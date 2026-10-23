@@ -1,6 +1,7 @@
 import { getVersion } from '@tauri-apps/api/app'
 import { getCurrentWindow } from '@tauri-apps/api/window'
-import { Download, Minus, RotateCcw, Square, Tag, X } from 'lucide-react'
+import { openUrl } from '@tauri-apps/plugin-opener'
+import { Download, GitFork, Minus, RotateCcw, Square, Tag, UserRound, X } from 'lucide-react'
 import { useEffect, useState } from 'react'
 import { isTauri } from '../lib/utils'
 import { useUpdater } from '../services/updater-context'
@@ -53,7 +54,12 @@ export function TitleBar() {
     <div data-tauri-drag-region className="flex items-center gap-2">
       <img src={titlebarLogo} alt="StreamDash" className="h-5 w-auto object-contain"/>
       <span aria-label={`Version ${version || 'loading'}, ${channel}`} className="flex items-center gap-1.5 text-[10px] tabular-nums text-zinc-500"><Tag size={11}/><span>{version || '…'}</span><span className="text-[9px] font-semibold tracking-wider text-zinc-600">· {channel}</span></span>
-      <div className="no-drag ml-0.5"><UpdateControl/></div>
+      <div className="no-drag ml-0.5 flex items-center gap-0.5">
+        <UpdateControl/>
+        <span className="mx-1 h-3 w-px bg-line"/>
+        <button type="button" title="GitHub repository" aria-label="Open GitHub repository" onClick={() => void openUrl('https://github.com/Tenkayro/StreamDash')} className="grid size-7 place-items-center rounded-md text-zinc-500 transition hover:bg-white/5 hover:text-zinc-200"><GitFork size={13}/></button>
+        <button type="button" title="Author: Tenkayro" aria-label="Open author profile for Tenkayro" onClick={() => void openUrl('https://github.com/Tenkayro')} className="grid size-7 place-items-center rounded-md text-zinc-500 transition hover:bg-white/5 hover:text-zinc-200"><UserRound size={13}/></button>
+      </div>
     </div>
     <div className="no-drag flex h-full">
       <button aria-label="Minimize" className="grid w-11 place-items-center hover:bg-white/5" onClick={() => window?.minimize()}><Minus size={13}/></button>
