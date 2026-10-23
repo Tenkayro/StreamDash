@@ -1,7 +1,7 @@
 {
   "$schema": "../node_modules/@tauri-apps/cli/config.schema.json",
   "productName": "StreamDash",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "identifier": "dev.streamdash.desktop",
   "build": {
     "frontendDist": "../dist",
@@ -32,7 +32,9 @@
     "publisher": "Tenkayro",
     "copyright": "Copyright © 2026 Tenkayro",
     "createUpdaterArtifacts": true,
-    "targets": ["msi"],
+    "targets": [
+      "msi"
+    ],
     "icon": [
       "icons/32x32.png",
       "icons/128x128.png",
@@ -46,9 +48,15 @@
         "silent": true
       },
       "wix": {
-        "language": ["en-US"],
-        "fragmentPaths": ["wix/user-data.wxs"],
-        "componentRefs": ["UserDataPreference"]
+        "language": [
+          "en-US"
+        ],
+        "fragmentPaths": [
+          "wix/user-data.wxs"
+        ],
+        "componentRefs": [
+          "UserDataPreference"
+        ]
       }
     },
     "android": {
