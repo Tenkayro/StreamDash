@@ -106,6 +106,7 @@ export function RuntimeProvider({ children }: { children: ReactNode }) {
     if (!clientId || !userId) throw new Error('Twitch is not connected')
     try {
       await twitchNative.chatSend(state().twitch.account ?? '', message)
+      chatRef.current?.echo(message)
       return
     } catch { /* fall back to Helix when the chat socket is down */ }
     const result = await twitchNative.helixPost<{ data?: Array<{ is_sent?: boolean; drop_reason?: { message?: string } }> }>(

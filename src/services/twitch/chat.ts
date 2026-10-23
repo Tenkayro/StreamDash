@@ -1,6 +1,6 @@
 import { listen, type UnlistenFn } from '@tauri-apps/api/event'
 import { twitchNative } from '../native'
-import type { ChatMessage, ChatPart, ConnectionPhase } from '../../types'
+import type { ChatBadge, ChatMessage, ChatPart, ConnectionPhase } from '../../types'
 
 const TV_BASE = 'https://7tv.io/v3'
 const TWITCH_EMOTE = (id: string) => `https://static-cdn.jtvnw.net/emoticons/v2/${id}/default/dark/2.0`
@@ -175,6 +175,7 @@ export class TwitchChatClient {
   private session = ''
   private emotes: ChatEmoteMap = new Map()
   private badges = new Map<string, string>()
+  private self = { displayName: '', color: '', badges: [] as ChatBadge[] }
   private login: string
   private channelId?: string
   private clientId: string
@@ -205,6 +206,20 @@ export class TwitchChatClient {
     this.unlisten.forEach((unlisten) => unlisten())
     this.unlisten = []
     void twitchNative.chatStop()
+  }
+
+  echo(text: string) {
+    const timestamp = Date.now()
+    this.onMessage({
+      id: `local-${timestamp}-${Math.random().toString(36).slice(2, 8)}`,
+      login: this.login,
+      displayName: this.self.displayName || this.login,
+      color: this.self.color || colorFor(this.login),
+      badges: this.self.badges,
+      timestamp,
+      text,
+      parts: buildChatParts(text, undefined, this.emotes),
+    })
   }
 
   private async prepare() {
@@ -253,6 +268,14 @@ export class TwitchChatClient {
   private handle(raw: string) {
     const line = parseIrcLine(raw)
     if (!line) return
+    if (line.command === 'USERSTATE') {
+      this.self = {
+        displayName: line.tags['display-name'] || this.login,
+        color: line.tags.color || colorFor(this.login),
+        badges: parseBadges(line.tags.badges, this.badges),
+      }
+      return
+    }
     if (line.command === 'CLEARMSG') { const id = line.tags['target-msg-id']; if (id) this.onDelete(id); return }
     if (line.command === 'CLEARCHAT') {
       const login = line.params[1]
