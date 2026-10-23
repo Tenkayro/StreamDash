@@ -6,6 +6,7 @@ import { join, resolve } from "node:path";
 import process from "node:process";
 
 const root = resolve(import.meta.dirname, "..");
+const repo = "Tenkayro/StreamDash";
 const versionFiles = [
   "package.json",
   "package-lock.json",
@@ -52,7 +53,8 @@ async function run(name, args, options = {}) {
     child.stderr.on("data", (chunk) => { stderr += chunk; });
     child.on("error", (error) => reject(new Error(`${name} could not be started: ${error.message}`)));
     child.on("close", (code) => {
-      if (code === 0) return resolveRun({ stdout: stdout.trim(), stderr: stderr.trim() });
+      if (code === 0 || options.allowFailure)
+        return resolveRun({ code, stdout: stdout.trim(), stderr: stderr.trim() });
       const output = `${stdout}\n${stderr}`.trim();
       reject(new Error(`${name} ${args.join(" ")} failed${output ? `:\n${output.slice(-5000)}` : ""}`));
     });
@@ -98,13 +100,57 @@ async function updateVersions(version) {
 }
 
 async function main() {
-  p.intro("StreamDash local release");
+  p.intro("StreamDash Release");
   if (process.platform !== "win32") throw new Error("Windows is required for MSI and MSIX builds.");
 
+  const check = p.spinner();
+  check.start("Checking Git, GitHub, and updater signing configuration");
+  let keyPath;
+  let pendingChanges = "";
+  try {
+    const status = await run("git", ["status", "--porcelain"]);
+    pendingChanges = status.stdout;
+    await run("gh", ["auth", "status"]);
+    const remote = await run("git", ["remote", "get-url", "origin"]);
+    if (!remote.stdout.toLowerCase().includes("tenkayro/streamdash"))
+      throw new Error(`origin does not point to ${repo}.`);
+    const branch = await run("git", ["branch", "--show-current"]);
+    if (branch.stdout !== "main")
+      throw new Error("Releases must be created from the main branch.");
+
+    keyPath =
+      process.env.TAURI_SIGNING_PRIVATE_KEY ||
+      join(homedir(), ".tauri", "streamdash-updater.key");
+    const publicKey = (await readFile(`${keyPath}.pub`, "utf8")).trim();
+    const tauriConfig = JSON.parse(
+      await readFile(join(root, "src-tauri/tauri.conf.json"), "utf8"),
+    );
+    if (tauriConfig.plugins?.updater?.pubkey !== publicKey)
+      throw new Error(
+        "The configured updater public key does not match the local signing key.",
+      );
+    check.stop("Release environment is ready");
+  } catch (error) {
+    check.stop("Release environment check failed");
+    throw error;
+  }
+
   const currentVersion = JSON.parse(await readFile(join(root, "package.json"), "utf8")).version;
+  const headPackage = await run("git", ["show", "HEAD:package.json"]);
+  const headVersion = JSON.parse(headPackage.stdout).version;
+  const hasUnreleasedWorkingVersion = currentVersion !== headVersion;
   const bump = await p.select({
     message: `Current version is ${currentVersion}. Choose the next version:`,
     options: [
+      ...(hasUnreleasedWorkingVersion
+        ? [
+            {
+              value: "current",
+              label: `Publish current working version ${currentVersion}`,
+              hint: `HEAD is still ${headVersion}`,
+            },
+          ]
+        : []),
       { value: "patch", label: `Patch  -> ${bumpVersion(currentVersion, "patch")}` },
       { value: "minor", label: `Minor  -> ${bumpVersion(currentVersion, "minor")}` },
       { value: "major", label: `Major  -> ${bumpVersion(currentVersion, "major")}` },
@@ -113,13 +159,19 @@ async function main() {
   });
   cancelled(bump);
 
-  let version = bump === "custom"
-    ? await p.text({
-        message: "Version",
-        placeholder: currentVersion,
-        validate: (value) => parseVersion(value) ? undefined : "Use semantic versioning, for example 1.2.3.",
-      })
-    : bumpVersion(currentVersion, bump);
+  let version =
+    bump === "current"
+      ? currentVersion
+      : bump === "custom"
+        ? await p.text({
+            message: "Version",
+            placeholder: currentVersion,
+            validate: (value) =>
+              parseVersion(value)
+                ? undefined
+                : "Use semantic versioning, for example 1.2.3.",
+          })
+        : bumpVersion(currentVersion, bump);
   cancelled(version);
   version = (version ?? "").trim();
 
@@ -130,22 +182,77 @@ async function main() {
   });
   cancelled(summary);
 
+  let changesCommitMessage = "";
+  if (pendingChanges) {
+    p.note(pendingChanges, "Changes that will be included");
+    const includeChanges = await p.confirm({
+      message: "Commit these pending changes before creating the version commit?",
+      initialValue: true,
+    });
+    cancelled(includeChanges);
+    if (!includeChanges) {
+      p.cancel(
+        "Release cancelled. Commit or stash the changes you do not want to publish.",
+      );
+      return;
+    }
+    changesCommitMessage = await p.text({
+      message: "Commit message for the pending changes",
+      defaultValue:
+        bump === "current"
+          ? `chore: release v${version}`
+          : "feat: prepare StreamDash release",
+      validate: (value) =>
+        (value ?? "").trim() ? undefined : "Enter a commit message.",
+    });
+    cancelled(changesCommitMessage);
+  }
+
+  const tag = `v${version}`;
+  const existingTag = await run(
+    "git",
+    ["rev-parse", "-q", "--verify", `refs/tags/${tag}`],
+    { allowFailure: true },
+  );
+  if (existingTag.code === 0) throw new Error(`Tag ${tag} already exists.`);
+  const existingRelease = await run(
+    "gh",
+    ["release", "view", tag, "--repo", repo],
+    { allowFailure: true },
+  );
+  if (existingRelease.code === 0)
+    throw new Error(`GitHub release ${tag} already exists.`);
+
   p.note(
     [
       `${currentVersion}  ->  ${version}`,
-      "Outputs: MSI, updater signature, latest.json, Microsoft Store MSIX",
-      "No Git commit, tag, push, or GitHub release will be created.",
+      `Repository: ${repo}`,
+      "GitHub: MSI installer, updater signature, latest.json",
+      "Local only: Microsoft Store MSIX (never uploaded to GitHub)",
+      "GitHub release notes: generated automatically",
     ].join("\n"),
-    "Local release",
+    "Release summary",
   );
-  const confirmed = await p.confirm({ message: `Build local release ${version}?`, initialValue: true });
+  const confirmed = await p.confirm({
+    message: `Build, commit${pendingChanges ? " pending changes" : ""}, tag, push, and publish ${tag}?`,
+    initialValue: true,
+  });
   cancelled(confirmed);
   if (!confirmed) return p.cancel("Release cancelled. No files were changed.");
+
+  if (pendingChanges) {
+    const save = p.spinner();
+    save.start("Committing the approved pending changes");
+    await run("git", ["add", "--all"]);
+    await run("git", ["commit", "-m", (changesCommitMessage ?? "").trim()]);
+    save.stop("Pending changes committed");
+  }
 
   const snapshots = new Map(await Promise.all(
     versionFiles.map(async (file) => [file, await readFile(join(root, file), "utf8")]),
   ));
 
+  let committed = false;
   try {
     const progress = p.spinner();
     progress.start(`Updating project versions to ${version}`);
@@ -154,7 +261,6 @@ async function main() {
     await run("npm", ["run", "check"]);
     await run("cargo", ["check", "--manifest-path", "src-tauri/Cargo.toml"]);
 
-    const keyPath = process.env.TAURI_SIGNING_PRIVATE_KEY || join(homedir(), ".tauri", "streamdash-updater.key");
     progress.message("Building the signed MSI updater package");
     await run("npm", ["run", "setup"], {
       env: { ...process.env, TAURI_SIGNING_PRIVATE_KEY: keyPath },
@@ -171,7 +277,8 @@ async function main() {
     const bundleDirectory = join(root, "src-tauri", "target", "release", "bundle", "msi");
     const installerAssetName = "StreamDash-Setup.msi";
     const installerAsset = join(bundleDirectory, installerAssetName);
-    const signature = (await readFile(`${installerAsset}.sig`, "utf8")).trim();
+    const signatureAsset = `${installerAsset}.sig`;
+    const signature = (await readFile(signatureAsset, "utf8")).trim();
     const manifest = {
       version,
       notes: (summary ?? "").trim(),
@@ -179,21 +286,67 @@ async function main() {
       platforms: {
         "windows-x86_64": {
           signature,
-          url: `https://github.com/Tenkayro/StreamDash/releases/download/v${version}/${installerAssetName}`,
+          url: `https://github.com/${repo}/releases/download/${tag}/${installerAssetName}`,
         },
       },
     };
-    await writeFile(join(bundleDirectory, "latest.json"), `${JSON.stringify(manifest, null, 2)}\n`);
-    progress.stop("Local MSI and MSIX release artifacts are ready");
-    p.outro(join(root, "src-tauri", "target", "release", "bundle"));
+    const manifestPath = join(bundleDirectory, "latest.json");
+    await writeFile(manifestPath, `${JSON.stringify(manifest, null, 2)}\n`);
+    progress.stop("GitHub artifacts and local Store MSIX are ready");
+
+    const publish = p.spinner();
+    publish.start("Committing the release version");
+    await run("git", ["add", ...versionFiles]);
+    const stagedVersionChanges = await run(
+      "git",
+      ["diff", "--cached", "--quiet", "--", ...versionFiles],
+      { allowFailure: true },
+    );
+    if (stagedVersionChanges.code !== 0)
+      await run("git", ["commit", "-m", `chore: release ${tag}`]);
+    committed = true;
+    await run("git", ["tag", "-a", tag, "-m", `StreamDash ${version}`]);
+    publish.message("Pushing main and the release tag");
+    await run("git", ["push", "--atomic", "origin", "main", tag]);
+    publish.message("Publishing the GitHub release (Store MSIX stays local)");
+    await run("gh", [
+      "release",
+      "create",
+      tag,
+      installerAsset,
+      signatureAsset,
+      manifestPath,
+      "--repo",
+      repo,
+      "--title",
+      `StreamDash ${version}`,
+      "--notes",
+      (summary ?? "").trim(),
+      "--generate-notes",
+      "--verify-tag",
+      "--latest",
+    ]);
+    publish.stop(`StreamDash ${version} is published`);
+    p.note(
+      join(root, "src-tauri", "target", "release", "bundle", "msix"),
+      "Microsoft Store MSIX (local only)",
+    );
+    p.outro(`https://github.com/${repo}/releases/tag/${tag}`);
   } catch (error) {
-    await Promise.all([...snapshots].map(([file, content]) => writeFile(join(root, file), content)));
+    if (!committed)
+      await Promise.all(
+        [...snapshots].map(([file, content]) =>
+          writeFile(join(root, file), content),
+        ),
+      );
     throw error;
   }
 }
 
 main().catch((error) => {
   p.log.error(error instanceof Error ? error.message : String(error));
-  p.outro("Local release failed. Version files were restored and nothing was uploaded.");
+  p.outro(
+    "Release failed. Nothing was published unless the error explicitly occurred during the push or GitHub release step.",
+  );
   process.exitCode = 1;
 });
