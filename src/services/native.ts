@@ -27,5 +27,6 @@ export const twitchNative = {
   devicePoll: (clientId: string, deviceCode: string, scopes: string[]) => invoke<{ status: string }>('twitch_device_poll', { clientId, deviceCode, scopes }),
   session: (clientId: string) => invoke<TwitchSession | null>('twitch_session', { clientId }),
   helix: <T>(clientId: string, path: string, query: [string, string][] = []) => invoke<T>('twitch_helix_get', { clientId, path, query }),
+  helixPatch: <T>(clientId: string, path: string, query: [string, string][], body: Record<string, unknown>) => invoke<T>('twitch_helix_patch', { clientId, path, query, body }),
   subscribe: (clientId: string, body: unknown) => invoke('twitch_eventsub_create', { clientId, body }),
 }

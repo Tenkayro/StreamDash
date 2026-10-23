@@ -9,10 +9,11 @@ import { Statistics } from './pages/Statistics'
 import { Goals } from './pages/Goals'
 import { Connections } from './pages/Connections'
 import { SettingsPage } from './pages/SettingsPage'
+import { StreamPage } from './pages/StreamPage'
 import { useAppStore } from './stores/app-store'
 import { isTauri } from './lib/utils'
 
-const pages: Record<string, React.ComponentType> = { dashboard: Dashboard, activity: ActivityPage, statistics: Statistics, goals: Goals, connections: Connections, settings: SettingsPage }
+const pages: Record<string, React.ComponentType> = { dashboard: Dashboard, stream: StreamPage, activity: ActivityPage, statistics: Statistics, goals: Goals, connections: Connections, settings: SettingsPage }
 export default function App() {
   const { page, ready, settings } = useAppStore(); const Page = pages[page] ?? Dashboard
   useEffect(() => {

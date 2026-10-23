@@ -37,9 +37,9 @@ export function RuntimeProvider({ children }: { children: ReactNode }) {
     try {
       const session = await twitchNative.session(clientId)
       if (!session) { state().setTwitch({ phase: 'disconnected' }); return }
-      twitchRef.current?.stop(); state().setTwitch({ phase: 'connecting', account: session.login })
+      twitchRef.current?.stop(); state().setTwitch({ phase: 'connecting', account: session.login, userId: session.userId, scopes: session.scopes })
       try { state().setStats(await loadTwitchSnapshot(clientId, session)) } catch (error) { toast.error('Some Twitch statistics are unavailable', { description: errorMessage(error) }) }
-      twitchRef.current = new TwitchEventSub(clientId, session, ingest, (phase, detail) => state().setTwitch({ phase, account: session.login, detail }))
+      twitchRef.current = new TwitchEventSub(clientId, session, ingest, (phase, detail) => state().setTwitch({ phase, account: session.login, userId: session.userId, scopes: session.scopes, detail }))
       twitchRef.current.start()
     } catch (error) { state().setTwitch({ phase: 'expired', detail: errorMessage(error) }) }
   }, [ingest, state])

@@ -1,6 +1,6 @@
 # StreamDash
 
-StreamDash is a Windows 10/11 desktop companion for streamers. It combines live Twitch EventSub activity, current Twitch channel statistics, and StreamElements tips in a focused desktop dashboard with local history, goals, charts, native notifications, autostart, and a system tray.
+StreamDash is a Windows 10/11 desktop companion for streamers. It combines live Twitch EventSub activity, current Twitch channel statistics, editing of the channel title/category/language, and StreamElements tips in a focused desktop dashboard with local history, goals, charts, native notifications, autostart, and a system tray.
 
 The normal application never generates demo activity. Empty, disconnected, loading, and error states reflect the actual services.
 
@@ -26,8 +26,9 @@ Twitch uses the public-client Device Code Grant. The application requests only:
 - `channel:read:subscriptions`
 - `bits:read`
 - `channel:read:redemptions`
+- `channel:manage:broadcast`
 
-EventSub handles follows, subscriptions, resub messages, gift subscriptions, cheers, incoming raids, custom channel-point redemptions, and online/offline changes. Helix provides follower/subscriber totals, current viewers, title, category, and stream start time.
+EventSub handles follows, subscriptions, resub messages, gift subscriptions, cheers, incoming raids, custom channel-point redemptions, and online/offline changes. Helix provides follower/subscriber totals, current viewers, title, category, and stream start time. The **Stream** page uses Helix to write the channel title, game/category, and broadcaster language.
 
 StreamElements connects to `wss://astro.streamelements.com/` and subscribes to the documented `channel.activities` and `channel.tips` topics. Tips are recorded only when their transaction status is `success`.
 
@@ -70,7 +71,7 @@ The current Twitch registration flow is documented at [Register Your App](https:
 7. Do **not** generate or configure a client secret. The Windows app follows Twitch's recommendation to use the public Device Code flow and refreshes public-client tokens without a secret.
 8. A Client ID saved through Settings is effective immediately; reconnect Twitch afterward. Restart only when changing `.env`.
 
-In StreamDash, open **Connections → Connect Twitch**. The system browser opens Twitch's activation page. Enter the displayed code and authorize the four listed scopes. Tokens are stored under the `StreamDash` service in Windows Credential Manager. Public-client access tokens last roughly four hours; refresh tokens expire after 30 days of inactivity, at which point StreamDash asks you to connect again.
+In StreamDash, open **Connections → Connect Twitch**. The system browser opens Twitch's activation page. Enter the displayed code and authorize the five listed scopes. Tokens are stored under the `StreamDash` service in Windows Credential Manager. Public-client access tokens last roughly four hours; refresh tokens expire after 30 days of inactivity, at which point StreamDash asks you to connect again.
 
 ### StreamElements
 
@@ -159,6 +160,7 @@ StreamElements graceful reconnect tokens restore subscriptions on the replacemen
 
 - **Connect Twitch says the Client ID is missing:** open Settings → Twitch, enter the Client ID, save it, and reconnect Twitch.
 - **Twitch statistics are unavailable:** disconnect and connect again so the currently configured scopes are granted. Confirm you authenticated as the broadcaster.
+- **Stream page reports a missing permission:** the `channel:manage:broadcast` scope was added after your last login. Use **Reconnect Twitch** on the Stream page to grant it.
 - **Twitch authorization expires:** public-client refresh tokens expire after 30 days of inactivity; reconnect from the Connections page.
 - **StreamElements connects but no events arrive:** recopy the JWT after switching to the correct linked channel. The token is account-specific.
 - **StreamElements reports unauthorized:** replace the stored token by disconnecting and reconnecting with a new JWT.

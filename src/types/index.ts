@@ -19,7 +19,7 @@ export interface ActivityEvent {
 }
 
 export type ConnectionPhase = 'disconnected' | 'connecting' | 'connected' | 'reconnecting' | 'expired' | 'error'
-export interface ConnectionState { phase: ConnectionPhase; account?: string; detail?: string }
+export interface ConnectionState { phase: ConnectionPhase; account?: string; userId?: string; scopes?: string[]; detail?: string }
 
 export interface DashboardStats {
   followers?: number
