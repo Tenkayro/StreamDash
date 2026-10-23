@@ -1,6 +1,6 @@
 [package]
 name = "streamdash"
-version = "0.1.0"
+version = "1.0.0"
 description = "A private real-time Twitch and StreamElements activity dashboard"
 authors = ["StreamDash contributors"]
 license = "MIT"
@@ -29,5 +29,3 @@ tauri-plugin-opener = "2"
 rusqlite = { version = "0.37", features = ["bundled"] }
 reqwest = { version = "0.12", features = ["json"] }
 keyring = { version = "3", features = ["windows-native"] }
-urlencoding = "2"
-chrono = { version = "0.4", features = ["serde"] }
