@@ -1,12 +1,13 @@
 use rusqlite::{params, Connection};
 use serde::{Deserialize, Serialize};
 use serde_json::{json, Value};
-use std::{path::PathBuf, sync::Mutex, time::{SystemTime, UNIX_EPOCH}};
+use std::{path::{Path, PathBuf}, process::Command, sync::Mutex, time::{SystemTime, UNIX_EPOCH}};
 use tauri::{Emitter, Manager};
 use tauri::menu::{Menu, MenuItem};
 use tauri::tray::TrayIconBuilder;
 
 const CREDENTIAL_SERVICE: &str = "StreamDash";
+const PREFERENCES_REGISTRY_KEY: &str = r"HKCU\Software\Tenkayro\StreamDash";
 
 struct AppState { db: Mutex<Connection> }
 
@@ -50,6 +51,53 @@ fn delete_secret_value(name: &str) -> Result<(), String> {
     match credential(name)?.delete_credential() {
         Ok(()) | Err(keyring::Error::NoEntry) => Ok(()), Err(e) => Err(e.to_string()),
     }
+}
+
+#[cfg(windows)]
+fn set_keep_user_data_preference(keep: bool) -> Result<(), String> {
+    let status = Command::new("reg.exe")
+        .args(["add", PREFERENCES_REGISTRY_KEY, "/v", "KeepUserData", "/t", "REG_DWORD", "/d", if keep { "1" } else { "0" }, "/f"])
+        .status()
+        .map_err(|e| e.to_string())?;
+    if status.success() { Ok(()) } else { Err("Could not update the uninstall preference".into()) }
+}
+
+#[cfg(not(windows))]
+fn set_keep_user_data_preference(_keep: bool) -> Result<(), String> { Ok(()) }
+
+fn migrate_legacy_data(new_directory: &Path) -> Result<(), String> {
+    let Some(roaming) = std::env::var_os("APPDATA").map(PathBuf::from) else { return Ok(()); };
+    let legacy = roaming.join("dev.streamdash.desktop");
+    if !legacy.exists() { return Ok(()); }
+    std::fs::create_dir_all(new_directory).map_err(|e| e.to_string())?;
+    for entry in std::fs::read_dir(&legacy).map_err(|e| e.to_string())? {
+        let entry = entry.map_err(|e| e.to_string())?;
+        let destination = new_directory.join(entry.file_name());
+        if !destination.exists() {
+            std::fs::rename(entry.path(), destination).map_err(|e| format!("Could not migrate StreamDash data: {e}"))?;
+        }
+    }
+    let _ = std::fs::remove_dir(&legacy);
+    Ok(())
+}
+
+pub fn uninstall_cleanup() {
+    let _ = delete_secret_value("twitch-oauth");
+    let _ = delete_secret_value("streamelements-token");
+
+    if let Some(roaming) = std::env::var_os("APPDATA").map(PathBuf::from) {
+        let _ = std::fs::remove_dir_all(roaming.join("StreamDash"));
+        let _ = std::fs::remove_dir_all(roaming.join("dev.streamdash.desktop"));
+    }
+    if let Some(local) = std::env::var_os("LOCALAPPDATA").map(PathBuf::from) {
+        let _ = std::fs::remove_dir_all(local.join("StreamDash"));
+        let _ = std::fs::remove_dir_all(local.join("dev.streamdash.desktop"));
+    }
+
+    for value in ["StreamDash", "streamdash"] {
+        let _ = Command::new("reg.exe").args(["delete", r"HKCU\Software\Microsoft\Windows\CurrentVersion\Run", "/v", value, "/f"]).status();
+    }
+    let _ = Command::new("reg.exe").args(["delete", PREFERENCES_REGISTRY_KEY, "/f"]).status();
 }
 
 fn load_twitch_tokens() -> Result<TwitchTokens, String> {
@@ -140,6 +188,9 @@ fn setting_save(state: tauri::State<'_, AppState>, key: String, value: Value) ->
         "INSERT INTO settings(key,value) VALUES(?1,?2) ON CONFLICT(key) DO UPDATE SET value=excluded.value",
         params![key, value.to_string()],
     ).map_err(|e| e.to_string())?;
+    if key == "keepUserData" {
+        set_keep_user_data_preference(value.as_bool().unwrap_or(true))?;
+    }
     Ok(())
 }
 
@@ -268,6 +319,9 @@ pub fn run() {
         .plugin(tauri_plugin_autostart::init(tauri_plugin_autostart::MacosLauncher::LaunchAgent, None))
         .setup(|app| {
             let db_path = app.path().app_data_dir()?.join("streamdash.db");
+            if let Some(data_directory) = db_path.parent() {
+                migrate_legacy_data(data_directory).map_err(std::io::Error::other)?;
+            }
             app.manage(AppState { db: Mutex::new(init_database(db_path).map_err(std::io::Error::other)?) });
             if cfg!(debug_assertions) { app.handle().plugin(tauri_plugin_log::Builder::default().level(log::LevelFilter::Info).build())?; }
             let open = MenuItem::with_id(app, "open", "Open Dashboard", true, None::<&str>)?;
@@ -275,7 +329,8 @@ pub fn run() {
             let settings = MenuItem::with_id(app, "settings", "Settings", true, None::<&str>)?;
             let quit = MenuItem::with_id(app, "quit", "Quit", true, None::<&str>)?;
             let menu = Menu::with_items(app, &[&open, &reconnect, &settings, &quit])?;
-            TrayIconBuilder::new().icon(app.default_window_icon().unwrap().clone()).menu(&menu)
+            let tray_icon = app.default_window_icon().cloned().ok_or_else(|| std::io::Error::other("StreamDash application icon is missing"))?;
+            TrayIconBuilder::new().icon(tray_icon).menu(&menu)
                 .on_menu_event(|app, event| match event.id.as_ref() {
                     "open" => { if let Some(w) = app.get_webview_window("main") { let _=w.show(); let _=w.set_focus(); } },
                     "reconnect" => { let _=app.emit("tray-reconnect", ()); },

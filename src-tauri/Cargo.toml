@@ -2,7 +2,7 @@
 name = "streamdash"
 version = "1.0.0"
 description = "A private real-time Twitch and StreamElements activity dashboard"
-authors = ["StreamDash contributors"]
+authors = ["Tenkayro"]
 license = "MIT"
 repository = ""
 edition = "2024"

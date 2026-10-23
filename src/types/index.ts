@@ -37,6 +37,7 @@ export interface DashboardStats {
 export interface AppSettings {
   twitchClientId: string
   launchAtStartup: boolean
+  keepUserData: boolean
   minimizeToTray: boolean
   compactFeed: boolean
   animations: boolean

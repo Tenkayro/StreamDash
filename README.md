@@ -129,7 +129,8 @@ Native notifications identify correctly only for an installed build. The develop
 ## Data and security
 
 - OAuth credentials and the StreamElements JWT use Windows Credential Manager.
-- Activity and non-sensitive settings use `%APPDATA%\dev.streamdash.desktop\streamdash.db`.
+- Activity and non-sensitive settings use `%APPDATA%\StreamDash\streamdash.db`.
+- **Settings → Keep user data on uninstall** is enabled by default. Disable it before uninstalling to remove the database, settings, cached data, stored credentials, and autostart entry.
 - Event IDs are unique in SQLite, preventing replayed WebSocket messages from creating duplicates.
 - History is bounded by the selected maximum (1,000–50,000 events).
 - Twitch token validation and refresh happen in Rust; tokens are never returned to React.
