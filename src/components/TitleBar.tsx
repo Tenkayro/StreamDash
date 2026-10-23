@@ -1,11 +1,15 @@
 import { getVersion } from '@tauri-apps/api/app'
 import { getCurrentWindow } from '@tauri-apps/api/window'
 import { openUrl } from '@tauri-apps/plugin-opener'
-import { Download, GitFork, Minus, RotateCcw, Square, Tag, UserRound, X } from 'lucide-react'
-import { useEffect, useState } from 'react'
+import { Bug, Download, GitFork, Minus, RotateCcw, Square, Tag, UserRound, X, type LucideIcon } from 'lucide-react'
+import { useEffect, useState, type MouseEventHandler } from 'react'
 import { isTauri } from '../lib/utils'
 import { useUpdater } from '../services/updater-context'
 import titlebarLogo from '../assets/branding/streamdash-logo-titlebar.webp'
+
+function TitleAction({ icon: Icon, label, onClick }: { icon: LucideIcon; label: string; onClick: MouseEventHandler<HTMLButtonElement> }) {
+  return <button type="button" title={label} aria-label={label} onClick={onClick} className="grid size-7 place-items-center rounded-md text-zinc-500 transition hover:bg-white/5.5 hover:text-zinc-200"><Icon size={13}/></button>
+}
 
 function UpdateControl() {
   const updater = useUpdater()
@@ -50,21 +54,23 @@ export function TitleBar() {
   const channel = import.meta.env.DEV ? 'DEV' : 'RELEASE'
   useEffect(() => { if (isTauri()) void getVersion().then(setVersion) }, [])
 
-  return <div data-tauri-drag-region className="drag-region flex h-9 shrink-0 items-center justify-between border-b border-line bg-[#0f1014] pl-4 text-[11px] text-muted">
-    <div data-tauri-drag-region className="flex items-center gap-2">
+  return <div data-tauri-drag-region className="drag-region flex h-9 shrink-0 items-center border-b border-line bg-[#0f1014] pl-3 text-[11px] text-muted">
+    <div data-tauri-drag-region className="flex shrink-0 items-center gap-2.5">
       <img src={titlebarLogo} alt="StreamDash" className="h-5 w-auto object-contain"/>
-      <span aria-label={`Version ${version || 'loading'}, ${channel}`} className="flex items-center gap-1.5 text-[10px] tabular-nums text-zinc-500"><Tag size={11}/><span>{version || '…'}</span><span className="text-[9px] font-semibold tracking-wider text-zinc-600">· {channel}</span></span>
-      <div className="no-drag ml-0.5 flex items-center gap-0.5">
-        <UpdateControl/>
-        <span className="mx-1 h-3 w-px bg-line"/>
-        <button type="button" title="GitHub repository" aria-label="Open GitHub repository" onClick={() => void openUrl('https://github.com/Tenkayro/StreamDash')} className="grid size-7 place-items-center rounded-md text-zinc-500 transition hover:bg-white/5 hover:text-zinc-200"><GitFork size={13}/></button>
-        <button type="button" title="Author: Tenkayro" aria-label="Open author profile for Tenkayro" onClick={() => void openUrl('https://github.com/Tenkayro')} className="grid size-7 place-items-center rounded-md text-zinc-500 transition hover:bg-white/5 hover:text-zinc-200"><UserRound size={13}/></button>
-      </div>
+      <span aria-label={`Version ${version || 'loading'}, ${channel}`} className="flex h-5 items-center gap-1.5 rounded-md border border-line bg-white/2.5 px-2 text-[9px] tabular-nums text-zinc-400"><Tag size={10}/><span>{version || '…'}</span><span className={channel === 'DEV' ? 'font-semibold tracking-wider text-amber-400/80' : 'font-semibold tracking-wider text-emerald-400/70'}>{channel}</span></span>
     </div>
-    <div className="no-drag flex h-full">
-      <button aria-label="Minimize" className="grid w-11 place-items-center hover:bg-white/5" onClick={() => window?.minimize()}><Minus size={13}/></button>
-      <button aria-label="Maximize" className="grid w-11 place-items-center hover:bg-white/5" onClick={() => window?.toggleMaximize()}><Square size={11}/></button>
-      <button aria-label="Close" className="grid w-11 place-items-center hover:bg-red-600 hover:text-white" onClick={() => window?.close()}><X size={14}/></button>
+    <div data-tauri-drag-region className="h-full min-w-8 flex-1"/>
+    <div className="no-drag flex h-full shrink-0 items-center">
+      <div className="flex items-center gap-0.5 px-1.5">
+        <UpdateControl/>
+        <TitleAction icon={GitFork} label="Open GitHub repository" onClick={() => void openUrl('https://github.com/Tenkayro/StreamDash')}/>
+        <TitleAction icon={Bug} label="Issues and feedback" onClick={() => void openUrl('https://github.com/Tenkayro/StreamDash/issues')}/>
+        <TitleAction icon={UserRound} label="Author: Tenkayro" onClick={() => void openUrl('https://github.com/Tenkayro')}/>
+      </div>
+      <span className="h-4 w-px bg-line"/>
+      <button aria-label="Minimize" className="grid h-full w-11 place-items-center hover:bg-white/5" onClick={() => window?.minimize()}><Minus size={13}/></button>
+      <button aria-label="Maximize" className="grid h-full w-11 place-items-center hover:bg-white/5" onClick={() => window?.toggleMaximize()}><Square size={11}/></button>
+      <button aria-label="Close" className="grid h-full w-11 place-items-center hover:bg-red-600 hover:text-white" onClick={() => window?.close()}><X size={14}/></button>
     </div>
   </div>
 }
