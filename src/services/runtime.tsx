@@ -32,8 +32,27 @@ import {
 } from "./twitch/client";
 import { TwitchChatClient } from "./twitch/chat";
 import { StreamElementsClient } from "./streamelements/client";
-import type { ActivityEvent, ChatUserProfile } from "../types";
+import type { ActivityEvent, AppSettings, ChatUserProfile } from "../types";
 import { RuntimeContext, type DeviceAuth } from "./runtime-context";
+
+type Bootstrap = {
+  settings: Partial<AppSettings>;
+  events: ActivityEvent[];
+};
+
+let bootstrapPromise: Promise<Bootstrap> | undefined;
+
+function loadBootstrap() {
+  bootstrapPromise ??= (async () => {
+    const settings = await loadSettings();
+    const events = await loadEvents(settings.maximumEvents ?? 5000);
+    return { settings, events };
+  })().catch((error) => {
+    bootstrapPromise = undefined;
+    throw error;
+  });
+  return bootstrapPromise;
+}
 
 export function RuntimeProvider({ children }: { children: ReactNode }) {
   const setSettings = useAppStore((s) => s.setSettings);
@@ -193,8 +212,7 @@ export function RuntimeProvider({ children }: { children: ReactNode }) {
     const unlisten: Array<() => void> = [];
     (async () => {
       try {
-        const settings = await loadSettings();
-        const events = await loadEvents(settings.maximumEvents ?? 5000);
+        const { settings, events } = await loadBootstrap();
         if (disposed) return;
         setSettings(settings);
         setEvents(events);
