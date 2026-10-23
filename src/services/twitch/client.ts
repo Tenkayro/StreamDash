@@ -3,6 +3,7 @@ import { twitchNative } from '../native'
 import { normalizeTwitch } from './events'
 
 export const TWITCH_SCOPES = ['moderator:read:followers', 'moderator:manage:banned_users', 'moderator:manage:chat_messages', 'channel:manage:moderators', 'channel:manage:vips', 'channel:read:subscriptions', 'bits:read', 'channel:read:redemptions', 'channel:manage:broadcast', 'user:write:chat', 'chat:read', 'chat:edit']
+export const needsTwitchPermissionUpdate = (scopes?: string[]) => TWITCH_SCOPES.some((scope) => !scopes?.includes(scope))
 type EventSubEnvelope = { metadata: { message_id: string; message_type: string; message_timestamp: string }; payload: { session?: { id: string; keepalive_timeout_seconds?: number; reconnect_url?: string }; subscription?: { type: string }; event?: Record<string, unknown> } }
 
 export async function loadTwitchSnapshot(clientId: string, session: TwitchSession): Promise<Partial<DashboardStats>> {
