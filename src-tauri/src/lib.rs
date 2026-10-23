@@ -1,7 +1,16 @@
+use futures_util::{SinkExt, StreamExt};
 use rusqlite::{params, Connection};
 use serde::{Deserialize, Serialize};
 use serde_json::{json, Value};
 use std::{path::{Path, PathBuf}, process::Command, sync::Mutex, time::{SystemTime, UNIX_EPOCH}};
+use tokio::sync::mpsc;
+use tokio_tungstenite::tungstenite::Message;
+
+static HTTP_CLIENT: std::sync::OnceLock<reqwest::Client> = std::sync::OnceLock::new();
+
+fn http() -> &'static reqwest::Client {
+    HTTP_CLIENT.get_or_init(reqwest::Client::new)
+}
 use tauri::{Emitter, Manager};
 use tauri::menu::{Menu, MenuItem};
 use tauri::tray::TrayIconBuilder;
@@ -222,7 +231,7 @@ fn secret_delete(name: String) -> Result<(), String> {
 
 #[tauri::command]
 async fn twitch_device_start(client_id: String, scopes: Vec<String>) -> Result<Value, String> {
-    let response = reqwest::Client::new().post("https://id.twitch.tv/oauth2/device")
+    let response = http().post("https://id.twitch.tv/oauth2/device")
         .form(&[("client_id", client_id), ("scopes", scopes.join(" "))]).send().await.map_err(|e| e.to_string())?;
     let status = response.status();
     let body: Value = response.json().await.map_err(|e| e.to_string())?;
@@ -232,7 +241,7 @@ async fn twitch_device_start(client_id: String, scopes: Vec<String>) -> Result<V
 
 #[tauri::command]
 async fn twitch_device_poll(client_id: String, device_code: String, scopes: Vec<String>) -> Result<Value, String> {
-    let response = reqwest::Client::new().post("https://id.twitch.tv/oauth2/token")
+    let response = http().post("https://id.twitch.tv/oauth2/token")
         .form(&[("client_id", client_id), ("scopes", scopes.join(" ")), ("device_code", device_code),
           ("grant_type", "urn:ietf:params:oauth:grant-type:device_code".to_string())])
         .send().await.map_err(|e| e.to_string())?;
@@ -256,7 +265,7 @@ async fn twitch_device_poll(client_id: String, device_code: String, scopes: Vec<
 
 async fn refresh_twitch(client_id: &str, current: TwitchTokens) -> Result<TwitchTokens, String> {
     let refresh = current.refresh_token.ok_or("Twitch session expired; reconnect required")?;
-    let response = reqwest::Client::new().post("https://id.twitch.tv/oauth2/token")
+    let response = http().post("https://id.twitch.tv/oauth2/token")
         .form(&[("grant_type", "refresh_token"), ("refresh_token", refresh.as_str()), ("client_id", client_id)])
         .send().await.map_err(|e| e.to_string())?;
     let status = response.status();
@@ -281,7 +290,7 @@ async fn valid_tokens(client_id: &str) -> Result<TwitchTokens, String> {
 async fn twitch_session(client_id: String) -> Result<Option<TwitchSession>, String> {
     let tokens = match load_twitch_tokens() { Ok(v) => v, Err(_) => return Ok(None) };
     let tokens = if tokens.expires_at <= now_epoch() + 120 { refresh_twitch(&client_id, tokens).await? } else { tokens };
-    let response = reqwest::Client::new().get("https://id.twitch.tv/oauth2/validate")
+    let response = http().get("https://id.twitch.tv/oauth2/validate")
         .bearer_auth(&tokens.access_token).send().await.map_err(|e| e.to_string())?;
     if response.status().as_u16() == 401 { delete_secret_value("twitch-oauth")?; return Ok(None); }
     let value: Value = response.json().await.map_err(|e| e.to_string())?;
@@ -301,7 +310,7 @@ async fn twitch_helix_get(client_id: String, path: String, query: Vec<(String,St
     if path.contains("..") || path.contains("://") { return Err("Invalid Helix path".into()); }
     let tokens = valid_tokens(&client_id).await?;
     let url = format!("https://api.twitch.tv/helix/{}", path.trim_start_matches('/'));
-    let response = reqwest::Client::new().get(url).query(&query).header("Client-Id", client_id)
+    let response = http().get(url).query(&query).header("Client-Id", client_id)
         .bearer_auth(tokens.access_token).send().await.map_err(|e| e.to_string())?;
     let status = response.status();
     let body: Value = response.json().await.map_err(|e| e.to_string())?;
@@ -314,7 +323,7 @@ async fn twitch_helix_patch(client_id: String, path: String, query: Vec<(String,
     if path.contains("..") || path.contains("://") { return Err("Invalid Helix path".into()); }
     let tokens = valid_tokens(&client_id).await?;
     let url = format!("https://api.twitch.tv/helix/{}", path.trim_start_matches('/'));
-    let response = reqwest::Client::new().patch(url).query(&query).header("Client-Id", client_id)
+    let response = http().patch(url).query(&query).header("Client-Id", client_id)
         .bearer_auth(tokens.access_token).json(&body).send().await.map_err(|e| e.to_string())?;
     let status = response.status();
     if status.as_u16() == 204 { return Ok(json!({})); }
@@ -328,7 +337,7 @@ async fn twitch_helix_post(client_id: String, path: String, query: Vec<(String,S
     if path.contains("..") || path.contains("://") { return Err("Invalid Helix path".into()); }
     let tokens = valid_tokens(&client_id).await?;
     let url = format!("https://api.twitch.tv/helix/{}", path.trim_start_matches('/'));
-    let response = reqwest::Client::new().post(url).query(&query).header("Client-Id", client_id)
+    let response = http().post(url).query(&query).header("Client-Id", client_id)
         .bearer_auth(tokens.access_token).json(&body).send().await.map_err(|e| e.to_string())?;
     let status = response.status();
     if status.as_u16() == 204 { return Ok(json!({})); }
@@ -340,16 +349,78 @@ async fn twitch_helix_post(client_id: String, path: String, query: Vec<(String,S
 #[tauri::command]
 async fn twitch_eventsub_create(client_id: String, body: Value) -> Result<(), String> {
     let tokens = valid_tokens(&client_id).await?;
-    let response = reqwest::Client::new().post("https://api.twitch.tv/helix/eventsub/subscriptions")
+    let response = http().post("https://api.twitch.tv/helix/eventsub/subscriptions")
         .header("Client-Id", client_id).bearer_auth(tokens.access_token).json(&body).send().await.map_err(|e| e.to_string())?;
     if response.status().is_success() || response.status().as_u16() == 409 { return Ok(()); }
     let body: Value = response.json().await.unwrap_or(json!({}));
     Err(body["message"].as_str().unwrap_or("Could not create EventSub subscription").to_string())
 }
 
+#[derive(Default)]
+struct ChatIrc {
+    sender: Mutex<Option<mpsc::UnboundedSender<String>>>,
+}
+
+#[tauri::command]
+async fn twitch_chat_start(app: tauri::AppHandle, state: tauri::State<'_, ChatIrc>, client_id: String, login: String, channel: String, session: String) -> Result<(), String> {
+    let tokens = valid_tokens(&client_id).await?;
+    let (socket, _) = tokio_tungstenite::connect_async("wss://irc-ws.chat.twitch.tv:443").await.map_err(|e| e.to_string())?;
+    let (mut write, mut read) = socket.split();
+    for line in [
+        format!("PASS oauth:{}", tokens.access_token),
+        "CAP REQ :twitch.tv/tags twitch.tv/commands".to_string(),
+        format!("NICK {login}"),
+        format!("JOIN #{channel}"),
+    ] {
+        write.send(Message::Text(line)).await.map_err(|e| e.to_string())?;
+    }
+    let (tx, mut rx) = mpsc::unbounded_channel::<String>();
+    *state.sender.lock().map_err(|_| "Chat state is unavailable")? = Some(tx);
+    tauri::async_runtime::spawn(async move {
+        loop {
+            tokio::select! {
+                incoming = read.next() => match incoming {
+                    Some(Ok(Message::Text(text))) => {
+                        if text.starts_with("PING") {
+                            if write.send(Message::Text("PONG :tmi.twitch.tv".to_string())).await.is_err() { break; }
+                        } else if text.starts_with("RECONNECT") || text.starts_with(":tmi.twitch.tv RECONNECT") {
+                            break;
+                        } else {
+                            let _ = app.emit("twitch-chat-line", json!({ "session": session.clone(), "line": text }));
+                        }
+                    }
+                    Some(Ok(Message::Ping(payload))) => { if write.send(Message::Pong(payload)).await.is_err() { break; } }
+                    Some(Ok(_)) => {}
+                    _ => break,
+                },
+                outgoing = rx.recv() => match outgoing {
+                    Some(line) => { if write.send(Message::Text(line)).await.is_err() { break; } }
+                    None => break,
+                },
+            }
+        }
+        let _ = app.emit("twitch-chat-closed", json!({ "session": session }));
+    });
+    Ok(())
+}
+
+#[tauri::command]
+fn twitch_chat_send(state: tauri::State<'_, ChatIrc>, channel: String, message: String) -> Result<(), String> {
+    if message.contains(['\r', '\n']) || channel.contains(['\r', '\n', ' ', '#']) { return Err("Invalid chat message".into()); }
+    let sender = state.sender.lock().map_err(|_| "Chat state is unavailable")?;
+    let sender = sender.as_ref().ok_or("Chat is not connected")?;
+    sender.send(format!("PRIVMSG #{channel} :{message}")).map_err(|_| "Chat is not connected".to_string())
+}
+
+#[tauri::command]
+fn twitch_chat_stop(state: tauri::State<'_, ChatIrc>) {
+    if let Ok(mut sender) = state.sender.lock() { *sender = None; }
+}
+
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
     tauri::Builder::default()
+        .manage(ChatIrc::default())
         .plugin(tauri_plugin_opener::init())
         .plugin(tauri_plugin_notification::init())
         .plugin(tauri_plugin_updater::Builder::new().build())
@@ -377,6 +448,6 @@ pub fn run() {
             Ok(())
         })
         .invoke_handler(tauri::generate_handler![events_list,event_insert,events_clear,settings_load,setting_save,
-          secret_set,secret_get,secret_delete,twitch_device_start,twitch_device_poll,twitch_session,twitch_helix_get,twitch_helix_patch,twitch_helix_post,twitch_eventsub_create])
+          secret_set,secret_get,secret_delete,twitch_device_start,twitch_device_poll,twitch_session,twitch_helix_get,twitch_helix_patch,twitch_helix_post,twitch_eventsub_create,twitch_chat_start,twitch_chat_send,twitch_chat_stop])
         .run(tauri::generate_context!()).expect("error while building StreamDash");
 }

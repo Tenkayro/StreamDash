@@ -1,7 +1,7 @@
+import { listen, type UnlistenFn } from '@tauri-apps/api/event'
 import { twitchNative } from '../native'
 import type { ChatMessage, ChatPart, ConnectionPhase } from '../../types'
 
-const IRC_URL = 'wss://irc-ws.chat.twitch.tv:443'
 const TV_BASE = 'https://7tv.io/v3'
 const TWITCH_EMOTE = (id: string) => `https://static-cdn.jtvnw.net/emoticons/v2/${id}/default/dark/2.0`
 const USER_COLORS = ['#ff7f7f', '#ffbf7f', '#ffdf7f', '#ffff7f', '#bfff7f', '#7fff7f', '#7fffbf', '#7fffff', '#7fbfff', '#7f7fff', '#bf7fff', '#ff7fff', '#ff7fbf']
@@ -168,10 +168,11 @@ function parseBadges(value: string | undefined, badgeUrls: Map<string, string>) 
 }
 
 export class TwitchChatClient {
-  private socket?: WebSocket
   private stopped = false
   private retry = 0
   private timer?: number
+  private unlisten: UnlistenFn[] = []
+  private session = ''
   private emotes: ChatEmoteMap = new Map()
   private badges = new Map<string, string>()
   private login: string
@@ -197,7 +198,14 @@ export class TwitchChatClient {
   }
 
   start() { this.stopped = false; void this.prepare() }
-  stop() { this.stopped = true; window.clearTimeout(this.timer); this.socket?.close(); this.socket = undefined }
+  stop() {
+    this.stopped = true
+    window.clearTimeout(this.timer)
+    this.session = ''
+    this.unlisten.forEach((unlisten) => unlisten())
+    this.unlisten = []
+    void twitchNative.chatStop()
+  }
 
   private async prepare() {
     this.onPhase('connecting')
@@ -207,38 +215,44 @@ export class TwitchChatClient {
     ])
     this.emotes = emotes.status === 'fulfilled' ? emotes.value : new Map()
     this.badges = badges.status === 'fulfilled' ? badges.value : new Map()
-    if (!this.stopped) this.open()
+    if (this.stopped) return
+    this.unlisten = await Promise.all([
+      listen<{ session: string; line: string }>('twitch-chat-line', ({ payload }) => {
+        if (payload.session !== this.session) return
+        for (const line of payload.line.split('\r\n')) if (line) this.handle(line)
+      }),
+      listen<{ session: string }>('twitch-chat-closed', ({ payload }) => {
+        if (payload.session === this.session && !this.stopped) this.retryLater()
+      }),
+    ])
+    if (this.stopped) { this.unlisten.forEach((unlisten) => unlisten()); this.unlisten = [] } else void this.connect()
   }
 
-  private open() {
-    const socket = new WebSocket(IRC_URL)
-    this.socket = socket
-    socket.onopen = () => {
+  private async connect() {
+    this.onPhase('connecting')
+    this.session = crypto.randomUUID()
+    try {
+      await twitchNative.chatStart(this.clientId, this.login, this.login, this.session)
+      if (this.stopped) return
       this.retry = 0
-      this.send('CAP REQ :twitch.tv/tags twitch.tv/commands')
-      this.send(`NICK justinfan${Math.floor(Math.random() * 90_000) + 10_000}`)
-      this.send(`JOIN #${this.login}`)
       this.onPhase('connected')
+    } catch (error) {
+      if (this.stopped) return
+      this.onPhase('error', error instanceof Error ? error.message : String(error))
+      this.retryLater()
     }
-    socket.onmessage = ({ data }) => { for (const line of String(data).split('\r\n')) if (line) this.handle(line) }
-    socket.onerror = () => this.onPhase('error', 'Twitch chat connection failed')
-    socket.onclose = () => { if (!this.stopped && this.socket === socket) this.retryLater() }
   }
 
   private retryLater() {
     this.onPhase('reconnecting')
     const wait = Math.min(30_000, 1000 * 2 ** this.retry++) + Math.random() * 500
     window.clearTimeout(this.timer)
-    this.timer = window.setTimeout(() => { if (!this.stopped) this.open() }, wait)
+    this.timer = window.setTimeout(() => { if (!this.stopped) void this.connect() }, wait)
   }
 
-  private send(line: string) { if (this.socket?.readyState === WebSocket.OPEN) this.socket.send(`${line}\r\n`) }
-
   private handle(raw: string) {
-    if (raw.startsWith('PING')) { this.send('PONG :tmi.twitch.tv'); return }
     const line = parseIrcLine(raw)
     if (!line) return
-    if (line.command === 'RECONNECT') { this.socket?.close(); return }
     if (line.command === 'CLEARMSG') { const id = line.tags['target-msg-id']; if (id) this.onDelete(id); return }
     if (line.command === 'CLEARCHAT') {
       const login = line.params[1]

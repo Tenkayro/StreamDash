@@ -29,5 +29,8 @@ export const twitchNative = {
   helix: <T>(clientId: string, path: string, query: [string, string][] = []) => invoke<T>('twitch_helix_get', { clientId, path, query }),
   helixPatch: <T>(clientId: string, path: string, query: [string, string][], body: Record<string, unknown>) => invoke<T>('twitch_helix_patch', { clientId, path, query, body }),
   helixPost: <T>(clientId: string, path: string, query: [string, string][], body: Record<string, unknown>) => invoke<T>('twitch_helix_post', { clientId, path, query, body }),
+  chatStart: (clientId: string, login: string, channel: string, session: string) => invoke('twitch_chat_start', { clientId, login, channel, session }),
+  chatSend: (channel: string, message: string) => invoke('twitch_chat_send', { channel, message }),
+  chatStop: () => invoke('twitch_chat_stop'),
   subscribe: (clientId: string, body: unknown) => invoke('twitch_eventsub_create', { clientId, body }),
 }

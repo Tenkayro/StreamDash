@@ -7,8 +7,6 @@ import { useRuntime } from '../services/runtime-context'
 import { useAppStore } from '../stores/app-store'
 import type { ChatMessage, ChatPart, ConnectionPhase } from '../types'
 
-const WRITE_SCOPE = 'user:write:chat'
-
 function tone(phase: ConnectionPhase) {
   return phase === 'connected' ? 'green' : phase === 'connecting' || phase === 'reconnecting' ? 'amber' : phase === 'error' || phase === 'expired' ? 'red' : 'neutral' as const
 }
@@ -41,10 +39,13 @@ export function ChatPage() {
   const { chat, chatMessages, clearChat, setPage, twitch } = useAppStore()
   const runtime = useRuntime()
   const listRef = useRef<HTMLDivElement>(null)
+  const inputRef = useRef<HTMLInputElement>(null)
   const [stick, setStick] = useState(true)
   const [draft, setDraft] = useState('')
   const [sending, setSending] = useState(false)
-  const missingScope = Boolean(twitch.phase === 'connected' && !twitch.scopes?.includes(WRITE_SCOPE))
+  const missingScope = Boolean(twitch.phase === 'connected' && !['chat:read', 'chat:edit'].every((scope) => twitch.scopes?.includes(scope)))
+
+  useEffect(() => { inputRef.current?.focus() }, [])
 
   useEffect(() => {
     const list = listRef.current
@@ -60,19 +61,21 @@ export function ChatPage() {
 
   const submit = async (event: React.FormEvent) => {
     event.preventDefault()
-    if (!draft.trim() || sending) return
-    setSending(true)
+    const message = draft.trim()
+    if (!message || sending) return
+    setDraft('')
+    inputRef.current?.focus()
     setStick(true)
-    try {
-      await runtime.sendChatMessage(draft)
-      setDraft('')
-    } catch (error) { toast.error('Message could not be sent', { description: errorMessage(error) }) }
-    finally { setSending(false) }
+    setSending(true)
+    try { await runtime.sendChatMessage(message) }
+    catch (error) { toast.error('Message could not be sent', { description: errorMessage(error) }); setDraft((current) => current || message) }
+    finally { setSending(false); inputRef.current?.focus() }
   }
 
-  if (twitch.phase !== 'connected') return <>{header}<Card><EmptyState icon={<MessageSquare size={22}/>} title="Twitch is not connected" body="Connect your Twitch account first. Chat is read anonymously, and messages are sent through Twitch with your connected account." action={<Button variant="primary" onClick={() => setPage('connections')}>Open Connections</Button>}/></Card></>
+  if (twitch.phase !== 'connected') return <>{header}<Card><EmptyState icon={<MessageSquare size={22}/>} title="Twitch is not connected" body="Connect your Twitch account first. Chat reads and sends through your authenticated Twitch connection." action={<Button variant="primary" onClick={() => setPage('connections')}>Open Connections</Button>}/></Card></>
 
   return <>{header}
+    {missingScope && <div className="mb-3 flex items-center justify-between gap-3 rounded-lg border border-amber-500/30 bg-amber-400/[.06] px-3 py-2 text-xs leading-5 text-amber-200"><span>Twitch chat requires the <span className="font-mono">chat:read</span> and <span className="font-mono">chat:edit</span> permissions. Reconnect once to grant them.</span><Button onClick={() => setPage('connections')}>Reconnect</Button></div>}
     {chat.detail && chat.phase === 'error' && <p className="mb-3 px-1 text-xs text-red-300">{chat.detail}</p>}
     <Card className="flex h-[calc(100vh-170px)] min-h-72 flex-col overflow-hidden">
       <div className="flex items-center justify-between border-b border-line px-4 py-2.5">
@@ -85,12 +88,10 @@ export function ChatPage() {
           : chatMessages.map((message) => <ChatRow key={message.id} message={message}/>)}
       </div>
       <div className="border-t border-line p-3">
-        {missingScope
-          ? <div className="flex items-center justify-between gap-3 rounded-lg border border-amber-500/30 bg-amber-400/[.06] px-3 py-2 text-xs leading-5 text-amber-200"><span>Twitch needs the <span className="font-mono">user:write:chat</span> permission to send messages. Reconnect once to grant it.</span><Button onClick={() => setPage('connections')}>Reconnect</Button></div>
-          : <form className="flex gap-2" onSubmit={submit}>
-              <input className="input" placeholder={`Message #${twitch.account}`} value={draft} maxLength={500} autoComplete="off" disabled={sending || !isTauri()} onChange={(event) => setDraft(event.target.value)}/>
-              <Button variant="primary" type="submit" disabled={!draft.trim() || sending || !isTauri()}>{sending ? <LoaderCircle size={15} className="animate-spin"/> : <Send size={15}/>}Send</Button>
-            </form>}
+        <form className="flex gap-2" onSubmit={submit}>
+          <input ref={inputRef} className="input" placeholder={`Message #${twitch.account}`} value={draft} maxLength={500} autoComplete="off" disabled={!isTauri()} onChange={(event) => setDraft(event.target.value)}/>
+          <Button variant="primary" type="submit" disabled={!draft.trim() || sending || !isTauri()}>{sending ? <LoaderCircle size={15} className="animate-spin"/> : <Send size={15}/>}Send</Button>
+        </form>
       </div>
     </Card>
   </>
