@@ -1,6 +1,6 @@
 import { getVersion } from '@tauri-apps/api/app'
 import { getCurrentWindow } from '@tauri-apps/api/window'
-import { Download, Minus, RotateCcw, Square, X } from 'lucide-react'
+import { Download, Minus, RotateCcw, Square, Tag, X } from 'lucide-react'
 import { useEffect, useState } from 'react'
 import { isTauri } from '../lib/utils'
 import { useUpdater } from '../services/updater-context'
@@ -45,13 +45,14 @@ function UpdateControl() {
 
 export function TitleBar() {
   const window = isTauri() ? getCurrentWindow() : null
-  const [version, setVersion] = useState(import.meta.env.DEV ? 'DEV' : '')
-  useEffect(() => { if (!import.meta.env.DEV && isTauri()) void getVersion().then(setVersion) }, [])
+  const [version, setVersion] = useState('')
+  const channel = import.meta.env.DEV ? 'DEV' : 'RELEASE'
+  useEffect(() => { if (isTauri()) void getVersion().then(setVersion) }, [])
 
   return <div data-tauri-drag-region className="drag-region flex h-9 shrink-0 items-center justify-between border-b border-line bg-[#0f1014] pl-4 text-[11px] text-muted">
     <div data-tauri-drag-region className="flex items-center gap-2">
       <img src={titlebarLogo} alt="StreamDash" className="h-5 w-auto object-contain"/>
-      {version && <span>- {version}</span>}
+      <span aria-label={`Version ${version || 'loading'}, ${channel}`} className="flex items-center gap-1.5 text-[10px] tabular-nums text-zinc-500"><Tag size={11}/><span>{version || '…'}</span><span className="text-[9px] font-semibold tracking-wider text-zinc-600">· {channel}</span></span>
       <div className="no-drag ml-0.5"><UpdateControl/></div>
     </div>
     <div className="no-drag flex h-full">
