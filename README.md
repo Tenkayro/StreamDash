@@ -6,9 +6,7 @@ StreamDash is a Windows 10/11 desktop companion for streamers. It combines live 
 The normal application never generates demo activity. Empty, disconnected, loading, and error states reflect the actual services.
 
 ## Screenshots
-
-<img width="1272" height="799" alt="image" src="https://github.com/user-attachments/assets/4b7e3fbd-6830-4b45-aff3-e1709d41662d" />
-
+<img width="1288" height="633" alt="image" src="https://github.com/user-attachments/assets/5f52129c-312e-49b8-903a-43046eae1195" />
 
 ## Stack
 
