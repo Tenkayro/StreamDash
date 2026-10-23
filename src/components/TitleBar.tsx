@@ -57,7 +57,7 @@ export function TitleBar() {
   return <div data-tauri-drag-region className="drag-region flex h-9 shrink-0 items-center border-b border-line bg-[#0f1014] pl-3 text-[11px] text-muted">
     <div data-tauri-drag-region className="flex shrink-0 items-center gap-2.5">
       <img src={titlebarLogo} alt="StreamDash" className="h-5 w-auto object-contain"/>
-      <span aria-label={`Version ${version || 'loading'}, ${channel}`} className="flex h-5 items-center gap-1.5 rounded-md border border-line bg-white/2.5 px-2 text-[9px] tabular-nums text-zinc-400"><Tag size={10}/><span>{version || '…'}</span><span className={channel === 'DEV' ? 'font-semibold tracking-wider text-amber-400/80' : 'font-semibold tracking-wider text-emerald-400/70'}>{channel}</span></span>
+      <span aria-label={`Version ${version || 'loading'}, ${channel}`} className="flex items-center gap-1 text-[9px] tabular-nums text-zinc-600"><Tag size={9}/><span>{version || '…'}</span><span className="text-[8px] tracking-wider text-zinc-700">· {channel}</span></span>
     </div>
     <div data-tauri-drag-region className="h-full min-w-8 flex-1"/>
     <div className="no-drag flex h-full shrink-0 items-center">
