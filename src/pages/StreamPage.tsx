@@ -156,7 +156,7 @@ export function StreamPage() {
         </div>
         <div className="mt-4 space-y-2 border-t border-line pt-3 text-xs">
           <div className="flex items-center justify-between"><span className="text-muted">Status</span><span>{stats.live ? 'Live' : 'Offline'}</span></div>
-          <div className="flex items-center justify-between"><span className="text-muted">Viewers</span><span className="tabular-nums">{stats.viewers?.toLocaleString() ?? '—'}</span></div>
+          <div className="flex items-center justify-between"><span className="text-muted">Viewers</span><span className="tabular-nums">{stats.viewers?.toLocaleString('en-US') ?? '—'}</span></div>
           <div className="flex items-center justify-between"><span className="text-muted">Account</span><span className="truncate pl-3">{twitch.account ?? '—'}</span></div>
         </div>
       </Card>

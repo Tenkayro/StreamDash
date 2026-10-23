@@ -34,7 +34,7 @@ export function RuntimeProvider({ children }: { children: ReactNode }) {
 
   const startTwitch = useCallback(async () => {
     const clientId = state().settings.twitchClientId.trim()
-    if (!clientId || !isTauri()) { chatRef.current?.stop(); state().setChat({ phase: 'disconnected' }); state().setTwitch({ phase: 'disconnected', detail: clientId ? undefined : 'Client ID nicht eingerichtet' }); return }
+    if (!clientId || !isTauri()) { chatRef.current?.stop(); state().setChat({ phase: 'disconnected' }); state().setTwitch({ phase: 'disconnected', detail: clientId ? undefined : 'Client ID not configured' }); return }
     try {
       const session = await twitchNative.session(clientId)
       if (!session) { chatRef.current?.stop(); state().setChat({ phase: 'disconnected' }); state().setTwitch({ phase: 'disconnected' }); return }
@@ -78,7 +78,7 @@ export function RuntimeProvider({ children }: { children: ReactNode }) {
 
   const connectTwitch = async () => {
     const clientId = state().settings.twitchClientId.trim()
-    if (!clientId) { state().setPage('settings'); toast.error('Twitch Client ID ist nicht eingerichtet', { description: 'Trage sie unter Einstellungen → Twitch ein.' }); return }
+    if (!clientId) { state().setPage('settings'); toast.error('Twitch Client ID is not configured', { description: 'Add it under Settings → Twitch.' }); return }
     try {
       state().setTwitch({ phase: 'connecting', detail: 'Waiting for authorization' })
       const device = await twitchNative.deviceStart(clientId, TWITCH_SCOPES)
