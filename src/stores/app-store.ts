@@ -55,7 +55,11 @@ export const defaultSettings: AppSettings = {
 const emptyStats: DashboardStats = { bits: 0, donations: 0, live: false };
 interface AppStore {
   page: string;
+  pageHistory: string[];
+  pageHistoryIndex: number;
   setPage: (page: string) => void;
+  goBack: () => void;
+  goForward: () => void;
   ready: boolean;
   setReady: (ready: boolean) => void;
   events: ActivityEvent[];
@@ -81,7 +85,33 @@ interface AppStore {
 }
 export const useAppStore = create<AppStore>((set) => ({
   page: "dashboard",
-  setPage: (page) => set({ page }),
+  pageHistory: ["dashboard"],
+  pageHistoryIndex: 0,
+  setPage: (page) =>
+    set((s) => {
+      if (page === s.page) return s;
+      const history = [
+        ...s.pageHistory.slice(0, s.pageHistoryIndex + 1),
+        page,
+      ].slice(-50);
+      return {
+        page,
+        pageHistory: history,
+        pageHistoryIndex: history.length - 1,
+      };
+    }),
+  goBack: () =>
+    set((s) => {
+      if (s.pageHistoryIndex <= 0) return s;
+      const index = s.pageHistoryIndex - 1;
+      return { page: s.pageHistory[index], pageHistoryIndex: index };
+    }),
+  goForward: () =>
+    set((s) => {
+      if (s.pageHistoryIndex >= s.pageHistory.length - 1) return s;
+      const index = s.pageHistoryIndex + 1;
+      return { page: s.pageHistory[index], pageHistoryIndex: index };
+    }),
   ready: false,
   setReady: (ready) => set({ ready }),
   events: [],

@@ -60,6 +60,26 @@ export default function App() {
   const { page, ready, settings } = useAppStore();
   const Page = pages[page] ?? Dashboard;
   useEffect(() => {
+    const handleMouseButton = (event: MouseEvent) => {
+      if (!event.isTrusted) return;
+      if (event.button !== 3 && event.button !== 4) return;
+      event.preventDefault();
+      if (event.button === 3) useAppStore.getState().goBack();
+      else useAppStore.getState().goForward();
+    };
+    const blockNavigation = (event: MouseEvent) => {
+      if (event.button === 3 || event.button === 4) event.preventDefault();
+    };
+    window.addEventListener("mousedown", blockNavigation, true);
+    window.addEventListener("mouseup", handleMouseButton, true);
+    window.addEventListener("auxclick", blockNavigation, true);
+    return () => {
+      window.removeEventListener("mousedown", blockNavigation, true);
+      window.removeEventListener("mouseup", handleMouseButton, true);
+      window.removeEventListener("auxclick", blockNavigation, true);
+    };
+  }, []);
+  useEffect(() => {
     if (!isTauri()) return;
     const appWindow = getCurrentWindow();
     let unlisten: (() => void) | undefined;
