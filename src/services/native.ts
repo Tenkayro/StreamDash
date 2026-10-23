@@ -1,0 +1,31 @@
+import { invoke } from '@tauri-apps/api/core'
+import type { ActivityEvent, AppSettings, TwitchSession } from '../types'
+import { isTauri } from '../lib/utils'
+
+export async function loadEvents(limit = 5000): Promise<ActivityEvent[]> {
+  return isTauri() ? invoke('events_list', { limit }) : []
+}
+export async function saveEvent(event: ActivityEvent, maxEvents: number): Promise<boolean> {
+  return isTauri() ? invoke('event_insert', { event, maxEvents }) : true
+}
+export async function clearEvents() { if (isTauri()) await invoke('events_clear') }
+export async function loadSettings(): Promise<Partial<AppSettings>> {
+  return isTauri() ? invoke('settings_load') : JSON.parse(localStorage.getItem('streamdash-settings') || '{}')
+}
+export async function saveSetting<K extends keyof AppSettings>(key: K, value: AppSettings[K]) {
+  if (isTauri()) await invoke('setting_save', { key, value })
+  else {
+    const existing = await loadSettings(); localStorage.setItem('streamdash-settings', JSON.stringify({ ...existing, [key]: value }))
+  }
+}
+export async function secretSet(name: 'streamelements-token', value: string) { return invoke('secret_set', { name, value }) }
+export async function secretGet(name: 'streamelements-token'): Promise<string | null> { return invoke('secret_get', { name }) }
+export async function secretDelete(name: 'streamelements-token' | 'twitch-oauth') { return invoke('secret_delete', { name }) }
+
+export const twitchNative = {
+  deviceStart: (clientId: string, scopes: string[]) => invoke<{ device_code: string; user_code: string; verification_uri: string; expires_in: number; interval: number }>('twitch_device_start', { clientId, scopes }),
+  devicePoll: (clientId: string, deviceCode: string, scopes: string[]) => invoke<{ status: string }>('twitch_device_poll', { clientId, deviceCode, scopes }),
+  session: (clientId: string) => invoke<TwitchSession | null>('twitch_session', { clientId }),
+  helix: <T>(clientId: string, path: string, query: [string, string][] = []) => invoke<T>('twitch_helix_get', { clientId, path, query }),
+  subscribe: (clientId: string, body: unknown) => invoke('twitch_eventsub_create', { clientId, body }),
+}
