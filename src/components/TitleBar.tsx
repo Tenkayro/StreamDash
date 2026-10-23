@@ -5,9 +5,11 @@ import {
   Bug,
   Download,
   GitFork,
+  LoaderCircle,
   Minus,
   RotateCcw,
   Square,
+  Store,
   Tag,
   UserRound,
   X,
@@ -46,6 +48,31 @@ function UpdateControl() {
     updater.phase === "downloading" || updater.phase === "installing";
   const progress =
     updater.phase === "installing" ? 100 : (updater.progress ?? 0);
+
+  if (updater.channel === "store" && updater.phase === "checking")
+    return (
+      <div
+        role="status"
+        title="Checking Microsoft Store for updates"
+        aria-label="Checking Microsoft Store for updates"
+        className="grid size-7 place-items-center text-zinc-500"
+      >
+        <LoaderCircle size={13} className="animate-spin" />
+      </div>
+    );
+
+  if (updater.channel === "store" && updater.phase === "available")
+    return (
+      <button
+        type="button"
+        title="Update StreamDash in Microsoft Store"
+        aria-label="Update StreamDash in Microsoft Store"
+        onClick={() => void updater.installUpdate()}
+        className="grid size-7 place-items-center rounded-md border border-accent/40 bg-accent-soft text-accent transition hover:border-accent/70 hover:brightness-125"
+      >
+        <Store size={13} />
+      </button>
+    );
 
   if (downloading)
     return (
@@ -128,8 +155,13 @@ function UpdateControl() {
 
 export function TitleBar() {
   const window = isTauri() ? getCurrentWindow() : null;
+  const updater = useUpdater();
   const [version, setVersion] = useState("");
-  const channel = import.meta.env.DEV ? "DEV" : "RELEASE";
+  const channel = import.meta.env.DEV
+    ? "DEV"
+    : updater.channel === "store"
+      ? "STORE"
+      : "RELEASE";
   useEffect(() => {
     if (isTauri()) void getVersion().then(setVersion);
   }, []);

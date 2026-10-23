@@ -12,5 +12,10 @@ with `MSIX_IDENTITY_NAME`, `MSIX_PUBLISHER`, `MSIX_PUBLISHER_DISPLAY_NAME`,
 The package is deliberately not signed locally. Microsoft signs MSIX packages
 after Store certification.
 
+At runtime, StreamDash detects the MSIX package identity and switches to the
+native Microsoft Store update check. Store builds never download or install the
+standalone GitHub MSI updater. When an update is available, the title bar opens
+the official Microsoft Store downloads and updates page.
+
 `npm run release` creates the MSI, updater files, and MSIX locally. It does not
 commit, tag, push, or create a GitHub release.

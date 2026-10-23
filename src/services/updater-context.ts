@@ -9,8 +9,11 @@ export type UpdatePhase =
   | "installing"
   | "error";
 
+export type UpdateChannel = "dev" | "standalone" | "store";
+
 export interface UpdateContextValue {
   phase: UpdatePhase;
+  channel: UpdateChannel;
   version?: string;
   currentVersion?: string;
   notes?: string;

@@ -1,4 +1,6 @@
 import { check, type Update } from "@tauri-apps/plugin-updater";
+import { invoke } from "@tauri-apps/api/core";
+import { openUrl } from "@tauri-apps/plugin-opener";
 import {
   useCallback,
   useEffect,
@@ -9,32 +11,77 @@ import {
 } from "react";
 import { toast } from "sonner";
 import { isTauri } from "../lib/utils";
-import { UpdateContext, type UpdateContextValue } from "./updater-context";
+import {
+  UpdateContext,
+  type UpdateChannel,
+  type UpdateContextValue,
+} from "./updater-context";
 
 type UpdateState = Omit<
   UpdateContextValue,
   "checkForUpdates" | "installUpdate"
 >;
 let automaticCheckStarted = false;
+const STORE_UPDATES_URL = "ms-windows-store://downloadsandupdates";
 
 export function UpdateProvider({ children }: { children: ReactNode }) {
   const updateRef = useRef<Update | null>(null);
-  const [state, setState] = useState<UpdateState>({ phase: "idle" });
+  const channelRef = useRef<UpdateChannel | null>(
+    import.meta.env.DEV ? "dev" : null,
+  );
+  const [state, setState] = useState<UpdateState>({
+    phase: "idle",
+    channel: import.meta.env.DEV ? "dev" : "standalone",
+  });
+
+  const resolveChannel = useCallback(async () => {
+    if (channelRef.current) return channelRef.current;
+    const channel = await invoke<"store" | "standalone">(
+      "distribution_channel",
+    );
+    channelRef.current = channel;
+    return channel;
+  }, []);
 
   const checkForUpdates = useCallback(async (notifyWhenCurrent = true) => {
     if (!isTauri()) return;
-    setState({ phase: "checking" });
+    if (import.meta.env.DEV) {
+      setState({ phase: "current", channel: "dev" });
+      if (notifyWhenCurrent) toast.info("Updates are disabled in development");
+      return;
+    }
+    setState((current) => ({ ...current, phase: "checking" }));
     try {
+      const channel = await resolveChannel();
+      setState((current) => ({ ...current, channel }));
+      if (channel === "store") {
+        const available = await invoke<boolean>("store_update_available");
+        setState({
+          phase: available ? "available" : "current",
+          channel: "store",
+        });
+        if (available) {
+          toast.info("A Microsoft Store update is available", {
+            description: "Use the Store button beside the version to update.",
+            duration: 12_000,
+          });
+        } else if (notifyWhenCurrent) {
+          toast.success("StreamDash is up to date");
+        }
+        return;
+      }
+
       if (updateRef.current) await updateRef.current.close();
       const available = await check();
       updateRef.current = available;
       if (!available) {
-        setState({ phase: "current" });
+        setState({ phase: "current", channel: "standalone" });
         if (notifyWhenCurrent) toast.success("StreamDash is up to date");
         return;
       }
       setState({
         phase: "available",
+        channel: "standalone",
         version: available.version,
         currentVersion: available.currentVersion,
         notes: available.body,
@@ -46,13 +93,23 @@ export function UpdateProvider({ children }: { children: ReactNode }) {
       });
     } catch (error) {
       const message = error instanceof Error ? error.message : String(error);
-      setState({ phase: "error", error: message });
+      setState((current) => ({ ...current, phase: "error", error: message }));
       if (notifyWhenCurrent)
         toast.error("Could not check for updates", { description: message });
     }
-  }, []);
+  }, [resolveChannel]);
 
   const installUpdate = useCallback(async () => {
+    if (channelRef.current === "store") {
+      try {
+        await openUrl(STORE_UPDATES_URL);
+      } catch (error) {
+        const message = error instanceof Error ? error.message : String(error);
+        setState((current) => ({ ...current, phase: "error", error: message }));
+        toast.error("Could not open Microsoft Store", { description: message });
+      }
+      return;
+    }
     const available = updateRef.current;
     if (!available) return;
     let downloaded = 0;

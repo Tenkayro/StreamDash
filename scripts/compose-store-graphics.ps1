@@ -26,7 +26,7 @@ function New-Graphics([System.Drawing.Bitmap]$Canvas) {
   return $graphics
 }
 
-function Draw-CoverImage(
+function Add-CoverImage(
   [System.Drawing.Graphics]$Graphics,
   [System.Drawing.Image]$Image,
   [int]$Width,
@@ -40,7 +40,7 @@ function Draw-CoverImage(
   $Graphics.DrawImage($Image, $x, $y, $drawWidth, $drawHeight)
 }
 
-function Draw-CenteredImage(
+function Add-CenteredImage(
   [System.Drawing.Graphics]$Graphics,
   [System.Drawing.Image]$Image,
   [int]$CenterX,
@@ -51,7 +51,7 @@ function Draw-CenteredImage(
   $Graphics.DrawImage($Image, $x, $Top, $Size, $Size)
 }
 
-function Draw-CenteredText(
+function Add-CenteredText(
   [System.Drawing.Graphics]$Graphics,
   [string]$Text,
   [float]$Y,
@@ -90,16 +90,16 @@ try {
   $poster = New-Canvas 1440 2160
   $graphics = New-Graphics $poster
   try {
-    Draw-CoverImage $graphics $posterSource 1440 2160
+    Add-CoverImage $graphics $posterSource 1440 2160
     $shade = [System.Drawing.SolidBrush]::new([System.Drawing.Color]::FromArgb(28, 0, 0, 0))
     $graphics.FillRectangle($shade, 0, 0, 1440, 2160)
     $shade.Dispose()
-    Draw-CenteredImage $graphics $logo 720 640 500
+    Add-CenteredImage $graphics $logo 720 640 500
     $titleFont = [System.Drawing.Font]::new('Segoe UI', 104, [System.Drawing.FontStyle]::Bold, [System.Drawing.GraphicsUnit]::Pixel)
     $taglineFont = [System.Drawing.Font]::new('Segoe UI', 29, [System.Drawing.FontStyle]::Bold, [System.Drawing.GraphicsUnit]::Pixel)
     try {
-      Draw-CenteredText $graphics 'StreamDash' 1155 1440 150 $titleFont ([System.Drawing.Color]::White)
-      Draw-CenteredText $graphics 'YOUR STREAM. ONE DASHBOARD.' 1300 1440 70 $taglineFont ([System.Drawing.Color]::FromArgb(255, 188, 198, 220))
+      Add-CenteredText $graphics 'StreamDash' 1155 1440 150 $titleFont ([System.Drawing.Color]::White)
+      Add-CenteredText $graphics 'YOUR STREAM. ONE DASHBOARD.' 1300 1440 70 $taglineFont ([System.Drawing.Color]::FromArgb(255, 188, 198, 220))
     } finally {
       $titleFont.Dispose()
       $taglineFont.Dispose()
@@ -113,16 +113,16 @@ try {
   $square = New-Canvas 2160 2160
   $graphics = New-Graphics $square
   try {
-    Draw-CoverImage $graphics $squareSource 2160 2160
+    Add-CoverImage $graphics $squareSource 2160 2160
     $shade = [System.Drawing.SolidBrush]::new([System.Drawing.Color]::FromArgb(24, 0, 0, 0))
     $graphics.FillRectangle($shade, 0, 0, 2160, 2160)
     $shade.Dispose()
-    Draw-CenteredImage $graphics $logo 1080 420 650
+    Add-CenteredImage $graphics $logo 1080 420 650
     $titleFont = [System.Drawing.Font]::new('Segoe UI', 132, [System.Drawing.FontStyle]::Bold, [System.Drawing.GraphicsUnit]::Pixel)
     $taglineFont = [System.Drawing.Font]::new('Segoe UI', 40, [System.Drawing.FontStyle]::Bold, [System.Drawing.GraphicsUnit]::Pixel)
     try {
-      Draw-CenteredText $graphics 'StreamDash' 1080 2160 190 $titleFont ([System.Drawing.Color]::White)
-      Draw-CenteredText $graphics 'YOUR STREAM. ONE DASHBOARD.' 1260 2160 90 $taglineFont ([System.Drawing.Color]::FromArgb(255, 188, 198, 220))
+      Add-CenteredText $graphics 'StreamDash' 1080 2160 190 $titleFont ([System.Drawing.Color]::White)
+      Add-CenteredText $graphics 'YOUR STREAM. ONE DASHBOARD.' 1260 2160 90 $taglineFont ([System.Drawing.Color]::FromArgb(255, 188, 198, 220))
     } finally {
       $titleFont.Dispose()
       $taglineFont.Dispose()
@@ -151,7 +151,7 @@ try {
       $graphics.FillRectangle($background, $bounds)
       $background.Dispose()
       $top = [int](($tile.Size - $tile.Logo) / 2)
-      Draw-CenteredImage $graphics $logo ([int]($tile.Size / 2)) $top $tile.Logo
+      Add-CenteredImage $graphics $logo ([int]($tile.Size / 2)) $top $tile.Logo
       Save-Png $canvas $tile.Name
     } finally {
       $graphics.Dispose()

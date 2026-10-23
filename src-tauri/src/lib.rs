@@ -776,6 +776,50 @@ fn app_quit(app: tauri::AppHandle) {
     shutdown(&app);
 }
 
+#[tauri::command]
+fn distribution_channel() -> &'static str {
+    #[cfg(windows)]
+    {
+        use windows::Win32::{
+            Foundation::ERROR_INSUFFICIENT_BUFFER,
+            Storage::Packaging::Appx::GetCurrentPackageFullName,
+        };
+
+        let mut length = 0;
+        let result = unsafe { GetCurrentPackageFullName(&mut length, None) };
+        if result == ERROR_INSUFFICIENT_BUFFER {
+            return "store";
+        }
+    }
+
+    "standalone"
+}
+
+#[tauri::command]
+async fn store_update_available() -> Result<bool, String> {
+    #[cfg(windows)]
+    {
+        use windows::Services::Store::StoreContext;
+
+        if distribution_channel() != "store" {
+            return Err("Microsoft Store updates require an installed Store package".into());
+        }
+        let context = StoreContext::GetDefault().map_err(|error| error.to_string())?;
+        let updates = context
+            .GetAppAndOptionalStorePackageUpdatesAsync()
+            .map_err(|error| error.to_string())?
+            .await
+            .map_err(|error| error.to_string())?;
+        return updates
+            .Size()
+            .map(|count| count > 0)
+            .map_err(|error| error.to_string());
+    }
+
+    #[cfg(not(windows))]
+    Err("Microsoft Store updates are only available on Windows".into())
+}
+
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
     tauri::Builder::default()
@@ -875,6 +919,8 @@ pub fn run() {
             twitch_chat_start,
             twitch_chat_send,
             twitch_chat_stop,
+            distribution_channel,
+            store_update_available,
             app_quit
         ])
         .build(tauri::generate_context!())
