@@ -15,6 +15,7 @@ import { Badge, Button, Card, EmptyState, PageHeader } from "../components/ui";
 import { UserCard } from "../components/chat/UserCard";
 import { errorMessage, isTauri } from "../lib/utils";
 import { twitchNative } from "../services/native";
+import { TWITCH_CLIENT_ID } from "../services/twitch/config";
 import { useRuntime } from "../services/runtime-context";
 import { useAppStore } from "../stores/app-store";
 import type {
@@ -312,7 +313,7 @@ export function ChatPage() {
     let active = true;
     void twitchNative
       .helix<{ data?: Array<{ is_active?: boolean }> }>(
-        settings.twitchClientId.trim(),
+        TWITCH_CLIENT_ID,
         "moderation/shield_mode",
         [
           ["broadcaster_id", twitch.userId],
@@ -332,7 +333,7 @@ export function ChatPage() {
     return () => {
       active = false;
     };
-  }, [canManageShield, settings.twitchClientId, twitch]);
+  }, [canManageShield, twitch]);
   useEffect(() => {
     const added = Math.max(0, chatMessages.length - previousCount.current);
     previousCount.current = chatMessages.length;
@@ -456,7 +457,7 @@ export function ChatPage() {
       const response = await twitchNative.helixPut<{
         data?: Array<{ is_active?: boolean }>;
       }>(
-        settings.twitchClientId.trim(),
+        TWITCH_CLIENT_ID,
         "moderation/shield_mode",
         [
           ["broadcaster_id", twitch.userId],

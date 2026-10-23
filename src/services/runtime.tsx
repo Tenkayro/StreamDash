@@ -30,6 +30,7 @@ import {
   TwitchEventSub,
   TWITCH_SCOPES,
 } from "./twitch/client";
+import { TWITCH_CLIENT_ID } from "./twitch/config";
 import { TwitchChatClient } from "./twitch/chat";
 import { StreamElementsClient } from "./streamelements/client";
 import type { ActivityEvent, AppSettings, ChatUserProfile } from "../types";
@@ -104,20 +105,16 @@ export function RuntimeProvider({ children }: { children: ReactNode }) {
   );
 
   const startTwitch = useCallback(async () => {
-    const clientId = state().settings.twitchClientId.trim();
-    if (!clientId || !isTauri()) {
+    if (!isTauri()) {
       state().setStatsLoading(false);
       chatRef.current?.stop();
       state().setChat({ phase: "disconnected" });
-      state().setTwitch({
-        phase: "disconnected",
-        detail: clientId ? undefined : "Client ID not configured",
-      });
+      state().setTwitch({ phase: "disconnected" });
       return;
     }
     state().setStatsLoading(true);
     try {
-      const session = await twitchNative.session(clientId);
+      const session = await twitchNative.session(TWITCH_CLIENT_ID);
       if (!session) {
         state().setStatsLoading(false);
         chatRef.current?.stop();
@@ -145,7 +142,7 @@ export function RuntimeProvider({ children }: { children: ReactNode }) {
         scopes: session.scopes,
       });
       try {
-        state().setStats(await loadTwitchSnapshot(clientId, session));
+        state().setStats(await loadTwitchSnapshot(TWITCH_CLIENT_ID, session));
       } catch (error) {
         toast.error("Some Twitch statistics are unavailable", {
           description: errorMessage(error),
@@ -154,7 +151,7 @@ export function RuntimeProvider({ children }: { children: ReactNode }) {
         state().setStatsLoading(false);
       }
       twitchRef.current = new TwitchEventSub(
-        clientId,
+        TWITCH_CLIENT_ID,
         session,
         ingest,
         (phase, detail) =>
@@ -169,7 +166,7 @@ export function RuntimeProvider({ children }: { children: ReactNode }) {
       twitchRef.current.start();
       chatRef.current?.stop();
       chatRef.current = new TwitchChatClient(
-        clientId,
+        TWITCH_CLIENT_ID,
         session.login,
         session.userId,
         (message) => state().pushChatMessage(message),
@@ -254,20 +251,15 @@ export function RuntimeProvider({ children }: { children: ReactNode }) {
   }, [reconnect, setEvents, setReady, setSettings, state]);
 
   const connectTwitch = async () => {
-    const clientId = state().settings.twitchClientId.trim();
-    if (!clientId) {
-      state().setPage("settings");
-      toast.error("Twitch Client ID is not configured", {
-        description: "Add it under Settings → Twitch.",
-      });
-      return;
-    }
     try {
       state().setTwitch({
         phase: "connecting",
         detail: "Waiting for authorization",
       });
-      const device = await twitchNative.deviceStart(clientId, TWITCH_SCOPES);
+      const device = await twitchNative.deviceStart(
+        TWITCH_CLIENT_ID,
+        TWITCH_SCOPES,
+      );
       setDeviceAuth({
         code: device.user_code,
         url: device.verification_uri,
@@ -279,7 +271,7 @@ export function RuntimeProvider({ children }: { children: ReactNode }) {
       while (Date.now() < expiresAt) {
         await new Promise((r) => setTimeout(r, interval));
         const result = await twitchNative.devicePoll(
-          clientId,
+          TWITCH_CLIENT_ID,
           device.device_code,
           TWITCH_SCOPES,
         );
@@ -332,10 +324,9 @@ export function RuntimeProvider({ children }: { children: ReactNode }) {
   };
   const sendChatMessage = async (text: string) => {
     const message = text.trim();
-    const clientId = state().settings.twitchClientId.trim();
     const userId = state().twitch.userId;
     if (!message) return;
-    if (!clientId || !userId) throw new Error("Twitch is not connected");
+    if (!userId) throw new Error("Twitch is not connected");
     try {
       await twitchNative.chatSend(state().twitch.account ?? "", message);
       chatRef.current?.echo(message);
@@ -345,7 +336,7 @@ export function RuntimeProvider({ children }: { children: ReactNode }) {
     }
     const result = await twitchNative.helixPost<{
       data?: Array<{ is_sent?: boolean; drop_reason?: { message?: string } }>;
-    }>(clientId, "chat/messages", [], {
+    }>(TWITCH_CLIENT_ID, "chat/messages", [], {
       broadcaster_id: userId,
       sender_id: userId,
       message,
@@ -359,22 +350,21 @@ export function RuntimeProvider({ children }: { children: ReactNode }) {
 
   const moderationContext = (scope: string) => {
     const current = state();
-    const clientId = current.settings.twitchClientId.trim();
     const broadcasterId = current.twitch.userId;
-    if (!clientId || !broadcasterId) throw new Error("Twitch is not connected");
+    if (!broadcasterId) throw new Error("Twitch is not connected");
     if (!current.twitch.scopes?.includes(scope))
       throw new Error(
         "Reconnect Twitch once to grant the required moderation permission",
       );
-    return { clientId, broadcasterId };
+    return { clientId: TWITCH_CLIENT_ID, broadcasterId };
   };
   const getChatUserProfile = async (
     login: string,
   ): Promise<ChatUserProfile> => {
     const current = state();
-    const clientId = current.settings.twitchClientId.trim();
     const broadcasterId = current.twitch.userId;
-    if (!clientId || !broadcasterId) throw new Error("Twitch is not connected");
+    if (!broadcasterId) throw new Error("Twitch is not connected");
+    const clientId = TWITCH_CLIENT_ID;
     const users = await twitchNative.helix<{
       data?: Array<{
         id: string;

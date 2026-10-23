@@ -1,11 +1,10 @@
 import { enable, disable } from "@tauri-apps/plugin-autostart";
-import { RotateCcw, Save, ShieldCheck } from "lucide-react";
+import { RotateCcw } from "lucide-react";
 import { useState, type ReactNode } from "react";
 import { toast } from "sonner";
 import { Button, Card, PageHeader } from "../components/ui";
 import { defaultDashboardWidgets, useAppStore } from "../stores/app-store";
 import { saveSetting } from "../services/native";
-import { useRuntime } from "../services/runtime-context";
 import { errorMessage, isTauri } from "../lib/utils";
 import type { ActivityType, AppSettings } from "../types";
 
@@ -94,8 +93,6 @@ function HighlightWords({
 
 export function SettingsPage() {
   const { settings, setSettings } = useAppStore();
-  const runtime = useRuntime();
-  const [clientId, setClientId] = useState(settings.twitchClientId);
 
   const update = async <K extends keyof AppSettings>(
     key: K,
@@ -112,63 +109,10 @@ export function SettingsPage() {
       });
     }
   };
-  const saveClientId = async () => {
-    const value = clientId.trim();
-    if (!/^[a-zA-Z0-9]{10,}$/.test(value)) {
-      toast.error("This Twitch Client ID looks invalid");
-      return;
-    }
-    const changed = value !== settings.twitchClientId;
-    await update("twitchClientId", value);
-    if (changed) await runtime.disconnectTwitch();
-    toast.success("Twitch Client ID saved", {
-      description: changed
-        ? "Reconnect Twitch on the Connections page now."
-        : undefined,
-    });
-  };
-
   return (
     <>
       <PageHeader title="Settings" />
       <div className="space-y-4">
-        <section>
-          <h2 className="mb-2 px-1 text-[10px] font-bold tracking-[.14em] text-zinc-600">
-            TWITCH
-          </h2>
-          <Card className="p-5">
-            <label className="label" htmlFor="twitch-client-id">
-              Twitch Client ID
-            </label>
-            <p className="mt-1 text-xs leading-5 text-muted">
-              The public Client ID of your Twitch developer application. It is
-              stored locally in the StreamDash database.
-            </p>
-            <div className="mt-3 flex max-w-2xl gap-2">
-              <input
-                id="twitch-client-id"
-                className="input font-mono"
-                autoComplete="off"
-                spellCheck={false}
-                placeholder="Client ID from the Twitch Developer Console"
-                value={clientId}
-                onChange={(event) => setClientId(event.target.value)}
-                onKeyDown={(event) => {
-                  if (event.key === "Enter") void saveClientId();
-                }}
-              />
-              <Button variant="primary" onClick={saveClientId}>
-                <Save size={14} />
-                Save
-              </Button>
-            </div>
-            <div className="mt-3 flex items-center gap-2 text-[11px] text-zinc-600">
-              <ShieldCheck size={13} />
-              The Client ID is public per Twitch. Access tokens stay protected
-              in Windows Credential Manager.
-            </div>
-          </Card>
-        </section>
         <section>
           <h2 className="mb-2 px-1 text-[10px] font-bold tracking-[.14em] text-zinc-600">
             GENERAL

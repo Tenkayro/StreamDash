@@ -22,6 +22,7 @@ import {
 } from "../components/ui";
 import { errorMessage, isTauri } from "../lib/utils";
 import { twitchNative } from "../services/native";
+import { TWITCH_CLIENT_ID } from "../services/twitch/config";
 import { useRuntime } from "../services/runtime-context";
 import { useAppStore } from "../stores/app-store";
 
@@ -96,11 +97,11 @@ function BoxArt({
 }
 
 export function StreamPage() {
-  const { stats, statsLoading, settings, twitch, setStats } = useAppStore();
+  const { stats, statsLoading, twitch, setStats } = useAppStore();
   const runtime = useRuntime();
-  const clientId = settings.twitchClientId.trim();
+  const clientId = TWITCH_CLIENT_ID;
   const connected =
-    twitch.phase === "connected" && Boolean(twitch.userId) && Boolean(clientId);
+    twitch.phase === "connected" && Boolean(twitch.userId);
   const busy = twitch.phase === "connecting" || twitch.phase === "reconnecting";
   const missingScope = connected && !twitch.scopes?.includes(MANAGE_SCOPE);
 

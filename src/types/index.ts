@@ -40,7 +40,6 @@ export type ContentWidth = 'compact' | 'wide' | 'full'
 export type AccentColor = 'violet' | 'blue' | 'emerald' | 'orange'
 
 export interface AppSettings {
-  twitchClientId: string
   launchAtStartup: boolean
   keepUserData: boolean
   minimizeToTray: boolean

@@ -23,7 +23,6 @@ export const defaultDashboardWidgets: DashboardWidgetId[] = [
 ];
 
 export const defaultSettings: AppSettings = {
-  twitchClientId: import.meta.env.VITE_TWITCH_CLIENT_ID?.trim() || "",
   launchAtStartup: false,
   keepUserData: true,
   minimizeToTray: true,
