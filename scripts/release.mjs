@@ -53,7 +53,7 @@ async function run(name, args, options = {}) {
 }
 
 function parseVersion(value) {
-  const match = /^(\d+)\.(\d+)\.(\d+)$/.exec(value)
+  const match = /^(\d+)\.(\d+)\.(\d+)$/.exec(value ?? '')
   return match?.slice(1).map(Number)
 }
 
@@ -136,13 +136,13 @@ async function main() {
     validate: (value) => parseVersion(value) ? undefined : 'Use semantic versioning, for example 1.2.3.',
   }) : bumpVersion(currentVersion, bump)
   cancelled(version)
-  version = version.trim()
+  version = (version ?? '').trim()
 
   const summary = await p.text({
     message: 'Short release summary shown inside StreamDash',
     placeholder: `StreamDash ${version} improvements and fixes.`,
     defaultValue: `StreamDash ${version} improvements and fixes.`,
-    validate: (value) => value.trim() ? undefined : 'Enter a short release summary.',
+    validate: (value) => (value ?? '').trim() ? undefined : 'Enter a short release summary.',
   })
   cancelled(summary)
 
@@ -155,7 +155,7 @@ async function main() {
     changesCommitMessage = await p.text({
       message: 'Commit message for the pending changes',
       defaultValue: 'feat: prepare StreamDash release',
-      validate: (value) => value.trim() ? undefined : 'Enter a commit message.',
+      validate: (value) => (value ?? '').trim() ? undefined : 'Enter a commit message.',
     })
     cancelled(changesCommitMessage)
   }
@@ -180,7 +180,7 @@ async function main() {
     const save = p.spinner()
     save.start('Committing the approved pending changes')
     await run('git', ['add', '--all'])
-    await run('git', ['commit', '-m', changesCommitMessage.trim()])
+    await run('git', ['commit', '-m', (changesCommitMessage ?? '').trim()])
     save.stop('Pending changes committed')
   }
 
@@ -205,7 +205,7 @@ async function main() {
     const signature = (await readFile(signatureAsset, 'utf8')).trim()
     const manifest = {
       version,
-      notes: summary.trim(),
+      notes: (summary ?? '').trim(),
       pub_date: new Date().toISOString(),
       platforms: {
         'windows-x86_64': {
@@ -234,7 +234,7 @@ async function main() {
       manifestPath,
       '--repo', repo,
       '--title', `StreamDash ${version}`,
-      '--notes', summary.trim(),
+      '--notes', (summary ?? '').trim(),
       '--generate-notes',
       '--verify-tag',
       '--latest',
