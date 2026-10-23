@@ -91,36 +91,45 @@ button:disabled {
     transform: translateY(0);
   }
 }
-@keyframes skeleton-shimmer {
-  to {
-    transform: translateX(100%);
+@keyframes loading-dot {
+  0%,
+  60%,
+  100% {
+    opacity: 0.2;
+    transform: translateY(0) scale(0.8);
+  }
+  30% {
+    opacity: 0.9;
+    transform: translateY(-2px) scale(1);
   }
 }
-.skeleton {
-  position: relative;
-  overflow: hidden;
-  background: #24262d;
+.loading-indicator {
+  gap: 3px;
 }
-.skeleton::after {
-  position: absolute;
-  inset: 0;
-  content: "";
-  transform: translateX(-100%);
-  background: linear-gradient(
-    90deg,
-    transparent,
-    color-mix(in srgb, var(--app-accent) 9%, white 5%),
-    transparent
-  );
-  animation: skeleton-shimmer 1.35s ease-in-out infinite;
+.loading-indicator > span {
+  width: 3px;
+  height: 3px;
+  flex: 0 0 auto;
+  border-radius: 999px;
+  background: var(--app-accent);
+  animation: loading-dot 1.15s cubic-bezier(0.4, 0, 0.2, 1) infinite;
+  will-change: opacity, transform;
+}
+.loading-indicator > span:nth-child(2) {
+  animation-delay: 0.13s;
+}
+.loading-indicator > span:nth-child(3) {
+  animation-delay: 0.26s;
 }
 @media (prefers-reduced-motion: reduce) {
-  .skeleton::after {
+  .loading-indicator > span {
     animation: none;
+    opacity: 0.55;
   }
 }
-[data-animations="off"] .skeleton::after {
+[data-animations="off"] .loading-indicator > span {
   animation: none;
+  opacity: 0.55;
 }
 .event-enter {
   animation: enter 0.24s ease-out;

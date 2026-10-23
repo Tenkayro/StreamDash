@@ -7,7 +7,13 @@ import {
 } from "lucide-react";
 import { useState } from "react";
 import { openUrl } from "@tauri-apps/plugin-opener";
-import { Badge, Button, Card, PageHeader, Skeleton } from "../components/ui";
+import {
+  Badge,
+  Button,
+  Card,
+  LoadingIndicator,
+  PageHeader,
+} from "../components/ui";
 import { useAppStore } from "../stores/app-store";
 import { useRuntime } from "../services/runtime-context";
 import { isTauri } from "../lib/utils";
@@ -47,7 +53,7 @@ export function Connections() {
                   <Badge tone={phaseTone(twitch.phase)}>{twitch.phase}</Badge>
                 </div>
                 {twitchBusy && !twitch.account ? (
-                  <Skeleton className="mt-2 h-3.5 w-24" />
+                  <LoadingIndicator className="mt-2 h-3.5 w-24" />
                 ) : twitch.account ? (
                   <p className="mt-1 text-sm text-muted">{twitch.account}</p>
                 ) : null}

@@ -3,16 +3,20 @@ import { cn } from "../lib/utils";
 export function Card({ className, ...props }: HTMLAttributes<HTMLDivElement>) {
   return <div className={cn("card", className)} {...props} />;
 }
-export function Skeleton({
+export function LoadingIndicator({
   className,
   ...props
 }: HTMLAttributes<HTMLSpanElement>) {
   return (
     <span
       aria-hidden="true"
-      className={cn("skeleton inline-block rounded", className)}
+      className={cn("loading-indicator inline-flex items-center justify-center", className)}
       {...props}
-    />
+    >
+      <span />
+      <span />
+      <span />
+    </span>
   );
 }
 export function Button({

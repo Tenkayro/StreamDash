@@ -41,7 +41,12 @@ import { toast } from "sonner";
 import { useAppStore, defaultDashboardWidgets } from "../stores/app-store";
 import { saveSetting } from "../services/native";
 import { ActivityFeed } from "../components/ActivityFeed";
-import { Badge, Card, PageHeader, Skeleton } from "../components/ui";
+import {
+  Badge,
+  Card,
+  LoadingIndicator,
+  PageHeader,
+} from "../components/ui";
 import { cn, money } from "../lib/utils";
 import type { ConnectionState, DashboardWidgetId } from "../types";
 
@@ -103,14 +108,14 @@ function Metric({
   note,
   icon: Icon,
   loading = false,
-  skeletonWidth = "w-14",
+  loadingWidth = "w-14",
 }: {
   label: string;
   value: string;
   note?: string;
   icon: LucideIcon;
   loading?: boolean;
-  skeletonWidth?: string;
+  loadingWidth?: string;
 }) {
   return (
     <Card className="flex min-h-24 flex-col p-3.5">
@@ -119,10 +124,14 @@ function Metric({
         <Icon size={14} className="text-zinc-600" />
       </div>
       <div className="mt-auto pt-2 text-xl font-semibold tracking-[-.03em]">
-        {loading ? <Skeleton className={`h-6 ${skeletonWidth}`} /> : value}
+        {loading ? (
+          <LoadingIndicator className={`h-6 ${loadingWidth}`} />
+        ) : (
+          value
+        )}
       </div>
       {loading && note !== undefined ? (
-        <Skeleton className="mt-1 h-2.5 w-3/5" />
+        <LoadingIndicator className="mt-1 h-2.5 w-3/5" />
       ) : note ? (
         <div className="mt-0.5 truncate text-[10px] text-zinc-600">{note}</div>
       ) : null}
@@ -361,7 +370,7 @@ export function Dashboard() {
           label="Followers"
           value={stats.followers?.toLocaleString("en-US") ?? "—"}
           loading={statsLoading}
-          skeletonWidth="w-12"
+          loadingWidth="w-12"
           icon={Heart}
         />
       );
@@ -371,7 +380,7 @@ export function Dashboard() {
           label="Subscribers"
           value={stats.subscribers?.toLocaleString("en-US") ?? "—"}
           loading={statsLoading}
-          skeletonWidth="w-10"
+          loadingWidth="w-10"
           icon={Star}
         />
       );
@@ -381,7 +390,7 @@ export function Dashboard() {
           label="Current viewers"
           value={stats.viewers?.toLocaleString("en-US") ?? "—"}
           loading={statsLoading}
-          skeletonWidth="w-11"
+          loadingWidth="w-11"
           icon={Eye}
         />
       );
@@ -391,7 +400,7 @@ export function Dashboard() {
           label="Stream duration"
           value={duration(stats.startedAt)}
           loading={statsLoading}
-          skeletonWidth="w-20"
+          loadingWidth="w-20"
           icon={Clock3}
         />
       );
@@ -418,7 +427,7 @@ export function Dashboard() {
           value={stats.live ? "Live" : "Offline"}
           note={statsLoading ? "" : stats.title}
           loading={statsLoading}
-          skeletonWidth="w-16"
+          loadingWidth="w-16"
           icon={Radio}
         />
       );
@@ -469,7 +478,7 @@ export function Dashboard() {
               <div className="text-[10px] text-muted">Title</div>
               <div className="mt-1 text-xs">
                 {statsLoading ? (
-                  <Skeleton className="h-3.5 w-4/5" />
+                  <LoadingIndicator className="h-3.5 w-4/5" />
                 ) : (
                   stats.title || "No stream information"
                 )}
@@ -479,7 +488,7 @@ export function Dashboard() {
               <div className="text-[10px] text-muted">Category</div>
               <div className="mt-1 text-xs">
                 {statsLoading ? (
-                  <Skeleton className="h-3.5 w-24" />
+                  <LoadingIndicator className="h-3.5 w-24" />
                 ) : (
                   stats.category || "—"
                 )}
@@ -531,7 +540,7 @@ export function Dashboard() {
                   <div className="mb-1 flex justify-between text-[10px]">
                     <span className="text-muted">{goal.label}</span>
                     {statsLoading && goal.label !== "Donations" ? (
-                      <Skeleton className="h-2.5 w-10" />
+                      <LoadingIndicator className="h-2.5 w-10" />
                     ) : (
                       <span>
                         {goal.target ? `${Math.round(percent)}%` : "No target"}
@@ -540,7 +549,7 @@ export function Dashboard() {
                   </div>
                   <div className="h-1.5 overflow-hidden rounded-full bg-white/5">
                     {statsLoading && goal.label !== "Donations" ? (
-                      <Skeleton className="h-full w-2/5 rounded-full" />
+                      <LoadingIndicator className="h-full w-2/5" />
                     ) : (
                       <div
                         className="h-full rounded-full bg-accent"
@@ -584,7 +593,7 @@ export function Dashboard() {
                 <div className="text-[10px] text-zinc-600">
                   {["connecting", "reconnecting"].includes(service.phase) &&
                   !service.account ? (
-                    <Skeleton className="h-2.5 w-16" />
+                    <LoadingIndicator className="h-2.5 w-16" />
                   ) : (
                     service.account || service.phase
                   )}
@@ -619,7 +628,7 @@ export function Dashboard() {
         }
         actions={
           statsLoading ? (
-            <Skeleton className="h-6 w-16 rounded-md" />
+            <LoadingIndicator className="h-6 w-16" />
           ) : (
             <Badge
               tone={stats.live ? "green" : connected ? "neutral" : "amber"}

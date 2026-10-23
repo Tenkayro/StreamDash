@@ -17,7 +17,7 @@ import { saveSetting } from "../../services/native";
 import { useRuntime } from "../../services/runtime-context";
 import { useAppStore } from "../../stores/app-store";
 import type { ChatMessage, ChatUserProfile } from "../../types";
-import { Skeleton } from "../ui";
+import { LoadingIndicator } from "../ui";
 
 const timeouts = [
   { label: "1s", seconds: 1 },
@@ -233,7 +233,7 @@ export function UserCard({
       >
         <header className="flex items-start gap-4 border-b border-line p-4">
           {loading ? (
-            <Skeleton className="size-20 shrink-0 rounded-lg" />
+            <LoadingIndicator className="size-20 shrink-0" />
           ) : profile?.avatarUrl ? (
             <img
               src={profile.avatarUrl}
@@ -249,7 +249,7 @@ export function UserCard({
             <div className="flex items-center gap-2">
               <h2 className="truncate text-lg font-semibold">
                 {loading ? (
-                  <Skeleton className="h-5 w-32" />
+                  <LoadingIndicator className="h-5 w-32" />
                 ) : (
                   profile?.displayName || login
                 )}
@@ -283,7 +283,7 @@ export function UserCard({
             </div>
             <div className="mt-0.5 text-xs text-muted">
               {loading ? (
-                <Skeleton className="h-3 w-20" />
+                <LoadingIndicator className="h-3 w-20" />
               ) : (
                 <>@{profile?.login || login}</>
               )}
@@ -292,7 +292,7 @@ export function UserCard({
               <span>
                 ID:{" "}
                 {loading ? (
-                  <Skeleton className="h-2.5 w-20 align-middle" />
+                  <LoadingIndicator className="h-2.5 w-20 align-middle" />
                 ) : (
                   <span className="text-zinc-300">{profile?.id || "—"}</span>
                 )}
@@ -300,7 +300,7 @@ export function UserCard({
               <span>
                 Created:{" "}
                 {loading ? (
-                  <Skeleton className="h-2.5 w-16 align-middle" />
+                  <LoadingIndicator className="h-2.5 w-16 align-middle" />
                 ) : (
                   <span className="text-zinc-300">
                     {date(profile?.createdAt)}
@@ -310,7 +310,7 @@ export function UserCard({
               <span>
                 Follows you:{" "}
                 {loading ? (
-                  <Skeleton className="h-2.5 w-14 align-middle" />
+                  <LoadingIndicator className="h-2.5 w-14 align-middle" />
                 ) : (
                   <span className="text-zinc-300">
                     {profile?.followedAt

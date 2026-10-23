@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Card, PageHeader, Skeleton } from "../components/ui";
+import { Card, LoadingIndicator, PageHeader } from "../components/ui";
 import { useAppStore } from "../stores/app-store";
 import { saveSetting } from "../services/native";
 import { money } from "../lib/utils";
@@ -28,7 +28,7 @@ function GoalRow({
           <div className="text-sm font-medium">{label}</div>
           <div className="mt-1 text-xs text-muted">
             {loading ? (
-              <Skeleton className="h-3 w-32" />
+              <LoadingIndicator className="h-3 w-32" />
             ) : value == null
               ? "Unavailable until the service is connected"
               : `${display?.(value) ?? value.toLocaleString("en-US")} / ${target ? (display?.(target) ?? target.toLocaleString("en-US")) : "No target"}`}
@@ -47,7 +47,7 @@ function GoalRow({
       </div>
       <div className="mt-3 h-2 overflow-hidden rounded-full bg-white/5">
         {loading ? (
-          <Skeleton className="h-full w-2/5 rounded-full" />
+          <LoadingIndicator className="h-full w-2/5" />
         ) : (
           <div
             className="h-full rounded-full bg-accent transition-all"

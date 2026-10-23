@@ -5,7 +5,7 @@ import { TitleBar } from "./components/TitleBar";
 import { Dashboard } from "./pages/Dashboard";
 import { useAppStore } from "./stores/app-store";
 import { isTauri } from "./lib/utils";
-import { Skeleton } from "./components/ui";
+import { LoadingIndicator } from "./components/ui";
 
 const StreamPage = lazy(() =>
   import("./pages/StreamPage").then((module) => ({
@@ -49,32 +49,12 @@ const pages: Record<string, React.ComponentType> = {
   settings: SettingsPage,
 };
 const loading = (
-  <div aria-label="Loading page" role="status">
-    <div className="mb-4 flex items-center justify-between">
-      <Skeleton className="h-6 w-28" />
-      <Skeleton className="h-6 w-16 rounded-md" />
-    </div>
-    <div className="grid grid-cols-12 gap-3">
-      {[0, 1, 2, 3].map((item) => (
-        <div key={item} className="card col-span-3 min-h-24 p-3.5">
-          <Skeleton className="h-2.5 w-20" />
-          <Skeleton className="mt-7 h-6 w-14" />
-        </div>
-      ))}
-      <div className="card col-span-8 h-56 p-4">
-        <Skeleton className="h-3 w-24" />
-        <div className="mt-6 space-y-4">
-          {["w-4/5", "w-2/3", "w-3/4"].map((width) => (
-            <Skeleton key={width} className={`h-3 ${width}`} />
-          ))}
-        </div>
-      </div>
-      <div className="card col-span-4 h-56 p-4">
-        <Skeleton className="h-3 w-20" />
-        <Skeleton className="mt-6 h-3 w-full" />
-        <Skeleton className="mt-4 h-3 w-2/3" />
-      </div>
-    </div>
+  <div
+    aria-label="Loading page"
+    role="status"
+    className="grid h-[55vh] place-items-center"
+  >
+    <LoadingIndicator className="h-8 w-16" />
   </div>
 );
 export default function App() {

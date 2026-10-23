@@ -16,8 +16,8 @@ import {
   Button,
   Card,
   EmptyState,
+  LoadingIndicator,
   PageHeader,
-  Skeleton,
 } from "../components/ui";
 import { errorMessage, isTauri } from "../lib/utils";
 import { twitchNative } from "../services/native";
@@ -223,7 +223,7 @@ export function StreamPage() {
       title="Stream"
       actions={
         statsLoading ? (
-          <Skeleton className="h-6 w-14 rounded-md" />
+          <LoadingIndicator className="h-6 w-14" />
         ) : (
           <Badge tone={stats.live ? "green" : "neutral"}>
             {stats.live ? "Live" : "Offline"}
@@ -315,7 +315,7 @@ export function StreamPage() {
           </p>
           <div className="relative mt-3">
             {busyLoading ? (
-              <Skeleton className="h-[34px] w-full rounded-lg" />
+              <LoadingIndicator className="h-[34px] w-full" />
             ) : (
               <>
                 <input
@@ -349,10 +349,10 @@ export function StreamPage() {
             </p>
             {busyLoading ? (
               <div className="mt-3 flex items-center gap-3 rounded-xl border border-line bg-[#101116] p-2.5">
-                <Skeleton className="h-12 w-9 shrink-0" />
+                <LoadingIndicator className="h-12 w-9 shrink-0" />
                 <div className="flex-1">
-                  <Skeleton className="h-3.5 w-32" />
-                  <Skeleton className="mt-2 h-2.5 w-20" />
+                  <LoadingIndicator className="h-3.5 w-32" />
+                  <LoadingIndicator className="mt-2 h-2.5 w-20" />
                 </div>
               </div>
             ) : category && (
@@ -368,7 +368,7 @@ export function StreamPage() {
             )}
             <div className="relative mt-3">
               {busyLoading ? (
-                <Skeleton className="h-[34px] w-full rounded-lg" />
+                <LoadingIndicator className="h-[34px] w-full" />
               ) : (
                 <>
               <Search
@@ -391,8 +391,8 @@ export function StreamPage() {
                     <div className="space-y-2 px-2 py-2">
                       {[0, 1, 2].map((item) => (
                         <div key={item} className="flex items-center gap-3">
-                          <Skeleton className="h-9 w-7 shrink-0" />
-                          <Skeleton
+                          <LoadingIndicator className="h-9 w-7 shrink-0" />
+                          <LoadingIndicator
                             className={`h-3 ${item === 1 ? "w-28" : "w-40"}`}
                           />
                         </div>
@@ -438,7 +438,7 @@ export function StreamPage() {
               Used for the language filter in the Twitch directory.
             </p>
             {busyLoading ? (
-              <Skeleton className="mt-3 h-[34px] w-full max-w-xs rounded-lg" />
+              <LoadingIndicator className="mt-3 h-[34px] w-full max-w-xs" />
             ) : (
             <select
               id="stream-language"
@@ -482,16 +482,16 @@ export function StreamPage() {
           <h2 className="text-sm font-semibold">Channel preview</h2>
           <div className="mt-4 flex gap-3">
             {busyLoading ? (
-              <Skeleton className="h-24 w-16 shrink-0" />
+              <LoadingIndicator className="h-24 w-16 shrink-0" />
             ) : (
               <BoxArt category={category} className="h-24 w-16 shrink-0" />
             )}
             <div className="min-w-0">
               {busyLoading ? (
                 <>
-                  <Skeleton className="h-3.5 w-44 max-w-full" />
-                  <Skeleton className="mt-2 h-3 w-28" />
-                  <Skeleton className="mt-2 h-2.5 w-16" />
+                  <LoadingIndicator className="h-3.5 w-44 max-w-full" />
+                  <LoadingIndicator className="mt-2 h-3 w-28" />
+                  <LoadingIndicator className="mt-2 h-2.5 w-16" />
                 </>
               ) : (
                 <>
@@ -513,7 +513,7 @@ export function StreamPage() {
             <div className="flex items-center justify-between">
               <span className="text-muted">Status</span>
               {statsLoading ? (
-                <Skeleton className="h-3 w-12" />
+                <LoadingIndicator className="h-3 w-12" />
               ) : (
                 <span>{stats.live ? "Live" : "Offline"}</span>
               )}
@@ -522,7 +522,7 @@ export function StreamPage() {
               <span className="text-muted">Viewers</span>
               <span className="tabular-nums">
                 {statsLoading ? (
-                  <Skeleton className="h-3 w-8" />
+                  <LoadingIndicator className="h-3 w-8" />
                 ) : (
                   stats.viewers?.toLocaleString("en-US") ?? "—"
                 )}
