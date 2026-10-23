@@ -764,6 +764,18 @@ fn twitch_chat_stop(state: tauri::State<'_, ChatIrc>) {
     }
 }
 
+fn shutdown(app: &tauri::AppHandle) {
+    for window in app.webview_windows().into_values() {
+        let _ = window.destroy();
+    }
+    app.exit(0);
+}
+
+#[tauri::command]
+fn app_quit(app: tauri::AppHandle) {
+    shutdown(&app);
+}
+
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
     tauri::Builder::default()
@@ -820,7 +832,7 @@ pub fn run() {
                         }
                         let _ = app.emit("tray-settings", ());
                     }
-                    "quit" => app.exit(0),
+                    "quit" => shutdown(app),
                     _ => {}
                 })
                 .build(app)?;
@@ -845,8 +857,16 @@ pub fn run() {
             twitch_eventsub_create,
             twitch_chat_start,
             twitch_chat_send,
-            twitch_chat_stop
+            twitch_chat_stop,
+            app_quit
         ])
-        .run(tauri::generate_context!())
-        .expect("error while building StreamDash");
+        .build(tauri::generate_context!())
+        .expect("error while building StreamDash")
+        .run(|app, event| {
+            if let tauri::RunEvent::ExitRequested { .. } = event {
+                for window in app.webview_windows().into_values() {
+                    let _ = window.destroy();
+                }
+            }
+        });
 }
