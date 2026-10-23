@@ -1,3 +1,4 @@
+import { twitchNative } from '../native'
 import type { ChatMessage, ChatPart, ConnectionPhase } from '../../types'
 
 const IRC_URL = 'wss://irc-ws.chat.twitch.tv:443'
@@ -137,10 +138,32 @@ function colorFor(login: string) {
   return USER_COLORS[hash % USER_COLORS.length]
 }
 
-function parseBadges(value: string | undefined) {
+interface HelixBadgeSet { set_id?: string; versions?: Array<{ id?: string; image_url_1x?: string; image_url_2x?: string }> }
+
+async function loadTwitchBadges(clientId: string, channelId: string) {
+  const map = new Map<string, string>()
+  const results = await Promise.allSettled([
+    twitchNative.helix<{ data?: HelixBadgeSet[] }>(clientId, 'chat/badges/global'),
+    twitchNative.helix<{ data?: HelixBadgeSet[] }>(clientId, 'chat/badges', [['broadcaster_id', channelId]]),
+  ])
+  for (const result of results) {
+    if (result.status !== 'fulfilled') continue
+    for (const set of result.value.data ?? []) {
+      if (!set.set_id) continue
+      for (const version of set.versions ?? []) {
+        const url = version.image_url_2x || version.image_url_1x
+        if (version.id && url) map.set(`${set.set_id}/${version.id}`, url)
+      }
+    }
+  }
+  return map
+}
+
+function parseBadges(value: string | undefined, badgeUrls: Map<string, string>) {
   return (value ?? '').split(',').filter(Boolean).flatMap((entry) => {
     const [id, version] = entry.split('/')
-    return id && version ? [{ id, version }] : []
+    const url = id && version ? badgeUrls.get(`${id}/${version}`) : undefined
+    return url ? [{ id, version, url }] : []
   })
 }
 
@@ -150,18 +173,21 @@ export class TwitchChatClient {
   private retry = 0
   private timer?: number
   private emotes: ChatEmoteMap = new Map()
+  private badges = new Map<string, string>()
   private login: string
   private channelId?: string
+  private clientId: string
   private onMessage: (message: ChatMessage) => void
   private onPhase: (phase: ConnectionPhase, detail?: string) => void
   private onDelete: (id: string) => void
   private onClear: (login?: string) => void
 
   constructor(
-    login: string, channelId: string | undefined,
+    clientId: string, login: string, channelId: string | undefined,
     onMessage: (message: ChatMessage) => void, onPhase: (phase: ConnectionPhase, detail?: string) => void,
     onDelete: (id: string) => void, onClear: (login?: string) => void,
   ) {
+    this.clientId = clientId
     this.login = login
     this.channelId = channelId
     this.onMessage = onMessage
@@ -175,7 +201,12 @@ export class TwitchChatClient {
 
   private async prepare() {
     this.onPhase('connecting')
-    try { this.emotes = await withTimeout(loadSevenTvEmotes(this.channelId), 6000) } catch { this.emotes = new Map() }
+    const [emotes, badges] = await Promise.allSettled([
+      withTimeout(loadSevenTvEmotes(this.channelId), 6000),
+      this.channelId ? withTimeout(loadTwitchBadges(this.clientId, this.channelId), 6000) : Promise.resolve(new Map<string, string>()),
+    ])
+    this.emotes = emotes.status === 'fulfilled' ? emotes.value : new Map()
+    this.badges = badges.status === 'fulfilled' ? badges.value : new Map()
     if (!this.stopped) this.open()
   }
 
@@ -228,7 +259,7 @@ export class TwitchChatClient {
       login,
       displayName: line.tags['display-name'] || login,
       color: line.tags.color || colorFor(login),
-      badges: parseBadges(line.tags.badges),
+      badges: parseBadges(line.tags.badges, this.badges),
       timestamp,
       text,
       parts: buildChatParts(text, line.tags.emotes, this.emotes),

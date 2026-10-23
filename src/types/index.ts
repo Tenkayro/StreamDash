@@ -52,7 +52,7 @@ export interface AppSettings {
 
 export interface TwitchSession { userId: string; login: string; scopes: string[]; expiresIn: number }
 
-export interface ChatBadge { id: string; version: string }
+export interface ChatBadge { id: string; version: string; url?: string }
 export type ChatPart = { type: 'text'; text: string } | { type: 'emote'; layers: Array<{ name: string; url: string }> }
 export interface ChatMessage {
   id: string

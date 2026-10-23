@@ -28,10 +28,13 @@ Twitch uses the public-client Device Code Grant. The application requests only:
 - `bits:read`
 - `channel:read:redemptions`
 - `channel:manage:broadcast`
+- `user:write:chat`
 
 EventSub handles follows, subscriptions, resub messages, gift subscriptions, cheers, incoming raids, custom channel-point redemptions, and online/offline changes. Helix provides follower/subscriber totals, current viewers, title, category, and stream start time. The **Stream** page uses Helix to write the channel title, game/category, and broadcaster language.
 
-The **Chat** page reads your channel chat anonymously through `wss://irc-ws.chat.twitch.tv` (a `justinfan` nick), so no messages can be sent and no token is shared with chat. It requests `twitch.tv/tags` and `twitch.tv/commands`, renders Twitch badges, colors, native emotes, and deletions/cleanups, and resolves 7TV emotes through the public v3 API (`users/twitch/{id}` plus the global `emote-sets/global` set), including zero-width overlay emotes.
+The **Chat** page reads your channel chat anonymously through `wss://irc-ws.chat.twitch.tv` (a `justinfan` nick), so no OAuth token is shared with the chat connection. It requests `twitch.tv/tags` and `twitch.tv/commands`, renders Twitch badges, colors, native emotes, and deletions/cleanups, and resolves 7TV emotes through the public v3 API (`users/twitch/{id}` plus the global `emote-sets/global` set), including zero-width overlay emotes.
+
+Sending a message goes through Helix (`POST /helix/chat/messages`) in the Rust backend using the `user:write:chat` scope, so the token stays in Rust. StreamDash sends as your connected broadcaster account and shows a hint when the scope is missing after an upgrade; the sent message appears once, when Twitch delivers it back through the chat connection. Badge artwork is resolved through `GET /helix/chat/badges/global` and `GET /helix/chat/badges` instead of guessing static CDN URLs.
 
 StreamElements connects to `wss://astro.streamelements.com/` and subscribes to the documented `channel.activities` and `channel.tips` topics. Tips are recorded only when their transaction status is `success`.
 
@@ -74,7 +77,7 @@ The current Twitch registration flow is documented at [Register Your App](https:
 7. Do **not** generate or configure a client secret. The Windows app follows Twitch's recommendation to use the public Device Code flow and refreshes public-client tokens without a secret.
 8. A Client ID saved through Settings is effective immediately; reconnect Twitch afterward. Restart only when changing `.env`.
 
-In StreamDash, open **Connections → Connect Twitch**. The system browser opens Twitch's activation page. Enter the displayed code and authorize the five listed scopes. Tokens are stored under the `StreamDash` service in Windows Credential Manager. Public-client access tokens last roughly four hours; refresh tokens expire after 30 days of inactivity, at which point StreamDash asks you to connect again.
+In StreamDash, open **Connections → Connect Twitch**. The system browser opens Twitch's activation page. Enter the displayed code and authorize the six listed scopes. Tokens are stored under the `StreamDash` service in Windows Credential Manager. Public-client access tokens last roughly four hours; refresh tokens expire after 30 days of inactivity, at which point StreamDash asks you to connect again.
 
 ### StreamElements
 
@@ -164,6 +167,7 @@ StreamElements graceful reconnect tokens restore subscriptions on the replacemen
 - **Connect Twitch says the Client ID is missing:** open Settings → Twitch, enter the Client ID, save it, and reconnect Twitch.
 - **Twitch statistics are unavailable:** disconnect and connect again so the currently configured scopes are granted. Confirm you authenticated as the broadcaster.
 - **Stream page reports a missing permission:** the `channel:manage:broadcast` scope was added after your last login. Use **Reconnect Twitch** on the Stream page to grant it.
+- **Chat input reports a missing permission:** the `user:write:chat` scope was added after your last login. Reconnect Twitch once (Chat or Connections page) to grant it.
 - **Twitch authorization expires:** public-client refresh tokens expire after 30 days of inactivity; reconnect from the Connections page.
 - **StreamElements connects but no events arrive:** recopy the JWT after switching to the correct linked channel. The token is account-specific.
 - **StreamElements reports unauthorized:** replace the stored token by disconnecting and reconnecting with a new JWT.

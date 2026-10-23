@@ -43,7 +43,7 @@ export function RuntimeProvider({ children }: { children: ReactNode }) {
       twitchRef.current = new TwitchEventSub(clientId, session, ingest, (phase, detail) => state().setTwitch({ phase, account: session.login, userId: session.userId, scopes: session.scopes, detail }))
       twitchRef.current.start()
       chatRef.current?.stop()
-      chatRef.current = new TwitchChatClient(session.login, session.userId,
+      chatRef.current = new TwitchChatClient(clientId, session.login, session.userId,
         (message) => state().pushChatMessage(message),
         (phase, detail) => state().setChat({ phase, detail }),
         (id) => state().removeChatMessage(id),
@@ -98,6 +98,17 @@ export function RuntimeProvider({ children }: { children: ReactNode }) {
   const disconnectTwitch = async () => { twitchRef.current?.stop(); chatRef.current?.stop(); state().setChat({ phase: 'disconnected' }); await secretDelete('twitch-oauth'); state().setTwitch({ phase: 'disconnected' }); state().setStats({ followers: undefined, subscribers: undefined, viewers: undefined, live: false, startedAt: undefined }) }
   const connectStreamElements = async (token: string) => { if (!token.trim()) return; await secretSet('streamelements-token', token.trim()); await startStreamElements() }
   const disconnectStreamElements = async () => { seRef.current?.stop(); await secretDelete('streamelements-token'); state().setStreamElements({ phase: 'disconnected' }) }
+  const sendChatMessage = async (text: string) => {
+    const message = text.trim()
+    const clientId = state().settings.twitchClientId.trim()
+    const userId = state().twitch.userId
+    if (!message) return
+    if (!clientId || !userId) throw new Error('Twitch is not connected')
+    const result = await twitchNative.helixPost<{ data?: Array<{ is_sent?: boolean; drop_reason?: { message?: string } }> }>(
+      clientId, 'chat/messages', [], { broadcaster_id: userId, sender_id: userId, message })
+    const dropped = result.data?.find((entry) => entry.is_sent === false)
+    if (dropped) throw new Error(dropped.drop_reason?.message ?? 'Twitch rejected the message')
+  }
 
-  return <RuntimeContext.Provider value={{ deviceAuth, connectTwitch, disconnectTwitch, connectStreamElements, disconnectStreamElements, reconnect }}>{children}</RuntimeContext.Provider>
+  return <RuntimeContext.Provider value={{ deviceAuth, connectTwitch, disconnectTwitch, connectStreamElements, disconnectStreamElements, sendChatMessage, reconnect }}>{children}</RuntimeContext.Provider>
 }

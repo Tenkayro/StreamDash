@@ -7,6 +7,7 @@ export interface RuntimeValue {
   disconnectTwitch: () => Promise<void>
   connectStreamElements: (token: string) => Promise<void>
   disconnectStreamElements: () => Promise<void>
+  sendChatMessage: (text: string) => Promise<void>
   reconnect: () => Promise<void>
 }
 export const RuntimeContext = createContext<RuntimeValue | null>(null)
