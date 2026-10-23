@@ -3,7 +3,10 @@
 
 fn main() {
     if std::env::args().any(|arg| arg == "--uninstall-cleanup") {
-        streamdash_lib::uninstall_cleanup();
+        if let Err(error) = streamdash_lib::uninstall_cleanup() {
+            eprintln!("{error}");
+            std::process::exit(1);
+        }
         return;
     }
     streamdash_lib::run();

@@ -7,7 +7,7 @@
         Root="HKCU"
         Key="Software\Tenkayro\StreamDash"
         Name="KeepUserData"
-        Type="integer" />
+        Type="raw" />
     </Property>
 
     <CustomAction
@@ -16,7 +16,7 @@
       ExeCommand="--uninstall-cleanup"
       Execute="deferred"
       Impersonate="yes"
-      Return="ignore" />
+      Return="check" />
 
     <InstallExecuteSequence>
       <Custom Action="CleanupStreamDashUserData" Before="RemoveFiles">
@@ -25,15 +25,14 @@
     </InstallExecuteSequence>
 
     <DirectoryRef Id="TARGETDIR">
-      <Component Id="UserDataPreference" Guid="*">
+      <Component Id="UserDataPreference" Guid="*" NeverOverwrite="yes" Permanent="yes">
         <RegistryValue
           Root="HKCU"
           Key="Software\Tenkayro\StreamDash"
           Name="KeepUserData"
-          Type="integer"
+          Type="string"
           Value="1"
-          KeyPath="yes"
-          NeverOverwrite="yes" />
+          KeyPath="yes" />
       </Component>
     </DirectoryRef>
   </Fragment>

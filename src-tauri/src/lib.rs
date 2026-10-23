@@ -56,7 +56,7 @@ fn delete_secret_value(name: &str) -> Result<(), String> {
 #[cfg(windows)]
 fn set_keep_user_data_preference(keep: bool) -> Result<(), String> {
     let status = Command::new("reg.exe")
-        .args(["add", PREFERENCES_REGISTRY_KEY, "/v", "KeepUserData", "/t", "REG_DWORD", "/d", if keep { "1" } else { "0" }, "/f"])
+        .args(["add", PREFERENCES_REGISTRY_KEY, "/v", "KeepUserData", "/t", "REG_SZ", "/d", if keep { "1" } else { "0" }, "/f"])
         .status()
         .map_err(|e| e.to_string())?;
     if status.success() { Ok(()) } else { Err("Could not update the uninstall preference".into()) }
@@ -81,23 +81,31 @@ fn migrate_legacy_data(new_directory: &Path) -> Result<(), String> {
     Ok(())
 }
 
-pub fn uninstall_cleanup() {
-    let _ = delete_secret_value("twitch-oauth");
-    let _ = delete_secret_value("streamelements-token");
+fn remove_directory_if_present(path: PathBuf) -> Result<(), String> {
+    if path.exists() {
+        std::fs::remove_dir_all(&path).map_err(|e| format!("Could not remove {}: {e}", path.display()))?;
+    }
+    Ok(())
+}
+
+pub fn uninstall_cleanup() -> Result<(), String> {
+    delete_secret_value("twitch-oauth")?;
+    delete_secret_value("streamelements-token")?;
 
     if let Some(roaming) = std::env::var_os("APPDATA").map(PathBuf::from) {
-        let _ = std::fs::remove_dir_all(roaming.join("StreamDash"));
-        let _ = std::fs::remove_dir_all(roaming.join("dev.streamdash.desktop"));
+        remove_directory_if_present(roaming.join("StreamDash"))?;
+        remove_directory_if_present(roaming.join("dev.streamdash.desktop"))?;
     }
     if let Some(local) = std::env::var_os("LOCALAPPDATA").map(PathBuf::from) {
-        let _ = std::fs::remove_dir_all(local.join("StreamDash"));
-        let _ = std::fs::remove_dir_all(local.join("dev.streamdash.desktop"));
+        remove_directory_if_present(local.join("StreamDash"))?;
+        remove_directory_if_present(local.join("dev.streamdash.desktop"))?;
     }
 
     for value in ["StreamDash", "streamdash"] {
         let _ = Command::new("reg.exe").args(["delete", r"HKCU\Software\Microsoft\Windows\CurrentVersion\Run", "/v", value, "/f"]).status();
     }
     let _ = Command::new("reg.exe").args(["delete", PREFERENCES_REGISTRY_KEY, "/f"]).status();
+    Ok(())
 }
 
 fn load_twitch_tokens() -> Result<TwitchTokens, String> {
