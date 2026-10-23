@@ -63,11 +63,12 @@ The current Twitch registration flow is documented at [Register Your App](https:
 
 1. Open the [Twitch Developer Console](https://dev.twitch.tv/console/apps), select **Applications**, then **Register Your Application**.
 2. Use a unique name such as `StreamDash YourName`.
-3. Add `http://localhost:1420` as the OAuth Redirect URL. StreamDash's Device Code flow does not redirect to it, but the Twitch registration form requires a redirect URL.
-4. Choose the closest desktop/installed application category shown by the console (the category label may vary by account/console version).
-5. Create the application and copy its **Client ID**. Enter it under **Settings → Twitch** after starting StreamDash. A developer may alternatively place it in `VITE_TWITCH_CLIENT_ID` in `.env` as a build-time default.
-6. Do **not** generate or configure a client secret. The Windows app follows Twitch's recommendation to use the public Device Code flow and refreshes public-client tokens without a secret.
-7. A Client ID saved through Settings is effective immediately; reconnect Twitch afterward. Restart only when changing `.env`.
+3. Add `https://localhost` as the OAuth Redirect URL. Twitch's current console requires HTTPS. StreamDash uses the Device Code flow and never redirects to this URL; it is present only because application registration requires a redirect entry.
+4. Set **Category** to **Broadcaster Suite**.
+5. Set **Client Type** to **Public**. A distributed Windows desktop application cannot keep a client secret confidential.
+6. Create the application and copy its **Client ID**. Enter it under **Settings → Twitch** after starting StreamDash. A developer may alternatively place it in `VITE_TWITCH_CLIENT_ID` in `.env` as a build-time default.
+7. Do **not** generate or configure a client secret. The Windows app follows Twitch's recommendation to use the public Device Code flow and refreshes public-client tokens without a secret.
+8. A Client ID saved through Settings is effective immediately; reconnect Twitch afterward. Restart only when changing `.env`.
 
 In StreamDash, open **Connections → Connect Twitch**. The system browser opens Twitch's activation page. Enter the displayed code and authorize the four listed scopes. Tokens are stored under the `StreamDash` service in Windows Credential Manager. Public-client access tokens last roughly four hours; refresh tokens expire after 30 days of inactivity, at which point StreamDash asks you to connect again.
 
@@ -121,7 +122,7 @@ npm run tauri build
 On Windows the configured bundles are written under:
 
 - `src-tauri\target\release\streamdash.exe` — unpackaged executable
-- `src-tauri\target\release\bundle\msi\StreamDash_1.0.0_x64_en-US.msi` — English, per-machine MSI installer for `C:\Program Files\StreamDash`
+- `src-tauri\target\release\bundle\msi\StreamDash-Setup.msi` — English, per-machine MSI installer for `C:\Program Files\StreamDash`
 
 Native notifications identify correctly only for an installed build. The development build may show a PowerShell/terminal identity in Windows notifications.
 

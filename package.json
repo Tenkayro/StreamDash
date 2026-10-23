@@ -9,7 +9,7 @@
     "lint": "oxlint src",
     "preview": "vite preview",
     "tauri": "tauri",
-    "setup": "tauri build --bundles msi",
+    "setup": "powershell -NoProfile -ExecutionPolicy Bypass -File scripts/build-msi.ps1",
     "check": "tsc -b --pretty false && oxlint src"
   },
   "dependencies": {
