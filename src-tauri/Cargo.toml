@@ -33,3 +33,8 @@ tokio-tungstenite = { version = "0.24", features = ["native-tls"] }
 futures-util = "0.3"
 keyring = { version = "3", features = ["windows-native"] }
 tauri-plugin-updater = "2.14.0"
+
+[profile.dev]
+# Skip debug symbols during development: faster linking and startup.
+debug = 0
+
