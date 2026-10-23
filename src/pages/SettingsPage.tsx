@@ -18,7 +18,7 @@ const eventOptions: Array<{ id: ActivityType; label: string }> = [
 ]
 
 function Toggle({ value, onChange }: { value: boolean; onChange: (value: boolean) => void }) {
-  return <button role="switch" aria-checked={value} onClick={() => onChange(!value)} className={`relative h-5 w-9 rounded-full transition ${value ? 'bg-accent' : 'bg-zinc-700'}`}><span className={`absolute top-0.5 size-4 rounded-full bg-white transition ${value ? 'left-[18px]' : 'left-0.5'}`}/></button>
+  return <button role="switch" aria-checked={value} data-state={value ? 'on' : 'off'} onClick={() => onChange(!value)} className="toggle-switch relative h-5 w-9 rounded-full transition-colors"><span className={`absolute top-0.5 size-4 rounded-full bg-white shadow-sm transition-[left] ${value ? 'left-[18px]' : 'left-0.5'}`}/></button>
 }
 function Row({ label, detail, children }: { label: string; detail: string; children: ReactNode }) {
   return <div className="flex items-center justify-between gap-6 border-b border-line py-4 last:border-0"><div><div className="text-sm">{label}</div><div className="mt-1 text-xs text-muted">{detail}</div></div>{children}</div>
