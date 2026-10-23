@@ -42,7 +42,7 @@
         "silent": true
       },
       "wix": {
-        "language": ["de-DE"]
+        "language": ["en-US"]
       }
     },
     "android": {

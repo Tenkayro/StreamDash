@@ -106,7 +106,7 @@ cargo check
 
 ## Production build
 
-To create the German system-wide Windows MSI with one command:
+To create the English system-wide Windows MSI with one command:
 
 ```powershell
 npm run setup
@@ -121,7 +121,7 @@ npm run tauri build
 On Windows the configured bundles are written under:
 
 - `src-tauri\target\release\streamdash.exe` — unpackaged executable
-- `src-tauri\target\release\bundle\msi\StreamDash_1.0.0_x64_de-DE.msi` — German, per-machine MSI installer for `C:\Program Files\StreamDash`
+- `src-tauri\target\release\bundle\msi\StreamDash_1.0.0_x64_en-US.msi` — English, per-machine MSI installer for `C:\Program Files\StreamDash`
 
 Native notifications identify correctly only for an installed build. The development build may show a PowerShell/terminal identity in Windows notifications.
 
