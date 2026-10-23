@@ -109,7 +109,7 @@ function ChatRow({
   const highlighted = isHighlighted(message, account, settings);
   return (
     <div
-      className={`group relative flex gap-2 border-l-2 px-3 py-1 leading-6 transition-colors ${message.deleted ? "border-transparent opacity-40" : highlighted ? "border-amber-400 bg-amber-400/[.08] hover:bg-amber-400/[.12]" : message.firstMessage ? "border-sky-500 bg-sky-400/[.035] hover:bg-sky-400/[.07]" : "border-transparent hover:bg-white/[.035]"}`}
+      className={`group relative flex gap-2 border-l-2 px-3 py-1 leading-6 transition-colors ${message.deleted ? "border-transparent opacity-40" : highlighted ? "border-amber-400 bg-amber-400/8 hover:bg-amber-400/12" : message.firstMessage ? "border-sky-500 bg-sky-400/[.035] hover:bg-sky-400/[.07]" : "border-transparent hover:bg-white/[.035]"}`}
     >
       {settings.chatTimestamps && (
         <span className="w-10 shrink-0 pt-0.5 text-right text-[10px] tabular-nums text-zinc-600">
@@ -117,7 +117,7 @@ function ChatRow({
         </span>
       )}
       <div
-        className="min-w-0 flex-1 whitespace-pre-wrap break-words"
+        className="min-w-0 flex-1 whitespace-pre-wrap wrap-break-word"
         style={{ fontSize: settings.chatFontSize }}
       >
         {message.reply && (
@@ -452,7 +452,7 @@ export function ChatPage() {
     <>
       {header}
       {missingScope && (
-        <div className="mb-3 flex items-center justify-between gap-3 rounded-lg border border-amber-500/30 bg-amber-400/[.06] px-3 py-2 text-xs leading-5 text-amber-200">
+        <div className="mb-3 flex items-center justify-between gap-3 rounded-lg border border-amber-500/30 bg-amber-400/6 px-3 py-2 text-xs leading-5 text-amber-200">
           <span>
             Twitch chat requires the{" "}
             <span className="font-mono">chat:read</span> and{" "}
@@ -541,7 +541,7 @@ export function ChatPage() {
         )}
         <div className="relative border-t border-line p-2.5">
           {completion && (
-            <div className="absolute bottom-[calc(100%-1px)] left-2.5 right-2.5 z-20 max-h-64 overflow-y-auto rounded-lg border border-line bg-[#17181e] p-1 shadow-2xl">
+            <div className="absolute bottom-[calc(100%-1px)] left-2.5 right-2.5 z-20 max-h-64 overflow-y-auto rounded-lg border border-line bg-raised p-1 shadow-2xl">
               {completion.items.map((item, index) => (
                 <button
                   key={`${item.source}-${item.name}`}

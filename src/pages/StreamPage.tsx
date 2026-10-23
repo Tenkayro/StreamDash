@@ -275,7 +275,7 @@ export function StreamPage() {
     <>
       {header}
       {missingScope && (
-        <Card className="mb-4 flex items-start gap-3 border-amber-500/30 bg-amber-400/[.06] p-4">
+        <Card className="mb-4 flex items-start gap-3 border-amber-500/30 bg-amber-400/6 p-4">
           <TriangleAlert size={16} className="mt-0.5 shrink-0 text-amber-300" />
           <div className="flex-1">
             <div className="text-sm font-medium text-amber-200">
@@ -373,7 +373,7 @@ export function StreamPage() {
                     lookup.items.map((item) => (
                       <button
                         key={item.id}
-                        className="flex w-full items-center gap-3 rounded-lg px-2 py-1.5 text-left hover:bg-white/[.06]"
+                        className="flex w-full items-center gap-3 rounded-lg px-2 py-1.5 text-left hover:bg-white/6"
                         onClick={() => {
                           setCategory(item);
                           setQuery("");

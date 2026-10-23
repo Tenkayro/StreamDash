@@ -182,7 +182,7 @@ function SortableWidget({
       )}
     >
       {editing && (
-        <div className="absolute -top-2 right-2 z-20 flex items-center rounded-md border border-line bg-[#17181e] shadow-lg">
+        <div className="absolute -top-2 right-2 z-20 flex items-center rounded-md border border-line bg-raised shadow-lg">
           <button
             type="button"
             title={`Move ${label}`}

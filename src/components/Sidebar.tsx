@@ -77,7 +77,7 @@ export function Sidebar() {
     <aside
       className={cn(
         "flex shrink-0 flex-col border-r border-line bg-[#0f1014] p-2 transition-[width]",
-        collapsed ? "w-[58px]" : "w-52",
+        collapsed ? "w-14.5" : "w-52",
       )}
     >
       <nav className="space-y-0.5 pt-1">
@@ -96,7 +96,7 @@ export function Sidebar() {
               key={id}
               onClick={() => setPage(id)}
               className={cn(
-                "relative flex h-9 w-full items-center rounded-lg text-sm text-zinc-500 transition hover:bg-white/[.04] hover:text-zinc-200",
+                "relative flex h-9 w-full items-center rounded-lg text-sm text-zinc-500 transition hover:bg-white/4 hover:text-zinc-200",
                 collapsed ? "justify-center" : "gap-3 px-3",
                 page === id && "bg-accent-soft text-accent",
               )}
@@ -170,7 +170,7 @@ export function Sidebar() {
             </div>
           </div>
         ) : (
-          <div className="mb-2 rounded-lg border border-line bg-[#121318] px-2 py-1.5">
+          <div className="mb-2 rounded-lg border border-line bg-panel px-2 py-1.5">
             <Status
               icon={twitchIcon}
               name="Twitch"
@@ -190,7 +190,7 @@ export function Sidebar() {
           title={collapsed ? "Expand navigation" : "Collapse navigation"}
           aria-label={collapsed ? "Expand navigation" : "Collapse navigation"}
           className={cn(
-            "flex h-8 w-full items-center rounded-lg text-xs text-zinc-600 hover:bg-white/[.04] hover:text-zinc-300",
+            "flex h-8 w-full items-center rounded-lg text-xs text-zinc-600 hover:bg-white/4 hover:text-zinc-300",
             collapsed ? "justify-center" : "gap-2 px-3",
           )}
         >

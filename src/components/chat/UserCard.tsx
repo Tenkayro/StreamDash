@@ -483,7 +483,7 @@ export function UserCard({
                     })}
                   </span>
                   <span
-                    className={`min-w-0 flex-1 break-words ${message.deleted ? "line-through" : ""}`}
+                    className={`min-w-0 flex-1 wrap-break-word ${message.deleted ? "line-through" : ""}`}
                   >
                     {message.text}
                   </span>

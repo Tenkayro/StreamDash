@@ -98,7 +98,7 @@ export default function App() {
       className={
         settings.animations
           ? ""
-          : "[&_*]:!transition-none [&_.event-enter]:!animate-none"
+          : "**:transition-none! [&_.event-enter]:animate-none!"
       }
     >
       <div className="flex h-screen flex-col bg-[#0b0c0f]">

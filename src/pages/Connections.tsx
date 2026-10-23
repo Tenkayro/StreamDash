@@ -87,7 +87,7 @@ export function Connections() {
             </div>
           </div>
           {runtime.deviceAuth && (
-            <div className="mt-5 rounded-xl border border-violet-500/30 bg-violet-500/[.06] p-4">
+            <div className="mt-5 rounded-xl border border-violet-500/30 bg-violet-500/6 p-4">
               <div className="text-xs text-muted">
                 Enter this code in the Twitch page opened in your browser
               </div>

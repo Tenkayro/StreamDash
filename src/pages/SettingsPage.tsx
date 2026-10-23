@@ -39,7 +39,7 @@ function Toggle({
       className="toggle-switch relative h-5 w-9 rounded-full transition-colors"
     >
       <span
-        className={`absolute top-0.5 size-4 rounded-full bg-white shadow-sm transition-[left] ${value ? "left-[18px]" : "left-0.5"}`}
+        className={`absolute top-0.5 size-4 rounded-full bg-white shadow-sm transition-[left] ${value ? "left-4.5" : "left-0.5"}`}
       />
     </button>
   );
