@@ -1,4 +1,5 @@
-# StreamDash
+<img width="1782" height="412" alt="StreamDash Logo mit Neon-Swoosh-trimmed" src="https://github.com/user-attachments/assets/c610fcaa-52d1-4bf6-b26a-17d8705de253" />
+
 
 StreamDash is a Windows 10/11 desktop companion for streamers. It combines live Twitch EventSub activity, current Twitch channel statistics, editing of the channel title/category/language, and StreamElements tips in a focused desktop dashboard with local history, goals, charts, native notifications, autostart, and a system tray.
 
@@ -6,7 +7,8 @@ The normal application never generates demo activity. Empty, disconnected, loadi
 
 ## Screenshots
 
-Screenshots will be added after the first signed release.
+<img width="1272" height="799" alt="image" src="https://github.com/user-attachments/assets/4b7e3fbd-6830-4b45-aff3-e1709d41662d" />
+
 
 ## Stack
 
