@@ -126,6 +126,18 @@ On Windows the configured bundles are written under:
 
 Native notifications identify correctly only for an installed build. The development build may show a PowerShell/terminal identity in Windows notifications.
 
+## Publishing a release
+
+Run the interactive release workflow from the `main` branch:
+
+```powershell
+npm run release
+```
+
+The Clack terminal UI offers patch, minor, major, and custom semantic versions. If there are pending files, it lists them and asks whether to include them plus which commit message to use. After confirmation it synchronizes every project version, runs the TypeScript and Rust checks, builds and signs the MSI updater, commits and tags the version, atomically pushes `main` and the tag, and publishes the installer, updater signature, and `latest.json` to `Tenkayro/StreamDash` on GitHub.
+
+The updater signing key is stored outside the repository at `%USERPROFILE%\.tauri\streamdash-updater.key`. Back up this private key securely: installed copies cannot accept future updates if it is lost. Never commit or share it. StreamDash checks the signed GitHub update manifest automatically and also exposes a manual check under **Settings → Updates**.
+
 ## Data and security
 
 - OAuth credentials and the StreamElements JWT use Windows Credential Manager.

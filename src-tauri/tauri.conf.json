@@ -31,6 +31,7 @@
     "active": true,
     "publisher": "Tenkayro",
     "copyright": "Copyright © 2026 Tenkayro",
+    "createUpdaterArtifacts": true,
     "targets": ["msi"],
     "icon": [
       "icons/32x32.png",
@@ -52,6 +53,18 @@
     },
     "android": {
       "debugApplicationIdSuffix": ".debug"
+    }
+  },
+  "plugins": {
+    "updater": {
+      "pubkey": "dW50cnVzdGVkIGNvbW1lbnQ6IG1pbmlzaWduIHB1YmxpYyBrZXk6IDhGRjI5Rjg3MDc2N0IyRjQKUldUMHNtY0hoNS95ajZaandnQjdMbksrOW0xUjB4RXhGMDZUc3dpTU1Gc3VlZEtOVCtiNGpRTzIK",
+      "endpoints": [
+        "https://github.com/Tenkayro/StreamDash/releases/latest/download/latest.json"
+      ],
+      "requireSignedVersion": true,
+      "windows": {
+        "installMode": "basicUi"
+      }
     }
   }
 }
