@@ -34,6 +34,11 @@ export interface DashboardStats {
   category?: string
 }
 
+export type DashboardWidgetId = 'followers' | 'subscribers' | 'viewers' | 'duration' | 'bits' | 'donations' | 'status' | 'eventCount' | 'activity' | 'streamDetails' | 'goals' | 'connections'
+export type UiDensity = 'compact' | 'comfortable'
+export type ContentWidth = 'compact' | 'wide' | 'full'
+export type AccentColor = 'violet' | 'blue' | 'emerald' | 'orange'
+
 export interface AppSettings {
   twitchClientId: string
   launchAtStartup: boolean
@@ -41,6 +46,11 @@ export interface AppSettings {
   minimizeToTray: boolean
   compactFeed: boolean
   animations: boolean
+  uiDensity: UiDensity
+  contentWidth: ContentWidth
+  accentColor: AccentColor
+  sidebarCollapsed: boolean
+  dashboardWidgets: DashboardWidgetId[]
   notifications: boolean
   notifyDonations: boolean
   notifyRaids: boolean

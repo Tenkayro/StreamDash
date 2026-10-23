@@ -152,7 +152,7 @@ fn events_list(state: tauri::State<'_, AppState>, limit: Option<u32>) -> Result<
         "SELECT id,source,event_type,username,display_name,timestamp,amount,currency,message,tier,gift_count,bits,viewer_count,metadata
          FROM activity_events ORDER BY timestamp DESC LIMIT ?1"
     ).map_err(|e| e.to_string())?;
-    let rows = stmt.query_map([limit.unwrap_or(1000).min(10000)], |row| {
+    let rows = stmt.query_map([limit.unwrap_or(1000).min(50_000)], |row| {
         let raw: String = row.get(13)?;
         Ok(ActivityRecord {
             id: row.get(0)?, source: row.get(1)?, event_type: row.get(2)?, username: row.get(3)?,
