@@ -34,14 +34,24 @@ export function ActivityFeed({
   events,
   limit,
   compact = false,
+  emptyTitle = "No activity yet",
+  emptyBody,
 }: {
   events: ActivityEvent[];
   limit?: number;
   compact?: boolean;
+  emptyTitle?: string;
+  emptyBody?: string;
 }) {
   const shown = limit ? events.slice(0, limit) : events;
   if (!shown.length)
-    return <EmptyState icon={<BellOff size={24} />} title="No activity yet" />;
+    return (
+      <EmptyState
+        icon={<BellOff size={24} />}
+        title={emptyTitle}
+        body={emptyBody}
+      />
+    );
   return (
     <div>
       {shown.map((event) => {
