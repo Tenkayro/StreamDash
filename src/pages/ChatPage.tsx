@@ -111,7 +111,7 @@ export function ChatPage() {
     else if (event.key === 'ArrowDown' && historyIndex >= 0) { event.preventDefault(); const index = historyIndex - 1; setHistoryIndex(index); const value = index >= 0 ? history[index] : ''; setDraft(value); setCursor(value.length) }
   }
 
-  const header = <PageHeader title="Chat" description="Fast Twitch chat with Twitch and 7TV emotes." actions={<div className="flex items-center gap-1.5"><Badge tone={tone(chat.phase)}>{chat.phase}</Badge><Button variant={searchOpen ? 'primary' : 'ghost'} onClick={() => setSearchOpen((open) => !open)}><Search size={14}/></Button><Button variant="ghost" disabled={chatMessages.length === 0} onClick={() => { setStick(true); setUnread(0); clearChat() }}><Trash2 size={14}/>Clear</Button></div>}/>
+  const header = <PageHeader title="Chat" actions={<div className="flex items-center gap-1.5"><Badge tone={tone(chat.phase)}>{chat.phase}</Badge><Button variant={searchOpen ? 'primary' : 'ghost'} onClick={() => setSearchOpen((open) => !open)}><Search size={14}/></Button><Button variant="ghost" disabled={chatMessages.length === 0} onClick={() => { setStick(true); setUnread(0); clearChat() }}><Trash2 size={14}/>Clear</Button></div>}/>
   if (twitch.phase !== 'connected') return <>{header}<Card><EmptyState icon={<MessageSquare size={22}/>} title="Twitch is not connected" body="Connect your Twitch account first. Chat reads and sends through your authenticated Twitch connection." action={<Button variant="primary" onClick={() => setPage('connections')}>Open Connections</Button>}/></Card></>
 
   return <>{header}

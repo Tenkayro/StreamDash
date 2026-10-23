@@ -97,7 +97,7 @@ export function StreamPage() {
     finally { setSaving(false) }
   }
 
-  const header = <PageHeader title="Stream" description="Change the title, category, and language shown on your Twitch channel." actions={<Badge tone={stats.live ? 'green' : 'neutral'}>{stats.live ? 'Live' : 'Offline'}</Badge>}/>
+  const header = <PageHeader title="Stream" actions={<Badge tone={stats.live ? 'green' : 'neutral'}>{stats.live ? 'Live' : 'Offline'}</Badge>}/>
 
   if (!connected) return <>{header}<Card>{runtime.deviceAuth
     ? <div className="p-5"><div className="text-xs text-muted">Enter this code in the Twitch page opened in your browser</div><div className="mt-2 font-mono text-2xl font-semibold tracking-[.16em]">{runtime.deviceAuth.code}</div><Button className="mt-3" onClick={() => openUrl(runtime.deviceAuth!.url)}><ExternalLink size={14}/>Open Twitch activation</Button></div>
