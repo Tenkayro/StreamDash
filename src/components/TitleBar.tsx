@@ -45,8 +45,8 @@ function UpdateControl() {
 
 export function TitleBar() {
   const window = isTauri() ? getCurrentWindow() : null
-  const [version, setVersion] = useState('')
-  useEffect(() => { if (isTauri()) void getVersion().then(setVersion) }, [])
+  const [version, setVersion] = useState(import.meta.env.DEV ? 'DEV' : '')
+  useEffect(() => { if (!import.meta.env.DEV && isTauri()) void getVersion().then(setVersion) }, [])
 
   return <div data-tauri-drag-region className="drag-region flex h-9 shrink-0 items-center justify-between border-b border-line bg-[#0f1014] pl-4 text-[11px] text-muted">
     <div data-tauri-drag-region className="flex items-center gap-2">
