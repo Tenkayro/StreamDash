@@ -3,16 +3,14 @@ import { twitchNative } from '../native'
 import { normalizeTwitch } from './events'
 
 export const TWITCH_SCOPES = ['moderator:read:followers', 'channel:read:subscriptions', 'bits:read', 'channel:read:redemptions']
-export const twitchClientId = import.meta.env.VITE_TWITCH_CLIENT_ID?.trim() || ''
-
 type EventSubEnvelope = { metadata: { message_id: string; message_type: string; message_timestamp: string }; payload: { session?: { id: string; keepalive_timeout_seconds?: number; reconnect_url?: string }; subscription?: { type: string }; event?: Record<string, unknown> } }
 
-export async function loadTwitchSnapshot(session: TwitchSession): Promise<Partial<DashboardStats>> {
+export async function loadTwitchSnapshot(clientId: string, session: TwitchSession): Promise<Partial<DashboardStats>> {
   const [followers, subscriptions, stream, channel] = await Promise.all([
-    twitchNative.helix<{ total: number }>(twitchClientId, 'channels/followers', [['broadcaster_id', session.userId], ['moderator_id', session.userId]]),
-    twitchNative.helix<{ total: number }>(twitchClientId, 'subscriptions', [['broadcaster_id', session.userId]]),
-    twitchNative.helix<{ data: Array<{ viewer_count: number; started_at: string; title: string; game_name: string }> }>(twitchClientId, 'streams', [['user_id', session.userId]]),
-    twitchNative.helix<{ data: Array<{ title: string; game_name: string }> }>(twitchClientId, 'channels', [['broadcaster_id', session.userId]]),
+    twitchNative.helix<{ total: number }>(clientId, 'channels/followers', [['broadcaster_id', session.userId], ['moderator_id', session.userId]]),
+    twitchNative.helix<{ total: number }>(clientId, 'subscriptions', [['broadcaster_id', session.userId]]),
+    twitchNative.helix<{ data: Array<{ viewer_count: number; started_at: string; title: string; game_name: string }> }>(clientId, 'streams', [['user_id', session.userId]]),
+    twitchNative.helix<{ data: Array<{ title: string; game_name: string }> }>(clientId, 'channels', [['broadcaster_id', session.userId]]),
   ])
   const live = stream.data[0]
   return { followers: followers.total, subscribers: subscriptions.total, viewers: live?.viewer_count ?? 0, live: !!live,
@@ -37,9 +35,10 @@ export class TwitchEventSub {
   private retry = 0
   private watchdog?: number
   private session: TwitchSession
+  private clientId: string
   private onEvent: (event: ActivityEvent) => void
   private onState: (state: 'connected'|'reconnecting'|'error', detail?: string) => void
-  constructor(session: TwitchSession, onEvent: (event: ActivityEvent) => void, onState: (state: 'connected'|'reconnecting'|'error', detail?: string) => void) { this.session = session; this.onEvent = onEvent; this.onState = onState }
+  constructor(clientId: string, session: TwitchSession, onEvent: (event: ActivityEvent) => void, onState: (state: 'connected'|'reconnecting'|'error', detail?: string) => void) { this.clientId = clientId; this.session = session; this.onEvent = onEvent; this.onState = onState }
   start() { this.stopped = false; this.open('wss://eventsub.wss.twitch.tv/ws?keepalive_timeout_seconds=30') }
   stop() { this.stopped = true; window.clearTimeout(this.watchdog); this.socket?.close(); this.socket = undefined }
   private open(url: string, replacement = false) {
@@ -53,7 +52,7 @@ export class TwitchEventSub {
       if (msg.metadata.message_type === 'session_welcome' && msg.payload.session) {
         this.retry = 0; this.onState('connected'); if (replacement) old?.close()
         if (!replacement) {
-          try { for (const [type, version, condition] of subscriptions(this.session.userId)) await twitchNative.subscribe(twitchClientId, { type, version, condition, transport: { method: 'websocket', session_id: msg.payload.session.id } }) }
+          try { for (const [type, version, condition] of subscriptions(this.session.userId)) await twitchNative.subscribe(this.clientId, { type, version, condition, transport: { method: 'websocket', session_id: msg.payload.session.id } }) }
           catch (error) { this.onState('error', String(error)); ws.close() }
         }
       } else if (msg.metadata.message_type === 'session_notification' && msg.payload.subscription && msg.payload.event) {

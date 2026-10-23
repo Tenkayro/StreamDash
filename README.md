@@ -49,7 +49,7 @@ npm install
 Copy-Item .env.example .env
 ```
 
-Edit `.env`:
+The Client ID can be configured after launching StreamDash under **Settings → Twitch**. It is stored in the local SQLite settings database. Alternatively, a build-time default can be placed in `.env`:
 
 ```dotenv
 VITE_TWITCH_CLIENT_ID=the_client_id_from_twitch
@@ -65,9 +65,9 @@ The current Twitch registration flow is documented at [Register Your App](https:
 2. Use a unique name such as `StreamDash YourName`.
 3. Add `http://localhost:1420` as the OAuth Redirect URL. StreamDash's Device Code flow does not redirect to it, but the Twitch registration form requires a redirect URL.
 4. Choose the closest desktop/installed application category shown by the console (the category label may vary by account/console version).
-5. Create the application and copy its **Client ID** into `VITE_TWITCH_CLIENT_ID` in `.env`.
+5. Create the application and copy its **Client ID**. Enter it under **Settings → Twitch** after starting StreamDash. A developer may alternatively place it in `VITE_TWITCH_CLIENT_ID` in `.env` as a build-time default.
 6. Do **not** generate or configure a client secret. The Windows app follows Twitch's recommendation to use the public Device Code flow and refreshes public-client tokens without a secret.
-7. Restart the development server after changing `.env`.
+7. A Client ID saved through Settings is effective immediately; reconnect Twitch afterward. Restart only when changing `.env`.
 
 In StreamDash, open **Connections → Connect Twitch**. The system browser opens Twitch's activation page. Enter the displayed code and authorize the four listed scopes. Tokens are stored under the `StreamDash` service in Windows Credential Manager. Public-client access tokens last roughly four hours; refresh tokens expire after 30 days of inactivity, at which point StreamDash asks you to connect again.
 
@@ -106,6 +106,14 @@ cargo check
 
 ## Production build
 
+To create the German system-wide Windows MSI with one command:
+
+```powershell
+npm run setup
+```
+
+The MSI requests administrator privileges and installs the 64-bit application under `C:\Program Files\StreamDash`. The regular Tauri build also produces the configured MSI:
+
 ```powershell
 npm run tauri build
 ```
@@ -113,8 +121,7 @@ npm run tauri build
 On Windows the configured bundles are written under:
 
 - `src-tauri\target\release\streamdash.exe` — unpackaged executable
-- `src-tauri\target\release\bundle\nsis\` — NSIS installer
-- `src-tauri\target\release\bundle\msi\` — MSI installer
+- `src-tauri\target\release\bundle\msi\StreamDash_1.0.0_x64_de-DE.msi` — German, per-machine MSI installer for `C:\Program Files\StreamDash`
 
 Native notifications identify correctly only for an installed build. The development build may show a PowerShell/terminal identity in Windows notifications.
 
@@ -136,7 +143,7 @@ StreamElements graceful reconnect tokens restore subscriptions on the replacemen
 
 ## Troubleshooting
 
-- **Connect Twitch says the Client ID is missing:** create `.env`, set `VITE_TWITCH_CLIENT_ID`, and restart `npm run tauri dev`.
+- **Connect Twitch says the Client ID is missing:** open Settings → Twitch, enter the Client ID, save it, and reconnect Twitch.
 - **Twitch statistics are unavailable:** disconnect and connect again so the currently configured scopes are granted. Confirm you authenticated as the broadcaster.
 - **Twitch authorization expires:** public-client refresh tokens expire after 30 days of inactivity; reconnect from the Connections page.
 - **StreamElements connects but no events arrive:** recopy the JWT after switching to the correct linked channel. The token is account-specific.

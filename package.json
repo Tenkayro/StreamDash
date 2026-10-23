@@ -9,6 +9,7 @@
     "lint": "oxlint src",
     "preview": "vite preview",
     "tauri": "tauri",
+    "setup": "tauri build --bundles msi",
     "check": "tsc -b --pretty false && oxlint src"
   },
   "dependencies": {

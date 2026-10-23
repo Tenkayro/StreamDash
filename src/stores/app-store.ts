@@ -2,6 +2,7 @@ import { create } from 'zustand'
 import type { ActivityEvent, AppSettings, ConnectionState, DashboardStats } from '../types'
 
 export const defaultSettings: AppSettings = {
+  twitchClientId: import.meta.env.VITE_TWITCH_CLIENT_ID?.trim() || '',
   launchAtStartup: false, minimizeToTray: true, compactFeed: false, animations: true,
   notifications: true, notifyDonations: true, notifyRaids: true, notifyGiftSubs: true,
   maximumEvents: 5000, disabledEventTypes: [], goals: {},

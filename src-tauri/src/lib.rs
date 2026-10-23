@@ -226,6 +226,10 @@ async fn twitch_session(client_id: String) -> Result<Option<TwitchSession>, Stri
         .bearer_auth(&tokens.access_token).send().await.map_err(|e| e.to_string())?;
     if response.status().as_u16() == 401 { delete_secret_value("twitch-oauth")?; return Ok(None); }
     let value: Value = response.json().await.map_err(|e| e.to_string())?;
+    if value["client_id"].as_str() != Some(client_id.as_str()) {
+        delete_secret_value("twitch-oauth")?;
+        return Ok(None);
+    }
     Ok(Some(TwitchSession {
         user_id: value["user_id"].as_str().unwrap_or_default().to_string(), login: value["login"].as_str().unwrap_or_default().to_string(),
         scopes: value["scopes"].as_array().map(|v| v.iter().filter_map(|s| s.as_str().map(str::to_string)).collect()).unwrap_or_default(),

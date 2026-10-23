@@ -6,7 +6,7 @@ import { toast } from 'sonner'
 import { useAppStore } from '../stores/app-store'
 import { errorMessage, isTauri, money } from '../lib/utils'
 import { loadEvents, loadSettings, saveEvent, secretDelete, secretGet, secretSet, twitchNative } from './native'
-import { loadTwitchSnapshot, TwitchEventSub, twitchClientId, TWITCH_SCOPES } from './twitch/client'
+import { loadTwitchSnapshot, TwitchEventSub, TWITCH_SCOPES } from './twitch/client'
 import { StreamElementsClient } from './streamelements/client'
 import type { ActivityEvent } from '../types'
 import { RuntimeContext, type DeviceAuth } from './runtime-context'
@@ -32,13 +32,14 @@ export function RuntimeProvider({ children }: { children: ReactNode }) {
   }, [state])
 
   const startTwitch = useCallback(async () => {
-    if (!twitchClientId || !isTauri()) return
+    const clientId = state().settings.twitchClientId.trim()
+    if (!clientId || !isTauri()) { state().setTwitch({ phase: 'disconnected', detail: clientId ? undefined : 'Client ID nicht eingerichtet' }); return }
     try {
-      const session = await twitchNative.session(twitchClientId)
+      const session = await twitchNative.session(clientId)
       if (!session) { state().setTwitch({ phase: 'disconnected' }); return }
       twitchRef.current?.stop(); state().setTwitch({ phase: 'connecting', account: session.login })
-      try { state().setStats(await loadTwitchSnapshot(session)) } catch (error) { toast.error('Some Twitch statistics are unavailable', { description: errorMessage(error) }) }
-      twitchRef.current = new TwitchEventSub(session, ingest, (phase, detail) => state().setTwitch({ phase, account: session.login, detail }))
+      try { state().setStats(await loadTwitchSnapshot(clientId, session)) } catch (error) { toast.error('Some Twitch statistics are unavailable', { description: errorMessage(error) }) }
+      twitchRef.current = new TwitchEventSub(clientId, session, ingest, (phase, detail) => state().setTwitch({ phase, account: session.login, detail }))
       twitchRef.current.start()
     } catch (error) { state().setTwitch({ phase: 'expired', detail: errorMessage(error) }) }
   }, [ingest, state])
@@ -68,17 +69,18 @@ export function RuntimeProvider({ children }: { children: ReactNode }) {
   }, [reconnect, setEvents, setReady, setSettings, state])
 
   const connectTwitch = async () => {
-    if (!twitchClientId) { toast.error('Twitch Client ID is not configured', { description: 'Create .env from .env.example, then restart StreamDash.' }); return }
+    const clientId = state().settings.twitchClientId.trim()
+    if (!clientId) { state().setPage('settings'); toast.error('Twitch Client ID ist nicht eingerichtet', { description: 'Trage sie unter Einstellungen → Twitch ein.' }); return }
     try {
       state().setTwitch({ phase: 'connecting', detail: 'Waiting for authorization' })
-      const device = await twitchNative.deviceStart(twitchClientId, TWITCH_SCOPES)
+      const device = await twitchNative.deviceStart(clientId, TWITCH_SCOPES)
       setDeviceAuth({ code: device.user_code, url: device.verification_uri, expiresAt: Date.now() + device.expires_in * 1000 })
       await openUrl(device.verification_uri)
       let interval = Math.max(device.interval, 1) * 1000
       const expiresAt = Date.now() + device.expires_in * 1000
       while (Date.now() < expiresAt) {
         await new Promise((r) => setTimeout(r, interval))
-        const result = await twitchNative.devicePoll(twitchClientId, device.device_code, TWITCH_SCOPES)
+        const result = await twitchNative.devicePoll(clientId, device.device_code, TWITCH_SCOPES)
         if (result.status === 'authorized') { setDeviceAuth(undefined); toast.success('Twitch connected'); await startTwitch(); return }
         if (result.status === 'slow_down') interval += 5000
       }

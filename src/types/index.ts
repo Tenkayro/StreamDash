@@ -35,6 +35,7 @@ export interface DashboardStats {
 }
 
 export interface AppSettings {
+  twitchClientId: string
   launchAtStartup: boolean
   minimizeToTray: boolean
   compactFeed: boolean
