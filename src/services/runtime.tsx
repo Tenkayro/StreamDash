@@ -47,7 +47,8 @@ export function RuntimeProvider({ children }: { children: ReactNode }) {
         (message) => state().pushChatMessage(message),
         (phase, detail) => state().setChat({ phase, detail }),
         (id) => state().removeChatMessage(id),
-        (login) => state().clearChat(login))
+        (login) => state().clearChat(login),
+        (emotes) => state().setChatEmotes(emotes))
       chatRef.current.start()
     } catch (error) { chatRef.current?.stop(); state().setChat({ phase: 'error', detail: errorMessage(error) }); state().setTwitch({ phase: 'expired', detail: errorMessage(error) }) }
   }, [ingest, state])
@@ -95,7 +96,7 @@ export function RuntimeProvider({ children }: { children: ReactNode }) {
       throw new Error('The Twitch authorization code expired')
     } catch (error) { setDeviceAuth(undefined); state().setTwitch({ phase: 'error', detail: errorMessage(error) }); toast.error('Could not connect Twitch', { description: errorMessage(error) }) }
   }
-  const disconnectTwitch = async () => { twitchRef.current?.stop(); chatRef.current?.stop(); state().setChat({ phase: 'disconnected' }); await secretDelete('twitch-oauth'); state().setTwitch({ phase: 'disconnected' }); state().setStats({ followers: undefined, subscribers: undefined, viewers: undefined, live: false, startedAt: undefined }) }
+  const disconnectTwitch = async () => { twitchRef.current?.stop(); chatRef.current?.stop(); state().setChat({ phase: 'disconnected' }); state().setChatEmotes([]); await secretDelete('twitch-oauth'); state().setTwitch({ phase: 'disconnected' }); state().setStats({ followers: undefined, subscribers: undefined, viewers: undefined, live: false, startedAt: undefined }) }
   const connectStreamElements = async (token: string) => { if (!token.trim()) return; await secretSet('streamelements-token', token.trim()); await startStreamElements() }
   const disconnectStreamElements = async () => { seRef.current?.stop(); await secretDelete('streamelements-token'); state().setStreamElements({ phase: 'disconnected' }) }
   const sendChatMessage = async (text: string) => {

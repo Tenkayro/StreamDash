@@ -51,6 +51,13 @@ export interface AppSettings {
   accentColor: AccentColor
   sidebarCollapsed: boolean
   dashboardWidgets: DashboardWidgetId[]
+  chatTimestamps: boolean
+  chatBadges: boolean
+  chatHighlightMentions: boolean
+  chatHighlightWords: string[]
+  chatFontSize: number
+  chatEmoteSize: number
+  maximumChatMessages: number
   notifications: boolean
   notifyDonations: boolean
   notifyRaids: boolean
@@ -63,6 +70,7 @@ export interface AppSettings {
 export interface TwitchSession { userId: string; login: string; scopes: string[]; expiresIn: number }
 
 export interface ChatBadge { id: string; version: string; url?: string }
+export interface ChatEmote { name: string; url: string; zeroWidth: boolean; source: '7tv' | 'twitch' }
 export type ChatPart = { type: 'text'; text: string } | { type: 'emote'; layers: Array<{ name: string; url: string }> }
 export interface ChatMessage {
   id: string
@@ -73,4 +81,7 @@ export interface ChatMessage {
   timestamp: number
   text: string
   parts: ChatPart[]
+  firstMessage?: boolean
+  action?: boolean
+  reply?: { displayName: string; body: string }
 }

@@ -24,7 +24,7 @@
       }
     ],
     "security": {
-      "csp": "default-src 'self'; connect-src 'self' ipc: http://ipc.localhost https://id.twitch.tv https://api.twitch.tv https://7tv.io wss://eventsub.wss.twitch.tv wss://astro.streamelements.com; img-src 'self' asset: https://static-cdn.jtvnw.net https://cdn.7tv.app data:; style-src 'self' 'unsafe-inline'; script-src 'self'"
+      "csp": "default-src 'self'; connect-src 'self' ipc: http://ipc.localhost https://id.twitch.tv https://api.twitch.tv https://7tv.io https://api.7tv.app wss://eventsub.wss.twitch.tv wss://astro.streamelements.com; img-src 'self' asset: https://static-cdn.jtvnw.net https://cdn.7tv.app data:; style-src 'self' 'unsafe-inline'; script-src 'self'"
     }
   },
   "bundle": {

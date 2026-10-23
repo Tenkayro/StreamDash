@@ -1,12 +1,11 @@
 import { listen, type UnlistenFn } from '@tauri-apps/api/event'
 import { twitchNative } from '../native'
-import type { ChatBadge, ChatMessage, ChatPart, ConnectionPhase } from '../../types'
+import type { ChatBadge, ChatEmote, ChatMessage, ChatPart, ConnectionPhase } from '../../types'
 
 const TV_BASE = 'https://7tv.io/v3'
 const TWITCH_EMOTE = (id: string) => `https://static-cdn.jtvnw.net/emoticons/v2/${id}/default/dark/2.0`
 const USER_COLORS = ['#ff7f7f', '#ffbf7f', '#ffdf7f', '#ffff7f', '#bfff7f', '#7fff7f', '#7fffbf', '#7fffff', '#7fbfff', '#7f7fff', '#bf7fff', '#ff7fff', '#ff7fbf']
 
-export interface ChatEmote { name: string; url: string; zeroWidth: boolean }
 export type ChatEmoteMap = Map<string, ChatEmote>
 
 interface SevenTvFile { name: string; format: string; width: number }
@@ -20,25 +19,37 @@ function selectEmoteFile(files: SevenTvFile[]) {
   return files.find((file) => file.format === 'WEBP' && file.width >= 64) ?? files.find((file) => file.format === 'WEBP') ?? files[0]
 }
 
-async function fetchEmoteSet(url: string, kind: 'set' | 'user'): Promise<ChatEmote[]> {
-  const response = await fetch(url)
-  if (!response.ok) throw new Error(`7TV request failed with ${response.status}`)
-  const payload = await response.json() as { emotes?: SevenTvActiveEmote[]; emote_set?: { emotes?: SevenTvActiveEmote[] } }
-  const emotes = kind === 'set' ? payload.emotes : payload.emote_set?.emotes
-  return (emotes ?? []).flatMap((active) => {
+function parseSevenTvEmotes(emotes: SevenTvActiveEmote[] = []): ChatEmote[] {
+  return emotes.flatMap((active) => {
     const data = active.data
     const host = data?.host
     if (!host?.url || data?.listed === false || ((data?.flags ?? 0) & (1 << 24))) return []
     const file = selectEmoteFile(host.files ?? [])
     if (!file) return []
-    return [{ name: active.name, url: `https:${host.url}/${file.name}`, zeroWidth: (active.flags & 1) === 1 }]
+    return [{ name: active.name, url: `https:${host.url}/${file.name}`, zeroWidth: (active.flags & 1) === 1, source: '7tv' as const }]
   })
+}
+
+async function fetchSevenTvSet(url: string): Promise<ChatEmote[]> {
+  const response = await fetch(url)
+  if (!response.ok) throw new Error(`7TV request failed with ${response.status}`)
+  const payload = await response.json() as { emotes?: SevenTvActiveEmote[] }
+  return parseSevenTvEmotes(payload.emotes)
+}
+
+async function fetchSevenTvChannel(channelId: string): Promise<ChatEmote[]> {
+  const response = await fetch(`${TV_BASE}/users/twitch/${channelId}`)
+  if (response.status === 404) return []
+  if (!response.ok) throw new Error(`7TV channel request failed with ${response.status}`)
+  const payload = await response.json() as { emote_set?: { emotes?: SevenTvActiveEmote[] }; emote_set_id?: string }
+  if (payload.emote_set?.emotes) return parseSevenTvEmotes(payload.emote_set.emotes)
+  return payload.emote_set_id ? fetchSevenTvSet(`${TV_BASE}/emote-sets/${payload.emote_set_id}`) : []
 }
 
 export async function loadSevenTvEmotes(channelId?: string): Promise<ChatEmoteMap> {
   const [global, channel] = await Promise.allSettled([
-    fetchEmoteSet(`${TV_BASE}/emote-sets/global`, 'set'),
-    channelId ? fetchEmoteSet(`${TV_BASE}/users/twitch/${channelId}`, 'user') : Promise.resolve<ChatEmote[]>([]),
+    fetchSevenTvSet(`${TV_BASE}/emote-sets/global`),
+    channelId ? fetchSevenTvChannel(channelId) : Promise.resolve<ChatEmote[]>([]),
   ])
   const map: ChatEmoteMap = new Map()
   for (const emote of global.status === 'fulfilled' ? global.value : []) map.set(emote.name, emote)
@@ -46,9 +57,26 @@ export async function loadSevenTvEmotes(channelId?: string): Promise<ChatEmoteMa
   return map
 }
 
+interface HelixEmote { name?: string; images?: { url_1x?: string; url_2x?: string; url_4x?: string } }
+async function loadTwitchEmotes(clientId: string, channelId: string): Promise<ChatEmoteMap> {
+  const results = await Promise.allSettled([
+    twitchNative.helix<{ data?: HelixEmote[] }>(clientId, 'chat/emotes/global'),
+    twitchNative.helix<{ data?: HelixEmote[] }>(clientId, 'chat/emotes', [['broadcaster_id', channelId]]),
+  ])
+  const map: ChatEmoteMap = new Map()
+  for (const result of results) {
+    if (result.status !== 'fulfilled') continue
+    for (const emote of result.value.data ?? []) {
+      const url = emote.images?.url_2x || emote.images?.url_1x || emote.images?.url_4x
+      if (emote.name && url) map.set(emote.name, { name: emote.name, url, zeroWidth: false, source: 'twitch' })
+    }
+  }
+  return map
+}
+
 function withTimeout<T>(promise: Promise<T>, ms: number): Promise<T> {
   let timer = 0
-  const timeout = new Promise<T>((_, reject) => { timer = window.setTimeout(() => reject(new Error('7TV request timed out')), ms) })
+  const timeout = new Promise<T>((_, reject) => { timer = window.setTimeout(() => reject(new Error('Chat resource request timed out')), ms) })
   return Promise.race([promise, timeout]).finally(() => window.clearTimeout(timer))
 }
 
@@ -183,11 +211,12 @@ export class TwitchChatClient {
   private onPhase: (phase: ConnectionPhase, detail?: string) => void
   private onDelete: (id: string) => void
   private onClear: (login?: string) => void
+  private onEmotes: (emotes: ChatEmote[]) => void
 
   constructor(
     clientId: string, login: string, channelId: string | undefined,
     onMessage: (message: ChatMessage) => void, onPhase: (phase: ConnectionPhase, detail?: string) => void,
-    onDelete: (id: string) => void, onClear: (login?: string) => void,
+    onDelete: (id: string) => void, onClear: (login?: string) => void, onEmotes: (emotes: ChatEmote[]) => void,
   ) {
     this.clientId = clientId
     this.login = login
@@ -196,6 +225,7 @@ export class TwitchChatClient {
     this.onPhase = onPhase
     this.onDelete = onDelete
     this.onClear = onClear
+    this.onEmotes = onEmotes
   }
 
   start() { this.stopped = false; void this.prepare() }
@@ -224,12 +254,15 @@ export class TwitchChatClient {
 
   private async prepare() {
     this.onPhase('connecting')
-    const [emotes, badges] = await Promise.allSettled([
+    const [sevenTv, twitchEmotes, badges] = await Promise.allSettled([
       withTimeout(loadSevenTvEmotes(this.channelId), 6000),
+      this.channelId ? withTimeout(loadTwitchEmotes(this.clientId, this.channelId), 6000) : Promise.resolve(new Map<string, ChatEmote>()),
       this.channelId ? withTimeout(loadTwitchBadges(this.clientId, this.channelId), 6000) : Promise.resolve(new Map<string, string>()),
     ])
-    this.emotes = emotes.status === 'fulfilled' ? emotes.value : new Map()
+    this.emotes = twitchEmotes.status === 'fulfilled' ? twitchEmotes.value : new Map()
+    if (sevenTv.status === 'fulfilled') for (const [name, emote] of sevenTv.value) this.emotes.set(name, emote)
     this.badges = badges.status === 'fulfilled' ? badges.value : new Map()
+    this.onEmotes([...this.emotes.values()].sort((left, right) => left.name.localeCompare(right.name)))
     if (this.stopped) return
     this.unlisten = await Promise.all([
       listen<{ session: string; line: string }>('twitch-chat-line', ({ payload }) => {
@@ -288,7 +321,9 @@ export class TwitchChatClient {
       return
     }
     if (line.command !== 'PRIVMSG') return
-    const text = line.params[1] ?? ''
+    const rawText = line.params[1] ?? ''
+    const action = rawText.startsWith('\u0001ACTION ') && rawText.endsWith('\u0001')
+    const text = action ? rawText.slice(8, -1) : rawText
     const login = (line.tags.login || line.prefix?.split('!')[0] || 'unknown').toLowerCase()
     const timestamp = Number(line.tags['tmi-sent-ts'] ?? '') || Date.now()
     this.onMessage({
@@ -299,7 +334,10 @@ export class TwitchChatClient {
       badges: parseBadges(line.tags.badges, this.badges),
       timestamp,
       text,
-      parts: buildChatParts(text, line.tags.emotes, this.emotes),
+      parts: buildChatParts(text, action ? undefined : line.tags.emotes, this.emotes),
+      action,
+      firstMessage: line.tags['first-msg'] === '1',
+      reply: line.tags['reply-parent-display-name'] ? { displayName: line.tags['reply-parent-display-name'], body: line.tags['reply-parent-msg-body'] || '' } : undefined,
     })
   }
 }
