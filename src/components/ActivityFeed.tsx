@@ -36,12 +36,14 @@ export function ActivityFeed({
   compact = false,
   emptyTitle = "No activity yet",
   emptyBody,
+  onUser,
 }: {
   events: ActivityEvent[];
   limit?: number;
   compact?: boolean;
   emptyTitle?: string;
   emptyBody?: string;
+  onUser?: (login: string) => void;
 }) {
   const shown = limit ? events.slice(0, limit) : events;
   if (!shown.length)
@@ -64,10 +66,26 @@ export function ActivityFeed({
         else if (event.giftCount) detail = `${event.giftCount} gifted subs`;
         else if (event.viewerCount)
           detail = `${event.viewerCount.toLocaleString("en-US")} viewers`;
+        const canOpenUser = Boolean(event.username && onUser);
         return (
           <div
             key={event.id}
-            className={`event-enter flex gap-3 border-b border-line/70 px-4 ${compact ? "py-2.5" : "py-3.5"} last:border-0`}
+            role={canOpenUser ? "button" : undefined}
+            tabIndex={canOpenUser ? 0 : undefined}
+            title={canOpenUser ? `Open ${who}'s user card` : undefined}
+            onClick={() => {
+              if (event.username) onUser?.(event.username);
+            }}
+            onKeyDown={(keyboardEvent) => {
+              if (
+                event.username &&
+                (keyboardEvent.key === "Enter" || keyboardEvent.key === " ")
+              ) {
+                keyboardEvent.preventDefault();
+                onUser?.(event.username);
+              }
+            }}
+            className={`event-enter flex gap-3 border-b border-line/70 px-4 transition-colors ${compact ? "py-2.5" : "py-3.5"} ${canOpenUser ? "cursor-pointer outline-none hover:bg-white/[.025] focus-visible:bg-accent-soft" : ""} last:border-0`}
           >
             <div
               className={`mt-0.5 grid size-8 shrink-0 place-items-center rounded-lg ${color}`}

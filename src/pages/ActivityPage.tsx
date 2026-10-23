@@ -8,15 +8,17 @@ import {
 } from "lucide-react";
 import { useMemo, useState } from "react";
 import { ActivityFeed } from "../components/ActivityFeed";
+import { UserCard } from "../components/chat/UserCard";
 import { Button, Card, PageHeader } from "../components/ui";
 import { useAppStore } from "../stores/app-store";
 import { clearEvents as clearNativeEvents } from "../services/native";
 import type { ActivitySource, ActivityType } from "../types";
 export function ActivityPage() {
-  const { events, settings, clearEvents } = useAppStore();
+  const { events, chatMessages, settings, twitch, clearEvents } = useAppStore();
   const [search, setSearch] = useState("");
   const [type, setType] = useState<ActivityType | "all">("all");
   const [source, setSource] = useState<ActivitySource | "all">("all");
+  const [selectedUser, setSelectedUser] = useState<string>();
   const filtered = useMemo(
     () =>
       events.filter(
@@ -136,6 +138,9 @@ export function ActivityPage() {
           <ActivityFeed
             events={filtered}
             compact={settings.compactFeed}
+            onUser={
+              twitch.phase === "connected" ? setSelectedUser : undefined
+            }
             emptyTitle={events.length ? "No matching activity" : "No activity yet"}
             emptyBody={
               events.length
@@ -145,6 +150,13 @@ export function ActivityPage() {
           />
         </div>
       </Card>
+      {selectedUser && (
+        <UserCard
+          login={selectedUser}
+          messages={chatMessages}
+          onClose={() => setSelectedUser(undefined)}
+        />
+      )}
     </>
   );
 }

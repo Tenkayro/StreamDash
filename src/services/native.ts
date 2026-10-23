@@ -77,6 +77,12 @@ export const twitchNative = {
     query: [string, string][],
     body: Record<string, unknown>,
   ) => invoke<T>("twitch_helix_post", { clientId, path, query, body }),
+  helixPut: <T>(
+    clientId: string,
+    path: string,
+    query: [string, string][],
+    body: Record<string, unknown>,
+  ) => invoke<T>("twitch_helix_put", { clientId, path, query, body }),
   helixDelete: <T>(clientId: string, path: string, query: [string, string][]) =>
     invoke<T>("twitch_helix_delete", { clientId, path, query }),
   chatStart: (

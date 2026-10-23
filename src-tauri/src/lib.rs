@@ -619,6 +619,44 @@ async fn twitch_helix_post(
 }
 
 #[tauri::command]
+async fn twitch_helix_put(
+    client_id: String,
+    path: String,
+    query: Vec<(String, String)>,
+    body: Value,
+) -> Result<Value, String> {
+    if path.contains("..") || path.contains("://") {
+        return Err("Invalid Helix path".into());
+    }
+    let tokens = valid_tokens(&client_id).await?;
+    let url = format!(
+        "https://api.twitch.tv/helix/{}",
+        path.trim_start_matches('/')
+    );
+    let response = http()
+        .put(url)
+        .query(&query)
+        .header("Client-Id", client_id)
+        .bearer_auth(tokens.access_token)
+        .json(&body)
+        .send()
+        .await
+        .map_err(|e| e.to_string())?;
+    let status = response.status();
+    if status.as_u16() == 204 {
+        return Ok(json!({}));
+    }
+    let body: Value = response.json().await.map_err(|e| e.to_string())?;
+    if !status.is_success() {
+        return Err(body["message"]
+            .as_str()
+            .unwrap_or("Twitch API request failed")
+            .to_string());
+    }
+    Ok(body)
+}
+
+#[tauri::command]
 async fn twitch_helix_delete(
     client_id: String,
     path: String,
@@ -914,6 +952,7 @@ pub fn run() {
             twitch_helix_get,
             twitch_helix_patch,
             twitch_helix_post,
+            twitch_helix_put,
             twitch_helix_delete,
             twitch_eventsub_create,
             twitch_chat_start,

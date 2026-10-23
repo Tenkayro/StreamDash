@@ -48,7 +48,7 @@ export function UserCard({
   login: string;
   messages: ChatMessage[];
   onClose: () => void;
-  onMention: (name: string) => void;
+  onMention?: (name: string) => void;
 }) {
   const runtime = useRuntime();
   const { settings, setSettings, twitch } = useAppStore();
@@ -371,16 +371,20 @@ export function UserCard({
               />
               Ignore highlights
             </label>
-            <button
-              className="text-accent hover:brightness-125"
-              onClick={() => {
-                onMention(profile?.displayName || login);
-                onClose();
-              }}
-            >
-              Mention
-            </button>
-            <span className="h-4 w-px bg-line" />
+            {onMention && (
+              <>
+                <button
+                  className="text-accent hover:brightness-125"
+                  onClick={() => {
+                    onMention(profile?.displayName || login);
+                    onClose();
+                  }}
+                >
+                  Mention
+                </button>
+                <span className="h-4 w-px bg-line" />
+              </>
+            )}
             <button
               disabled={!canManageVips || isSelf || Boolean(busy)}
               onClick={() => void changeRole("vip", !profile?.vip)}

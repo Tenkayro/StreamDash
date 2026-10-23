@@ -5,6 +5,7 @@ import {
   MessageSquare,
   Search,
   Send,
+  Shield,
   Trash2,
   X,
 } from "lucide-react";
@@ -13,6 +14,7 @@ import { toast } from "sonner";
 import { Badge, Button, Card, EmptyState, PageHeader } from "../components/ui";
 import { UserCard } from "../components/chat/UserCard";
 import { errorMessage, isTauri } from "../lib/utils";
+import { twitchNative } from "../services/native";
 import { useRuntime } from "../services/runtime-context";
 import { useAppStore } from "../stores/app-store";
 import type {
@@ -251,12 +253,22 @@ export function ChatPage() {
   const [history, setHistory] = useState<string[]>([]);
   const [historyIndex, setHistoryIndex] = useState(-1);
   const [selectedUser, setSelectedUser] = useState<string>();
+  const [shield, setShield] = useState<{
+    account?: string;
+    active: boolean;
+  }>();
+  const [shieldBusy, setShieldBusy] = useState(false);
   const missingScope = Boolean(
     twitch.phase === "connected" &&
     !["chat:read", "chat:edit"].every((scope) =>
       twitch.scopes?.includes(scope),
     ),
   );
+  const canManageShield = Boolean(
+    twitch.scopes?.includes("moderator:manage:shield_mode"),
+  );
+  const shieldActive =
+    shield && shield.account === twitch.account ? shield.active : undefined;
   const users = useMemo(
     () =>
       [
@@ -290,6 +302,37 @@ export function ChatPage() {
   useEffect(() => {
     inputRef.current?.focus();
   }, []);
+  useEffect(() => {
+    if (
+      twitch.phase !== "connected" ||
+      !twitch.userId ||
+      !canManageShield
+    )
+      return;
+    let active = true;
+    void twitchNative
+      .helix<{ data?: Array<{ is_active?: boolean }> }>(
+        settings.twitchClientId.trim(),
+        "moderation/shield_mode",
+        [
+          ["broadcaster_id", twitch.userId],
+          ["moderator_id", twitch.userId],
+        ],
+      )
+      .then((response) => {
+        if (active)
+          setShield({
+            account: twitch.account,
+            active: Boolean(response.data?.[0]?.is_active),
+          });
+      })
+      .catch(() => {
+        /* The action itself still reports useful API errors when used. */
+      });
+    return () => {
+      active = false;
+    };
+  }, [canManageShield, settings.twitchClientId, twitch]);
   useEffect(() => {
     const added = Math.max(0, chatMessages.length - previousCount.current);
     previousCount.current = chatMessages.length;
@@ -401,12 +444,65 @@ export function ChatPage() {
     }
   };
 
+  const toggleShield = async () => {
+    if (!canManageShield) {
+      setPage("connections");
+      return;
+    }
+    if (!twitch.userId || shieldActive == null || shieldBusy) return;
+    const next = !shieldActive;
+    setShieldBusy(true);
+    try {
+      const response = await twitchNative.helixPut<{
+        data?: Array<{ is_active?: boolean }>;
+      }>(
+        settings.twitchClientId.trim(),
+        "moderation/shield_mode",
+        [
+          ["broadcaster_id", twitch.userId],
+          ["moderator_id", twitch.userId],
+        ],
+        { is_active: next },
+      );
+      const active = response.data?.[0]?.is_active ?? next;
+      setShield({ account: twitch.account, active });
+      toast.success(active ? "Shield Mode enabled" : "Shield Mode disabled");
+    } catch (error) {
+      toast.error("Shield Mode could not be changed", {
+        description: errorMessage(error),
+      });
+    } finally {
+      setShieldBusy(false);
+    }
+  };
+
   const header = (
     <PageHeader
       title="Chat"
       actions={
         <div className="flex items-center gap-1.5">
           <Badge tone={tone(chat.phase)}>{chat.phase}</Badge>
+          {twitch.phase === "connected" && (
+            <Button
+              variant={shieldActive ? "danger" : "ghost"}
+              title={
+                canManageShield
+                  ? shieldActive
+                    ? "Disable Twitch Shield Mode"
+                    : "Enable Twitch Shield Mode"
+                  : "Reconnect Twitch to enable Shield Mode control"
+              }
+              onClick={() => void toggleShield()}
+              disabled={shieldBusy || (canManageShield && shieldActive == null)}
+            >
+              {shieldBusy || (canManageShield && shieldActive == null) ? (
+                <LoaderCircle size={14} className="animate-spin" />
+              ) : (
+                <Shield size={14} />
+              )}
+              {shieldActive ? "Shield on" : "Shield"}
+            </Button>
+          )}
           <Button
             variant={searchOpen ? "primary" : "ghost"}
             onClick={() => setSearchOpen((open) => !open)}

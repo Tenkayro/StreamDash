@@ -1,5 +1,6 @@
 import {
   ExternalLink,
+  Flag,
   Gamepad2,
   Languages,
   LoaderCircle,
@@ -104,6 +105,7 @@ export function StreamPage() {
   const missingScope = connected && !twitch.scopes?.includes(MANAGE_SCOPE);
 
   const [saving, setSaving] = useState(false);
+  const [marking, setMarking] = useState(false);
   const [title, setTitle] = useState("");
   const [category, setCategory] = useState<Category>();
   const [language, setLanguage] = useState("en");
@@ -218,17 +220,61 @@ export function StreamPage() {
     }
   };
 
+  const markStream = async () => {
+    if (!connected || !userId || !stats.live || marking) return;
+    setMarking(true);
+    try {
+      const result = await twitchNative.helixPost<{
+        data?: Array<{ position_seconds?: number }>;
+      }>(clientId, "streams/markers", [], { user_id: userId });
+      const position = result.data?.[0]?.position_seconds;
+      toast.success("Stream marker added", {
+        description:
+          position == null
+            ? "The current moment was saved for your highlight workflow."
+            : `Saved at ${Math.floor(position / 60)}:${String(position % 60).padStart(2, "0")}.`,
+      });
+    } catch (error) {
+      toast.error("Could not add stream marker", {
+        description: errorMessage(error),
+      });
+    } finally {
+      setMarking(false);
+    }
+  };
+
   const header = (
     <PageHeader
       title="Stream"
       actions={
-        statsLoading ? (
-          <LoadingIndicator className="h-6 w-14" />
-        ) : (
-          <Badge tone={stats.live ? "green" : "neutral"}>
-            {stats.live ? "Live" : "Offline"}
-          </Badge>
-        )
+        <div className="flex items-center gap-1.5">
+          {connected && (
+            <Button
+              variant="ghost"
+              title={
+                stats.live
+                  ? "Mark this moment for a future highlight"
+                  : "Stream markers are available while live"
+              }
+              disabled={statsLoading || !stats.live || marking || missingScope}
+              onClick={() => void markStream()}
+            >
+              {marking ? (
+                <LoaderCircle size={14} className="animate-spin" />
+              ) : (
+                <Flag size={14} />
+              )}
+              Add marker
+            </Button>
+          )}
+          {statsLoading ? (
+            <LoadingIndicator className="h-6 w-14" />
+          ) : (
+            <Badge tone={stats.live ? "green" : "neutral"}>
+              {stats.live ? "Live" : "Offline"}
+            </Badge>
+          )}
+        </div>
       }
     />
   );
