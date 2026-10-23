@@ -7,13 +7,14 @@ import { useAppStore } from '../stores/app-store'
 import { errorMessage, isTauri, money } from '../lib/utils'
 import { loadEvents, loadSettings, saveEvent, secretDelete, secretGet, secretSet, twitchNative } from './native'
 import { loadTwitchSnapshot, TwitchEventSub, TWITCH_SCOPES } from './twitch/client'
+import { TwitchChatClient } from './twitch/chat'
 import { StreamElementsClient } from './streamelements/client'
 import type { ActivityEvent } from '../types'
 import { RuntimeContext, type DeviceAuth } from './runtime-context'
 
 export function RuntimeProvider({ children }: { children: ReactNode }) {
   const setSettings = useAppStore((s) => s.setSettings); const setEvents = useAppStore((s) => s.setEvents); const setReady = useAppStore((s) => s.setReady); const state = useAppStore.getState
-  const twitchRef = useRef<TwitchEventSub | undefined>(undefined); const seRef = useRef<StreamElementsClient | undefined>(undefined)
+  const twitchRef = useRef<TwitchEventSub | undefined>(undefined); const seRef = useRef<StreamElementsClient | undefined>(undefined); const chatRef = useRef<TwitchChatClient | undefined>(undefined)
   const [deviceAuth, setDeviceAuth] = useState<DeviceAuth>()
 
   const ingest = useCallback(async (event: ActivityEvent) => {
@@ -33,15 +34,22 @@ export function RuntimeProvider({ children }: { children: ReactNode }) {
 
   const startTwitch = useCallback(async () => {
     const clientId = state().settings.twitchClientId.trim()
-    if (!clientId || !isTauri()) { state().setTwitch({ phase: 'disconnected', detail: clientId ? undefined : 'Client ID nicht eingerichtet' }); return }
+    if (!clientId || !isTauri()) { chatRef.current?.stop(); state().setChat({ phase: 'disconnected' }); state().setTwitch({ phase: 'disconnected', detail: clientId ? undefined : 'Client ID nicht eingerichtet' }); return }
     try {
       const session = await twitchNative.session(clientId)
-      if (!session) { state().setTwitch({ phase: 'disconnected' }); return }
+      if (!session) { chatRef.current?.stop(); state().setChat({ phase: 'disconnected' }); state().setTwitch({ phase: 'disconnected' }); return }
       twitchRef.current?.stop(); state().setTwitch({ phase: 'connecting', account: session.login, userId: session.userId, scopes: session.scopes })
       try { state().setStats(await loadTwitchSnapshot(clientId, session)) } catch (error) { toast.error('Some Twitch statistics are unavailable', { description: errorMessage(error) }) }
       twitchRef.current = new TwitchEventSub(clientId, session, ingest, (phase, detail) => state().setTwitch({ phase, account: session.login, userId: session.userId, scopes: session.scopes, detail }))
       twitchRef.current.start()
-    } catch (error) { state().setTwitch({ phase: 'expired', detail: errorMessage(error) }) }
+      chatRef.current?.stop()
+      chatRef.current = new TwitchChatClient(session.login, session.userId,
+        (message) => state().pushChatMessage(message),
+        (phase, detail) => state().setChat({ phase, detail }),
+        (id) => state().removeChatMessage(id),
+        (login) => state().clearChat(login))
+      chatRef.current.start()
+    } catch (error) { chatRef.current?.stop(); state().setChat({ phase: 'error', detail: errorMessage(error) }); state().setTwitch({ phase: 'expired', detail: errorMessage(error) }) }
   }, [ingest, state])
 
   const startStreamElements = useCallback(async () => {
@@ -65,7 +73,7 @@ export function RuntimeProvider({ children }: { children: ReactNode }) {
         unlisten.push(await listen('tray-reconnect', reconnect), await listen('tray-settings', () => state().setPage('settings')))
       }
     })()
-    return () => { disposed = true; unlisten.forEach((f) => f()); twitchRef.current?.stop(); seRef.current?.stop() }
+    return () => { disposed = true; unlisten.forEach((f) => f()); twitchRef.current?.stop(); seRef.current?.stop(); chatRef.current?.stop() }
   }, [reconnect, setEvents, setReady, setSettings, state])
 
   const connectTwitch = async () => {
@@ -87,7 +95,7 @@ export function RuntimeProvider({ children }: { children: ReactNode }) {
       throw new Error('The Twitch authorization code expired')
     } catch (error) { setDeviceAuth(undefined); state().setTwitch({ phase: 'error', detail: errorMessage(error) }); toast.error('Could not connect Twitch', { description: errorMessage(error) }) }
   }
-  const disconnectTwitch = async () => { twitchRef.current?.stop(); await secretDelete('twitch-oauth'); state().setTwitch({ phase: 'disconnected' }); state().setStats({ followers: undefined, subscribers: undefined, viewers: undefined, live: false, startedAt: undefined }) }
+  const disconnectTwitch = async () => { twitchRef.current?.stop(); chatRef.current?.stop(); state().setChat({ phase: 'disconnected' }); await secretDelete('twitch-oauth'); state().setTwitch({ phase: 'disconnected' }); state().setStats({ followers: undefined, subscribers: undefined, viewers: undefined, live: false, startedAt: undefined }) }
   const connectStreamElements = async (token: string) => { if (!token.trim()) return; await secretSet('streamelements-token', token.trim()); await startStreamElements() }
   const disconnectStreamElements = async () => { seRef.current?.stop(); await secretDelete('streamelements-token'); state().setStreamElements({ phase: 'disconnected' }) }
 

@@ -1,5 +1,5 @@
 import { create } from 'zustand'
-import type { ActivityEvent, AppSettings, ConnectionState, DashboardStats } from '../types'
+import type { ActivityEvent, AppSettings, ChatMessage, ConnectionState, DashboardStats } from '../types'
 
 export const defaultSettings: AppSettings = {
   twitchClientId: import.meta.env.VITE_TWITCH_CLIENT_ID?.trim() || '',
@@ -14,6 +14,8 @@ interface AppStore {
   events: ActivityEvent[]; setEvents: (events: ActivityEvent[]) => void; pushEvent: (event: ActivityEvent) => void; clearEvents: () => void
   twitch: ConnectionState; setTwitch: (state: ConnectionState) => void
   streamElements: ConnectionState; setStreamElements: (state: ConnectionState) => void
+  chat: ConnectionState; setChat: (state: ConnectionState) => void
+  chatMessages: ChatMessage[]; pushChatMessage: (message: ChatMessage) => void; removeChatMessage: (id: string) => void; clearChat: (login?: string) => void
   stats: DashboardStats; setStats: (stats: Partial<DashboardStats>) => void
   settings: AppSettings; setSettings: (settings: Partial<AppSettings>) => void
 }
@@ -22,6 +24,10 @@ export const useAppStore = create<AppStore>((set) => ({
   events: [], setEvents: (events) => set({ events }), pushEvent: (event) => set((s) => s.events.some((e) => e.id === event.id) ? s : { events: [event, ...s.events].slice(0, s.settings.maximumEvents) }), clearEvents: () => set({ events: [] }),
   twitch: { phase: 'disconnected' }, setTwitch: (twitch) => set({ twitch }),
   streamElements: { phase: 'disconnected' }, setStreamElements: (streamElements) => set({ streamElements }),
+  chat: { phase: 'disconnected' }, setChat: (chat) => set({ chat }),
+  chatMessages: [], pushChatMessage: (message) => set((s) => s.chatMessages.some((item) => item.id === message.id) ? s : ({ chatMessages: [...s.chatMessages, message].slice(-400) })),
+  removeChatMessage: (id) => set((s) => ({ chatMessages: s.chatMessages.filter((message) => message.id !== id) })),
+  clearChat: (login) => set((s) => ({ chatMessages: login ? s.chatMessages.filter((message) => message.login !== login) : [] })),
   stats: emptyStats, setStats: (stats) => set((s) => ({ stats: { ...s.stats, ...stats } })),
   settings: defaultSettings, setSettings: (settings) => set((s) => ({ settings: { ...s.settings, ...settings } })),
 }))

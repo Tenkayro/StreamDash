@@ -15,7 +15,8 @@ Screenshots will be added after the first signed release.
 - Tailwind CSS 4 and shadcn-style local UI primitives
 - SQLite through `rusqlite`
 - Windows Credential Manager through `keyring`
-- Twitch Helix API and EventSub WebSocket
+- Twitch Helix API, EventSub WebSocket, and IRC-over-WebSocket chat
+- 7TV emote sets (channel and global) and Twitch native emotes
 - StreamElements Astro WebSocket gateway
 
 ## Implemented integrations
@@ -29,6 +30,8 @@ Twitch uses the public-client Device Code Grant. The application requests only:
 - `channel:manage:broadcast`
 
 EventSub handles follows, subscriptions, resub messages, gift subscriptions, cheers, incoming raids, custom channel-point redemptions, and online/offline changes. Helix provides follower/subscriber totals, current viewers, title, category, and stream start time. The **Stream** page uses Helix to write the channel title, game/category, and broadcaster language.
+
+The **Chat** page reads your channel chat anonymously through `wss://irc-ws.chat.twitch.tv` (a `justinfan` nick), so no messages can be sent and no token is shared with chat. It requests `twitch.tv/tags` and `twitch.tv/commands`, renders Twitch badges, colors, native emotes, and deletions/cleanups, and resolves 7TV emotes through the public v3 API (`users/twitch/{id}` plus the global `emote-sets/global` set), including zero-width overlay emotes.
 
 StreamElements connects to `wss://astro.streamelements.com/` and subscribes to the documented `channel.activities` and `channel.tips` topics. Tips are recorded only when their transaction status is `success`.
 
