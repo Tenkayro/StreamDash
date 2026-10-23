@@ -11,6 +11,7 @@
     "preview": "vite preview",
     "tauri": "tauri",
     "setup": "powershell -NoProfile -ExecutionPolicy Bypass -File scripts/build-msi.ps1",
+    "msix": "powershell -NoProfile -ExecutionPolicy Bypass -File scripts/build-msix.ps1",
     "release": "node scripts/release.mjs",
     "check": "tsc -b --pretty false && oxlint src",
     "start": "tauri dev"
