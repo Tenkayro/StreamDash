@@ -11,7 +11,14 @@ import {
 import { useEffect, useState } from "react";
 import { openUrl } from "@tauri-apps/plugin-opener";
 import { toast } from "sonner";
-import { Badge, Button, Card, EmptyState, PageHeader } from "../components/ui";
+import {
+  Badge,
+  Button,
+  Card,
+  EmptyState,
+  PageHeader,
+  Skeleton,
+} from "../components/ui";
 import { errorMessage, isTauri } from "../lib/utils";
 import { twitchNative } from "../services/native";
 import { useRuntime } from "../services/runtime-context";
@@ -88,7 +95,7 @@ function BoxArt({
 }
 
 export function StreamPage() {
-  const { stats, settings, twitch, setStats } = useAppStore();
+  const { stats, statsLoading, settings, twitch, setStats } = useAppStore();
   const runtime = useRuntime();
   const clientId = settings.twitchClientId.trim();
   const connected =
@@ -105,10 +112,10 @@ export function StreamPage() {
     term: "",
     items: [],
   });
-  const [loaded, setLoaded] = useState(false);
+  const [loadedFor, setLoadedFor] = useState<string>();
 
   const userId = twitch.userId;
-  const busyLoading = connected && !loaded;
+  const busyLoading = connected && loadedFor !== userId;
   const term = query.trim();
   const showResults = connected && term.length >= 2;
   const searching = showResults && lookup.term !== term;
@@ -136,7 +143,7 @@ export function StreamPage() {
             description: errorMessage(error),
           });
       } finally {
-        if (!cancelled) setLoaded(true);
+        if (!cancelled) setLoadedFor(userId);
       }
     })();
     return () => {
@@ -215,9 +222,13 @@ export function StreamPage() {
     <PageHeader
       title="Stream"
       actions={
-        <Badge tone={stats.live ? "green" : "neutral"}>
-          {stats.live ? "Live" : "Offline"}
-        </Badge>
+        statsLoading ? (
+          <Skeleton className="h-6 w-14 rounded-md" />
+        ) : (
+          <Badge tone={stats.live ? "green" : "neutral"}>
+            {stats.live ? "Live" : "Offline"}
+          </Badge>
+        )
       }
     />
   );
@@ -303,19 +314,25 @@ export function StreamPage() {
             results.
           </p>
           <div className="relative mt-3">
-            <input
-              id="stream-title"
-              className="input pr-16"
-              maxLength={140}
-              autoComplete="off"
-              placeholder="What are you streaming today?"
-              value={title}
-              disabled={busyLoading || missingScope}
-              onChange={(event) => setTitle(event.target.value)}
-            />
-            <span className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-[11px] tabular-nums text-zinc-600">
-              {title.length}/140
-            </span>
+            {busyLoading ? (
+              <Skeleton className="h-[34px] w-full rounded-lg" />
+            ) : (
+              <>
+                <input
+                  id="stream-title"
+                  className="input pr-16"
+                  maxLength={140}
+                  autoComplete="off"
+                  placeholder="What are you streaming today?"
+                  value={title}
+                  disabled={missingScope}
+                  onChange={(event) => setTitle(event.target.value)}
+                />
+                <span className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-[11px] tabular-nums text-zinc-600">
+                  {title.length}/140
+                </span>
+              </>
+            )}
           </div>
 
           <div className="mt-6">
@@ -330,7 +347,15 @@ export function StreamPage() {
               Search Twitch’s directory for the game or category you are
               streaming.
             </p>
-            {category && (
+            {busyLoading ? (
+              <div className="mt-3 flex items-center gap-3 rounded-xl border border-line bg-[#101116] p-2.5">
+                <Skeleton className="h-12 w-9 shrink-0" />
+                <div className="flex-1">
+                  <Skeleton className="h-3.5 w-32" />
+                  <Skeleton className="mt-2 h-2.5 w-20" />
+                </div>
+              </div>
+            ) : category && (
               <div className="mt-3 flex items-center gap-3 rounded-xl border border-line bg-[#101116] p-2.5">
                 <BoxArt category={category} className="h-12 w-9" />
                 <div className="min-w-0 flex-1">
@@ -342,6 +367,10 @@ export function StreamPage() {
               </div>
             )}
             <div className="relative mt-3">
+              {busyLoading ? (
+                <Skeleton className="h-[34px] w-full rounded-lg" />
+              ) : (
+                <>
               <Search
                 size={14}
                 className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-zinc-600"
@@ -353,15 +382,21 @@ export function StreamPage() {
                 spellCheck={false}
                 placeholder="Search categories, e.g. Minecraft"
                 value={query}
-                disabled={busyLoading || missingScope}
+                disabled={missingScope}
                 onChange={(event) => setQuery(event.target.value)}
               />
               {showResults && (
                 <div className="absolute z-10 mt-1 max-h-80 w-full overflow-y-auto rounded-xl border border-line bg-[#14151b] p-1 shadow-2xl shadow-black/40">
                   {searching && (
-                    <div className="flex items-center gap-2 px-3 py-2 text-xs text-muted">
-                      <LoaderCircle size={13} className="animate-spin" />
-                      Searching…
+                    <div className="space-y-2 px-2 py-2">
+                      {[0, 1, 2].map((item) => (
+                        <div key={item} className="flex items-center gap-3">
+                          <Skeleton className="h-9 w-7 shrink-0" />
+                          <Skeleton
+                            className={`h-3 ${item === 1 ? "w-28" : "w-40"}`}
+                          />
+                        </div>
+                      ))}
                     </div>
                   )}
                   {!searching && lookup.items.length === 0 && (
@@ -386,6 +421,8 @@ export function StreamPage() {
                     ))}
                 </div>
               )}
+                </>
+              )}
             </div>
           </div>
 
@@ -400,11 +437,14 @@ export function StreamPage() {
             <p className="mt-1 text-xs leading-5 text-muted">
               Used for the language filter in the Twitch directory.
             </p>
+            {busyLoading ? (
+              <Skeleton className="mt-3 h-[34px] w-full max-w-xs rounded-lg" />
+            ) : (
             <select
               id="stream-language"
               className="input mt-3 max-w-xs"
               value={language}
-              disabled={busyLoading || missingScope}
+              disabled={missingScope}
               onChange={(event) => setLanguage(event.target.value)}
             >
               {!LANGUAGES.some((item) => item.value === language) && (
@@ -416,6 +456,7 @@ export function StreamPage() {
                 </option>
               ))}
             </select>
+            )}
           </div>
 
           <div className="mt-6 flex items-center justify-between gap-4 border-t border-line pt-5">
@@ -440,29 +481,51 @@ export function StreamPage() {
         <Card className="h-fit p-4">
           <h2 className="text-sm font-semibold">Channel preview</h2>
           <div className="mt-4 flex gap-3">
-            <BoxArt category={category} className="h-24 w-16 shrink-0" />
+            {busyLoading ? (
+              <Skeleton className="h-24 w-16 shrink-0" />
+            ) : (
+              <BoxArt category={category} className="h-24 w-16 shrink-0" />
+            )}
             <div className="min-w-0">
-              <div className="line-clamp-3 text-sm font-medium leading-5">
-                {title.trim() || "No title yet"}
-              </div>
-              <div className="mt-1 truncate text-xs text-muted">
-                {category?.name || "No category selected"}
-              </div>
-              <div className="mt-0.5 text-[11px] text-zinc-600">
-                {LANGUAGES.find((item) => item.value === language)?.label ??
-                  language}
-              </div>
+              {busyLoading ? (
+                <>
+                  <Skeleton className="h-3.5 w-44 max-w-full" />
+                  <Skeleton className="mt-2 h-3 w-28" />
+                  <Skeleton className="mt-2 h-2.5 w-16" />
+                </>
+              ) : (
+                <>
+                  <div className="line-clamp-3 text-sm font-medium leading-5">
+                    {title.trim() || "No title yet"}
+                  </div>
+                  <div className="mt-1 truncate text-xs text-muted">
+                    {category?.name || "No category selected"}
+                  </div>
+                  <div className="mt-0.5 text-[11px] text-zinc-600">
+                    {LANGUAGES.find((item) => item.value === language)?.label ??
+                      language}
+                  </div>
+                </>
+              )}
             </div>
           </div>
           <div className="mt-4 space-y-2 border-t border-line pt-3 text-xs">
             <div className="flex items-center justify-between">
               <span className="text-muted">Status</span>
-              <span>{stats.live ? "Live" : "Offline"}</span>
+              {statsLoading ? (
+                <Skeleton className="h-3 w-12" />
+              ) : (
+                <span>{stats.live ? "Live" : "Offline"}</span>
+              )}
             </div>
             <div className="flex items-center justify-between">
               <span className="text-muted">Viewers</span>
               <span className="tabular-nums">
-                {stats.viewers?.toLocaleString("en-US") ?? "—"}
+                {statsLoading ? (
+                  <Skeleton className="h-3 w-8" />
+                ) : (
+                  stats.viewers?.toLocaleString("en-US") ?? "—"
+                )}
               </span>
             </div>
             <div className="flex items-center justify-between">

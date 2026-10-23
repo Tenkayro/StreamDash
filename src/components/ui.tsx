@@ -3,6 +3,18 @@ import { cn } from "../lib/utils";
 export function Card({ className, ...props }: HTMLAttributes<HTMLDivElement>) {
   return <div className={cn("card", className)} {...props} />;
 }
+export function Skeleton({
+  className,
+  ...props
+}: HTMLAttributes<HTMLSpanElement>) {
+  return (
+    <span
+      aria-hidden="true"
+      className={cn("skeleton inline-block rounded", className)}
+      {...props}
+    />
+  );
+}
 export function Button({
   className,
   variant = "default",

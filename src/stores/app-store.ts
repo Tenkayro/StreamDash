@@ -79,6 +79,8 @@ interface AppStore {
   removeChatMessage: (id: string) => void;
   clearChat: (login?: string) => void;
   stats: DashboardStats;
+  statsLoading: boolean;
+  setStatsLoading: (loading: boolean) => void;
   setStats: (stats: Partial<DashboardStats>) => void;
   settings: AppSettings;
   setSettings: (settings: Partial<AppSettings>) => void;
@@ -167,6 +169,8 @@ export const useAppStore = create<AppStore>((set) => ({
         : [],
     })),
   stats: emptyStats,
+  statsLoading: false,
+  setStatsLoading: (statsLoading) => set({ statsLoading }),
   setStats: (stats) => set((s) => ({ stats: { ...s.stats, ...stats } })),
   settings: defaultSettings,
   setSettings: (settings) =>

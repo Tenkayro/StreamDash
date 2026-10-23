@@ -106,6 +106,7 @@ export function RuntimeProvider({ children }: { children: ReactNode }) {
   const startTwitch = useCallback(async () => {
     const clientId = state().settings.twitchClientId.trim();
     if (!clientId || !isTauri()) {
+      state().setStatsLoading(false);
       chatRef.current?.stop();
       state().setChat({ phase: "disconnected" });
       state().setTwitch({
@@ -114,9 +115,11 @@ export function RuntimeProvider({ children }: { children: ReactNode }) {
       });
       return;
     }
+    state().setStatsLoading(true);
     try {
       const session = await twitchNative.session(clientId);
       if (!session) {
+        state().setStatsLoading(false);
         chatRef.current?.stop();
         state().setChat({ phase: "disconnected" });
         state().setTwitch({ phase: "disconnected" });
@@ -147,6 +150,8 @@ export function RuntimeProvider({ children }: { children: ReactNode }) {
         toast.error("Some Twitch statistics are unavailable", {
           description: errorMessage(error),
         });
+      } finally {
+        state().setStatsLoading(false);
       }
       twitchRef.current = new TwitchEventSub(
         clientId,
@@ -175,6 +180,7 @@ export function RuntimeProvider({ children }: { children: ReactNode }) {
       );
       chatRef.current.start();
     } catch (error) {
+      state().setStatsLoading(false);
       chatRef.current?.stop();
       state().setChat({ phase: "error", detail: errorMessage(error) });
       state().setTwitch({ phase: "expired", detail: errorMessage(error) });
@@ -301,6 +307,7 @@ export function RuntimeProvider({ children }: { children: ReactNode }) {
     state().setChatEmotes([]);
     await secretDelete("twitch-oauth");
     state().setTwitch({ phase: "disconnected" });
+    state().setStatsLoading(false);
     state().setStats({
       followers: undefined,
       subscribers: undefined,

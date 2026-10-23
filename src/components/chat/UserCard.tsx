@@ -2,7 +2,6 @@ import {
   Ban,
   Crown,
   ExternalLink,
-  LoaderCircle,
   MessageSquare,
   ShieldCheck,
   ShieldOff,
@@ -18,6 +17,7 @@ import { saveSetting } from "../../services/native";
 import { useRuntime } from "../../services/runtime-context";
 import { useAppStore } from "../../stores/app-store";
 import type { ChatMessage, ChatUserProfile } from "../../types";
+import { Skeleton } from "../ui";
 
 const timeouts = [
   { label: "1s", seconds: 1 },
@@ -232,7 +232,9 @@ export function UserCard({
         className="flex max-h-[86vh] w-full max-w-3xl flex-col overflow-hidden rounded-xl border border-zinc-700 bg-[#101115] shadow-2xl"
       >
         <header className="flex items-start gap-4 border-b border-line p-4">
-          {profile?.avatarUrl ? (
+          {loading ? (
+            <Skeleton className="size-20 shrink-0 rounded-lg" />
+          ) : profile?.avatarUrl ? (
             <img
               src={profile.avatarUrl}
               alt=""
@@ -240,17 +242,17 @@ export function UserCard({
             />
           ) : (
             <div className="grid size-20 shrink-0 place-items-center rounded-lg bg-white/5 text-zinc-600">
-              {loading ? (
-                <LoaderCircle className="animate-spin" size={22} />
-              ) : (
-                <UserRound size={28} />
-              )}
+              <UserRound size={28} />
             </div>
           )}
           <div className="min-w-0 flex-1">
             <div className="flex items-center gap-2">
               <h2 className="truncate text-lg font-semibold">
-                {profile?.displayName || login}
+                {loading ? (
+                  <Skeleton className="h-5 w-32" />
+                ) : (
+                  profile?.displayName || login
+                )}
               </h2>
               {badges.map((badge) => (
                 <img
@@ -280,25 +282,42 @@ export function UserCard({
               )}
             </div>
             <div className="mt-0.5 text-xs text-muted">
-              @{profile?.login || login}
+              {loading ? (
+                <Skeleton className="h-3 w-20" />
+              ) : (
+                <>@{profile?.login || login}</>
+              )}
             </div>
             <div className="mt-3 flex flex-wrap gap-x-5 gap-y-1 text-[11px] text-zinc-500">
               <span>
-                ID: <span className="text-zinc-300">{profile?.id || "—"}</span>
+                ID:{" "}
+                {loading ? (
+                  <Skeleton className="h-2.5 w-20 align-middle" />
+                ) : (
+                  <span className="text-zinc-300">{profile?.id || "—"}</span>
+                )}
               </span>
               <span>
                 Created:{" "}
-                <span className="text-zinc-300">
-                  {date(profile?.createdAt)}
-                </span>
+                {loading ? (
+                  <Skeleton className="h-2.5 w-16 align-middle" />
+                ) : (
+                  <span className="text-zinc-300">
+                    {date(profile?.createdAt)}
+                  </span>
+                )}
               </span>
               <span>
                 Follows you:{" "}
-                <span className="text-zinc-300">
-                  {profile?.followedAt
-                    ? `Since ${date(profile.followedAt)}`
-                    : "No"}
-                </span>
+                {loading ? (
+                  <Skeleton className="h-2.5 w-14 align-middle" />
+                ) : (
+                  <span className="text-zinc-300">
+                    {profile?.followedAt
+                      ? `Since ${date(profile.followedAt)}`
+                      : "No"}
+                  </span>
+                )}
               </span>
               <span>
                 Messages:{" "}

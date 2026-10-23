@@ -19,6 +19,7 @@ import { useEffect, useState, type MouseEventHandler } from "react";
 import { isTauri } from "../lib/utils";
 import { useUpdater } from "../services/updater-context";
 import titlebarLogo from "../assets/branding/streamdash-logo-titlebar.webp";
+import { Skeleton } from "./ui";
 
 function TitleAction({
   icon: Icon,
@@ -185,7 +186,11 @@ export function TitleBar() {
           className="flex items-center gap-1 text-[9px] tabular-nums text-zinc-600"
         >
           <Tag size={9} />
-          <span>{version || "…"}</span>
+          {version ? (
+            <span>{version}</span>
+          ) : (
+            <Skeleton className="h-2 w-7" />
+          )}
           <span className="text-[8px] tracking-wider text-zinc-700">
             · {channel}
           </span>

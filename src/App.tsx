@@ -1,11 +1,11 @@
 import { lazy, Suspense, useEffect } from "react";
 import { getCurrentWindow } from "@tauri-apps/api/window";
-import { LoaderCircle } from "lucide-react";
 import { Sidebar } from "./components/Sidebar";
 import { TitleBar } from "./components/TitleBar";
 import { Dashboard } from "./pages/Dashboard";
 import { useAppStore } from "./stores/app-store";
 import { isTauri } from "./lib/utils";
+import { Skeleton } from "./components/ui";
 
 const StreamPage = lazy(() =>
   import("./pages/StreamPage").then((module) => ({
@@ -49,10 +49,31 @@ const pages: Record<string, React.ComponentType> = {
   settings: SettingsPage,
 };
 const loading = (
-  <div className="grid h-[60vh] place-items-center">
-    <div className="flex items-center gap-3 text-sm text-muted">
-      <LoaderCircle size={18} className="animate-spin" />
-      Preparing StreamDash…
+  <div aria-label="Loading page" role="status">
+    <div className="mb-4 flex items-center justify-between">
+      <Skeleton className="h-6 w-28" />
+      <Skeleton className="h-6 w-16 rounded-md" />
+    </div>
+    <div className="grid grid-cols-12 gap-3">
+      {[0, 1, 2, 3].map((item) => (
+        <div key={item} className="card col-span-3 min-h-24 p-3.5">
+          <Skeleton className="h-2.5 w-20" />
+          <Skeleton className="mt-7 h-6 w-14" />
+        </div>
+      ))}
+      <div className="card col-span-8 h-56 p-4">
+        <Skeleton className="h-3 w-24" />
+        <div className="mt-6 space-y-4">
+          {["w-4/5", "w-2/3", "w-3/4"].map((width) => (
+            <Skeleton key={width} className={`h-3 ${width}`} />
+          ))}
+        </div>
+      </div>
+      <div className="card col-span-4 h-56 p-4">
+        <Skeleton className="h-3 w-20" />
+        <Skeleton className="mt-6 h-3 w-full" />
+        <Skeleton className="mt-4 h-3 w-2/3" />
+      </div>
     </div>
   </div>
 );
@@ -115,6 +136,7 @@ export default function App() {
     <div
       data-accent={settings.accentColor}
       data-density={settings.uiDensity}
+      data-animations={settings.animations ? "on" : "off"}
       className={
         settings.animations
           ? ""

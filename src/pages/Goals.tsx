@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Card, PageHeader } from "../components/ui";
+import { Card, PageHeader, Skeleton } from "../components/ui";
 import { useAppStore } from "../stores/app-store";
 import { saveSetting } from "../services/native";
 import { money } from "../lib/utils";
@@ -9,12 +9,14 @@ function GoalRow({
   target,
   onTarget,
   display,
+  loading,
 }: {
   label: string;
   value?: number;
   target?: number;
   onTarget: (v?: number) => void;
   display?: (n: number) => string;
+  loading?: boolean;
 }) {
   const percent =
     value != null && target ? Math.min(100, (value / target) * 100) : 0;
@@ -25,7 +27,9 @@ function GoalRow({
         <div>
           <div className="text-sm font-medium">{label}</div>
           <div className="mt-1 text-xs text-muted">
-            {value == null
+            {loading ? (
+              <Skeleton className="h-3 w-32" />
+            ) : value == null
               ? "Unavailable until the service is connected"
               : `${display?.(value) ?? value.toLocaleString("en-US")} / ${target ? (display?.(target) ?? target.toLocaleString("en-US")) : "No target"}`}
           </div>
@@ -42,16 +46,20 @@ function GoalRow({
         />
       </div>
       <div className="mt-3 h-2 overflow-hidden rounded-full bg-white/5">
-        <div
-          className="h-full rounded-full bg-accent transition-all"
-          style={{ width: `${percent}%` }}
-        />
+        {loading ? (
+          <Skeleton className="h-full w-2/5 rounded-full" />
+        ) : (
+          <div
+            className="h-full rounded-full bg-accent transition-all"
+            style={{ width: `${percent}%` }}
+          />
+        )}
       </div>
     </div>
   );
 }
 export function Goals() {
-  const { stats, settings, setSettings } = useAppStore();
+  const { stats, statsLoading, settings, setSettings } = useAppStore();
   const update = async (
     key: "followers" | "subscribers" | "donations",
     value?: number,
@@ -67,12 +75,14 @@ export function Goals() {
         <GoalRow
           label="Followers"
           value={stats.followers}
+          loading={statsLoading}
           target={settings.goals.followers}
           onTarget={(v) => update("followers", v)}
         />
         <GoalRow
           label="Subscribers"
           value={stats.subscribers}
+          loading={statsLoading}
           target={settings.goals.subscribers}
           onTarget={(v) => update("subscribers", v)}
         />

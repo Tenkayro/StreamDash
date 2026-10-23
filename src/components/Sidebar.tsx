@@ -18,6 +18,7 @@ import { cn } from "../lib/utils";
 import type { ConnectionState } from "../types";
 import twitchIcon from "../assets/services/twitch.webp";
 import streamElementsIcon from "../assets/services/streamelements.webp";
+import { Skeleton } from "./ui";
 const nav = [
   { id: "dashboard", label: "Dashboard", icon: LayoutDashboard },
   { id: "stream", label: "Stream", icon: RadioTower },
@@ -54,7 +55,12 @@ function Status({
     >
       <img src={icon} alt="" className="size-4 shrink-0 object-contain" />
       <span className="min-w-0 flex-1 truncate text-[11px] text-zinc-300">
-        {label}
+        {["connecting", "reconnecting"].includes(state.phase) &&
+        !state.account ? (
+          <Skeleton className="h-2.5 w-16" />
+        ) : (
+          label
+        )}
       </span>
       <span className={cn("size-1.5 shrink-0 rounded-full", color)} />
     </div>

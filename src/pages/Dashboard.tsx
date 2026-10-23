@@ -41,7 +41,7 @@ import { toast } from "sonner";
 import { useAppStore, defaultDashboardWidgets } from "../stores/app-store";
 import { saveSetting } from "../services/native";
 import { ActivityFeed } from "../components/ActivityFeed";
-import { Badge, Card, PageHeader } from "../components/ui";
+import { Badge, Card, PageHeader, Skeleton } from "../components/ui";
 import { cn, money } from "../lib/utils";
 import type { ConnectionState, DashboardWidgetId } from "../types";
 
@@ -102,11 +102,15 @@ function Metric({
   value,
   note,
   icon: Icon,
+  loading = false,
+  skeletonWidth = "w-14",
 }: {
   label: string;
   value: string;
   note?: string;
   icon: LucideIcon;
+  loading?: boolean;
+  skeletonWidth?: string;
 }) {
   return (
     <Card className="flex min-h-24 flex-col p-3.5">
@@ -115,11 +119,13 @@ function Metric({
         <Icon size={14} className="text-zinc-600" />
       </div>
       <div className="mt-auto pt-2 text-xl font-semibold tracking-[-.03em]">
-        {value}
+        {loading ? <Skeleton className={`h-6 ${skeletonWidth}`} /> : value}
       </div>
-      {note && (
+      {loading && note !== undefined ? (
+        <Skeleton className="mt-1 h-2.5 w-3/5" />
+      ) : note ? (
         <div className="mt-0.5 truncate text-[10px] text-zinc-600">{note}</div>
-      )}
+      ) : null}
     </Card>
   );
 }
@@ -277,6 +283,7 @@ export function Dashboard() {
     settings,
     twitch,
     streamElements,
+    statsLoading,
     setPage,
     setSettings,
   } = useAppStore();
@@ -353,6 +360,8 @@ export function Dashboard() {
         <Metric
           label="Followers"
           value={stats.followers?.toLocaleString("en-US") ?? "—"}
+          loading={statsLoading}
+          skeletonWidth="w-12"
           icon={Heart}
         />
       );
@@ -361,6 +370,8 @@ export function Dashboard() {
         <Metric
           label="Subscribers"
           value={stats.subscribers?.toLocaleString("en-US") ?? "—"}
+          loading={statsLoading}
+          skeletonWidth="w-10"
           icon={Star}
         />
       );
@@ -369,6 +380,8 @@ export function Dashboard() {
         <Metric
           label="Current viewers"
           value={stats.viewers?.toLocaleString("en-US") ?? "—"}
+          loading={statsLoading}
+          skeletonWidth="w-11"
           icon={Eye}
         />
       );
@@ -377,6 +390,8 @@ export function Dashboard() {
         <Metric
           label="Stream duration"
           value={duration(stats.startedAt)}
+          loading={statsLoading}
+          skeletonWidth="w-20"
           icon={Clock3}
         />
       );
@@ -401,7 +416,9 @@ export function Dashboard() {
         <Metric
           label="Stream status"
           value={stats.live ? "Live" : "Offline"}
-          note={stats.title}
+          note={statsLoading ? "" : stats.title}
+          loading={statsLoading}
+          skeletonWidth="w-16"
           icon={Radio}
         />
       );
@@ -451,12 +468,22 @@ export function Dashboard() {
             <div>
               <div className="text-[10px] text-muted">Title</div>
               <div className="mt-1 text-xs">
-                {stats.title || "No stream information"}
+                {statsLoading ? (
+                  <Skeleton className="h-3.5 w-4/5" />
+                ) : (
+                  stats.title || "No stream information"
+                )}
               </div>
             </div>
             <div>
               <div className="text-[10px] text-muted">Category</div>
-              <div className="mt-1 text-xs">{stats.category || "—"}</div>
+              <div className="mt-1 text-xs">
+                {statsLoading ? (
+                  <Skeleton className="h-3.5 w-24" />
+                ) : (
+                  stats.category || "—"
+                )}
+              </div>
             </div>
           </div>
         </Card>
@@ -503,15 +530,23 @@ export function Dashboard() {
                 <div key={goal.label}>
                   <div className="mb-1 flex justify-between text-[10px]">
                     <span className="text-muted">{goal.label}</span>
-                    <span>
-                      {goal.target ? `${Math.round(percent)}%` : "No target"}
-                    </span>
+                    {statsLoading && goal.label !== "Donations" ? (
+                      <Skeleton className="h-2.5 w-10" />
+                    ) : (
+                      <span>
+                        {goal.target ? `${Math.round(percent)}%` : "No target"}
+                      </span>
+                    )}
                   </div>
                   <div className="h-1.5 overflow-hidden rounded-full bg-white/5">
-                    <div
-                      className="h-full rounded-full bg-accent"
-                      style={{ width: `${percent}%` }}
-                    />
+                    {statsLoading && goal.label !== "Donations" ? (
+                      <Skeleton className="h-full w-2/5 rounded-full" />
+                    ) : (
+                      <div
+                        className="h-full rounded-full bg-accent"
+                        style={{ width: `${percent}%` }}
+                      />
+                    )}
                   </div>
                 </div>
               );
@@ -547,7 +582,12 @@ export function Dashboard() {
               <div>
                 <div className="text-xs">{name as string}</div>
                 <div className="text-[10px] text-zinc-600">
-                  {service.account || service.phase}
+                  {["connecting", "reconnecting"].includes(service.phase) &&
+                  !service.account ? (
+                    <Skeleton className="h-2.5 w-16" />
+                  ) : (
+                    service.account || service.phase
+                  )}
                 </div>
               </div>
               <span
@@ -578,9 +618,15 @@ export function Dashboard() {
           </button>
         }
         actions={
-          <Badge tone={stats.live ? "green" : connected ? "neutral" : "amber"}>
-            {stats.live ? "Live" : connected ? "Offline" : "Disconnected"}
-          </Badge>
+          statsLoading ? (
+            <Skeleton className="h-6 w-16 rounded-md" />
+          ) : (
+            <Badge
+              tone={stats.live ? "green" : connected ? "neutral" : "amber"}
+            >
+              {stats.live ? "Live" : connected ? "Offline" : "Disconnected"}
+            </Badge>
+          )
         }
       />
       <DndContext
