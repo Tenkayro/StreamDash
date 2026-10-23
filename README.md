@@ -6,7 +6,8 @@ The normal application never generates demo activity. Empty, disconnected, loadi
 
 ## Screenshots
 
-Screenshots will be added after the first signed release.
+<img width="1272" height="799" alt="image" src="https://github.com/user-attachments/assets/4b7e3fbd-6830-4b45-aff3-e1709d41662d" />
+
 
 ## Stack
 
