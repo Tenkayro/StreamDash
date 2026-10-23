@@ -2,7 +2,6 @@ import { check, type Update } from '@tauri-apps/plugin-updater'
 import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from 'react'
 import { toast } from 'sonner'
 import { isTauri } from '../lib/utils'
-import { useAppStore } from '../stores/app-store'
 import { UpdateContext, type UpdateContextValue } from './updater-context'
 
 type UpdateState = Omit<UpdateContextValue, 'checkForUpdates' | 'installUpdate'>
@@ -26,8 +25,7 @@ export function UpdateProvider({ children }: { children: ReactNode }) {
       }
       setState({ phase: 'available', version: available.version, currentVersion: available.currentVersion, notes: available.body })
       toast.info(`StreamDash ${available.version} is available`, {
-        description: 'Open Settings to download and install the signed update.',
-        action: { label: 'Open Settings', onClick: () => useAppStore.getState().setPage('settings') },
+        description: 'Use the download button beside the version in the title bar.',
         duration: 12_000,
       })
     } catch (error) {

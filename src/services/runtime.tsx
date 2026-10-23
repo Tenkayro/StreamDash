@@ -6,7 +6,7 @@ import { toast } from 'sonner'
 import { useAppStore } from '../stores/app-store'
 import { errorMessage, isTauri, money } from '../lib/utils'
 import { loadEvents, loadSettings, saveEvent, secretDelete, secretGet, secretSet, twitchNative } from './native'
-import { loadTwitchSnapshot, TwitchEventSub, TWITCH_SCOPES } from './twitch/client'
+import { loadTwitchSnapshot, needsTwitchPermissionUpdate, TwitchEventSub, TWITCH_SCOPES } from './twitch/client'
 import { TwitchChatClient } from './twitch/chat'
 import { StreamElementsClient } from './streamelements/client'
 import type { ActivityEvent, ChatUserProfile } from '../types'
@@ -38,6 +38,13 @@ export function RuntimeProvider({ children }: { children: ReactNode }) {
     try {
       const session = await twitchNative.session(clientId)
       if (!session) { chatRef.current?.stop(); state().setChat({ phase: 'disconnected' }); state().setTwitch({ phase: 'disconnected' }); return }
+      if (needsTwitchPermissionUpdate(session.scopes)) toast.warning('Twitch permissions need attention', {
+        id: 'twitch-permissions',
+        description: 'Reconnect Twitch once to enable all moderation and channel features.',
+        action: { label: 'Open Connections', onClick: () => state().setPage('connections') },
+        duration: 12_000,
+      })
+      else toast.dismiss('twitch-permissions')
       twitchRef.current?.stop(); state().setTwitch({ phase: 'connecting', account: session.login, userId: session.userId, scopes: session.scopes })
       try { state().setStats(await loadTwitchSnapshot(clientId, session)) } catch (error) { toast.error('Some Twitch statistics are unavailable', { description: errorMessage(error) }) }
       twitchRef.current = new TwitchEventSub(clientId, session, ingest, (phase, detail) => state().setTwitch({ phase, account: session.login, userId: session.userId, scopes: session.scopes, detail }))

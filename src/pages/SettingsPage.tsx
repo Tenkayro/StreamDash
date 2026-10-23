@@ -1,13 +1,12 @@
 import { enable, disable } from '@tauri-apps/plugin-autostart'
 import { getVersion } from '@tauri-apps/api/app'
-import { Download, LoaderCircle, RefreshCw, RotateCcw, Save, ShieldCheck } from 'lucide-react'
+import { RotateCcw, Save, ShieldCheck } from 'lucide-react'
 import { useEffect, useState, type ReactNode } from 'react'
 import { toast } from 'sonner'
 import { Button, Card, PageHeader } from '../components/ui'
 import { defaultDashboardWidgets, useAppStore } from '../stores/app-store'
 import { saveSetting } from '../services/native'
 import { useRuntime } from '../services/runtime-context'
-import { useUpdater } from '../services/updater-context'
 import { errorMessage, isTauri } from '../lib/utils'
 import type { ActivityType, AppSettings } from '../types'
 
@@ -27,20 +26,6 @@ function Row({ label, detail, children }: { label: string; detail: string; child
 function HighlightWords({ value, onSave }: { value: string[]; onSave: (value: string[]) => void }) {
   const [draft, setDraft] = useState(value.join(', '))
   return <input aria-label="Highlight words" className="input max-w-72" placeholder="important, giveaway, your name" value={draft} onChange={(event) => setDraft(event.target.value)} onBlur={() => onSave([...new Set(draft.split(',').map((word) => word.trim()).filter(Boolean))])}/>
-}
-
-function UpdatePanel({ currentVersion }: { currentVersion: string }) {
-  const updater = useUpdater()
-  const busy = updater.phase === 'checking' || updater.phase === 'downloading' || updater.phase === 'installing'
-  const detail = updater.phase === 'checking' ? 'Checking GitHub for a signed update…'
-    : updater.phase === 'current' ? 'You are running the latest version.'
-      : updater.phase === 'available' ? `Version ${updater.version} is ready to download.`
-        : updater.phase === 'downloading' ? `Downloading update${updater.progress == null ? '…' : ` — ${updater.progress}%`}`
-          : updater.phase === 'installing' ? 'Starting the installer. StreamDash will close automatically…'
-            : updater.phase === 'error' ? updater.error || 'The update check failed.'
-              : 'Updates are signed and downloaded from the official GitHub release.'
-
-  return <Card className="overflow-hidden"><div className="flex items-center justify-between gap-6 px-5 py-4"><div><div className="text-sm">StreamDash {currentVersion}</div><div className={`mt-1 text-xs ${updater.phase === 'error' ? 'text-red-300' : 'text-muted'}`}>{detail}</div></div><div className="flex shrink-0 gap-2"><Button disabled={busy} onClick={() => updater.checkForUpdates()}>{updater.phase === 'checking' ? <LoaderCircle size={14} className="animate-spin"/> : <RefreshCw size={14}/>}Check for updates</Button>{updater.phase === 'available' && <Button variant="primary" onClick={updater.installUpdate}><Download size={14}/>Install {updater.version}</Button>}</div></div>{updater.phase === 'available' && updater.notes && <div className="border-t border-line px-5 py-3 text-xs leading-5 text-muted whitespace-pre-line">{updater.notes}</div>}{updater.phase === 'downloading' && updater.progress != null && <div className="h-1 bg-white/5"><div className="h-full bg-accent transition-[width]" style={{ width: `${updater.progress}%` }}/></div>}</Card>
 }
 
 export function SettingsPage() {
@@ -74,7 +59,6 @@ export function SettingsPage() {
     <section><h2 className="mb-2 px-1 text-[10px] font-bold tracking-[.14em] text-zinc-600">CHAT</h2><Card className="px-5"><Row label="Timestamps" detail="Show the receive time beside every message."><Toggle value={settings.chatTimestamps} onChange={(value) => update('chatTimestamps', value)}/></Row><Row label="Badges" detail="Show Twitch broadcaster, moderator and subscriber badges."><Toggle value={settings.chatBadges} onChange={(value) => update('chatBadges', value)}/></Row><Row label="Highlight mentions" detail="Highlight messages that mention your Twitch account."><Toggle value={settings.chatHighlightMentions} onChange={(value) => update('chatHighlightMentions', value)}/></Row><Row label="Highlight words" detail="Comma-separated words or phrases; matching is case-insensitive."><HighlightWords value={settings.chatHighlightWords} onSave={(value) => update('chatHighlightWords', value)}/></Row><Row label="Text size" detail="Change the chat message font size."><select className="input w-32" value={settings.chatFontSize} onChange={(event) => update('chatFontSize', Number(event.target.value))}><option value={12}>Small</option><option value={13}>Normal</option><option value={14}>Large</option><option value={16}>Extra large</option></select></Row><Row label="Emote size" detail="Set the height of Twitch and 7TV emotes."><select className="input w-32" value={settings.chatEmoteSize} onChange={(event) => update('chatEmoteSize', Number(event.target.value))}><option value={24}>Small</option><option value={28}>Normal</option><option value={34}>Large</option><option value={40}>Extra large</option></select></Row><Row label="Message buffer" detail="Older chat messages are discarded to keep memory usage stable."><select className="input w-32" value={settings.maximumChatMessages} onChange={(event) => update('maximumChatMessages', Number(event.target.value))}><option value={400}>400</option><option value={1000}>1,000</option><option value={2000}>2,000</option><option value={5000}>5,000</option></select></Row><Row label="Hidden users" detail={`${settings.chatHiddenUsers.length} users are hidden from the chat view.`}><Button disabled={!settings.chatHiddenUsers.length} onClick={() => update('chatHiddenUsers', [])}>Show all</Button></Row><Row label="Highlight exclusions" detail={`${settings.chatHighlightIgnoredUsers.length} users are excluded from highlights.`}><Button disabled={!settings.chatHighlightIgnoredUsers.length} onClick={() => update('chatHighlightIgnoredUsers', [])}>Reset</Button></Row></Card></section>
     <section><h2 className="mb-2 px-1 text-[10px] font-bold tracking-[.14em] text-zinc-600">EVENTS</h2><Card className="p-4"><p className="mb-3 text-xs text-muted">Choose which incoming events StreamDash records and displays.</p><div className="grid grid-cols-2 gap-2 md:grid-cols-3 xl:grid-cols-4">{eventOptions.map((option) => { const enabled = !settings.disabledEventTypes.includes(option.id); return <button key={option.id} onClick={() => update('disabledEventTypes', enabled ? [...settings.disabledEventTypes, option.id] : settings.disabledEventTypes.filter((id) => id !== option.id))} className={`flex items-center justify-between rounded-lg border px-3 py-2 text-xs transition ${enabled ? 'border-accent/30 bg-accent-soft text-zinc-200' : 'border-line bg-black/10 text-zinc-600'}`}><span>{option.label}</span><span className={`size-1.5 rounded-full ${enabled ? 'bg-accent' : 'bg-zinc-700'}`}/></button> })}</div></Card></section>
     <section><h2 className="mb-2 px-1 text-[10px] font-bold tracking-[.14em] text-zinc-600">DATA</h2><Card className="px-5"><Row label="Maximum stored events" detail="Older entries are removed automatically once this limit is reached."><select className="input w-32" value={settings.maximumEvents} onChange={(event) => update('maximumEvents', Number(event.target.value))}><option value={1000}>1,000</option><option value={5000}>5,000</option><option value={10000}>10,000</option><option value={50000}>50,000</option></select></Row></Card></section>
-    <section><h2 className="mb-2 px-1 text-[10px] font-bold tracking-[.14em] text-zinc-600">UPDATES</h2><UpdatePanel currentVersion={version}/></section>
     <section><h2 className="mb-2 px-1 text-[10px] font-bold tracking-[.14em] text-zinc-600">ABOUT</h2><Card className="px-5"><Row label="StreamDash" detail="Tauri desktop application"><span className="text-xs text-muted">Version {version}</span></Row></Card></section>
   </div></>
 }
