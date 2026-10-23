@@ -25,5 +25,6 @@ export default function App() {
     return () => unlisten?.()
   }, [])
   const widths = { compact: 'max-w-[1180px]', wide: 'max-w-[1500px]', full: 'max-w-none' }
-  return <div data-accent={settings.accentColor} data-density={settings.uiDensity} className={settings.animations ? '' : '[&_*]:!transition-none [&_.event-enter]:!animate-none'}><div className="flex h-screen flex-col bg-[#0b0c0f]"><TitleBar/><div className="flex min-h-0 flex-1"><Sidebar/><main className="min-w-0 flex-1 overflow-y-auto"><div className={`mx-auto ${widths[settings.contentWidth]} ${settings.uiDensity === 'compact' ? 'p-4' : 'p-6'}`}>{ready ? <Suspense fallback={loading}><Page/></Suspense> : loading}</div></main></div></div></div>
+  if (!ready) return <div data-tauri-drag-region className="grid h-screen place-items-center bg-[#0b0c0f]"><img src="/streamdash-icon.png" alt="StreamDash is starting" className="size-16 object-contain animate-pulse"/></div>
+  return <div data-accent={settings.accentColor} data-density={settings.uiDensity} className={settings.animations ? '' : '[&_*]:!transition-none [&_.event-enter]:!animate-none'}><div className="flex h-screen flex-col bg-[#0b0c0f]"><TitleBar/><div className="flex min-h-0 flex-1"><Sidebar/><main className="min-w-0 flex-1 overflow-y-auto"><div className={`mx-auto ${widths[settings.contentWidth]} ${settings.uiDensity === 'compact' ? 'p-4' : 'p-6'}`}><Suspense fallback={loading}><Page/></Suspense></div></main></div></div></div>
 }
