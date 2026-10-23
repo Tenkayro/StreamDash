@@ -128,13 +128,15 @@ export function RuntimeProvider({ children }: { children: ReactNode }) {
     if (!clientId || !broadcasterId) throw new Error('Twitch is not connected')
     const users = await twitchNative.helix<{ data?: Array<{ id: string; login: string; display_name: string; profile_image_url?: string; created_at?: string }> }>(clientId, 'users', [['login', login]])
     const user = users.data?.[0]; if (!user) throw new Error('Twitch user was not found')
-    const [follow, ban] = await Promise.allSettled([
+    const [follow, ban, moderator, vip] = await Promise.allSettled([
       twitchNative.helix<{ data?: Array<{ followed_at?: string }> }>(clientId, 'channels/followers', [['broadcaster_id', broadcasterId], ['user_id', user.id]]),
       current.twitch.scopes?.includes('moderator:manage:banned_users') ? twitchNative.helix<{ data?: Array<{ expires_at?: string; reason?: string }> }>(clientId, 'moderation/banned', [['broadcaster_id', broadcasterId], ['user_id', user.id]]) : Promise.resolve({ data: [] }),
+      current.twitch.scopes?.includes('channel:manage:moderators') ? twitchNative.helix<{ data?: unknown[] }>(clientId, 'moderation/moderators', [['broadcaster_id', broadcasterId], ['user_id', user.id]]) : Promise.resolve({ data: [] }),
+      current.twitch.scopes?.includes('channel:manage:vips') ? twitchNative.helix<{ data?: unknown[] }>(clientId, 'channels/vips', [['broadcaster_id', broadcasterId], ['user_id', user.id]]) : Promise.resolve({ data: [] }),
     ])
     const follower = follow.status === 'fulfilled' ? follow.value.data?.[0] : undefined
     const banned = ban.status === 'fulfilled' ? ban.value.data?.[0] : undefined
-    return { id: user.id, login: user.login, displayName: user.display_name, avatarUrl: user.profile_image_url, createdAt: user.created_at, followedAt: follower?.followed_at, banned: Boolean(banned), bannedUntil: banned?.expires_at, banReason: banned?.reason }
+    return { id: user.id, login: user.login, displayName: user.display_name, avatarUrl: user.profile_image_url, createdAt: user.created_at, followedAt: follower?.followed_at, banned: Boolean(banned), bannedUntil: banned?.expires_at, banReason: banned?.reason, moderator: moderator.status === 'fulfilled' && Boolean(moderator.value.data?.length), vip: vip.status === 'fulfilled' && Boolean(vip.value.data?.length) }
   }
   const moderateChatUser = async (userId: string, duration?: number, reason?: string) => {
     const { clientId, broadcasterId } = moderationContext('moderator:manage:banned_users')
@@ -150,6 +152,12 @@ export function RuntimeProvider({ children }: { children: ReactNode }) {
     await twitchNative.helixDelete(clientId, 'moderation/chat', [['broadcaster_id', broadcasterId], ['moderator_id', broadcasterId], ['message_id', messageId]])
     state().removeChatMessage(messageId)
   }
+  const setChatUserRole = async (userId: string, role: 'moderator' | 'vip', enabled: boolean) => {
+    const scope = role === 'moderator' ? 'channel:manage:moderators' : 'channel:manage:vips'; const { clientId, broadcasterId } = moderationContext(scope)
+    const path = role === 'moderator' ? 'moderation/moderators' : 'channels/vips'; const query: [string, string][] = [['broadcaster_id', broadcasterId], ['user_id', userId]]
+    if (enabled) await twitchNative.helixPost(clientId, path, query, {})
+    else await twitchNative.helixDelete(clientId, path, query)
+  }
 
-  return <RuntimeContext.Provider value={{ deviceAuth, connectTwitch, disconnectTwitch, reauthorizeTwitch, connectStreamElements, disconnectStreamElements, sendChatMessage, getChatUserProfile, moderateChatUser, unbanChatUser, deleteChatMessage, reconnect }}>{children}</RuntimeContext.Provider>
+  return <RuntimeContext.Provider value={{ deviceAuth, connectTwitch, disconnectTwitch, reauthorizeTwitch, connectStreamElements, disconnectStreamElements, sendChatMessage, getChatUserProfile, moderateChatUser, unbanChatUser, deleteChatMessage, setChatUserRole, reconnect }}>{children}</RuntimeContext.Provider>
 }

@@ -14,6 +14,7 @@ export interface RuntimeValue {
   moderateChatUser: (userId: string, duration?: number, reason?: string) => Promise<void>
   unbanChatUser: (userId: string) => Promise<void>
   deleteChatMessage: (messageId: string) => Promise<void>
+  setChatUserRole: (userId: string, role: 'moderator' | 'vip', enabled: boolean) => Promise<void>
   reconnect: () => Promise<void>
 }
 export const RuntimeContext = createContext<RuntimeValue | null>(null)

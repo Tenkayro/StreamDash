@@ -100,4 +100,6 @@ export interface ChatUserProfile {
   banned: boolean
   bannedUntil?: string
   banReason?: string
+  moderator: boolean
+  vip: boolean
 }
