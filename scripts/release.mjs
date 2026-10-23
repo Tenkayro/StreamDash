@@ -13,9 +13,27 @@ function executable(name) {
   return process.platform === 'win32' && ['npm', 'npx'].includes(name) ? `${name}.cmd` : name
 }
 
+function quoteArgument(value) {
+  return /^[\w\-.\\/:@=,+]+$/.test(value) ? value : `"${value.replace(/"/g, '""')}"`
+}
+
+function spawnProcess(name, args, options) {
+  const command = executable(name)
+  // Node no longer spawns .cmd/.bat files without a shell (CVE-2024-27980), so run
+  // command scripts through cmd.exe and hand the arguments over verbatim.
+  if (process.platform === 'win32' && /\.(cmd|bat)$/i.test(command)) {
+    const line = [command, ...args].map(quoteArgument).join(' ')
+    return spawn(process.env.ComSpec || 'cmd.exe', ['/d', '/s', '/c', `"${line}"`], {
+      ...options,
+      windowsVerbatimArguments: true,
+    })
+  }
+  return spawn(command, args, options)
+}
+
 async function run(name, args, options = {}) {
   return new Promise((resolveRun, reject) => {
-    const child = spawn(executable(name), args, {
+    const child = spawnProcess(name, args, {
       cwd: root,
       env: options.env || process.env,
       windowsHide: true,
@@ -25,7 +43,7 @@ async function run(name, args, options = {}) {
     let stderr = ''
     child.stdout.on('data', (chunk) => { stdout += chunk })
     child.stderr.on('data', (chunk) => { stderr += chunk })
-    child.on('error', reject)
+    child.on('error', (error) => reject(new Error(`${name} could not be started: ${error.message}`)))
     child.on('close', (code) => {
       if (code === 0 || options.allowFailure) return resolveRun({ code, stdout: stdout.trim(), stderr: stderr.trim() })
       const output = `${stdout}\n${stderr}`.trim()
