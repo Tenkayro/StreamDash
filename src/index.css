@@ -1,6 +1,6 @@
 @import "tailwindcss";
 :root { --app-accent: #8067e9; --app-accent-soft: #8067e91c; font-family: "Segoe UI Variable", "Segoe UI", system-ui, sans-serif; color: #e8e9ed; background: #0c0d10; font-synthesis: none; text-rendering: optimizeLegibility; }
-* { box-sizing: border-box; } html, body, #root { width: 100%; height: 100%; margin: 0; overflow: hidden; } button, input, select { font: inherit; } button { cursor: pointer; } button:disabled { cursor: not-allowed; opacity: .5; } ::selection { background: #7256e8; color: white; }
+* { box-sizing: border-box; } html, body, #root { width: 100%; height: 100%; margin: 0; overflow: hidden; } body { user-select: none; } input, textarea, [contenteditable="true"] { user-select: text; } button, input, select, textarea { font: inherit; } button { cursor: pointer; } button:disabled { cursor: not-allowed; opacity: .5; } ::selection { background: var(--app-accent); color: white; }
 ::-webkit-scrollbar { width: 10px; height: 10px; } ::-webkit-scrollbar-thumb { background: #2b2d34; border: 3px solid transparent; background-clip: padding-box; border-radius: 8px; } ::-webkit-scrollbar-track { background: transparent; }
 @theme inline { --color-panel: #121318; --color-raised: #17181e; --color-line: #272931; --color-muted: #9296a3; --color-accent: var(--app-accent); --color-accent-soft: var(--app-accent-soft); }
 [data-accent="violet"] { --app-accent: #8067e9; --app-accent-soft: #8067e91c; }
