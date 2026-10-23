@@ -1,6 +1,6 @@
 [package]
 name = "streamdash"
-version = "1.3.1"
+version = "1.3.2"
 description = "A private real-time Twitch and StreamElements activity dashboard"
 authors = ["Tenkayro"]
 license = "MIT"
