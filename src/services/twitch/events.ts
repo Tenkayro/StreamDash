@@ -7,7 +7,7 @@ const num = (v: unknown) => typeof v === 'number' ? v : undefined
 export function normalizeTwitch(messageId: string, subscriptionType: string, raw: Raw, timestamp: string): ActivityEvent | null {
   const map: Record<string, ActivityType> = {
     'channel.follow': 'follow', 'channel.subscribe': 'subscription', 'channel.subscription.message': 'resubscription',
-    'channel.subscription.gift': num(raw.total) && Number(raw.total) > 1 ? 'community_gift' : 'gift_subscription',
+    'channel.subscription.gift': Number(raw.total ?? 0) > 1 ? 'community_gift' : 'gift_subscription',
     'channel.cheer': 'cheer', 'channel.raid': 'raid', 'channel.channel_points_custom_reward_redemption.add': 'channel_point',
     'stream.online': 'stream_online', 'stream.offline': 'stream_offline',
   }

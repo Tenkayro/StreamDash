@@ -1,4 +1,4 @@
-import { createContext, useCallback, useContext, useEffect, useRef, useState, type ReactNode } from 'react'
+import { useCallback, useEffect, useRef, useState, type ReactNode } from 'react'
 import { listen } from '@tauri-apps/api/event'
 import { openUrl } from '@tauri-apps/plugin-opener'
 import { isPermissionGranted, requestPermission, sendNotification } from '@tauri-apps/plugin-notification'
@@ -9,18 +9,11 @@ import { loadEvents, loadSettings, saveEvent, secretDelete, secretGet, secretSet
 import { loadTwitchSnapshot, TwitchEventSub, twitchClientId, TWITCH_SCOPES } from './twitch/client'
 import { StreamElementsClient } from './streamelements/client'
 import type { ActivityEvent } from '../types'
-
-interface DeviceAuth { code: string; url: string; expiresAt: number }
-interface RuntimeValue {
-  deviceAuth?: DeviceAuth; connectTwitch: () => Promise<void>; disconnectTwitch: () => Promise<void>
-  connectStreamElements: (token: string) => Promise<void>; disconnectStreamElements: () => Promise<void>; reconnect: () => Promise<void>
-}
-const RuntimeContext = createContext<RuntimeValue | null>(null)
-export const useRuntime = () => useContext(RuntimeContext)!
+import { RuntimeContext, type DeviceAuth } from './runtime-context'
 
 export function RuntimeProvider({ children }: { children: ReactNode }) {
-  const store = useAppStore(); const state = useAppStore.getState
-  const twitchRef = useRef<TwitchEventSub>(); const seRef = useRef<StreamElementsClient>()
+  const setSettings = useAppStore((s) => s.setSettings); const setEvents = useAppStore((s) => s.setEvents); const setReady = useAppStore((s) => s.setReady); const state = useAppStore.getState
+  const twitchRef = useRef<TwitchEventSub | undefined>(undefined); const seRef = useRef<StreamElementsClient | undefined>(undefined)
   const [deviceAuth, setDeviceAuth] = useState<DeviceAuth>()
 
   const ingest = useCallback(async (event: ActivityEvent) => {
@@ -65,14 +58,14 @@ export function RuntimeProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     let disposed = false; const unlisten: Array<() => void> = []
     ;(async () => {
-      try { const [settings, events] = await Promise.all([loadSettings(), loadEvents()]); if (disposed) return; store.setSettings(settings); store.setEvents(events); store.setReady(true); await reconnect() }
-      catch (error) { toast.error('StreamDash could not initialize', { description: errorMessage(error) }); store.setReady(true) }
+      try { const settings = await loadSettings(); const events = await loadEvents(settings.maximumEvents ?? 5000); if (disposed) return; setSettings(settings); setEvents(events); const bits = events.reduce((n,e)=>n+(e.bits??0),0); const donations = events.reduce((n,e)=>n+(e.amount??0),0); state().setStats({ bits, donations, donationCurrency: events.find((e)=>e.currency)?.currency }); setReady(true); await reconnect() }
+      catch (error) { toast.error('StreamDash could not initialize', { description: errorMessage(error) }); setReady(true) }
       if (isTauri()) {
         unlisten.push(await listen('tray-reconnect', reconnect), await listen('tray-settings', () => state().setPage('settings')))
       }
     })()
     return () => { disposed = true; unlisten.forEach((f) => f()); twitchRef.current?.stop(); seRef.current?.stop() }
-  }, []) // one application lifecycle
+  }, [reconnect, setEvents, setReady, setSettings, state])
 
   const connectTwitch = async () => {
     if (!twitchClientId) { toast.error('Twitch Client ID is not configured', { description: 'Create .env from .env.example, then restart StreamDash.' }); return }
@@ -82,7 +75,8 @@ export function RuntimeProvider({ children }: { children: ReactNode }) {
       setDeviceAuth({ code: device.user_code, url: device.verification_uri, expiresAt: Date.now() + device.expires_in * 1000 })
       await openUrl(device.verification_uri)
       let interval = Math.max(device.interval, 1) * 1000
-      while (Date.now() < Date.now() + device.expires_in * 1000) {
+      const expiresAt = Date.now() + device.expires_in * 1000
+      while (Date.now() < expiresAt) {
         await new Promise((r) => setTimeout(r, interval))
         const result = await twitchNative.devicePoll(twitchClientId, device.device_code, TWITCH_SCOPES)
         if (result.status === 'authorized') { setDeviceAuth(undefined); toast.success('Twitch connected'); await startTwitch(); return }

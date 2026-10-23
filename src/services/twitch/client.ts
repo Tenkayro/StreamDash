@@ -36,7 +36,10 @@ export class TwitchEventSub {
   private stopped = false
   private retry = 0
   private watchdog?: number
-  constructor(private session: TwitchSession, private onEvent: (event: ActivityEvent) => void, private onState: (state: 'connected'|'reconnecting'|'error', detail?: string) => void) {}
+  private session: TwitchSession
+  private onEvent: (event: ActivityEvent) => void
+  private onState: (state: 'connected'|'reconnecting'|'error', detail?: string) => void
+  constructor(session: TwitchSession, onEvent: (event: ActivityEvent) => void, onState: (state: 'connected'|'reconnecting'|'error', detail?: string) => void) { this.session = session; this.onEvent = onEvent; this.onState = onState }
   start() { this.stopped = false; this.open('wss://eventsub.wss.twitch.tv/ws?keepalive_timeout_seconds=30') }
   stop() { this.stopped = true; window.clearTimeout(this.watchdog); this.socket?.close(); this.socket = undefined }
   private open(url: string, replacement = false) {
@@ -50,9 +53,8 @@ export class TwitchEventSub {
       if (msg.metadata.message_type === 'session_welcome' && msg.payload.session) {
         this.retry = 0; this.onState('connected'); if (replacement) old?.close()
         if (!replacement) {
-          for (const [type, version, condition] of subscriptions(this.session.userId)) {
-            await twitchNative.subscribe(twitchClientId, { type, version, condition, transport: { method: 'websocket', session_id: msg.payload.session.id } })
-          }
+          try { for (const [type, version, condition] of subscriptions(this.session.userId)) await twitchNative.subscribe(twitchClientId, { type, version, condition, transport: { method: 'websocket', session_id: msg.payload.session.id } }) }
+          catch (error) { this.onState('error', String(error)); ws.close() }
         }
       } else if (msg.metadata.message_type === 'session_notification' && msg.payload.subscription && msg.payload.event) {
         const event = normalizeTwitch(msg.metadata.message_id, msg.payload.subscription.type, msg.payload.event, msg.metadata.message_timestamp)

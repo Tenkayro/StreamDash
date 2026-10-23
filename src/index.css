@@ -1,111 +1,12 @@
-:root {
-  --text: #6b6375;
-  --text-h: #08060d;
-  --bg: #fff;
-  --border: #e5e4e7;
-  --code-bg: #f4f3ec;
-  --accent: #aa3bff;
-  --accent-bg: rgba(170, 59, 255, 0.1);
-  --accent-border: rgba(170, 59, 255, 0.5);
-  --social-bg: rgba(244, 243, 236, 0.5);
-  --shadow:
-    rgba(0, 0, 0, 0.1) 0 10px 15px -3px, rgba(0, 0, 0, 0.05) 0 4px 6px -2px;
-
-  --sans: system-ui, 'Segoe UI', Roboto, sans-serif;
-  --heading: system-ui, 'Segoe UI', Roboto, sans-serif;
-  --mono: ui-monospace, Consolas, monospace;
-
-  font: 18px/145% var(--sans);
-  letter-spacing: 0.18px;
-  color-scheme: light dark;
-  color: var(--text);
-  background: var(--bg);
-  font-synthesis: none;
-  text-rendering: optimizeLegibility;
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
-
-  @media (max-width: 1024px) {
-    font-size: 16px;
-  }
-}
-
-@media (prefers-color-scheme: dark) {
-  :root {
-    --text: #9ca3af;
-    --text-h: #f3f4f6;
-    --bg: #16171d;
-    --border: #2e303a;
-    --code-bg: #1f2028;
-    --accent: #c084fc;
-    --accent-bg: rgba(192, 132, 252, 0.15);
-    --accent-border: rgba(192, 132, 252, 0.5);
-    --social-bg: rgba(47, 48, 58, 0.5);
-    --shadow:
-      rgba(0, 0, 0, 0.4) 0 10px 15px -3px, rgba(0, 0, 0, 0.25) 0 4px 6px -2px;
-  }
-
-  #social .button-icon {
-    filter: invert(1) brightness(2);
-  }
-}
-
-#root {
-  width: 1126px;
-  max-width: 100%;
-  margin: 0 auto;
-  text-align: center;
-  border-inline: 1px solid var(--border);
-  min-height: 100svh;
-  display: flex;
-  flex-direction: column;
-  box-sizing: border-box;
-}
-
-body {
-  margin: 0;
-}
-
-h1,
-h2 {
-  font-family: var(--heading);
-  font-weight: 500;
-  color: var(--text-h);
-}
-
-h1 {
-  font-size: 56px;
-  letter-spacing: -1.68px;
-  margin: 32px 0;
-  @media (max-width: 1024px) {
-    font-size: 36px;
-    margin: 20px 0;
-  }
-}
-h2 {
-  font-size: 24px;
-  line-height: 118%;
-  letter-spacing: -0.24px;
-  margin: 0 0 8px;
-  @media (max-width: 1024px) {
-    font-size: 20px;
-  }
-}
-p {
-  margin: 0;
-}
-
-code,
-.counter {
-  font-family: var(--mono);
-  display: inline-flex;
-  border-radius: 4px;
-  color: var(--text-h);
-}
-
-code {
-  font-size: 15px;
-  line-height: 135%;
-  padding: 4px 8px;
-  background: var(--code-bg);
-}
+@import "tailwindcss";
+:root { font-family: "Segoe UI Variable", "Segoe UI", system-ui, sans-serif; color: #e8e9ed; background: #0c0d10; font-synthesis: none; text-rendering: optimizeLegibility; }
+* { box-sizing: border-box; } html, body, #root { width: 100%; height: 100%; margin: 0; overflow: hidden; } button, input, select { font: inherit; } button { cursor: pointer; } button:disabled { cursor: not-allowed; opacity: .5; } ::selection { background: #7256e8; color: white; }
+::-webkit-scrollbar { width: 10px; height: 10px; } ::-webkit-scrollbar-thumb { background: #2b2d34; border: 3px solid transparent; background-clip: padding-box; border-radius: 8px; } ::-webkit-scrollbar-track { background: transparent; }
+@theme { --color-panel: #121318; --color-raised: #17181e; --color-line: #272931; --color-muted: #9296a3; --color-accent: #8067e9; --color-accent-soft: #8067e91c; }
+@keyframes enter { from { opacity: 0; transform: translateY(-6px); } to { opacity: 1; transform: translateY(0); } }
+.event-enter { animation: enter .24s ease-out; } .drag-region { -webkit-app-region: drag; } .no-drag { -webkit-app-region: no-drag; }
+.card { border: 1px solid #25272e; background: #131419; border-radius: 14px; }
+.button { display: inline-flex; align-items: center; justify-content: center; gap: 8px; min-height: 36px; padding: 0 14px; border: 1px solid #30323a; border-radius: 9px; background: #1b1c22; color: #e8e9ed; transition: .15s ease; }
+.button:hover { background: #22242b; border-color: #3a3d47; } .button-primary { background: #765bdd; border-color: #846ae3; color: white; } .button-primary:hover { background: #8065e4; }
+.input { width: 100%; min-height: 38px; border: 1px solid #2c2e36; border-radius: 9px; background: #101116; color: #e8e9ed; padding: 0 11px; outline: none; } .input:focus { border-color: #6e58c5; box-shadow: 0 0 0 3px #7158d21a; }
+.label { font-size: 12px; font-weight: 600; letter-spacing: .02em; color: #a2a5af; }

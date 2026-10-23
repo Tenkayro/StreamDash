@@ -3,16 +3,20 @@ import type { ActivityEvent, ActivityType } from '../../types'
 type Json = Record<string, unknown>
 export class StreamElementsClient {
   private socket?: WebSocket; private stopped = false; private retry = 0; private reconnectToken?: string
-  constructor(private token: string, private onEvent: (event: ActivityEvent) => void, private onState: (state: 'connected'|'reconnecting'|'error', detail?: string) => void) {}
+  private token: string
+  private onEvent: (event: ActivityEvent) => void
+  private onState: (state: 'connected'|'reconnecting'|'error', detail?: string) => void
+  constructor(token: string, onEvent: (event: ActivityEvent) => void, onState: (state: 'connected'|'reconnecting'|'error', detail?: string) => void) { this.token = token; this.onEvent = onEvent; this.onState = onState }
   start() { this.stopped = false; this.open() }
   stop() { this.stopped = true; this.socket?.close(); this.socket = undefined }
   private open() {
+    const old = this.socket
     const suffix = this.reconnectToken ? `?reconnect_token=${encodeURIComponent(this.reconnectToken)}` : ''
     const ws = new WebSocket(`wss://astro.streamelements.com/${suffix}`); this.socket = ws
     ws.onmessage = ({ data }) => {
       let msg: Json; try { msg = JSON.parse(String(data)) } catch { return }
       if (msg.type === 'welcome') {
-        this.retry = 0; this.onState('connected')
+        this.retry = 0; this.onState('connected'); if (old && old !== ws) old.close()
         if (!this.reconnectToken) for (const topic of ['channel.activities', 'channel.tips']) ws.send(JSON.stringify({ type: 'subscribe', nonce: crypto.randomUUID(), data: { topic, token: this.token, token_type: 'jwt' } }))
         this.reconnectToken = undefined
       } else if (msg.type === 'response' && msg.error) this.onState('error', String((msg.data as Json)?.message ?? msg.error))
