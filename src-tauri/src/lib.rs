@@ -347,6 +347,20 @@ async fn twitch_helix_post(client_id: String, path: String, query: Vec<(String,S
 }
 
 #[tauri::command]
+async fn twitch_helix_delete(client_id: String, path: String, query: Vec<(String,String)>) -> Result<Value, String> {
+    if path.contains("..") || path.contains("://") { return Err("Invalid Helix path".into()); }
+    let tokens = valid_tokens(&client_id).await?;
+    let url = format!("https://api.twitch.tv/helix/{}", path.trim_start_matches('/'));
+    let response = http().delete(url).query(&query).header("Client-Id", client_id)
+        .bearer_auth(tokens.access_token).send().await.map_err(|e| e.to_string())?;
+    let status = response.status();
+    if status.as_u16() == 204 { return Ok(json!({})); }
+    let body: Value = response.json().await.unwrap_or(json!({}));
+    if !status.is_success() { return Err(body["message"].as_str().unwrap_or("Twitch API request failed").to_string()); }
+    Ok(body)
+}
+
+#[tauri::command]
 async fn twitch_eventsub_create(client_id: String, body: Value) -> Result<(), String> {
     let tokens = valid_tokens(&client_id).await?;
     let response = http().post("https://api.twitch.tv/helix/eventsub/subscriptions")
@@ -448,6 +462,6 @@ pub fn run() {
             Ok(())
         })
         .invoke_handler(tauri::generate_handler![events_list,event_insert,events_clear,settings_load,setting_save,
-          secret_set,secret_get,secret_delete,twitch_device_start,twitch_device_poll,twitch_session,twitch_helix_get,twitch_helix_patch,twitch_helix_post,twitch_eventsub_create,twitch_chat_start,twitch_chat_send,twitch_chat_stop])
+          secret_set,secret_get,secret_delete,twitch_device_start,twitch_device_poll,twitch_session,twitch_helix_get,twitch_helix_patch,twitch_helix_post,twitch_helix_delete,twitch_eventsub_create,twitch_chat_start,twitch_chat_send,twitch_chat_stop])
         .run(tauri::generate_context!()).expect("error while building StreamDash");
 }

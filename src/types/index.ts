@@ -58,6 +58,9 @@ export interface AppSettings {
   chatFontSize: number
   chatEmoteSize: number
   maximumChatMessages: number
+  chatHiddenUsers: string[]
+  chatHighlightIgnoredUsers: string[]
+  chatUserNotes: Record<string, string>
   notifications: boolean
   notifyDonations: boolean
   notifyRaids: boolean
@@ -84,4 +87,17 @@ export interface ChatMessage {
   firstMessage?: boolean
   action?: boolean
   reply?: { displayName: string; body: string }
+  deleted?: boolean
+}
+
+export interface ChatUserProfile {
+  id: string
+  login: string
+  displayName: string
+  avatarUrl?: string
+  createdAt?: string
+  followedAt?: string
+  banned: boolean
+  bannedUntil?: string
+  banReason?: string
 }

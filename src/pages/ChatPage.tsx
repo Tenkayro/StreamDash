@@ -2,6 +2,7 @@ import { AtSign, ChevronDown, LoaderCircle, MessageSquare, Search, Send, Trash2,
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { toast } from 'sonner'
 import { Badge, Button, Card, EmptyState, PageHeader } from '../components/ui'
+import { UserCard } from '../components/chat/UserCard'
 import { errorMessage, isTauri } from '../lib/utils'
 import { useRuntime } from '../services/runtime-context'
 import { useAppStore } from '../stores/app-store'
@@ -13,6 +14,7 @@ function tone(phase: ConnectionPhase) {
 function formatTime(timestamp: number) { return new Date(timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) }
 function includesIgnoreCase(value: string, query: string) { return value.toLocaleLowerCase().includes(query.toLocaleLowerCase()) }
 function isHighlighted(message: ChatMessage, account: string | undefined, settings: AppSettings) {
+  if (settings.chatHighlightIgnoredUsers.includes(message.login)) return false
   if (settings.chatHighlightMentions && account && new RegExp(`(^|\\W)@?${account.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}(?=\\W|$)`, 'i').test(message.text)) return true
   return settings.chatHighlightWords.some((word) => word && includesIgnoreCase(message.text, word))
 }
@@ -25,17 +27,17 @@ function Parts({ parts, emoteSize }: { parts: ChatPart[]; emoteSize: number }) {
       </span>)}</>
 }
 
-function ChatRow({ message, account, settings, onMention }: { message: ChatMessage; account?: string; settings: AppSettings; onMention: (name: string) => void }) {
+function ChatRow({ message, account, settings, onUser }: { message: ChatMessage; account?: string; settings: AppSettings; onUser: (login: string) => void }) {
   const highlighted = isHighlighted(message, account, settings)
-  return <div className={`group relative flex gap-2 border-l-2 px-3 py-1 leading-6 transition-colors ${highlighted ? 'border-amber-400 bg-amber-400/[.08] hover:bg-amber-400/[.12]' : message.firstMessage ? 'border-sky-500 bg-sky-400/[.035] hover:bg-sky-400/[.07]' : 'border-transparent hover:bg-white/[.035]'}`}>
+  return <div className={`group relative flex gap-2 border-l-2 px-3 py-1 leading-6 transition-colors ${message.deleted ? 'border-transparent opacity-40' : highlighted ? 'border-amber-400 bg-amber-400/[.08] hover:bg-amber-400/[.12]' : message.firstMessage ? 'border-sky-500 bg-sky-400/[.035] hover:bg-sky-400/[.07]' : 'border-transparent hover:bg-white/[.035]'}`}>
     {settings.chatTimestamps && <span className="w-10 shrink-0 pt-0.5 text-right text-[10px] tabular-nums text-zinc-600">{formatTime(message.timestamp)}</span>}
     <div className="min-w-0 flex-1 whitespace-pre-wrap break-words" style={{ fontSize: settings.chatFontSize }}>
       {message.reply && <div className="mb-0.5 truncate border-l border-zinc-700 pl-2 text-[10px] leading-4 text-zinc-600">Replying to <span className="text-zinc-400">{message.reply.displayName}</span>: {message.reply.body}</div>}
       {settings.chatBadges && message.badges.map((badge) => <img key={`${badge.id}/${badge.version}`} src={badge.url} alt={badge.id} title={badge.id} loading="lazy" className="mr-1 inline-block h-4 w-auto align-[-3px]"/>)}
-      <button className="font-semibold hover:underline" style={{ color: message.color }} title={`Mention ${message.login}`} onClick={() => onMention(message.displayName)}>{message.displayName}</button>
+      <button className="font-semibold hover:underline" style={{ color: message.color }} title={`Open user card for ${message.login}`} onClick={() => onUser(message.login)}>{message.displayName}</button>
       {message.firstMessage && <span className="ml-1 rounded bg-sky-400/10 px-1 py-0.5 text-[9px] font-semibold uppercase tracking-wide text-sky-300">first</span>}
       <span className="text-zinc-500">{message.action ? ' ' : ': '}</span>
-      <span className={message.action ? 'italic' : undefined}><Parts parts={message.parts} emoteSize={settings.chatEmoteSize}/></span>
+      <span className={`${message.action ? 'italic ' : ''}${message.deleted ? 'line-through' : ''}`}><Parts parts={message.parts} emoteSize={settings.chatEmoteSize}/></span>{message.deleted && <span className="ml-2 text-[9px] uppercase text-zinc-600">deleted</span>}
     </div>
   </div>
 }
@@ -70,10 +72,11 @@ export function ChatPage() {
   const [stick, setStick] = useState(true); const [unread, setUnread] = useState(0); const [draft, setDraft] = useState(''); const [cursor, setCursor] = useState(0)
   const [sending, setSending] = useState(false); const [search, setSearch] = useState(''); const [searchOpen, setSearchOpen] = useState(false)
   const [selected, setSelected] = useState(0); const [dismissedDraft, setDismissedDraft] = useState<string>(); const [history, setHistory] = useState<string[]>([]); const [historyIndex, setHistoryIndex] = useState(-1)
+  const [selectedUser, setSelectedUser] = useState<string>()
   const missingScope = Boolean(twitch.phase === 'connected' && !['chat:read', 'chat:edit'].every((scope) => twitch.scopes?.includes(scope)))
   const users = useMemo(() => [...new Set([...chatMessages].reverse().map((message) => message.displayName))].slice(0, 250), [chatMessages])
   const completion = useMemo(() => dismissedDraft === draft ? undefined : getCompletion(draft, cursor, chatEmotes, users), [chatEmotes, cursor, dismissedDraft, draft, users])
-  const visibleMessages = useMemo(() => search ? chatMessages.filter((message) => includesIgnoreCase(`${message.displayName} ${message.login} ${message.text}`, search)) : chatMessages, [chatMessages, search])
+  const visibleMessages = useMemo(() => chatMessages.filter((message) => !settings.chatHiddenUsers.includes(message.login) && (!search || includesIgnoreCase(`${message.displayName} ${message.login} ${message.text}`, search))), [chatMessages, search, settings.chatHiddenUsers])
 
   useEffect(() => { inputRef.current?.focus() }, [])
   useEffect(() => {
@@ -120,7 +123,7 @@ export function ChatPage() {
         {search && <span className="shrink-0 text-[10px] text-zinc-600">{visibleMessages.length} matches</span>}
       </div>
       <div ref={listRef} onScroll={onScroll} className="relative flex-1 overflow-y-auto py-1">
-        {visibleMessages.length === 0 ? <div className="grid h-full place-items-center px-6 text-center text-sm text-muted">{search ? 'No messages match this filter.' : chat.phase === 'connecting' || chat.phase === 'reconnecting' ? 'Connecting to Twitch chat…' : 'Waiting for the first chat message…'}</div> : visibleMessages.map((message) => <ChatRow key={message.id} message={message} account={twitch.account} settings={settings} onMention={mention}/>)}
+        {visibleMessages.length === 0 ? <div className="grid h-full place-items-center px-6 text-center text-sm text-muted">{search ? 'No messages match this filter.' : chat.phase === 'connecting' || chat.phase === 'reconnecting' ? 'Connecting to Twitch chat…' : 'Waiting for the first chat message…'}</div> : visibleMessages.map((message) => <ChatRow key={message.id} message={message} account={twitch.account} settings={settings} onUser={setSelectedUser}/>)}
       </div>
       {!stick && <button className="mx-auto -mb-3 flex -translate-y-4 items-center gap-1.5 rounded-full border border-line bg-raised px-3 py-1.5 text-[11px] shadow-xl hover:border-zinc-600" onClick={jumpToLatest}><ChevronDown size={13}/>{unread ? `${unread} new message${unread === 1 ? '' : 's'}` : 'Jump to latest'}</button>}
       <div className="relative border-t border-line p-2.5">
@@ -128,6 +131,6 @@ export function ChatPage() {
         <form className="flex gap-2" onSubmit={submit}><input ref={inputRef} className="input" placeholder={`Message #${twitch.account} · type :emote: or @user`} value={draft} maxLength={500} autoComplete="off" disabled={!isTauri()} onChange={(event) => { setDraft(event.target.value); setCursor(event.target.selectionStart ?? event.target.value.length); setSelected(0); setDismissedDraft(undefined); setHistoryIndex(-1) }} onClick={(event) => setCursor(event.currentTarget.selectionStart ?? draft.length)} onKeyDown={onInputKeyDown}/><Button variant="primary" type="submit" disabled={!draft.trim() || sending || !isTauri()}>{sending ? <LoaderCircle size={15} className="animate-spin"/> : <Send size={15}/>}Send</Button></form>
         <div className="mt-1.5 flex justify-between px-1 text-[9px] text-zinc-700"><span>Tab/Enter completes · ↑ recalls sent messages · click a name to mention</span><span>{draft.length}/500</span></div>
       </div>
-    </Card>
+    </Card>{selectedUser && <UserCard login={selectedUser} messages={chatMessages} onClose={() => setSelectedUser(undefined)} onMention={mention}/>}
   </>
 }

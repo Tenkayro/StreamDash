@@ -1,13 +1,19 @@
 import { createContext, useContext } from 'react'
+import type { ChatUserProfile } from '../types'
 
 export interface DeviceAuth { code: string; url: string; expiresAt: number }
 export interface RuntimeValue {
   deviceAuth?: DeviceAuth
   connectTwitch: () => Promise<void>
   disconnectTwitch: () => Promise<void>
+  reauthorizeTwitch: () => Promise<void>
   connectStreamElements: (token: string) => Promise<void>
   disconnectStreamElements: () => Promise<void>
   sendChatMessage: (text: string) => Promise<void>
+  getChatUserProfile: (login: string) => Promise<ChatUserProfile>
+  moderateChatUser: (userId: string, duration?: number, reason?: string) => Promise<void>
+  unbanChatUser: (userId: string) => Promise<void>
+  deleteChatMessage: (messageId: string) => Promise<void>
   reconnect: () => Promise<void>
 }
 export const RuntimeContext = createContext<RuntimeValue | null>(null)

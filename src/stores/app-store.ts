@@ -10,6 +10,7 @@ export const defaultSettings: AppSettings = {
   dashboardWidgets: defaultDashboardWidgets,
   chatTimestamps: true, chatBadges: true, chatHighlightMentions: true, chatHighlightWords: [],
   chatFontSize: 13, chatEmoteSize: 28, maximumChatMessages: 1000,
+  chatHiddenUsers: [], chatHighlightIgnoredUsers: [], chatUserNotes: {},
   notifications: true, notifyDonations: true, notifyRaids: true, notifyGiftSubs: true,
   maximumEvents: 5000, disabledEventTypes: [], goals: {},
 }
@@ -38,8 +39,8 @@ export const useAppStore = create<AppStore>((set) => ({
     const withoutEcho = message.id.startsWith('local-') ? s.chatMessages : s.chatMessages.filter((item) => !(item.id.startsWith('local-') && item.login === message.login && item.text === message.text && message.timestamp - item.timestamp < 15_000))
     return { chatMessages: [...withoutEcho, message].slice(-s.settings.maximumChatMessages) }
   }),
-  removeChatMessage: (id) => set((s) => ({ chatMessages: s.chatMessages.filter((message) => message.id !== id) })),
-  clearChat: (login) => set((s) => ({ chatMessages: login ? s.chatMessages.filter((message) => message.login !== login) : [] })),
+  removeChatMessage: (id) => set((s) => ({ chatMessages: s.chatMessages.map((message) => message.id === id ? { ...message, deleted: true } : message) })),
+  clearChat: (login) => set((s) => ({ chatMessages: login ? s.chatMessages.map((message) => message.login === login ? { ...message, deleted: true } : message) : [] })),
   stats: emptyStats, setStats: (stats) => set((s) => ({ stats: { ...s.stats, ...stats } })),
   settings: defaultSettings, setSettings: (settings) => set((s) => ({ settings: { ...s.settings, ...settings } })),
 }))

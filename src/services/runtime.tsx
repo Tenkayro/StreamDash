@@ -9,7 +9,7 @@ import { loadEvents, loadSettings, saveEvent, secretDelete, secretGet, secretSet
 import { loadTwitchSnapshot, TwitchEventSub, TWITCH_SCOPES } from './twitch/client'
 import { TwitchChatClient } from './twitch/chat'
 import { StreamElementsClient } from './streamelements/client'
-import type { ActivityEvent } from '../types'
+import type { ActivityEvent, ChatUserProfile } from '../types'
 import { RuntimeContext, type DeviceAuth } from './runtime-context'
 
 export function RuntimeProvider({ children }: { children: ReactNode }) {
@@ -97,6 +97,7 @@ export function RuntimeProvider({ children }: { children: ReactNode }) {
     } catch (error) { setDeviceAuth(undefined); state().setTwitch({ phase: 'error', detail: errorMessage(error) }); toast.error('Could not connect Twitch', { description: errorMessage(error) }) }
   }
   const disconnectTwitch = async () => { twitchRef.current?.stop(); chatRef.current?.stop(); state().setChat({ phase: 'disconnected' }); state().setChatEmotes([]); await secretDelete('twitch-oauth'); state().setTwitch({ phase: 'disconnected' }); state().setStats({ followers: undefined, subscribers: undefined, viewers: undefined, live: false, startedAt: undefined }) }
+  const reauthorizeTwitch = async () => { await disconnectTwitch(); await connectTwitch() }
   const connectStreamElements = async (token: string) => { if (!token.trim()) return; await secretSet('streamelements-token', token.trim()); await startStreamElements() }
   const disconnectStreamElements = async () => { seRef.current?.stop(); await secretDelete('streamelements-token'); state().setStreamElements({ phase: 'disconnected' }) }
   const sendChatMessage = async (text: string) => {
@@ -116,5 +117,39 @@ export function RuntimeProvider({ children }: { children: ReactNode }) {
     if (dropped) throw new Error(dropped.drop_reason?.message ?? 'Twitch rejected the message')
   }
 
-  return <RuntimeContext.Provider value={{ deviceAuth, connectTwitch, disconnectTwitch, connectStreamElements, disconnectStreamElements, sendChatMessage, reconnect }}>{children}</RuntimeContext.Provider>
+  const moderationContext = (scope: string) => {
+    const current = state(); const clientId = current.settings.twitchClientId.trim(); const broadcasterId = current.twitch.userId
+    if (!clientId || !broadcasterId) throw new Error('Twitch is not connected')
+    if (!current.twitch.scopes?.includes(scope)) throw new Error('Reconnect Twitch once to grant the required moderation permission')
+    return { clientId, broadcasterId }
+  }
+  const getChatUserProfile = async (login: string): Promise<ChatUserProfile> => {
+    const current = state(); const clientId = current.settings.twitchClientId.trim(); const broadcasterId = current.twitch.userId
+    if (!clientId || !broadcasterId) throw new Error('Twitch is not connected')
+    const users = await twitchNative.helix<{ data?: Array<{ id: string; login: string; display_name: string; profile_image_url?: string; created_at?: string }> }>(clientId, 'users', [['login', login]])
+    const user = users.data?.[0]; if (!user) throw new Error('Twitch user was not found')
+    const [follow, ban] = await Promise.allSettled([
+      twitchNative.helix<{ data?: Array<{ followed_at?: string }> }>(clientId, 'channels/followers', [['broadcaster_id', broadcasterId], ['user_id', user.id]]),
+      current.twitch.scopes?.includes('moderator:manage:banned_users') ? twitchNative.helix<{ data?: Array<{ expires_at?: string; reason?: string }> }>(clientId, 'moderation/banned', [['broadcaster_id', broadcasterId], ['user_id', user.id]]) : Promise.resolve({ data: [] }),
+    ])
+    const follower = follow.status === 'fulfilled' ? follow.value.data?.[0] : undefined
+    const banned = ban.status === 'fulfilled' ? ban.value.data?.[0] : undefined
+    return { id: user.id, login: user.login, displayName: user.display_name, avatarUrl: user.profile_image_url, createdAt: user.created_at, followedAt: follower?.followed_at, banned: Boolean(banned), bannedUntil: banned?.expires_at, banReason: banned?.reason }
+  }
+  const moderateChatUser = async (userId: string, duration?: number, reason?: string) => {
+    const { clientId, broadcasterId } = moderationContext('moderator:manage:banned_users')
+    const data: Record<string, unknown> = { user_id: userId }; if (duration != null) data.duration = Math.max(1, Math.min(1_209_600, Math.round(duration))); if (reason?.trim()) data.reason = reason.trim().slice(0, 500)
+    await twitchNative.helixPost(clientId, 'moderation/bans', [['broadcaster_id', broadcasterId], ['moderator_id', broadcasterId]], { data })
+  }
+  const unbanChatUser = async (userId: string) => {
+    const { clientId, broadcasterId } = moderationContext('moderator:manage:banned_users')
+    await twitchNative.helixDelete(clientId, 'moderation/bans', [['broadcaster_id', broadcasterId], ['moderator_id', broadcasterId], ['user_id', userId]])
+  }
+  const deleteChatMessage = async (messageId: string) => {
+    const { clientId, broadcasterId } = moderationContext('moderator:manage:chat_messages')
+    await twitchNative.helixDelete(clientId, 'moderation/chat', [['broadcaster_id', broadcasterId], ['moderator_id', broadcasterId], ['message_id', messageId]])
+    state().removeChatMessage(messageId)
+  }
+
+  return <RuntimeContext.Provider value={{ deviceAuth, connectTwitch, disconnectTwitch, reauthorizeTwitch, connectStreamElements, disconnectStreamElements, sendChatMessage, getChatUserProfile, moderateChatUser, unbanChatUser, deleteChatMessage, reconnect }}>{children}</RuntimeContext.Provider>
 }
