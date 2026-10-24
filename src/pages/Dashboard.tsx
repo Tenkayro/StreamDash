@@ -31,7 +31,7 @@ import {
 import {
   ReactGridLayout,
   useContainerWidth,
-  verticalCompactor,
+  noCompactor,
   type Layout,
 } from "react-grid-layout";
 import { createScaledStrategy } from "react-grid-layout/core";
@@ -116,7 +116,8 @@ const widgetCatalog: WidgetCatalogEntry[] = [
   },
 ];
 const GRID_COLUMNS = 24;
-const GRID_GAP = 12;
+const GRID_GAP = 8;
+const GRID_BOTTOM_BUFFER = 5;
 
 function Metric({
   label,
@@ -134,7 +135,7 @@ function Metric({
   loadingWidth?: string;
 }) {
   return (
-    <Card className="flex min-h-24 flex-col p-3.5">
+    <Card className="flex min-h-0 flex-col p-3">
       <div className="flex items-center justify-between">
         <span className="text-[11px] font-medium text-muted">{label}</span>
         <Icon size={14} className="text-zinc-600" />
@@ -198,16 +199,16 @@ function defaultWidgetSize(id: DashboardItemId): DashboardWidgetSize {
   if (metricIndex >= 0)
     return {
       x: (metricIndex % 4) * 6,
-      y: Math.floor(metricIndex / 4) * 3,
+      y: Math.floor(metricIndex / 4) * 2,
       columns: 6,
-      rows: 3,
+      rows: 2,
     };
-  if (id === "activity") return { x: 0, y: 6, columns: 16, rows: 8 };
-  if (id === "streamDetails") return { x: 16, y: 6, columns: 8, rows: 8 };
-  if (id === "goals") return { x: 0, y: 14, columns: 12, rows: 6 };
-  if (id === "connections") return { x: 12, y: 14, columns: 12, rows: 6 };
-  if (id === "livePreview") return { x: 0, y: 20, columns: 16, rows: 12 };
-  return { x: 0, y: 1000, columns: 12, rows: 8 };
+  if (id === "activity") return { x: 0, y: 4, columns: 16, rows: 7 };
+  if (id === "streamDetails") return { x: 16, y: 4, columns: 8, rows: 7 };
+  if (id === "goals") return { x: 0, y: 11, columns: 12, rows: 5 };
+  if (id === "connections") return { x: 12, y: 11, columns: 12, rows: 5 };
+  if (id === "livePreview") return { x: 0, y: 16, columns: 16, rows: 11 };
+  return { x: 0, y: 1000, columns: 12, rows: 7 };
 }
 
 function minimumWidgetSize(id: DashboardItemId): DashboardWidgetSize {
@@ -287,7 +288,7 @@ function HiddenWidgets({
 }) {
   return (
     <div
-      className="card mb-3 flex min-h-12 items-center gap-3 border-dashed px-3 py-2 transition"
+      className="card mb-2 flex min-h-10 items-center gap-2 border-dashed px-2.5 py-1.5 transition"
     >
       <div className="flex shrink-0 items-center gap-2 text-[11px] font-medium text-zinc-500">
         <EyeOff size={13} />
@@ -960,8 +961,10 @@ export function Dashboard() {
     gridLayout.reduce(
       (bottom, item) => Math.max(bottom, item.y + item.h),
       0,
-    ) + 2,
+    ) + GRID_BOTTOM_BUFFER,
   );
+  const editingGridHeight =
+    gridRows * gridCellSize + Math.max(0, gridRows - 1) * GRID_GAP;
   const positionStrategy = useMemo(
     () => createScaledStrategy(zoom / 100),
     [zoom],
@@ -1035,15 +1038,15 @@ export function Dashboard() {
             }}
             dragConfig={{
               enabled: editing,
-              bounded: true,
+              bounded: false,
               handle: ".dashboard-drag-handle",
               threshold: 5,
             }}
             resizeConfig={{ enabled: editing, handles: ["se"] }}
             positionStrategy={positionStrategy}
-            compactor={verticalCompactor}
+            compactor={noCompactor}
             className={cn("dashboard-layout", editing && "is-editing")}
-            style={{ minHeight: editing ? 520 : undefined }}
+            style={{ minHeight: editing ? editingGridHeight : undefined }}
             onLayoutChange={(next) => setInteractionLayout(next)}
             onDragStop={(next) => persistGridLayout(next)}
             onResizeStop={(next) => persistGridLayout(next)}
