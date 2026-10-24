@@ -12,6 +12,7 @@ import {
   Store,
   Tag,
   UserRound,
+  ZoomIn,
   X,
   type LucideIcon,
 } from "lucide-react";
@@ -20,6 +21,8 @@ import { isTauri } from "../lib/utils";
 import { useUpdater } from "../services/updater-context";
 import titlebarLogo from "../assets/branding/streamdash-logo-titlebar.webp";
 import { LoadingIndicator } from "./ui";
+import { useAppStore } from "../stores/app-store";
+import { saveSetting } from "../services/native";
 
 function TitleAction({
   icon: Icon,
@@ -158,6 +161,7 @@ export function TitleBar() {
   const window = isTauri() ? getCurrentWindow() : null;
   const updater = useUpdater();
   const [version, setVersion] = useState("");
+  const { page, settings, setSettings } = useAppStore();
   const channel = import.meta.env.DEV
     ? "DEV"
     : updater.channel === "store"
@@ -199,6 +203,24 @@ export function TitleBar() {
       <div data-tauri-drag-region className="h-full min-w-8 flex-1" />
       <div className="no-drag flex h-full shrink-0 items-center">
         <div className="flex items-center gap-0.5 px-1.5">
+          {page === "dashboard" && (
+            <button
+              type="button"
+              title="Reset dashboard zoom"
+              aria-label={`Dashboard zoom ${settings.dashboardZoom} percent. Reset zoom`}
+              onClick={() => {
+                setSettings({ dashboardZoom: 100 });
+                void saveSetting("dashboardZoom", 100);
+              }}
+              className="flex h-7 items-center gap-1.5 rounded-md px-2 text-zinc-500 transition hover:bg-white/5.5 hover:text-zinc-200"
+            >
+              <ZoomIn size={13} />
+              <span className="min-w-7 text-right text-[10px] tabular-nums">
+                {settings.dashboardZoom}%
+              </span>
+              {settings.dashboardZoom !== 100 && <RotateCcw size={10} />}
+            </button>
+          )}
           <UpdateControl />
           <TitleAction
             icon={GitFork}

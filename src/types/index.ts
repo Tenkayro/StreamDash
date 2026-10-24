@@ -35,6 +35,7 @@ export interface DashboardStats {
 }
 
 export type DashboardWidgetId = 'followers' | 'subscribers' | 'viewers' | 'duration' | 'bits' | 'donations' | 'status' | 'eventCount' | 'activity' | 'streamDetails' | 'livePreview' | 'goals' | 'connections'
+export interface DashboardWidgetSize { columns: number; height: number }
 export type UiDensity = 'compact' | 'comfortable'
 export type ContentWidth = 'compact' | 'wide' | 'full'
 export type AccentColor = 'violet' | 'blue' | 'emerald' | 'orange'
@@ -50,6 +51,8 @@ export interface AppSettings {
   accentColor: AccentColor
   sidebarCollapsed: boolean
   dashboardWidgets: DashboardWidgetId[]
+  dashboardWidgetSizes: Partial<Record<DashboardWidgetId, DashboardWidgetSize>>
+  dashboardZoom: number
   dashboardLayoutVersion: number
   chatTimestamps: boolean
   chatBadges: boolean

@@ -140,6 +140,9 @@ button:disabled {
 .no-drag {
   -webkit-app-region: no-drag;
 }
+.dashboard-zoom-gesture iframe {
+  pointer-events: none;
+}
 .card {
   border: 1px solid #23252c;
   background: #121318;

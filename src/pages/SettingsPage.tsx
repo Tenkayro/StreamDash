@@ -238,9 +238,24 @@ export function SettingsPage() {
               detail={`${settings.dashboardWidgets.length} widgets are currently visible.`}
             >
               <Button
-                onClick={() =>
-                  update("dashboardWidgets", defaultDashboardWidgets)
-                }
+                onClick={async () => {
+                  setSettings({
+                    dashboardWidgets: defaultDashboardWidgets,
+                    dashboardWidgetSizes: {},
+                    dashboardZoom: 100,
+                  });
+                  try {
+                    await Promise.all([
+                      saveSetting("dashboardWidgets", defaultDashboardWidgets),
+                      saveSetting("dashboardWidgetSizes", {}),
+                      saveSetting("dashboardZoom", 100),
+                    ]);
+                  } catch (error) {
+                    toast.error("Dashboard layout could not be reset", {
+                      description: errorMessage(error),
+                    });
+                  }
+                }}
               >
                 <RotateCcw size={14} />
                 Reset

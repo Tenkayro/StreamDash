@@ -17,7 +17,14 @@ import {
   Wallet,
   type LucideIcon,
 } from "lucide-react";
-import { useEffect, useMemo, useState, type ReactNode } from "react";
+import {
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+  type PointerEvent as ReactPointerEvent,
+  type ReactNode,
+} from "react";
 import {
   closestCenter,
   DndContext,
@@ -50,7 +57,11 @@ import {
   PageHeader,
 } from "../components/ui";
 import { cn, money } from "../lib/utils";
-import type { ConnectionState, DashboardWidgetId } from "../types";
+import type {
+  ConnectionState,
+  DashboardWidgetId,
+  DashboardWidgetSize,
+} from "../types";
 
 const widgetCatalog: Array<{
   id: DashboardWidgetId;
@@ -162,13 +173,21 @@ function connectionTone(state: ConnectionState) {
         ? "bg-red-400"
         : "bg-zinc-600";
 }
-function widgetSpan(id: DashboardWidgetId) {
-  if (id === "activity") return "col-span-12 lg:col-span-8";
-  if (id === "livePreview") return "col-span-12 lg:col-span-8";
-  if (id === "streamDetails") return "col-span-12 lg:col-span-4";
-  if (id === "goals" || id === "connections")
-    return "col-span-12 lg:col-span-6";
-  return "col-span-12 sm:col-span-6 xl:col-span-3";
+function defaultWidgetSize(id: DashboardWidgetId): DashboardWidgetSize {
+  if (id === "activity") return { columns: 8, height: 320 };
+  if (id === "livePreview") return { columns: 8, height: 360 };
+  if (id === "streamDetails") return { columns: 4, height: 220 };
+  if (id === "goals") return { columns: 6, height: 230 };
+  if (id === "connections") return { columns: 6, height: 220 };
+  return { columns: 3, height: 96 };
+}
+
+function minimumWidgetSize(id: DashboardWidgetId): DashboardWidgetSize {
+  if (id === "livePreview") return { columns: 7, height: 350 };
+  if (id === "activity") return { columns: 4, height: 180 };
+  if (["streamDetails", "goals", "connections"].includes(id))
+    return { columns: 3, height: 140 };
+  return { columns: 2, height: 88 };
 }
 const hiddenDropId = "dashboard-hidden-widgets";
 
@@ -176,15 +195,22 @@ function SortableWidget({
   id,
   editing,
   label,
+  size,
   onHide,
+  onResize,
+  onResizeEnd,
   children,
 }: {
   id: DashboardWidgetId;
   editing: boolean;
   label: string;
+  size: DashboardWidgetSize;
   onHide: () => void;
+  onResize: (size: DashboardWidgetSize) => void;
+  onResizeEnd: (size: DashboardWidgetSize) => void;
   children: ReactNode;
 }) {
+  const elementRef = useRef<HTMLDivElement | null>(null);
   const {
     attributes,
     listeners,
@@ -193,13 +219,68 @@ function SortableWidget({
     transition,
     isDragging,
   } = useSortable({ id, disabled: !editing });
+  const assignRef = (node: HTMLDivElement | null) => {
+    elementRef.current = node;
+    setNodeRef(node);
+  };
+  const startResize = (event: ReactPointerEvent<HTMLButtonElement>) => {
+    event.preventDefault();
+    event.stopPropagation();
+    const element = elementRef.current;
+    const grid = element?.parentElement;
+    if (!element || !grid) return;
+    const startX = event.clientX;
+    const startY = event.clientY;
+    const gridRect = grid.getBoundingClientRect();
+    const itemRect = element.getBoundingClientRect();
+    const gap = 12;
+    const columnWidth = (gridRect.width - gap * 11) / 12;
+    const heightScale = element.offsetHeight / itemRect.height;
+    const minimum = minimumWidgetSize(id);
+    let latest = size;
+
+    const move = (pointerEvent: PointerEvent) => {
+      const columns = Math.max(
+        minimum.columns,
+        Math.min(
+          12,
+          size.columns +
+            Math.round((pointerEvent.clientX - startX) / (columnWidth + gap)),
+        ),
+      );
+      const height = Math.max(
+        minimum.height,
+        Math.min(
+          900,
+          Math.round(
+            size.height + (pointerEvent.clientY - startY) * heightScale,
+          ),
+        ),
+      );
+      latest = { columns, height };
+      onResize(latest);
+    };
+    const stop = () => {
+      window.removeEventListener("pointermove", move);
+      window.removeEventListener("pointerup", stop);
+      window.removeEventListener("pointercancel", stop);
+      onResizeEnd(latest);
+    };
+    window.addEventListener("pointermove", move);
+    window.addEventListener("pointerup", stop, { once: true });
+    window.addEventListener("pointercancel", stop, { once: true });
+  };
   return (
     <div
-      ref={setNodeRef}
-      style={{ transform: CSS.Transform.toString(transform), transition }}
+      ref={assignRef}
+      style={{
+        gridColumn: `span ${size.columns} / span ${size.columns}`,
+        height: size.height,
+        transform: CSS.Translate.toString(transform),
+        transition,
+      }}
       className={cn(
-        "relative min-w-0 [&>.card]:h-full",
-        widgetSpan(id),
+        "relative min-w-0",
         editing && "rounded-xl ring-1 ring-accent/20",
         isDragging && "z-10 opacity-20",
       )}
@@ -227,7 +308,18 @@ function SortableWidget({
           </button>
         </div>
       )}
-      {children}
+      <div className="h-full overflow-hidden [&>.card]:h-full">{children}</div>
+      {editing && (
+        <button
+          type="button"
+          title={`Resize ${label}`}
+          aria-label={`Resize ${label}`}
+          onPointerDown={startResize}
+          className="absolute -bottom-1 -right-1 z-20 size-5 cursor-nwse-resize rounded-tl-md border-l border-t border-accent/40 bg-raised text-accent shadow-lg touch-none"
+        >
+          <span className="absolute bottom-1 right-1 size-2 border-b border-r border-current" />
+        </button>
+      )}
     </div>
   );
 }
@@ -307,7 +399,10 @@ export function Dashboard() {
   const [, tick] = useState(0);
   const [editing, setEditing] = useState(false);
   const [dragging, setDragging] = useState<DashboardWidgetId>();
-  const [dragSize, setDragSize] = useState<{ width: number; height: number }>();
+  const dashboardRef = useRef<HTMLDivElement | null>(null);
+  const zoomSaveTimer = useRef<ReturnType<typeof setTimeout> | undefined>(
+    undefined,
+  );
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 5 } }),
     useSensor(KeyboardSensor, {
@@ -317,6 +412,48 @@ export function Dashboard() {
   useEffect(() => {
     const id = setInterval(() => tick((x) => x + 1), 30_000);
     return () => clearInterval(id);
+  }, []);
+  useEffect(() => {
+    const dashboard = dashboardRef.current;
+    if (!dashboard) return;
+    const handleZoom = (event: WheelEvent) => {
+      if (!event.ctrlKey) return;
+      event.preventDefault();
+      const current = useAppStore.getState().settings.dashboardZoom;
+      const next = Math.max(
+        50,
+        Math.min(150, current + (event.deltaY < 0 ? 10 : -10)),
+      );
+      if (next === current) return;
+      useAppStore.getState().setSettings({ dashboardZoom: next });
+      clearTimeout(zoomSaveTimer.current);
+      zoomSaveTimer.current = setTimeout(() => {
+        void saveSetting("dashboardZoom", next).catch(() =>
+          toast.error("Dashboard zoom could not be saved"),
+        );
+      }, 200);
+    };
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === "Control")
+        dashboard.classList.add("dashboard-zoom-gesture");
+    };
+    const handleKeyUp = (event: KeyboardEvent) => {
+      if (event.key === "Control")
+        dashboard.classList.remove("dashboard-zoom-gesture");
+    };
+    const cancelZoomGesture = () =>
+      dashboard.classList.remove("dashboard-zoom-gesture");
+    dashboard.addEventListener("wheel", handleZoom, { passive: false });
+    window.addEventListener("keydown", handleKeyDown);
+    window.addEventListener("keyup", handleKeyUp);
+    window.addEventListener("blur", cancelZoomGesture);
+    return () => {
+      dashboard.removeEventListener("wheel", handleZoom);
+      window.removeEventListener("keydown", handleKeyDown);
+      window.removeEventListener("keyup", handleKeyUp);
+      window.removeEventListener("blur", cancelZoomGesture);
+      clearTimeout(zoomSaveTimer.current);
+    };
   }, []);
   const connected =
     twitch.phase === "connected" || streamElements.phase === "connected";
@@ -344,16 +481,49 @@ export function Dashboard() {
   const hideWidget = (id: DashboardWidgetId) =>
     updateWidgets(widgets.filter((widget) => widget !== id));
   const showWidget = (id: DashboardWidgetId) => updateWidgets([...widgets, id]);
+  const widgetSize = (id: DashboardWidgetId) => {
+    const fallback = defaultWidgetSize(id);
+    const saved = settings.dashboardWidgetSizes[id];
+    const minimum = minimumWidgetSize(id);
+    return {
+      columns: Math.max(
+        minimum.columns,
+        Math.min(12, saved?.columns ?? fallback.columns),
+      ),
+      height: Math.max(
+        minimum.height,
+        Math.min(900, saved?.height ?? fallback.height),
+      ),
+    };
+  };
+  const resizeWidget = (id: DashboardWidgetId, size: DashboardWidgetSize) => {
+    const current = useAppStore.getState().settings.dashboardWidgetSizes;
+    setSettings({ dashboardWidgetSizes: { ...current, [id]: size } });
+  };
+  const finishResize = (id: DashboardWidgetId, size: DashboardWidgetSize) => {
+    resizeWidget(id, size);
+    const next = useAppStore.getState().settings.dashboardWidgetSizes;
+    void saveSetting("dashboardWidgetSizes", next).catch(() =>
+      toast.error("Widget size could not be saved"),
+    );
+  };
+  const resetDashboard = () => {
+    setSettings({
+      dashboardWidgets: defaultDashboardWidgets,
+      dashboardWidgetSizes: {},
+    });
+    void Promise.all([
+      saveSetting("dashboardWidgets", defaultDashboardWidgets),
+      saveSetting("dashboardWidgetSizes", {}),
+    ]).catch(() => toast.error("Dashboard layout could not be reset"));
+  };
   const finishDrag = () => {
     setDragging(undefined);
-    setDragSize(undefined);
   };
   const startDrag = (event: DragStartEvent) => {
     const id = event.active.id as DashboardWidgetId;
     if (!allWidgetIds.has(id)) return;
-    const rect = event.active.rect.current.initial;
     setDragging(id);
-    if (rect) setDragSize({ width: rect.width, height: rect.height });
   };
   const endDrag = (event: DragEndEvent) => {
     const source = event.active.id as DashboardWidgetId;
@@ -515,7 +685,7 @@ export function Dashboard() {
       );
     if (id === "livePreview")
       return (
-        <Card className="overflow-hidden">
+        <Card className="flex flex-col overflow-hidden">
           <div className="flex items-center justify-between border-b border-line px-4 py-3">
             <div className="flex items-center gap-2 text-xs font-semibold">
               <MonitorPlay size={14} className="text-accent" />
@@ -528,8 +698,8 @@ export function Dashboard() {
               Open
             </button>
           </div>
-          <div className="overflow-hidden bg-black">
-            <TwitchPlayer className="aspect-video h-auto w-full" />
+          <div className="min-h-0 flex-1 overflow-hidden bg-black">
+            <TwitchPlayer className="h-full w-full" />
           </div>
         </Card>
       );
@@ -646,8 +816,12 @@ export function Dashboard() {
   };
   const activeWidget =
     dragging && allWidgetIds.has(dragging) ? dragging : undefined;
+  const zoom = Math.max(50, Math.min(150, settings.dashboardZoom || 100));
   return (
-    <>
+    <div
+      ref={dashboardRef}
+      style={{ zoom: zoom / 100, width: `${10_000 / zoom}%` }}
+    >
       <PageHeader
         title="Dashboard"
         titleActions={
@@ -685,11 +859,11 @@ export function Dashboard() {
           <HiddenWidgets
             widgets={hiddenWidgets}
             onShow={showWidget}
-            onReset={() => updateWidgets(defaultDashboardWidgets)}
+            onReset={resetDashboard}
           />
         )}
         <SortableContext items={widgets} strategy={rectSortingStrategy}>
-          <div className="grid grid-cols-12 gap-3">
+          <div className="dashboard-grid grid grid-cols-12 items-start gap-3">
             {widgets.map((id) => {
               const label =
                 widgetCatalog.find((widget) => widget.id === id)?.label ??
@@ -700,7 +874,10 @@ export function Dashboard() {
                   id={id}
                   editing={editing}
                   label={label}
+                  size={widgetSize(id)}
                   onHide={() => hideWidget(id)}
+                  onResize={(size) => resizeWidget(id, size)}
+                  onResizeEnd={(size) => finishResize(id, size)}
                 >
                   {renderWidget(id)}
                 </SortableWidget>
@@ -709,14 +886,14 @@ export function Dashboard() {
           </div>
         </SortableContext>
         <DragOverlay
+          adjustScale={false}
           dropAnimation={{ duration: 180, easing: "cubic-bezier(.2,.8,.2,1)" }}
         >
           {activeWidget && (
-            <div
-              style={{ width: dragSize?.width, height: dragSize?.height }}
-              className="pointer-events-none [&>.card]:h-full opacity-95 drop-shadow-2xl"
-            >
-              {renderWidget(activeWidget)}
+            <div className="pointer-events-none flex h-12 w-64 max-w-[70vw] items-center gap-2 rounded-xl border border-accent/40 bg-raised px-3 text-xs font-semibold text-zinc-200 opacity-95 shadow-2xl shadow-black/50">
+              <GripVertical size={14} className="text-accent" />
+              {widgetCatalog.find((widget) => widget.id === activeWidget)
+                ?.label ?? "Widget"}
             </div>
           )}
         </DragOverlay>
@@ -739,6 +916,6 @@ export function Dashboard() {
           </div>
         </Card>
       )}
-    </>
+    </div>
   );
 }

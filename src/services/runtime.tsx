@@ -47,19 +47,18 @@ let bootstrapPromise: Promise<Bootstrap> | undefined;
 function loadBootstrap() {
   bootstrapPromise ??= (async () => {
     const settings = await loadSettings();
-    if ((settings.dashboardLayoutVersion ?? 0) < 2) {
+    if ((settings.dashboardLayoutVersion ?? 0) < 3) {
       if (
         Array.isArray(settings.dashboardWidgets) &&
-        !settings.dashboardWidgets.includes("livePreview")
+        settings.dashboardWidgets.includes("livePreview")
       ) {
-        settings.dashboardWidgets = [
-          ...settings.dashboardWidgets,
-          "livePreview",
-        ];
+        settings.dashboardWidgets = settings.dashboardWidgets.filter(
+          (widget) => widget !== "livePreview",
+        );
         await saveSetting("dashboardWidgets", settings.dashboardWidgets);
       }
-      settings.dashboardLayoutVersion = 2;
-      await saveSetting("dashboardLayoutVersion", 2);
+      settings.dashboardLayoutVersion = 3;
+      await saveSetting("dashboardLayoutVersion", 3);
     }
     const events = await loadEvents(settings.maximumEvents ?? 5000);
     return { settings, events };

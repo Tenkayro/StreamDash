@@ -9,3 +9,4 @@ src-tauri/target/
 .vscode/settings.json
 src-tauri/gen/
 todo
+AGENTS.md
