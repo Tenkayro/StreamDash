@@ -4,7 +4,6 @@ import {
   Eye,
   EyeOff,
   Globe2,
-  GripVertical,
   Heart,
   LayoutGrid,
   Link2,
@@ -28,15 +27,6 @@ import {
   type FormEvent,
   type ReactNode,
 } from "react";
-import {
-  ReactGridLayout,
-  useContainerWidth,
-  noCompactor,
-  type Layout,
-} from "react-grid-layout";
-import { createScaledStrategy } from "react-grid-layout/core";
-import { GridBackground } from "react-grid-layout/extras";
-import "react-grid-layout/css/styles.css";
 import { toast } from "sonner";
 import { useAppStore, defaultDashboardWidgets } from "../stores/app-store";
 import { saveSetting } from "../services/native";
@@ -55,7 +45,6 @@ import type {
   DashboardBrowserSource,
   DashboardItemId,
   DashboardWidgetId,
-  DashboardWidgetSize,
 } from "../types";
 
 type WidgetCatalogEntry = {
@@ -115,9 +104,16 @@ const widgetCatalog: WidgetCatalogEntry[] = [
     description: "Service health and accounts",
   },
 ];
-const GRID_COLUMNS = 24;
-const GRID_GAP = 8;
-const GRID_BOTTOM_BUFFER = 5;
+const metricWidgetIds = new Set<DashboardItemId>([
+  "followers",
+  "subscribers",
+  "viewers",
+  "duration",
+  "bits",
+  "donations",
+  "status",
+  "eventCount",
+]);
 
 function Metric({
   label,
@@ -184,44 +180,7 @@ function sourceHostname(url: string) {
   }
 }
 
-function defaultWidgetSize(id: DashboardItemId): DashboardWidgetSize {
-  const metrics: DashboardWidgetId[] = [
-    "followers",
-    "subscribers",
-    "viewers",
-    "duration",
-    "bits",
-    "donations",
-    "status",
-    "eventCount",
-  ];
-  const metricIndex = metrics.indexOf(id as DashboardWidgetId);
-  if (metricIndex >= 0)
-    return {
-      x: (metricIndex % 4) * 6,
-      y: Math.floor(metricIndex / 4) * 2,
-      columns: 6,
-      rows: 2,
-    };
-  if (id === "activity") return { x: 0, y: 4, columns: 16, rows: 7 };
-  if (id === "streamDetails") return { x: 16, y: 4, columns: 8, rows: 7 };
-  if (id === "goals") return { x: 0, y: 11, columns: 12, rows: 5 };
-  if (id === "connections") return { x: 12, y: 11, columns: 12, rows: 5 };
-  if (id === "livePreview") return { x: 0, y: 16, columns: 16, rows: 11 };
-  return { x: 0, y: 1000, columns: 12, rows: 7 };
-}
-
-function minimumWidgetSize(id: DashboardItemId): DashboardWidgetSize {
-  if (isBrowserWidget(id)) return { x: 0, y: 0, columns: 8, rows: 5 };
-  if (id === "livePreview")
-    return { x: 0, y: 0, columns: 14, rows: 12 };
-  if (id === "activity") return { x: 0, y: 0, columns: 8, rows: 5 };
-  if (["streamDetails", "goals", "connections"].includes(id))
-    return { x: 0, y: 0, columns: 6, rows: 4 };
-  return { x: 0, y: 0, columns: 4, rows: 2 };
-}
-
-function GridWidget({
+function DashboardWidget({
   editing,
   label,
   onHide,
@@ -240,18 +199,10 @@ function GridWidget({
         <div className="absolute -top-2 right-2 z-20 flex items-center rounded-md border border-line bg-raised shadow-lg">
           <button
             type="button"
-            title={`Move ${label}`}
-            aria-label={`Drag ${label} to move`}
-            className="dashboard-drag-handle grid size-6 cursor-grab place-items-center text-zinc-500 outline-none hover:bg-white/5 hover:text-zinc-200 active:cursor-grabbing"
-          >
-            <GripVertical size={12} />
-          </button>
-          <button
-            type="button"
             title={`Hide ${label}`}
             aria-label={`Hide ${label}`}
             onClick={onHide}
-            className="grid size-6 place-items-center border-l border-line text-zinc-500 hover:bg-white/5 hover:text-zinc-200"
+            className="grid size-6 place-items-center text-zinc-500 hover:bg-white/5 hover:text-zinc-200"
           >
             <EyeOff size={12} />
           </button>
@@ -271,6 +222,14 @@ function GridWidget({
       <div className="h-full overflow-hidden [&>.card]:h-full">{children}</div>
     </div>
   );
+}
+
+function widgetLayoutClass(id: DashboardItemId) {
+  if (id === "activity") return "min-h-72 lg:col-span-2";
+  if (id === "streamDetails") return "min-h-56";
+  if (id === "livePreview") return "col-span-full min-h-96";
+  if (id === "goals" || id === "connections") return "min-h-52";
+  return "min-h-80";
 }
 
 function HiddenWidgets({
@@ -434,15 +393,7 @@ export function Dashboard() {
   const [, tick] = useState(0);
   const [editing, setEditing] = useState(false);
   const [addingBrowserSource, setAddingBrowserSource] = useState(false);
-  const [interactionLayout, setInteractionLayout] = useState<Layout | null>(
-    null,
-  );
   const dashboardRef = useRef<HTMLDivElement | null>(null);
-  const {
-    width: gridWidth,
-    containerRef: gridContainerRef,
-    mounted: gridMounted,
-  } = useContainerWidth({ initialWidth: 1000 });
   const zoomSaveTimer = useRef<ReturnType<typeof setTimeout> | undefined>(
     undefined,
   );
@@ -529,7 +480,6 @@ export function Dashboard() {
     [availableWidgets, widgets],
   );
   const updateWidgets = (next: DashboardItemId[]) => {
-    setInteractionLayout(null);
     setSettings({ dashboardWidgets: next });
     void saveSetting("dashboardWidgets", next).catch(() =>
       toast.error("Dashboard layout could not be saved"),
@@ -538,62 +488,15 @@ export function Dashboard() {
   const hideWidget = (id: DashboardItemId) =>
     updateWidgets(widgets.filter((widget) => widget !== id));
   const showWidget = (id: DashboardItemId) => updateWidgets([...widgets, id]);
-  const baseGridLayout = useMemo<Layout>(
-    () =>
-      widgets.map((id) => {
-        const fallback = defaultWidgetSize(id);
-        const saved = settings.dashboardWidgetSizes[id] ?? fallback;
-        const minimum = minimumWidgetSize(id);
-        const width = Math.max(
-          minimum.columns,
-          Math.min(GRID_COLUMNS, saved.columns),
-        );
-        const height = Math.max(minimum.rows, Math.min(24, saved.rows));
-        return {
-          i: id,
-          x: Math.max(0, Math.min(GRID_COLUMNS - width, saved.x)),
-          y: Math.max(0, saved.y),
-          w: width,
-          h: height,
-          minW: minimum.columns,
-          minH: minimum.rows,
-          maxW: GRID_COLUMNS,
-          maxH: 24,
-        };
-      }),
-    [settings.dashboardWidgetSizes, widgets],
-  );
-  const gridLayout = interactionLayout ?? baseGridLayout;
-  const persistGridLayout = (layout: Layout) => {
-    setInteractionLayout(layout);
-    const current = useAppStore.getState().settings.dashboardWidgetSizes;
-    const next = { ...current };
-    layout.forEach((item) => {
-      next[item.i as DashboardItemId] = {
-        x: item.x,
-        y: item.y,
-        columns: item.w,
-        rows: item.h,
-      };
-    });
-    setSettings({ dashboardWidgetSizes: next });
-    void saveSetting("dashboardWidgetSizes", next).catch(() =>
-      toast.error("Dashboard layout could not be saved"),
-    );
-  };
   const resetDashboard = () => {
-    setInteractionLayout(null);
     setSettings({
       dashboardWidgets: defaultDashboardWidgets,
-      dashboardWidgetSizes: {},
     });
-    void Promise.all([
-      saveSetting("dashboardWidgets", defaultDashboardWidgets),
-      saveSetting("dashboardWidgetSizes", {}),
-    ]).catch(() => toast.error("Dashboard layout could not be reset"));
+    void saveSetting("dashboardWidgets", defaultDashboardWidgets).catch(() =>
+      toast.error("Dashboard layout could not be reset"),
+    );
   };
   const addBrowserSource = (name: string, url: string) => {
-    setInteractionLayout(null);
     const source: DashboardBrowserSource = {
       id: crypto.randomUUID(),
       name,
@@ -605,48 +508,30 @@ export function Dashboard() {
       ...widgets,
       widgetId,
     ];
-    const fallback = defaultWidgetSize(widgetId);
-    const sizes = {
-      ...settings.dashboardWidgetSizes,
-      [widgetId]: {
-        ...fallback,
-        y: gridLayout.reduce(
-          (bottom, item) => Math.max(bottom, item.y + item.h),
-          0,
-        ),
-      },
-    };
     setSettings({
       dashboardBrowserSources: sources,
       dashboardWidgets: nextWidgets,
-      dashboardWidgetSizes: sizes,
     });
     setAddingBrowserSource(false);
     void Promise.all([
       saveSetting("dashboardBrowserSources", sources),
       saveSetting("dashboardWidgets", nextWidgets),
-      saveSetting("dashboardWidgetSizes", sizes),
     ]).catch(() => toast.error("Browser source could not be saved"));
   };
   const deleteBrowserSource = (id: DashboardItemId) => {
     if (!isBrowserWidget(id)) return;
-    setInteractionLayout(null);
     const sourceId = id.slice("browser:".length);
     const sources = settings.dashboardBrowserSources.filter(
       (source) => source.id !== sourceId,
     );
     const nextWidgets = widgets.filter((widget) => widget !== id);
-    const sizes = { ...settings.dashboardWidgetSizes };
-    delete sizes[id];
     setSettings({
       dashboardBrowserSources: sources,
       dashboardWidgets: nextWidgets,
-      dashboardWidgetSizes: sizes,
     });
     void Promise.all([
       saveSetting("dashboardBrowserSources", sources),
       saveSetting("dashboardWidgets", nextWidgets),
-      saveSetting("dashboardWidgetSizes", sizes),
     ]).catch(() => toast.error("Browser source could not be deleted"));
   };
   const metric = (id: DashboardWidgetId) => {
@@ -952,22 +837,9 @@ export function Dashboard() {
     );
   };
   const zoom = Math.max(50, Math.min(150, settings.dashboardZoom || 100));
-  const gridCellSize = Math.max(
-    18,
-    (gridWidth - GRID_GAP * (GRID_COLUMNS - 1)) / GRID_COLUMNS,
-  );
-  const gridRows = Math.max(
-    16,
-    gridLayout.reduce(
-      (bottom, item) => Math.max(bottom, item.y + item.h),
-      0,
-    ) + GRID_BOTTOM_BUFFER,
-  );
-  const editingGridHeight =
-    gridRows * gridCellSize + Math.max(0, gridRows - 1) * GRID_GAP;
-  const positionStrategy = useMemo(
-    () => createScaledStrategy(zoom / 100),
-    [zoom],
+  const visibleMetricWidgets = widgets.filter((id) => metricWidgetIds.has(id));
+  const visibleContentWidgets = widgets.filter(
+    (id) => !metricWidgetIds.has(id),
   );
   return (
     <div
@@ -1012,69 +884,65 @@ export function Dashboard() {
           onReset={resetDashboard}
         />
       )}
-      <div ref={gridContainerRef} className="relative min-h-0">
-        {gridMounted && editing && (
-          <GridBackground
-            width={gridWidth}
-            cols={GRID_COLUMNS}
-            rowHeight={gridCellSize}
-            margin={[GRID_GAP, GRID_GAP]}
-            containerPadding={[0, 0]}
-            rows={gridRows}
-            color="rgba(128, 103, 233, 0.10)"
-            borderRadius={3}
-            className="pointer-events-none absolute inset-0"
-          />
-        )}
-        {gridMounted && (
-          <ReactGridLayout
-            width={gridWidth}
-            layout={gridLayout}
-            gridConfig={{
-              cols: GRID_COLUMNS,
-              rowHeight: gridCellSize,
-              margin: [GRID_GAP, GRID_GAP],
-              containerPadding: [0, 0],
-            }}
-            dragConfig={{
-              enabled: editing,
-              bounded: false,
-              handle: ".dashboard-drag-handle",
-              threshold: 5,
-            }}
-            resizeConfig={{ enabled: editing, handles: ["se"] }}
-            positionStrategy={positionStrategy}
-            compactor={noCompactor}
-            className={cn("dashboard-layout", editing && "is-editing")}
-            style={{ minHeight: editing ? editingGridHeight : undefined }}
-            onLayoutChange={(next) => setInteractionLayout(next)}
-            onDragStop={(next) => persistGridLayout(next)}
-            onResizeStop={(next) => persistGridLayout(next)}
-          >
-            {widgets.map((id) => {
-              const label =
-                availableWidgets.find((widget) => widget.id === id)?.label ??
-                "Widget";
-              return (
-                <div key={id}>
-                  <GridWidget
-                    editing={editing}
-                    label={label}
-                    onHide={() => hideWidget(id)}
-                    onDelete={
-                      isBrowserWidget(id)
-                        ? () => deleteBrowserSource(id)
-                        : undefined
-                    }
-                  >
-                    {renderWidget(id)}
-                  </GridWidget>
-                </div>
-              );
-            })}
-          </ReactGridLayout>
-        )}
-      </div>
+      {visibleMetricWidgets.length > 0 && (
+        <div
+          className="grid gap-2"
+          style={{
+            gridTemplateColumns:
+              "repeat(auto-fit, minmax(min(100%, 180px), 1fr))",
+          }}
+        >
+          {visibleMetricWidgets.map((id) => {
+            const label =
+              availableWidgets.find((widget) => widget.id === id)?.label ??
+              "Widget";
+            return (
+              <DashboardWidget
+                key={id}
+                editing={editing}
+                label={label}
+                onHide={() => hideWidget(id)}
+              >
+                {renderWidget(id)}
+              </DashboardWidget>
+            );
+          })}
+        </div>
+      )}
+      {visibleContentWidgets.length > 0 && (
+        <div
+          className={cn(
+            "grid grid-flow-row-dense gap-2",
+            visibleMetricWidgets.length > 0 && "mt-2",
+          )}
+          style={{
+            gridTemplateColumns:
+              "repeat(auto-fit, minmax(min(100%, 260px), 1fr))",
+          }}
+        >
+          {visibleContentWidgets.map((id) => {
+            const label =
+              availableWidgets.find((widget) => widget.id === id)?.label ??
+              "Widget";
+            return (
+              <div key={id} className={widgetLayoutClass(id)}>
+                <DashboardWidget
+                  editing={editing}
+                  label={label}
+                  onHide={() => hideWidget(id)}
+                  onDelete={
+                    isBrowserWidget(id)
+                      ? () => deleteBrowserSource(id)
+                      : undefined
+                  }
+                >
+                  {renderWidget(id)}
+                </DashboardWidget>
+              </div>
+            );
+          })}
+        </div>
+      )}
       {widgets.length === 0 && (
         <Card className="grid min-h-52 place-items-center text-center">
           <div>

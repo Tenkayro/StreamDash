@@ -33,7 +33,6 @@ export const defaultSettings: AppSettings = {
   accentColor: "violet",
   sidebarCollapsed: false,
   dashboardWidgets: defaultDashboardWidgets,
-  dashboardWidgetSizes: {},
   dashboardBrowserSources: [],
   dashboardZoom: 100,
   dashboardLayoutVersion: 5,

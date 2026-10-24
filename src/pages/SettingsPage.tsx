@@ -241,13 +241,11 @@ export function SettingsPage() {
                 onClick={async () => {
                   setSettings({
                     dashboardWidgets: defaultDashboardWidgets,
-                    dashboardWidgetSizes: {},
                     dashboardZoom: 100,
                   });
                   try {
                     await Promise.all([
                       saveSetting("dashboardWidgets", defaultDashboardWidgets),
-                      saveSetting("dashboardWidgetSizes", {}),
                       saveSetting("dashboardZoom", 100),
                     ]);
                   } catch (error) {
