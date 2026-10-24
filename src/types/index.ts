@@ -36,6 +36,8 @@ export interface DashboardStats {
 
 export type DashboardWidgetId = 'followers' | 'subscribers' | 'viewers' | 'duration' | 'bits' | 'donations' | 'status' | 'eventCount' | 'activity' | 'streamDetails' | 'livePreview' | 'goals' | 'connections'
 export type DashboardItemId = DashboardWidgetId | `browser:${string}`
+export type DashboardWidgetWidth = 'single' | 'wide' | 'full'
+export interface DashboardWidgetDimensions { width: DashboardWidgetWidth; height: number }
 export interface DashboardBrowserSource { id: string; name: string; url: string }
 export type UiDensity = 'compact' | 'comfortable'
 export type ContentWidth = 'compact' | 'wide' | 'full'
@@ -52,6 +54,7 @@ export interface AppSettings {
   accentColor: AccentColor
   sidebarCollapsed: boolean
   dashboardWidgets: DashboardItemId[]
+  dashboardWidgetDimensions: Partial<Record<DashboardItemId, DashboardWidgetDimensions>>
   dashboardBrowserSources: DashboardBrowserSource[]
   dashboardZoom: number
   dashboardLayoutVersion: number

@@ -4,10 +4,12 @@ import {
   Eye,
   EyeOff,
   Globe2,
+  GripVertical,
   Heart,
   LayoutGrid,
   Link2,
   MonitorPlay,
+  MoveDiagonal2,
   Plus,
   Radio,
   RotateCcw,
@@ -25,8 +27,10 @@ import {
   useRef,
   useState,
   type FormEvent,
+  type PointerEvent as ReactPointerEvent,
   type ReactNode,
 } from "react";
+import { flushSync } from "react-dom";
 import { toast } from "sonner";
 import { useAppStore, defaultDashboardWidgets } from "../stores/app-store";
 import { saveSetting } from "../services/native";
@@ -44,7 +48,9 @@ import type {
   ConnectionState,
   DashboardBrowserSource,
   DashboardItemId,
+  DashboardWidgetDimensions,
   DashboardWidgetId,
+  DashboardWidgetWidth,
 } from "../types";
 
 type WidgetCatalogEntry = {
@@ -181,28 +187,49 @@ function sourceHostname(url: string) {
 }
 
 function DashboardWidget({
+  id,
   editing,
   label,
   onHide,
   onDelete,
+  onMoveStart,
+  onResizeStart,
   children,
 }: {
+  id: DashboardItemId;
   editing: boolean;
   label: string;
   onHide: () => void;
   onDelete?: () => void;
+  onMoveStart: (event: ReactPointerEvent<HTMLButtonElement>) => void;
+  onResizeStart: (event: ReactPointerEvent<HTMLButtonElement>) => void;
   children: ReactNode;
 }) {
   return (
-    <div className={cn("relative h-full min-w-0", editing && "ring-1 ring-accent/25")}>
+    <div
+      data-dashboard-widget={id}
+      className={cn(
+        "relative h-full min-w-0",
+        editing && "ring-1 ring-accent/25",
+      )}
+    >
       {editing && (
         <div className="absolute -top-2 right-2 z-20 flex items-center rounded-md border border-line bg-raised shadow-lg">
+          <button
+            type="button"
+            title={`Move ${label}`}
+            aria-label={`Move ${label}`}
+            onPointerDown={onMoveStart}
+            className="grid size-6 touch-none cursor-grab place-items-center text-zinc-500 outline-none hover:bg-white/5 hover:text-zinc-200 active:cursor-grabbing"
+          >
+            <GripVertical size={12} />
+          </button>
           <button
             type="button"
             title={`Hide ${label}`}
             aria-label={`Hide ${label}`}
             onClick={onHide}
-            className="grid size-6 place-items-center text-zinc-500 hover:bg-white/5 hover:text-zinc-200"
+            className="grid size-6 place-items-center border-l border-line text-zinc-500 hover:bg-white/5 hover:text-zinc-200"
           >
             <EyeOff size={12} />
           </button>
@@ -220,16 +247,37 @@ function DashboardWidget({
         </div>
       )}
       <div className="h-full overflow-hidden [&>.card]:h-full">{children}</div>
+      {editing && (
+        <button
+          type="button"
+          title={`Resize ${label}`}
+          aria-label={`Resize ${label}`}
+          onPointerDown={onResizeStart}
+          className="absolute bottom-0 right-0 z-20 grid size-7 touch-none cursor-se-resize place-items-center rounded-tl-md border-l border-t border-line bg-raised/95 text-accent outline-none hover:bg-raised"
+        >
+          <MoveDiagonal2 size={12} />
+        </button>
+      )}
     </div>
   );
 }
 
-function widgetLayoutClass(id: DashboardItemId) {
-  if (id === "activity") return "min-h-72 lg:col-span-2";
-  if (id === "streamDetails") return "min-h-56";
-  if (id === "livePreview") return "col-span-full min-h-96";
-  if (id === "goals" || id === "connections") return "min-h-52";
-  return "min-h-80";
+function defaultWidgetDimensions(
+  id: DashboardItemId,
+): DashboardWidgetDimensions {
+  if (metricWidgetIds.has(id)) return { width: "single", height: 96 };
+  if (id === "activity") return { width: "wide", height: 288 };
+  if (id === "streamDetails") return { width: "single", height: 224 };
+  if (id === "livePreview") return { width: "full", height: 384 };
+  if (id === "goals" || id === "connections")
+    return { width: "single", height: 208 };
+  return { width: "single", height: 320 };
+}
+
+function widgetLayoutClass(width: DashboardWidgetWidth) {
+  if (width === "full") return "col-span-full";
+  if (width === "wide") return "lg:col-span-2";
+  return "";
 }
 
 function HiddenWidgets({
@@ -393,6 +441,10 @@ export function Dashboard() {
   const [, tick] = useState(0);
   const [editing, setEditing] = useState(false);
   const [addingBrowserSource, setAddingBrowserSource] = useState(false);
+  const [draggedWidget, setDraggedWidget] = useState<DashboardItemId | null>(
+    null,
+  );
+  const [dragOrder, setDragOrder] = useState<DashboardItemId[] | null>(null);
   const dashboardRef = useRef<HTMLDivElement | null>(null);
   const zoomSaveTimer = useRef<ReturnType<typeof setTimeout> | undefined>(
     undefined,
@@ -488,13 +540,227 @@ export function Dashboard() {
   const hideWidget = (id: DashboardItemId) =>
     updateWidgets(widgets.filter((widget) => widget !== id));
   const showWidget = (id: DashboardItemId) => updateWidgets([...widgets, id]);
+  const startWidgetMove = (
+    event: ReactPointerEvent<HTMLButtonElement>,
+    id: DashboardItemId,
+  ) => {
+    event.preventDefault();
+    event.stopPropagation();
+    const pointerId = event.pointerId;
+    let order = [...widgets];
+    let lastTarget: DashboardItemId | null = null;
+    setDraggedWidget(id);
+    setDragOrder(order);
+
+    const findWidgetElement = (widgetId: DashboardItemId) =>
+      Array.from(
+        dashboardRef.current?.querySelectorAll<HTMLElement>(
+          "[data-dashboard-drop-id]",
+        ) ?? [],
+      ).find((element) => element.dataset.dashboardDropId === widgetId);
+    const animateElement = (element: HTMLElement, before: DOMRect) => {
+      const after = element.getBoundingClientRect();
+      const x = before.left - after.left;
+      const y = before.top - after.top;
+      if (Math.abs(x) < 1 && Math.abs(y) < 1) return;
+      element.animate(
+        [
+          { transform: `translate(${x}px, ${y}px)` },
+          { transform: "translate(0, 0)" },
+        ],
+        { duration: 180, easing: "cubic-bezier(.2,.8,.2,1)" },
+      );
+    };
+    const move = (pointerEvent: PointerEvent) => {
+      if (pointerEvent.pointerId !== pointerId) return;
+      pointerEvent.preventDefault();
+      const target = document
+        .elementFromPoint(pointerEvent.clientX, pointerEvent.clientY)
+        ?.closest<HTMLElement>("[data-dashboard-drop-id]");
+      const targetId = target?.dataset.dashboardDropId as
+        | DashboardItemId
+        | undefined;
+      if (
+        !targetId ||
+        targetId === id ||
+        targetId === lastTarget ||
+        metricWidgetIds.has(targetId) !== metricWidgetIds.has(id)
+      ) {
+        if (targetId !== lastTarget) lastTarget = null;
+        return;
+      }
+      const sourceIndex = order.indexOf(id);
+      const targetIndex = order.indexOf(targetId);
+      if (sourceIndex < 0 || targetIndex < 0) return;
+      const sourceElement = findWidgetElement(id);
+      const targetElement = findWidgetElement(targetId);
+      const sourceRect = sourceElement?.getBoundingClientRect();
+      const targetRect = targetElement?.getBoundingClientRect();
+      const sourceWidget = order[sourceIndex];
+      const targetWidget = order[targetIndex];
+      order = order.map((widget, index) =>
+        index === sourceIndex
+          ? targetWidget
+          : index === targetIndex
+            ? sourceWidget
+            : widget,
+      );
+      flushSync(() => setDragOrder([...order]));
+      if (sourceElement && sourceRect) animateElement(sourceElement, sourceRect);
+      if (targetElement && targetRect) animateElement(targetElement, targetRect);
+      lastTarget = targetId;
+    };
+    const finish = (pointerEvent: PointerEvent) => {
+      if (pointerEvent.pointerId !== pointerId) return;
+      window.removeEventListener("pointermove", move);
+      window.removeEventListener("pointerup", finish);
+      window.removeEventListener("pointercancel", cancel);
+      setDraggedWidget(null);
+      setDragOrder(null);
+      updateWidgets(order);
+    };
+    const cancel = (pointerEvent: PointerEvent) => {
+      if (pointerEvent.pointerId !== pointerId) return;
+      window.removeEventListener("pointermove", move);
+      window.removeEventListener("pointerup", finish);
+      window.removeEventListener("pointercancel", cancel);
+      setDraggedWidget(null);
+      setDragOrder(null);
+    };
+    window.addEventListener("pointermove", move, { passive: false });
+    window.addEventListener("pointerup", finish);
+    window.addEventListener("pointercancel", cancel);
+  };
+  const dimensionsFor = (id: DashboardItemId): DashboardWidgetDimensions => {
+    const fallback = defaultWidgetDimensions(id);
+    const saved = settings.dashboardWidgetDimensions[id];
+    if (
+      !saved ||
+      !["single", "wide", "full"].includes(saved.width) ||
+      !Number.isFinite(saved.height)
+    )
+      return fallback;
+    return {
+      width: saved.width,
+      height: Math.max(80, Math.min(720, saved.height)),
+    };
+  };
+  const startWidgetResize = (
+    event: ReactPointerEvent<HTMLButtonElement>,
+    id: DashboardItemId,
+  ) => {
+    event.preventDefault();
+    event.stopPropagation();
+    const widget = event.currentTarget.closest<HTMLElement>(
+      "[data-dashboard-widget]",
+    );
+    const item = widget?.parentElement;
+    const grid = item?.parentElement;
+    if (!widget || !item || !grid) return;
+
+    const startRect = item.getBoundingClientRect();
+    const gridRect = grid.getBoundingClientRect();
+    const gridStyle = getComputedStyle(grid);
+    const tracks = gridStyle.gridTemplateColumns
+      .split(" ")
+      .map((track) => Number.parseFloat(track))
+      .filter(Number.isFinite);
+    const columnCount = Math.max(1, tracks.length);
+    const scale =
+      Math.max(50, Math.min(150, settings.dashboardZoom || 100)) / 100;
+    const columnGap = (Number.parseFloat(gridStyle.columnGap) || 0) * scale;
+    const cellWidth = tracks.length ? tracks[0] * scale : gridRect.width;
+    const startX = event.clientX;
+    const startY = event.clientY;
+    let nextWidth = dimensionsFor(id).width;
+    let nextHeight = dimensionsFor(id).height;
+
+    const preview = document.createElement("div");
+    preview.textContent = `${nextWidth} · ${Math.round(startRect.width / scale)} × ${nextHeight}`;
+    Object.assign(preview.style, {
+      position: "fixed",
+      zIndex: "9999",
+      pointerEvents: "none",
+      left: `${startRect.left}px`,
+      top: `${startRect.top}px`,
+      width: `${startRect.width}px`,
+      height: `${startRect.height}px`,
+      border: "1px solid var(--app-accent)",
+      borderRadius: "10px",
+      background: "color-mix(in srgb, var(--app-accent) 10%, transparent)",
+      color: "#e8e9ed",
+      fontSize: "10px",
+      padding: "6px 8px",
+      boxShadow: "0 12px 32px rgb(0 0 0 / 35%)",
+    });
+    document.body.append(preview);
+
+    const move = (pointerEvent: PointerEvent) => {
+      if (pointerEvent.pointerId !== event.pointerId) return;
+      pointerEvent.preventDefault();
+      const visualWidth = Math.max(
+        Math.min(160, gridRect.width),
+        Math.min(
+          gridRect.right - startRect.left,
+          startRect.width + pointerEvent.clientX - startX,
+        ),
+      );
+      const visualHeight = Math.max(
+        80 * scale,
+        Math.min(720 * scale, startRect.height + pointerEvent.clientY - startY),
+      );
+      const requestedColumns = Math.max(
+        1,
+        Math.round((visualWidth + columnGap) / (cellWidth + columnGap)),
+      );
+      nextWidth =
+        requestedColumns >= columnCount
+          ? "full"
+          : requestedColumns >= 2
+            ? "wide"
+            : "single";
+      nextHeight = Math.round(visualHeight / scale / 8) * 8;
+      preview.style.width = `${visualWidth}px`;
+      preview.style.height = `${visualHeight}px`;
+      preview.textContent = `${nextWidth} · ${Math.round(visualWidth / scale)} × ${nextHeight}`;
+    };
+    const finish = (pointerEvent: PointerEvent) => {
+      if (pointerEvent.pointerId !== event.pointerId) return;
+      window.removeEventListener("pointermove", move);
+      window.removeEventListener("pointerup", finish);
+      window.removeEventListener("pointercancel", cancel);
+      preview.remove();
+      const current =
+        useAppStore.getState().settings.dashboardWidgetDimensions;
+      const next = {
+        ...current,
+        [id]: { width: nextWidth, height: nextHeight },
+      };
+      setSettings({ dashboardWidgetDimensions: next });
+      void saveSetting("dashboardWidgetDimensions", next).catch(() =>
+        toast.error("Widget size could not be saved"),
+      );
+    };
+    const cancel = (pointerEvent: PointerEvent) => {
+      if (pointerEvent.pointerId !== event.pointerId) return;
+      window.removeEventListener("pointermove", move);
+      window.removeEventListener("pointerup", finish);
+      window.removeEventListener("pointercancel", cancel);
+      preview.remove();
+    };
+    window.addEventListener("pointermove", move, { passive: false });
+    window.addEventListener("pointerup", finish);
+    window.addEventListener("pointercancel", cancel);
+  };
   const resetDashboard = () => {
     setSettings({
       dashboardWidgets: defaultDashboardWidgets,
+      dashboardWidgetDimensions: {},
     });
-    void saveSetting("dashboardWidgets", defaultDashboardWidgets).catch(() =>
-      toast.error("Dashboard layout could not be reset"),
-    );
+    void Promise.all([
+      saveSetting("dashboardWidgets", defaultDashboardWidgets),
+      saveSetting("dashboardWidgetDimensions", {}),
+    ]).catch(() => toast.error("Dashboard layout could not be reset"));
   };
   const addBrowserSource = (name: string, url: string) => {
     const source: DashboardBrowserSource = {
@@ -525,13 +791,17 @@ export function Dashboard() {
       (source) => source.id !== sourceId,
     );
     const nextWidgets = widgets.filter((widget) => widget !== id);
+    const dimensions = { ...settings.dashboardWidgetDimensions };
+    delete dimensions[id];
     setSettings({
       dashboardBrowserSources: sources,
       dashboardWidgets: nextWidgets,
+      dashboardWidgetDimensions: dimensions,
     });
     void Promise.all([
       saveSetting("dashboardBrowserSources", sources),
       saveSetting("dashboardWidgets", nextWidgets),
+      saveSetting("dashboardWidgetDimensions", dimensions),
     ]).catch(() => toast.error("Browser source could not be deleted"));
   };
   const metric = (id: DashboardWidgetId) => {
@@ -837,13 +1107,17 @@ export function Dashboard() {
     );
   };
   const zoom = Math.max(50, Math.min(150, settings.dashboardZoom || 100));
-  const visibleMetricWidgets = widgets.filter((id) => metricWidgetIds.has(id));
-  const visibleContentWidgets = widgets.filter(
+  const displayedWidgets = dragOrder ?? widgets;
+  const visibleMetricWidgets = displayedWidgets.filter((id) =>
+    metricWidgetIds.has(id),
+  );
+  const visibleContentWidgets = displayedWidgets.filter(
     (id) => !metricWidgetIds.has(id),
   );
   return (
     <div
       ref={dashboardRef}
+      className={cn(draggedWidget && "[&_iframe]:pointer-events-none")}
       style={{ zoom: zoom / 100, width: `${10_000 / zoom}%` }}
     >
       <PageHeader
@@ -896,15 +1170,29 @@ export function Dashboard() {
             const label =
               availableWidgets.find((widget) => widget.id === id)?.label ??
               "Widget";
+            const dimensions = dimensionsFor(id);
             return (
-              <DashboardWidget
+              <div
                 key={id}
-                editing={editing}
-                label={label}
-                onHide={() => hideWidget(id)}
+                data-dashboard-drop-id={id}
+                className={cn(
+                  "rounded-xl transition",
+                  widgetLayoutClass(dimensions.width),
+                  draggedWidget === id && "ring-2 ring-accent/60",
+                )}
+                style={{ height: dimensions.height }}
               >
-                {renderWidget(id)}
-              </DashboardWidget>
+                <DashboardWidget
+                  id={id}
+                  editing={editing}
+                  label={label}
+                  onHide={() => hideWidget(id)}
+                  onMoveStart={(event) => startWidgetMove(event, id)}
+                  onResizeStart={(event) => startWidgetResize(event, id)}
+                >
+                  {renderWidget(id)}
+                </DashboardWidget>
+              </div>
             );
           })}
         </div>
@@ -924,12 +1212,25 @@ export function Dashboard() {
             const label =
               availableWidgets.find((widget) => widget.id === id)?.label ??
               "Widget";
+            const dimensions = dimensionsFor(id);
             return (
-              <div key={id} className={widgetLayoutClass(id)}>
+              <div
+                key={id}
+                data-dashboard-drop-id={id}
+                className={cn(
+                  "rounded-xl transition",
+                  widgetLayoutClass(dimensions.width),
+                  draggedWidget === id && "ring-2 ring-accent/60",
+                )}
+                style={{ height: dimensions.height }}
+              >
                 <DashboardWidget
+                  id={id}
                   editing={editing}
                   label={label}
                   onHide={() => hideWidget(id)}
+                  onMoveStart={(event) => startWidgetMove(event, id)}
+                  onResizeStart={(event) => startWidgetResize(event, id)}
                   onDelete={
                     isBrowserWidget(id)
                       ? () => deleteBrowserSource(id)
