@@ -19,6 +19,7 @@ import {
   loadEvents,
   loadSettings,
   saveEvent,
+  saveSetting,
   secretDelete,
   secretGet,
   secretSet,
@@ -46,6 +47,20 @@ let bootstrapPromise: Promise<Bootstrap> | undefined;
 function loadBootstrap() {
   bootstrapPromise ??= (async () => {
     const settings = await loadSettings();
+    if ((settings.dashboardLayoutVersion ?? 0) < 2) {
+      if (
+        Array.isArray(settings.dashboardWidgets) &&
+        !settings.dashboardWidgets.includes("livePreview")
+      ) {
+        settings.dashboardWidgets = [
+          ...settings.dashboardWidgets,
+          "livePreview",
+        ];
+        await saveSetting("dashboardWidgets", settings.dashboardWidgets);
+      }
+      settings.dashboardLayoutVersion = 2;
+      await saveSetting("dashboardLayoutVersion", 2);
+    }
     const events = await loadEvents(settings.maximumEvents ?? 5000);
     return { settings, events };
   })().catch((error) => {

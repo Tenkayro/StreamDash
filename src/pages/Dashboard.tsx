@@ -7,6 +7,7 @@ import {
   Heart,
   LayoutGrid,
   Link2,
+  MonitorPlay,
   Radio,
   RotateCcw,
   Settings2,
@@ -41,6 +42,7 @@ import { toast } from "sonner";
 import { useAppStore, defaultDashboardWidgets } from "../stores/app-store";
 import { saveSetting } from "../services/native";
 import { ActivityFeed } from "../components/ActivityFeed";
+import { TwitchPlayer } from "../components/TwitchPlayer";
 import {
   Badge,
   Card,
@@ -92,6 +94,11 @@ const widgetCatalog: Array<{
     id: "streamDetails",
     label: "Stream details",
     description: "Title and category",
+  },
+  {
+    id: "livePreview",
+    label: "Live Preview",
+    description: "Watch your Twitch stream",
   },
   { id: "goals", label: "Goals", description: "Progress toward your targets" },
   {
@@ -157,6 +164,7 @@ function connectionTone(state: ConnectionState) {
 }
 function widgetSpan(id: DashboardWidgetId) {
   if (id === "activity") return "col-span-12 lg:col-span-8";
+  if (id === "livePreview") return "col-span-12 lg:col-span-8";
   if (id === "streamDetails") return "col-span-12 lg:col-span-4";
   if (id === "goals" || id === "connections")
     return "col-span-12 lg:col-span-6";
@@ -440,7 +448,15 @@ export function Dashboard() {
     );
   };
   const renderWidget = (id: DashboardWidgetId) => {
-    if (!["activity", "streamDetails", "goals", "connections"].includes(id))
+    if (
+      ![
+        "activity",
+        "streamDetails",
+        "livePreview",
+        "goals",
+        "connections",
+      ].includes(id)
+    )
       return metric(id);
     if (id === "activity")
       return (
@@ -494,6 +510,26 @@ export function Dashboard() {
                 )}
               </div>
             </div>
+          </div>
+        </Card>
+      );
+    if (id === "livePreview")
+      return (
+        <Card className="overflow-hidden">
+          <div className="flex items-center justify-between border-b border-line px-4 py-3">
+            <div className="flex items-center gap-2 text-xs font-semibold">
+              <MonitorPlay size={14} className="text-accent" />
+              Live Preview
+            </div>
+            <button
+              className="text-[11px] text-accent hover:brightness-125"
+              onClick={() => setPage("livePreview")}
+            >
+              Open
+            </button>
+          </div>
+          <div className="overflow-hidden bg-black">
+            <TwitchPlayer className="aspect-video h-auto w-full" />
           </div>
         </Card>
       );

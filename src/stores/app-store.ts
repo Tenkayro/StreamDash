@@ -20,6 +20,7 @@ export const defaultDashboardWidgets: DashboardWidgetId[] = [
   "eventCount",
   "activity",
   "streamDetails",
+  "livePreview",
 ];
 
 export const defaultSettings: AppSettings = {
@@ -33,6 +34,7 @@ export const defaultSettings: AppSettings = {
   accentColor: "violet",
   sidebarCollapsed: false,
   dashboardWidgets: defaultDashboardWidgets,
+  dashboardLayoutVersion: 2,
   chatTimestamps: true,
   chatBadges: true,
   chatHighlightMentions: true,

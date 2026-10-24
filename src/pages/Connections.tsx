@@ -18,6 +18,8 @@ import { useAppStore } from "../stores/app-store";
 import { useRuntime } from "../services/runtime-context";
 import { isTauri } from "../lib/utils";
 import { needsTwitchPermissionUpdate } from "../services/twitch/client";
+import twitchIcon from "../assets/services/twitch.webp";
+import streamElementsIcon from "../assets/services/streamelements.webp";
 
 function phaseTone(phase: string) {
   return phase === "connected"
@@ -44,8 +46,12 @@ export function Connections() {
         <Card className="p-5">
           <div className="flex items-start justify-between gap-5">
             <div className="flex gap-4">
-              <div className="grid size-11 place-items-center rounded-xl bg-[#9146ff]/10 text-[#a66cff]">
-                <span className="text-lg font-bold">T</span>
+              <div className="grid size-11 place-items-center rounded-xl bg-[#9146ff]/10">
+                <img
+                  src={twitchIcon}
+                  alt=""
+                  className="size-7 object-contain"
+                />
               </div>
               <div>
                 <div className="flex items-center gap-2">
@@ -115,8 +121,12 @@ export function Connections() {
         <Card className="p-5">
           <div className="flex items-start justify-between gap-6">
             <div className="flex gap-4">
-              <div className="grid size-11 place-items-center rounded-xl bg-cyan-400/10 text-cyan-300">
-                <span className="text-lg font-bold">SE</span>
+              <div className="grid size-11 place-items-center rounded-xl bg-cyan-400/10">
+                <img
+                  src={streamElementsIcon}
+                  alt=""
+                  className="size-7 object-contain"
+                />
               </div>
               <div>
                 <div className="flex items-center gap-2">

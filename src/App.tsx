@@ -20,6 +20,11 @@ const ActivityPage = lazy(() =>
     default: module.ActivityPage,
   })),
 );
+const LivePreview = lazy(() =>
+  import("./pages/LivePreview").then((module) => ({
+    default: module.LivePreview,
+  })),
+);
 const Statistics = lazy(() =>
   import("./pages/Statistics").then((module) => ({
     default: module.Statistics,
@@ -43,6 +48,7 @@ const pages: Record<string, React.ComponentType> = {
   stream: StreamPage,
   chat: ChatPage,
   activity: ActivityPage,
+  livePreview: LivePreview,
   statistics: Statistics,
   goals: Goals,
   connections: Connections,

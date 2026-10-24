@@ -34,7 +34,7 @@ export interface DashboardStats {
   category?: string
 }
 
-export type DashboardWidgetId = 'followers' | 'subscribers' | 'viewers' | 'duration' | 'bits' | 'donations' | 'status' | 'eventCount' | 'activity' | 'streamDetails' | 'goals' | 'connections'
+export type DashboardWidgetId = 'followers' | 'subscribers' | 'viewers' | 'duration' | 'bits' | 'donations' | 'status' | 'eventCount' | 'activity' | 'streamDetails' | 'livePreview' | 'goals' | 'connections'
 export type UiDensity = 'compact' | 'comfortable'
 export type ContentWidth = 'compact' | 'wide' | 'full'
 export type AccentColor = 'violet' | 'blue' | 'emerald' | 'orange'
@@ -50,6 +50,7 @@ export interface AppSettings {
   accentColor: AccentColor
   sidebarCollapsed: boolean
   dashboardWidgets: DashboardWidgetId[]
+  dashboardLayoutVersion: number
   chatTimestamps: boolean
   chatBadges: boolean
   chatHighlightMentions: boolean
