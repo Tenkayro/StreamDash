@@ -674,6 +674,33 @@ export function Dashboard() {
     const startY = event.clientY;
     let nextWidth = dimensionsFor(id).width;
     let nextHeight = dimensionsFor(id).height;
+    const heightSnapCandidates = Array.from(
+      grid.querySelectorAll<HTMLElement>("[data-dashboard-drop-id]"),
+    )
+      .filter((element) => element !== item)
+      .flatMap((element) => {
+        const otherId = element.dataset.dashboardDropId as
+          | DashboardItemId
+          | undefined;
+        if (!otherId) return [];
+        const rect = element.getBoundingClientRect();
+        const candidates = [
+          {
+            visual: rect.height,
+            logical: dimensionsFor(otherId).height,
+          },
+        ];
+        if (Math.abs(rect.top - startRect.top) <= 4) {
+          candidates.push({
+            visual: rect.bottom - startRect.top,
+            logical: Math.round((rect.bottom - startRect.top) / scale),
+          });
+        }
+        return candidates;
+      })
+      .filter(
+        (candidate) => candidate.logical >= 80 && candidate.logical <= 720,
+      );
 
     const preview = document.createElement("div");
     preview.textContent = `${nextWidth} · ${Math.round(startRect.width / scale)} × ${nextHeight}`;
@@ -705,7 +732,7 @@ export function Dashboard() {
           startRect.width + pointerEvent.clientX - startX,
         ),
       );
-      const visualHeight = Math.max(
+      const rawVisualHeight = Math.max(
         80 * scale,
         Math.min(720 * scale, startRect.height + pointerEvent.clientY - startY),
       );
@@ -719,10 +746,31 @@ export function Dashboard() {
           : requestedColumns >= 2
             ? "wide"
             : "single";
-      nextHeight = Math.round(visualHeight / scale / 8) * 8;
+      const closestHeight = heightSnapCandidates.reduce<
+        (typeof heightSnapCandidates)[number] | null
+      >(
+        (closest, candidate) =>
+          Math.abs(candidate.visual - rawVisualHeight) <
+          Math.abs(
+            (closest?.visual ?? Number.POSITIVE_INFINITY) - rawVisualHeight,
+          )
+            ? candidate
+            : closest,
+        null,
+      );
+      const magneticallySnapped =
+        closestHeight !== null &&
+        Math.abs(closestHeight.visual - rawVisualHeight) <= 12;
+      nextHeight = magneticallySnapped
+        ? closestHeight.logical
+        : Math.round(rawVisualHeight / scale / 8) * 8;
+      const visualHeight = magneticallySnapped
+        ? closestHeight.visual
+        : nextHeight * scale;
       preview.style.width = `${visualWidth}px`;
       preview.style.height = `${visualHeight}px`;
-      preview.textContent = `${nextWidth} · ${Math.round(visualWidth / scale)} × ${nextHeight}`;
+      preview.style.borderWidth = magneticallySnapped ? "2px" : "1px";
+      preview.textContent = `${nextWidth} · ${Math.round(visualWidth / scale)} × ${nextHeight}${magneticallySnapped ? " · aligned" : ""}`;
     };
     const finish = (pointerEvent: PointerEvent) => {
       if (pointerEvent.pointerId !== event.pointerId) return;
