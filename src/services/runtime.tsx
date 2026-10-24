@@ -60,6 +60,22 @@ function loadBootstrap() {
       settings.dashboardLayoutVersion = 3;
       await saveSetting("dashboardLayoutVersion", 3);
     }
+    if ((settings.dashboardLayoutVersion ?? 0) < 4) {
+      settings.dashboardWidgetSizes = {};
+      settings.dashboardLayoutVersion = 4;
+      await Promise.all([
+        saveSetting("dashboardWidgetSizes", {}),
+        saveSetting("dashboardLayoutVersion", 4),
+      ]);
+    }
+    if ((settings.dashboardLayoutVersion ?? 0) < 5) {
+      settings.dashboardWidgetSizes = {};
+      settings.dashboardLayoutVersion = 5;
+      await Promise.all([
+        saveSetting("dashboardWidgetSizes", {}),
+        saveSetting("dashboardLayoutVersion", 5),
+      ]);
+    }
     const events = await loadEvents(settings.maximumEvents ?? 5000);
     return { settings, events };
   })().catch((error) => {

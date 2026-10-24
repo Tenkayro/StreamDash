@@ -143,6 +143,39 @@ button:disabled {
 .dashboard-zoom-gesture iframe {
   pointer-events: none;
 }
+.dashboard-layout .react-grid-item {
+  transition-duration: 160ms;
+  transition-timing-function: cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+.dashboard-layout .react-grid-placeholder {
+  border: 1px solid color-mix(in srgb, var(--app-accent) 70%, transparent);
+  border-radius: 11px;
+  background: var(--app-accent);
+  opacity: 0.16;
+}
+.dashboard-layout .react-grid-item.resizing,
+.dashboard-layout .react-grid-item.react-draggable-dragging {
+  z-index: 40;
+  filter: drop-shadow(0 16px 24px rgb(0 0 0 / 45%));
+}
+.dashboard-layout .react-grid-item.resizing iframe,
+.dashboard-layout .react-grid-item.react-draggable-dragging iframe {
+  pointer-events: none;
+}
+.dashboard-layout .react-resizable-handle {
+  z-index: 25;
+  opacity: 1;
+}
+.dashboard-layout .react-resizable-handle::after {
+  right: 4px;
+  bottom: 4px;
+  width: 8px;
+  height: 8px;
+  border-color: var(--app-accent);
+}
+.dashboard-layout:not(.is-editing) .react-resizable-handle {
+  display: none;
+}
 .card {
   border: 1px solid #23252c;
   background: #121318;

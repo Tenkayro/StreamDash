@@ -3,17 +3,20 @@ import {
   Clock3,
   Eye,
   EyeOff,
+  Globe2,
   GripVertical,
   Heart,
   LayoutGrid,
   Link2,
   MonitorPlay,
+  Plus,
   Radio,
   RotateCcw,
   Settings2,
   Sparkles,
   Star,
   Target,
+  Trash2,
   Wallet,
   type LucideIcon,
 } from "lucide-react";
@@ -22,29 +25,18 @@ import {
   useMemo,
   useRef,
   useState,
-  type PointerEvent as ReactPointerEvent,
+  type FormEvent,
   type ReactNode,
 } from "react";
 import {
-  closestCenter,
-  DndContext,
-  DragOverlay,
-  KeyboardSensor,
-  PointerSensor,
-  useDroppable,
-  useSensor,
-  useSensors,
-  type DragEndEvent,
-  type DragStartEvent,
-} from "@dnd-kit/core";
-import {
-  arrayMove,
-  rectSortingStrategy,
-  SortableContext,
-  sortableKeyboardCoordinates,
-  useSortable,
-} from "@dnd-kit/sortable";
-import { CSS } from "@dnd-kit/utilities";
+  ReactGridLayout,
+  useContainerWidth,
+  verticalCompactor,
+  type Layout,
+} from "react-grid-layout";
+import { createScaledStrategy } from "react-grid-layout/core";
+import { GridBackground } from "react-grid-layout/extras";
+import "react-grid-layout/css/styles.css";
 import { toast } from "sonner";
 import { useAppStore, defaultDashboardWidgets } from "../stores/app-store";
 import { saveSetting } from "../services/native";
@@ -52,6 +44,7 @@ import { ActivityFeed } from "../components/ActivityFeed";
 import { TwitchPlayer } from "../components/TwitchPlayer";
 import {
   Badge,
+  Button,
   Card,
   LoadingIndicator,
   PageHeader,
@@ -59,15 +52,19 @@ import {
 import { cn, money } from "../lib/utils";
 import type {
   ConnectionState,
+  DashboardBrowserSource,
+  DashboardItemId,
   DashboardWidgetId,
   DashboardWidgetSize,
 } from "../types";
 
-const widgetCatalog: Array<{
-  id: DashboardWidgetId;
+type WidgetCatalogEntry = {
+  id: DashboardItemId;
   label: string;
   description: string;
-}> = [
+};
+
+const widgetCatalog: WidgetCatalogEntry[] = [
   {
     id: "followers",
     label: "Followers",
@@ -118,7 +115,8 @@ const widgetCatalog: Array<{
     description: "Service health and accounts",
   },
 ];
-const allWidgetIds = new Set(widgetCatalog.map((widget) => widget.id));
+const GRID_COLUMNS = 24;
+const GRID_GAP = 12;
 
 function Metric({
   label,
@@ -173,127 +171,77 @@ function connectionTone(state: ConnectionState) {
         ? "bg-red-400"
         : "bg-zinc-600";
 }
-function defaultWidgetSize(id: DashboardWidgetId): DashboardWidgetSize {
-  if (id === "activity") return { columns: 8, height: 320 };
-  if (id === "livePreview") return { columns: 8, height: 360 };
-  if (id === "streamDetails") return { columns: 4, height: 220 };
-  if (id === "goals") return { columns: 6, height: 230 };
-  if (id === "connections") return { columns: 6, height: 220 };
-  return { columns: 3, height: 96 };
+function isBrowserWidget(id: DashboardItemId): id is `browser:${string}` {
+  return id.startsWith("browser:");
 }
 
-function minimumWidgetSize(id: DashboardWidgetId): DashboardWidgetSize {
-  if (id === "livePreview") return { columns: 7, height: 350 };
-  if (id === "activity") return { columns: 4, height: 180 };
+function sourceHostname(url: string) {
+  try {
+    return new URL(url).hostname;
+  } catch {
+    return url;
+  }
+}
+
+function defaultWidgetSize(id: DashboardItemId): DashboardWidgetSize {
+  const metrics: DashboardWidgetId[] = [
+    "followers",
+    "subscribers",
+    "viewers",
+    "duration",
+    "bits",
+    "donations",
+    "status",
+    "eventCount",
+  ];
+  const metricIndex = metrics.indexOf(id as DashboardWidgetId);
+  if (metricIndex >= 0)
+    return {
+      x: (metricIndex % 4) * 6,
+      y: Math.floor(metricIndex / 4) * 3,
+      columns: 6,
+      rows: 3,
+    };
+  if (id === "activity") return { x: 0, y: 6, columns: 16, rows: 8 };
+  if (id === "streamDetails") return { x: 16, y: 6, columns: 8, rows: 8 };
+  if (id === "goals") return { x: 0, y: 14, columns: 12, rows: 6 };
+  if (id === "connections") return { x: 12, y: 14, columns: 12, rows: 6 };
+  if (id === "livePreview") return { x: 0, y: 20, columns: 16, rows: 12 };
+  return { x: 0, y: 1000, columns: 12, rows: 8 };
+}
+
+function minimumWidgetSize(id: DashboardItemId): DashboardWidgetSize {
+  if (isBrowserWidget(id)) return { x: 0, y: 0, columns: 8, rows: 5 };
+  if (id === "livePreview")
+    return { x: 0, y: 0, columns: 14, rows: 12 };
+  if (id === "activity") return { x: 0, y: 0, columns: 8, rows: 5 };
   if (["streamDetails", "goals", "connections"].includes(id))
-    return { columns: 3, height: 140 };
-  return { columns: 2, height: 88 };
+    return { x: 0, y: 0, columns: 6, rows: 4 };
+  return { x: 0, y: 0, columns: 4, rows: 2 };
 }
-const hiddenDropId = "dashboard-hidden-widgets";
 
-function SortableWidget({
-  id,
+function GridWidget({
   editing,
   label,
-  size,
   onHide,
-  onResize,
-  onResizeEnd,
+  onDelete,
   children,
 }: {
-  id: DashboardWidgetId;
   editing: boolean;
   label: string;
-  size: DashboardWidgetSize;
   onHide: () => void;
-  onResize: (size: DashboardWidgetSize) => void;
-  onResizeEnd: (size: DashboardWidgetSize) => void;
+  onDelete?: () => void;
   children: ReactNode;
 }) {
-  const elementRef = useRef<HTMLDivElement | null>(null);
-  const {
-    attributes,
-    listeners,
-    setNodeRef,
-    transform,
-    transition,
-    isDragging,
-  } = useSortable({ id, disabled: !editing });
-  const assignRef = (node: HTMLDivElement | null) => {
-    elementRef.current = node;
-    setNodeRef(node);
-  };
-  const startResize = (event: ReactPointerEvent<HTMLButtonElement>) => {
-    event.preventDefault();
-    event.stopPropagation();
-    const element = elementRef.current;
-    const grid = element?.parentElement;
-    if (!element || !grid) return;
-    const startX = event.clientX;
-    const startY = event.clientY;
-    const gridRect = grid.getBoundingClientRect();
-    const itemRect = element.getBoundingClientRect();
-    const gap = 12;
-    const columnWidth = (gridRect.width - gap * 11) / 12;
-    const heightScale = element.offsetHeight / itemRect.height;
-    const minimum = minimumWidgetSize(id);
-    let latest = size;
-
-    const move = (pointerEvent: PointerEvent) => {
-      const columns = Math.max(
-        minimum.columns,
-        Math.min(
-          12,
-          size.columns +
-            Math.round((pointerEvent.clientX - startX) / (columnWidth + gap)),
-        ),
-      );
-      const height = Math.max(
-        minimum.height,
-        Math.min(
-          900,
-          Math.round(
-            size.height + (pointerEvent.clientY - startY) * heightScale,
-          ),
-        ),
-      );
-      latest = { columns, height };
-      onResize(latest);
-    };
-    const stop = () => {
-      window.removeEventListener("pointermove", move);
-      window.removeEventListener("pointerup", stop);
-      window.removeEventListener("pointercancel", stop);
-      onResizeEnd(latest);
-    };
-    window.addEventListener("pointermove", move);
-    window.addEventListener("pointerup", stop, { once: true });
-    window.addEventListener("pointercancel", stop, { once: true });
-  };
   return (
-    <div
-      ref={assignRef}
-      style={{
-        gridColumn: `span ${size.columns} / span ${size.columns}`,
-        height: size.height,
-        transform: CSS.Translate.toString(transform),
-        transition,
-      }}
-      className={cn(
-        "relative min-w-0",
-        editing && "rounded-xl ring-1 ring-accent/20",
-        isDragging && "z-10 opacity-20",
-      )}
-    >
+    <div className={cn("relative h-full min-w-0", editing && "ring-1 ring-accent/25")}>
       {editing && (
         <div className="absolute -top-2 right-2 z-20 flex items-center rounded-md border border-line bg-raised shadow-lg">
           <button
             type="button"
             title={`Move ${label}`}
-            aria-label={`Drag ${label} to reorder`}
-            {...attributes}
-            {...listeners}
-            className="grid size-6 cursor-grab place-items-center text-zinc-500 outline-none hover:bg-white/5 hover:text-zinc-200 active:cursor-grabbing"
+            aria-label={`Drag ${label} to move`}
+            className="dashboard-drag-handle grid size-6 cursor-grab place-items-center text-zinc-500 outline-none hover:bg-white/5 hover:text-zinc-200 active:cursor-grabbing"
           >
             <GripVertical size={12} />
           </button>
@@ -306,20 +254,20 @@ function SortableWidget({
           >
             <EyeOff size={12} />
           </button>
+          {onDelete && (
+            <button
+              type="button"
+              title={`Delete ${label}`}
+              aria-label={`Delete ${label}`}
+              onClick={onDelete}
+              className="grid size-6 place-items-center border-l border-line text-zinc-500 hover:bg-red-400/10 hover:text-red-300"
+            >
+              <Trash2 size={12} />
+            </button>
+          )}
         </div>
       )}
       <div className="h-full overflow-hidden [&>.card]:h-full">{children}</div>
-      {editing && (
-        <button
-          type="button"
-          title={`Resize ${label}`}
-          aria-label={`Resize ${label}`}
-          onPointerDown={startResize}
-          className="absolute -bottom-1 -right-1 z-20 size-5 cursor-nwse-resize rounded-tl-md border-l border-t border-accent/40 bg-raised text-accent shadow-lg touch-none"
-        >
-          <span className="absolute bottom-1 right-1 size-2 border-b border-r border-current" />
-        </button>
-      )}
     </div>
   );
 }
@@ -327,20 +275,19 @@ function SortableWidget({
 function HiddenWidgets({
   widgets,
   onShow,
+  onAddBrowser,
+  onDeleteBrowser,
   onReset,
 }: {
-  widgets: typeof widgetCatalog;
-  onShow: (id: DashboardWidgetId) => void;
+  widgets: WidgetCatalogEntry[];
+  onShow: (id: DashboardItemId) => void;
+  onAddBrowser: () => void;
+  onDeleteBrowser: (id: DashboardItemId) => void;
   onReset: () => void;
 }) {
-  const { isOver, setNodeRef } = useDroppable({ id: hiddenDropId });
   return (
     <div
-      ref={setNodeRef}
-      className={cn(
-        "card mb-3 flex min-h-12 items-center gap-3 border-dashed px-3 py-2 transition",
-        isOver && "border-accent bg-accent-soft",
-      )}
+      className="card mb-3 flex min-h-12 items-center gap-3 border-dashed px-3 py-2 transition"
     >
       <div className="flex shrink-0 items-center gap-2 text-[11px] font-medium text-zinc-500">
         <EyeOff size={13} />
@@ -352,27 +299,46 @@ function HiddenWidgets({
       <div className="flex min-w-0 flex-1 flex-wrap gap-1.5">
         {widgets.length ? (
           widgets.map((widget) => (
-            <button
+            <div
               key={widget.id}
-              title={`Show ${widget.label} · ${widget.description}`}
-              onClick={() => onShow(widget.id)}
-              className="inline-flex h-7 items-center gap-1.5 rounded-md border border-line bg-black/15 px-2 text-[10px] text-zinc-500 transition hover:border-zinc-600 hover:text-zinc-200"
+              className="inline-flex h-7 overflow-hidden rounded-md border border-line bg-black/15"
             >
-              <Eye size={11} />
-              {widget.label}
-            </button>
+              <button
+                title={`Show ${widget.label} - ${widget.description}`}
+                onClick={() => onShow(widget.id)}
+                className="inline-flex items-center gap-1.5 px-2 text-[10px] text-zinc-500 transition hover:text-zinc-200"
+              >
+                <Eye size={11} />
+                {widget.label}
+              </button>
+              {isBrowserWidget(widget.id) && (
+                <button
+                  type="button"
+                  title={`Delete ${widget.label}`}
+                  aria-label={`Delete ${widget.label}`}
+                  onClick={() => onDeleteBrowser(widget.id)}
+                  className="grid w-7 place-items-center border-l border-line text-zinc-600 hover:bg-red-400/10 hover:text-red-300"
+                >
+                  <Trash2 size={11} />
+                </button>
+              )}
+            </div>
           ))
         ) : (
-          <span
-            className={cn(
-              "text-[10px]",
-              isOver ? "text-accent" : "text-zinc-700",
-            )}
-          >
-            {isOver ? "Release to hide" : "Drag a card here to hide it"}
+          <span className="text-[10px] text-zinc-700">
+            Hidden widgets appear here
           </span>
         )}
       </div>
+      <button
+        type="button"
+        title="Add browser source"
+        onClick={onAddBrowser}
+        className="inline-flex h-7 shrink-0 items-center gap-1.5 rounded-md border border-line bg-black/15 px-2 text-[10px] text-zinc-400 transition hover:border-accent/50 hover:text-accent"
+      >
+        <Plus size={11} />
+        Browser source
+      </button>
       <button
         title="Reset dashboard"
         aria-label="Reset dashboard"
@@ -382,6 +348,74 @@ function HiddenWidgets({
         <RotateCcw size={13} />
       </button>
     </div>
+  );
+}
+
+function BrowserSourceForm({
+  onAdd,
+  onCancel,
+}: {
+  onAdd: (name: string, url: string) => void;
+  onCancel: () => void;
+}) {
+  const [name, setName] = useState("");
+  const [url, setUrl] = useState("");
+  const submit = (event: FormEvent) => {
+    event.preventDefault();
+    try {
+      const parsed = new URL(url.trim());
+      const localHttp =
+        parsed.protocol === "http:" &&
+        ["localhost", "127.0.0.1"].includes(parsed.hostname);
+      if (parsed.protocol !== "https:" && !localHttp)
+        throw new Error("Use an HTTPS URL or a local development address");
+      onAdd(name.trim() || parsed.hostname, parsed.toString());
+    } catch (error) {
+      toast.error("Invalid browser source", {
+        description:
+          error instanceof Error ? error.message : "Enter a valid URL",
+      });
+    }
+  };
+  return (
+    <Card className="mb-3 p-4">
+      <form onSubmit={submit}>
+        <div className="mb-3 flex items-center gap-2 text-xs font-semibold">
+          <Globe2 size={14} className="text-accent" />
+          Add browser source
+        </div>
+        <div className="grid gap-3 sm:grid-cols-[minmax(140px,0.35fr)_minmax(260px,1fr)_auto]">
+          <input
+            className="input"
+            value={name}
+            maxLength={50}
+            onChange={(event) => setName(event.target.value)}
+            placeholder="Name (optional)"
+            aria-label="Browser source name"
+          />
+          <input
+            className="input"
+            value={url}
+            onChange={(event) => setUrl(event.target.value)}
+            placeholder="https://example.com/widget"
+            aria-label="Browser source URL"
+            required
+          />
+          <div className="flex gap-2">
+            <Button type="button" onClick={onCancel}>
+              Cancel
+            </Button>
+            <Button type="submit" variant="primary">
+              Add
+            </Button>
+          </div>
+        </div>
+        <p className="mt-2 text-[10px] text-zinc-600">
+          Some websites block embedding. HTTPS and local development URLs are
+          supported.
+        </p>
+      </form>
+    </Card>
   );
 }
 
@@ -398,16 +432,18 @@ export function Dashboard() {
   } = useAppStore();
   const [, tick] = useState(0);
   const [editing, setEditing] = useState(false);
-  const [dragging, setDragging] = useState<DashboardWidgetId>();
+  const [addingBrowserSource, setAddingBrowserSource] = useState(false);
+  const [interactionLayout, setInteractionLayout] = useState<Layout | null>(
+    null,
+  );
   const dashboardRef = useRef<HTMLDivElement | null>(null);
+  const {
+    width: gridWidth,
+    containerRef: gridContainerRef,
+    mounted: gridMounted,
+  } = useContainerWidth({ initialWidth: 1000 });
   const zoomSaveTimer = useRef<ReturnType<typeof setTimeout> | undefined>(
     undefined,
-  );
-  const sensors = useSensors(
-    useSensor(PointerSensor, { activationConstraint: { distance: 5 } }),
-    useSensor(KeyboardSensor, {
-      coordinateGetter: sortableKeyboardCoordinates,
-    }),
   );
   useEffect(() => {
     const id = setInterval(() => tick((x) => x + 1), 30_000);
@@ -457,57 +493,95 @@ export function Dashboard() {
   }, []);
   const connected =
     twitch.phase === "connected" || streamElements.phase === "connected";
+  const browserWidgets = useMemo<WidgetCatalogEntry[]>(
+    () =>
+      settings.dashboardBrowserSources.map((source) => ({
+        id: `browser:${source.id}`,
+        label: source.name,
+        description: source.url,
+      })),
+    [settings.dashboardBrowserSources],
+  );
+  const availableWidgets = useMemo(
+    () => [...widgetCatalog, ...browserWidgets],
+    [browserWidgets],
+  );
+  const validWidgetIds = useMemo(
+    () => new Set(availableWidgets.map((widget) => widget.id)),
+    [availableWidgets],
+  );
   const widgets = useMemo(
     () =>
       Array.isArray(settings.dashboardWidgets)
         ? [
             ...new Set(
-              settings.dashboardWidgets.filter((id) => allWidgetIds.has(id)),
+              settings.dashboardWidgets.filter((id) =>
+                validWidgetIds.has(id),
+              ),
             ),
           ]
         : defaultDashboardWidgets,
-    [settings.dashboardWidgets],
+    [settings.dashboardWidgets, validWidgetIds],
   );
   const hiddenWidgets = useMemo(
-    () => widgetCatalog.filter((widget) => !widgets.includes(widget.id)),
-    [widgets],
+    () => availableWidgets.filter((widget) => !widgets.includes(widget.id)),
+    [availableWidgets, widgets],
   );
-  const updateWidgets = (next: DashboardWidgetId[]) => {
+  const updateWidgets = (next: DashboardItemId[]) => {
+    setInteractionLayout(null);
     setSettings({ dashboardWidgets: next });
     void saveSetting("dashboardWidgets", next).catch(() =>
       toast.error("Dashboard layout could not be saved"),
     );
   };
-  const hideWidget = (id: DashboardWidgetId) =>
+  const hideWidget = (id: DashboardItemId) =>
     updateWidgets(widgets.filter((widget) => widget !== id));
-  const showWidget = (id: DashboardWidgetId) => updateWidgets([...widgets, id]);
-  const widgetSize = (id: DashboardWidgetId) => {
-    const fallback = defaultWidgetSize(id);
-    const saved = settings.dashboardWidgetSizes[id];
-    const minimum = minimumWidgetSize(id);
-    return {
-      columns: Math.max(
-        minimum.columns,
-        Math.min(12, saved?.columns ?? fallback.columns),
-      ),
-      height: Math.max(
-        minimum.height,
-        Math.min(900, saved?.height ?? fallback.height),
-      ),
-    };
-  };
-  const resizeWidget = (id: DashboardWidgetId, size: DashboardWidgetSize) => {
+  const showWidget = (id: DashboardItemId) => updateWidgets([...widgets, id]);
+  const baseGridLayout = useMemo<Layout>(
+    () =>
+      widgets.map((id) => {
+        const fallback = defaultWidgetSize(id);
+        const saved = settings.dashboardWidgetSizes[id] ?? fallback;
+        const minimum = minimumWidgetSize(id);
+        const width = Math.max(
+          minimum.columns,
+          Math.min(GRID_COLUMNS, saved.columns),
+        );
+        const height = Math.max(minimum.rows, Math.min(24, saved.rows));
+        return {
+          i: id,
+          x: Math.max(0, Math.min(GRID_COLUMNS - width, saved.x)),
+          y: Math.max(0, saved.y),
+          w: width,
+          h: height,
+          minW: minimum.columns,
+          minH: minimum.rows,
+          maxW: GRID_COLUMNS,
+          maxH: 24,
+        };
+      }),
+    [settings.dashboardWidgetSizes, widgets],
+  );
+  const gridLayout = interactionLayout ?? baseGridLayout;
+  const persistGridLayout = (layout: Layout) => {
+    setInteractionLayout(layout);
     const current = useAppStore.getState().settings.dashboardWidgetSizes;
-    setSettings({ dashboardWidgetSizes: { ...current, [id]: size } });
-  };
-  const finishResize = (id: DashboardWidgetId, size: DashboardWidgetSize) => {
-    resizeWidget(id, size);
-    const next = useAppStore.getState().settings.dashboardWidgetSizes;
+    const next = { ...current };
+    layout.forEach((item) => {
+      next[item.i as DashboardItemId] = {
+        x: item.x,
+        y: item.y,
+        columns: item.w,
+        rows: item.h,
+      };
+    });
+    setSettings({ dashboardWidgetSizes: next });
     void saveSetting("dashboardWidgetSizes", next).catch(() =>
-      toast.error("Widget size could not be saved"),
+      toast.error("Dashboard layout could not be saved"),
     );
   };
   const resetDashboard = () => {
+    setInteractionLayout(null);
     setSettings({
       dashboardWidgets: defaultDashboardWidgets,
       dashboardWidgetSizes: {},
@@ -517,29 +591,62 @@ export function Dashboard() {
       saveSetting("dashboardWidgetSizes", {}),
     ]).catch(() => toast.error("Dashboard layout could not be reset"));
   };
-  const finishDrag = () => {
-    setDragging(undefined);
+  const addBrowserSource = (name: string, url: string) => {
+    setInteractionLayout(null);
+    const source: DashboardBrowserSource = {
+      id: crypto.randomUUID(),
+      name,
+      url,
+    };
+    const sources = [...settings.dashboardBrowserSources, source];
+    const widgetId: DashboardItemId = `browser:${source.id}`;
+    const nextWidgets: DashboardItemId[] = [
+      ...widgets,
+      widgetId,
+    ];
+    const fallback = defaultWidgetSize(widgetId);
+    const sizes = {
+      ...settings.dashboardWidgetSizes,
+      [widgetId]: {
+        ...fallback,
+        y: gridLayout.reduce(
+          (bottom, item) => Math.max(bottom, item.y + item.h),
+          0,
+        ),
+      },
+    };
+    setSettings({
+      dashboardBrowserSources: sources,
+      dashboardWidgets: nextWidgets,
+      dashboardWidgetSizes: sizes,
+    });
+    setAddingBrowserSource(false);
+    void Promise.all([
+      saveSetting("dashboardBrowserSources", sources),
+      saveSetting("dashboardWidgets", nextWidgets),
+      saveSetting("dashboardWidgetSizes", sizes),
+    ]).catch(() => toast.error("Browser source could not be saved"));
   };
-  const startDrag = (event: DragStartEvent) => {
-    const id = event.active.id as DashboardWidgetId;
-    if (!allWidgetIds.has(id)) return;
-    setDragging(id);
-  };
-  const endDrag = (event: DragEndEvent) => {
-    const source = event.active.id as DashboardWidgetId;
-    const target = event.over?.id;
-    if (allWidgetIds.has(source) && target === hiddenDropId) hideWidget(source);
-    else if (
-      allWidgetIds.has(source) &&
-      target &&
-      allWidgetIds.has(target as DashboardWidgetId) &&
-      source !== target
-    ) {
-      const from = widgets.indexOf(source);
-      const to = widgets.indexOf(target as DashboardWidgetId);
-      if (from >= 0 && to >= 0) updateWidgets(arrayMove(widgets, from, to));
-    }
-    finishDrag();
+  const deleteBrowserSource = (id: DashboardItemId) => {
+    if (!isBrowserWidget(id)) return;
+    setInteractionLayout(null);
+    const sourceId = id.slice("browser:".length);
+    const sources = settings.dashboardBrowserSources.filter(
+      (source) => source.id !== sourceId,
+    );
+    const nextWidgets = widgets.filter((widget) => widget !== id);
+    const sizes = { ...settings.dashboardWidgetSizes };
+    delete sizes[id];
+    setSettings({
+      dashboardBrowserSources: sources,
+      dashboardWidgets: nextWidgets,
+      dashboardWidgetSizes: sizes,
+    });
+    void Promise.all([
+      saveSetting("dashboardBrowserSources", sources),
+      saveSetting("dashboardWidgets", nextWidgets),
+      saveSetting("dashboardWidgetSizes", sizes),
+    ]).catch(() => toast.error("Browser source could not be deleted"));
   };
   const metric = (id: DashboardWidgetId) => {
     if (id === "followers")
@@ -617,7 +724,36 @@ export function Dashboard() {
       />
     );
   };
-  const renderWidget = (id: DashboardWidgetId) => {
+  const renderWidget = (id: DashboardItemId) => {
+    if (isBrowserWidget(id)) {
+      const source = settings.dashboardBrowserSources.find(
+        (item) => item.id === id.slice("browser:".length),
+      );
+      if (!source) return null;
+      return (
+        <Card className="flex flex-col overflow-hidden">
+          <div className="flex shrink-0 items-center gap-2 border-b border-line px-4 py-3">
+            <Globe2 size={14} className="shrink-0 text-accent" />
+            <h2 className="min-w-0 flex-1 truncate text-xs font-semibold">
+              {source.name}
+            </h2>
+            <span className="max-w-1/2 truncate text-[9px] text-zinc-600">
+              {sourceHostname(source.url)}
+            </span>
+          </div>
+          <iframe
+            src={source.url}
+            title={source.name}
+            loading="lazy"
+            referrerPolicy="no-referrer"
+            sandbox="allow-forms allow-modals allow-popups allow-popups-to-escape-sandbox allow-same-origin allow-scripts"
+            allow="autoplay; fullscreen"
+            allowFullScreen
+            className="min-h-0 w-full flex-1 border-0 bg-black"
+          />
+        </Card>
+      );
+    }
     if (
       ![
         "activity",
@@ -627,7 +763,7 @@ export function Dashboard() {
         "connections",
       ].includes(id)
     )
-      return metric(id);
+      return metric(id as DashboardWidgetId);
     if (id === "activity")
       return (
         <Card className="overflow-hidden">
@@ -814,9 +950,22 @@ export function Dashboard() {
       </Card>
     );
   };
-  const activeWidget =
-    dragging && allWidgetIds.has(dragging) ? dragging : undefined;
   const zoom = Math.max(50, Math.min(150, settings.dashboardZoom || 100));
+  const gridCellSize = Math.max(
+    18,
+    (gridWidth - GRID_GAP * (GRID_COLUMNS - 1)) / GRID_COLUMNS,
+  );
+  const gridRows = Math.max(
+    16,
+    gridLayout.reduce(
+      (bottom, item) => Math.max(bottom, item.y + item.h),
+      0,
+    ) + 2,
+  );
+  const positionStrategy = useMemo(
+    () => createScaledStrategy(zoom / 100),
+    [zoom],
+  );
   return (
     <div
       ref={dashboardRef}
@@ -826,10 +975,7 @@ export function Dashboard() {
         title="Dashboard"
         titleActions={
           <button
-            onClick={() => {
-              setEditing(!editing);
-              finishDrag();
-            }}
+            onClick={() => setEditing(!editing)}
             className={`inline-flex items-center gap-1.5 rounded-md px-2 py-1 text-[11px] transition ${editing ? "bg-accent-soft text-accent" : "text-zinc-600 hover:bg-white/4 hover:text-zinc-300"}`}
           >
             {editing ? <LayoutGrid size={12} /> : <Settings2 size={12} />}{" "}
@@ -848,56 +994,84 @@ export function Dashboard() {
           )
         }
       />
-      <DndContext
-        sensors={sensors}
-        collisionDetection={closestCenter}
-        onDragStart={startDrag}
-        onDragEnd={endDrag}
-        onDragCancel={finishDrag}
-      >
-        {editing && (
-          <HiddenWidgets
-            widgets={hiddenWidgets}
-            onShow={showWidget}
-            onReset={resetDashboard}
+      {editing && addingBrowserSource && (
+        <BrowserSourceForm
+          onAdd={addBrowserSource}
+          onCancel={() => setAddingBrowserSource(false)}
+        />
+      )}
+      {editing && (
+        <HiddenWidgets
+          widgets={hiddenWidgets}
+          onShow={showWidget}
+          onAddBrowser={() => setAddingBrowserSource(true)}
+          onDeleteBrowser={deleteBrowserSource}
+          onReset={resetDashboard}
+        />
+      )}
+      <div ref={gridContainerRef} className="relative min-h-0">
+        {gridMounted && editing && (
+          <GridBackground
+            width={gridWidth}
+            cols={GRID_COLUMNS}
+            rowHeight={gridCellSize}
+            margin={[GRID_GAP, GRID_GAP]}
+            containerPadding={[0, 0]}
+            rows={gridRows}
+            color="rgba(128, 103, 233, 0.10)"
+            borderRadius={3}
+            className="pointer-events-none absolute inset-0"
           />
         )}
-        <SortableContext items={widgets} strategy={rectSortingStrategy}>
-          <div className="dashboard-grid grid grid-cols-12 items-start gap-3">
+        {gridMounted && (
+          <ReactGridLayout
+            width={gridWidth}
+            layout={gridLayout}
+            gridConfig={{
+              cols: GRID_COLUMNS,
+              rowHeight: gridCellSize,
+              margin: [GRID_GAP, GRID_GAP],
+              containerPadding: [0, 0],
+            }}
+            dragConfig={{
+              enabled: editing,
+              bounded: true,
+              handle: ".dashboard-drag-handle",
+              threshold: 5,
+            }}
+            resizeConfig={{ enabled: editing, handles: ["se"] }}
+            positionStrategy={positionStrategy}
+            compactor={verticalCompactor}
+            className={cn("dashboard-layout", editing && "is-editing")}
+            style={{ minHeight: editing ? 520 : undefined }}
+            onLayoutChange={(next) => setInteractionLayout(next)}
+            onDragStop={(next) => persistGridLayout(next)}
+            onResizeStop={(next) => persistGridLayout(next)}
+          >
             {widgets.map((id) => {
               const label =
-                widgetCatalog.find((widget) => widget.id === id)?.label ??
+                availableWidgets.find((widget) => widget.id === id)?.label ??
                 "Widget";
               return (
-                <SortableWidget
-                  key={id}
-                  id={id}
-                  editing={editing}
-                  label={label}
-                  size={widgetSize(id)}
-                  onHide={() => hideWidget(id)}
-                  onResize={(size) => resizeWidget(id, size)}
-                  onResizeEnd={(size) => finishResize(id, size)}
-                >
-                  {renderWidget(id)}
-                </SortableWidget>
+                <div key={id}>
+                  <GridWidget
+                    editing={editing}
+                    label={label}
+                    onHide={() => hideWidget(id)}
+                    onDelete={
+                      isBrowserWidget(id)
+                        ? () => deleteBrowserSource(id)
+                        : undefined
+                    }
+                  >
+                    {renderWidget(id)}
+                  </GridWidget>
+                </div>
               );
             })}
-          </div>
-        </SortableContext>
-        <DragOverlay
-          adjustScale={false}
-          dropAnimation={{ duration: 180, easing: "cubic-bezier(.2,.8,.2,1)" }}
-        >
-          {activeWidget && (
-            <div className="pointer-events-none flex h-12 w-64 max-w-[70vw] items-center gap-2 rounded-xl border border-accent/40 bg-raised px-3 text-xs font-semibold text-zinc-200 opacity-95 shadow-2xl shadow-black/50">
-              <GripVertical size={14} className="text-accent" />
-              {widgetCatalog.find((widget) => widget.id === activeWidget)
-                ?.label ?? "Widget"}
-            </div>
-          )}
-        </DragOverlay>
-      </DndContext>
+          </ReactGridLayout>
+        )}
+      </div>
       {widgets.length === 0 && (
         <Card className="grid min-h-52 place-items-center text-center">
           <div>

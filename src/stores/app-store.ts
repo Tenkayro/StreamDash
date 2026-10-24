@@ -6,10 +6,10 @@ import type {
   ChatMessage,
   ConnectionState,
   DashboardStats,
-  DashboardWidgetId,
+  DashboardItemId,
 } from "../types";
 
-export const defaultDashboardWidgets: DashboardWidgetId[] = [
+export const defaultDashboardWidgets: DashboardItemId[] = [
   "followers",
   "subscribers",
   "viewers",
@@ -34,8 +34,9 @@ export const defaultSettings: AppSettings = {
   sidebarCollapsed: false,
   dashboardWidgets: defaultDashboardWidgets,
   dashboardWidgetSizes: {},
+  dashboardBrowserSources: [],
   dashboardZoom: 100,
-  dashboardLayoutVersion: 3,
+  dashboardLayoutVersion: 5,
   chatTimestamps: true,
   chatBadges: true,
   chatHighlightMentions: true,
