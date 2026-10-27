@@ -21,6 +21,7 @@ import { needsTwitchPermissionUpdate } from "../services/twitch/client";
 import twitchIcon from "../assets/services/twitch.webp";
 import streamElementsIcon from "../assets/services/streamelements.webp";
 import tipeeStreamIcon from "../assets/services/tipeeestream.webp";
+import obsIcon from "../assets/services/obs.svg";
 import { useTranslation } from "react-i18next";
 
 const streamElementsTokenUrl =
@@ -177,17 +178,91 @@ function TokenForm({
   );
 }
 
+function ObsForm({
+  address,
+  onAddressChange,
+  password,
+  onPasswordChange,
+  busy,
+  disabled,
+  onConnect,
+}: {
+  address: string;
+  onAddressChange: (value: string) => void;
+  password: string;
+  onPasswordChange: (value: string) => void;
+  busy: boolean;
+  disabled: boolean;
+  onConnect: () => Promise<void>;
+}) {
+  const { t } = useTranslation();
+  return (
+    <div className="max-w-xl pb-3 pl-16 pr-4">
+      <div className="flex gap-2">
+        <div className="w-44 shrink-0">
+          <input
+            className="input"
+            autoComplete="off"
+            spellCheck={false}
+            aria-label={t("connections.obsAddress")}
+            placeholder="127.0.0.1:4455"
+            value={address}
+            onChange={(event) => onAddressChange(event.target.value)}
+          />
+        </div>
+        <input
+          className="input min-w-0 flex-1"
+          type="password"
+          autoComplete="off"
+          aria-label={t("connections.obsPassword")}
+          placeholder={t("connections.obsPasswordPlaceholder")}
+          value={password}
+          onChange={(event) => onPasswordChange(event.target.value)}
+          onKeyDown={(event) => {
+            if (event.key === "Enter" && !disabled && !busy)
+              void onConnect();
+          }}
+        />
+        <Button
+          className="shrink-0 whitespace-nowrap"
+          variant="primary"
+          disabled={disabled || busy}
+          onClick={() => void onConnect()}
+        >
+          {busy ? (
+            <LoaderCircle className="animate-spin" size={15} />
+          ) : (
+            <CheckCircle2 size={15} />
+          )}
+          {t("connections.connectObs")}
+        </Button>
+      </div>
+      <p className="mt-2 text-[11px] leading-4 text-zinc-600">
+        {t("connections.obsHint")}
+      </p>
+    </div>
+  );
+}
+
 export function Connections() {
   const { t } = useTranslation();
-  const { twitch, streamElements, tipeeStream } = useAppStore();
+  const twitch = useAppStore((state) => state.twitch);
+  const streamElements = useAppStore((state) => state.streamElements);
+  const tipeeStream = useAppStore((state) => state.tipeeStream);
+  const obs = useAppStore((state) => state.obs);
+  const obsSnapshot = useAppStore((state) => state.obsSnapshot);
+  const settings = useAppStore((state) => state.settings);
   const runtime = useRuntime();
   const [token, setToken] = useState("");
   const [tipeeeStreamKey, setTipeeeStreamKey] = useState("");
+  const [obsAddress, setObsAddress] = useState(settings.obsAddress);
+  const [obsPassword, setObsPassword] = useState("");
   const twitchBusy = ["connecting", "reconnecting"].includes(twitch.phase);
   const seBusy = ["connecting", "reconnecting"].includes(streamElements.phase);
   const tipeeStreamBusy = ["connecting", "reconnecting"].includes(
     tipeeStream.phase,
   );
+  const obsBusy = ["connecting", "reconnecting"].includes(obs.phase);
   const missingModeration =
     twitch.phase === "connected" && needsTwitchPermissionUpdate(twitch.scopes);
 
@@ -332,6 +407,42 @@ export function Connections() {
                 setTipeeeStreamKey("");
               }}
               helpUrl={tipeeStreamTokenUrl}
+            />
+          )}
+        </ServiceRow>
+
+        <ServiceRow
+          name="OBS"
+          icon={obsIcon}
+          tint="bg-zinc-300/10"
+          phase={obs.phase}
+          purpose={t("connections.obsPurpose")}
+          meta={
+            obs.phase === "connected"
+              ? (obsSnapshot?.scene ?? obsSnapshot?.version)
+              : undefined
+          }
+          error={obs.detail}
+          action={
+            obs.phase !== "disconnected" ? (
+              <RowAction onClick={runtime.disconnectObs}>
+                {t("connections.disconnect")}
+              </RowAction>
+            ) : undefined
+          }
+        >
+          {obs.phase !== "connected" && !obsBusy && (
+            <ObsForm
+              address={obsAddress}
+              onAddressChange={setObsAddress}
+              password={obsPassword}
+              onPasswordChange={setObsPassword}
+              busy={obsBusy}
+              disabled={!isTauri()}
+              onConnect={async () => {
+                await runtime.connectObs(obsAddress, obsPassword);
+                setObsPassword("");
+              }}
             />
           )}
         </ServiceRow>

@@ -35,6 +35,7 @@ import { TWITCH_CLIENT_ID } from "./twitch/config";
 import { TwitchChatClient } from "./twitch/chat";
 import { StreamElementsClient } from "./streamelements/client";
 import { TipeeeStreamClient } from "./tipeeestream/client";
+import { DEFAULT_OBS_ADDRESS, ObsClient } from "./obs/client";
 import type { ActivityEvent, AppSettings, ChatUserProfile } from "../types";
 import { RuntimeContext, type DeviceAuth } from "./runtime-context";
 import i18n from "../i18n";
@@ -83,6 +84,7 @@ export function RuntimeProvider({ children }: { children: ReactNode }) {
   const twitchRef = useRef<TwitchEventSub | undefined>(undefined);
   const seRef = useRef<StreamElementsClient | undefined>(undefined);
   const tipeeStreamRef = useRef<TipeeeStreamClient | undefined>(undefined);
+  const obsRef = useRef<ObsClient | undefined>(undefined);
   const chatRef = useRef<TwitchChatClient | undefined>(undefined);
   const [deviceAuth, setDeviceAuth] = useState<DeviceAuth>();
 
@@ -246,13 +248,41 @@ export function RuntimeProvider({ children }: { children: ReactNode }) {
     }
   }, [ingest, state]);
 
+  const startObs = useCallback(async () => {
+    if (!isTauri()) return;
+    const current = state();
+    if (!current.settings.obsEnabled) {
+      current.setObs({ phase: "disconnected" });
+      current.setObsSnapshot(undefined);
+      return;
+    }
+    try {
+      const password = await secretGet("obs-password").catch(() => null);
+      if (!state().settings.obsEnabled) return;
+      obsRef.current?.stop();
+      current.setObs({ phase: "connecting" });
+      const client = new ObsClient({
+        address: state().settings.obsAddress || DEFAULT_OBS_ADDRESS,
+        password: password ?? undefined,
+        translate: (key) => i18n.t(key),
+        onSnapshot: (snapshot) => state().setObsSnapshot(snapshot),
+        onState: (phase, detail) => state().setObs({ phase, detail }),
+      });
+      obsRef.current = client;
+      client.start();
+    } catch (error) {
+      current.setObs({ phase: "error", detail: errorMessage(error) });
+    }
+  }, [state]);
+
   const reconnect = useCallback(async () => {
     await Promise.all([
       startTwitch(),
       startStreamElements(),
       startTipeeeStream(),
+      startObs(),
     ]);
-  }, [startTwitch, startStreamElements, startTipeeeStream]);
+  }, [startTwitch, startStreamElements, startTipeeeStream, startObs]);
 
   useEffect(() => {
     let disposed = false;
@@ -293,6 +323,7 @@ export function RuntimeProvider({ children }: { children: ReactNode }) {
       twitchRef.current?.stop();
       seRef.current?.stop();
       tipeeStreamRef.current?.stop();
+      obsRef.current?.stop();
       chatRef.current?.stop();
     };
   }, [reconnect, setEvents, setReady, setSettings, state]);
@@ -380,8 +411,40 @@ export function RuntimeProvider({ children }: { children: ReactNode }) {
     state().setTipeeeStream({ phase: "disconnected" });
     await secretDelete("tipeeestream-api-key").catch(() => undefined);
   };
-  const sendChatMessage = async (text: string) => {
-    const message = text.trim();
+  const connectObs = async (address: string, password: string) => {
+    const value = address.trim() || DEFAULT_OBS_ADDRESS;
+    state().setSettings({ obsAddress: value, obsEnabled: true });
+    await saveSetting("obsAddress", value);
+    await saveSetting("obsEnabled", true);
+    if (password.trim()) await secretSet("obs-password", password.trim());
+    await startObs();
+  };
+  const disconnectObs = async () => {
+    obsRef.current?.stop();
+    obsRef.current = undefined;
+    state().setObs({ phase: "disconnected" });
+    state().setObsSnapshot(undefined);
+    state().setSettings({ obsEnabled: false });
+    await saveSetting("obsEnabled", false).catch(() => undefined);
+  };
+  const obsAction = async (action: (client: ObsClient) => Promise<void>) => {
+    const client = obsRef.current;
+    if (!client) return;
+    try {
+      await action(client);
+    } catch (error) {
+      toast.error(i18n.t("obs.errors.action"), {
+        description: errorMessage(error),
+      });
+    }
+  };
+  const setObsScene = (scene: string) =>
+    obsAction((client) => client.setScene(scene));
+  const setObsMute = (input: string, muted: boolean) =>
+    obsAction((client) => client.setMute(input, muted));
+  const setObsVolume = (input: string, volume: number) =>
+    obsAction((client) => client.setVolume(input, volume));
+  const sendChatMessage = async (text: string) => {    const message = text.trim();
     const userId = state().twitch.userId;
     if (!message) return;
     if (!userId) throw new Error(i18n.t("stream.notConnected"));
@@ -561,6 +624,11 @@ export function RuntimeProvider({ children }: { children: ReactNode }) {
         disconnectStreamElements,
         connectTipeeeStream,
         disconnectTipeeeStream,
+        connectObs,
+        disconnectObs,
+        setObsScene,
+        setObsMute,
+        setObsVolume,
         sendChatMessage,
         getChatUserProfile,
         moderateChatUser,

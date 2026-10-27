@@ -81,6 +81,12 @@
     "disconnect": "Déconnecter",
     "enterCode": "Saisissez ce code sur la page Twitch ouverte dans votre navigateur",
     "jwtPlaceholder": "Collez le JWT de votre compte",
+    "connectObs": "Connecter OBS",
+    "obsAddress": "Adresse",
+    "obsHint": "Activez le serveur WebSocket dans OBS sous Outils → Paramètres du serveur WebSocket. Le port 4455 est utilisé par défaut.",
+    "obsPassword": "Mot de passe",
+    "obsPasswordPlaceholder": "Facultatif",
+    "obsPurpose": "État, scènes et audio d'OBS",
     "openActivation": "Ouvrir l’activation Twitch",
     "openTokenInstructions": "Obtenir l’identifiant requis",
     "reconnectModeration": "Reconnectez-vous une fois pour activer toutes les fonctions de modération.",
@@ -97,7 +103,7 @@
   "dashboard": {
     "activityEvents": "Événements d’activité", "add": "Ajouter", "addBrowserSource": "Ajouter une source navigateur", "addWidgets": "Ajouter des widgets", "bitsCollected": "Bits collectés", "browserSource": "Source navigateur", "cancel": "Annuler", "currentViewers": "Spectateurs actuels", "customize": "Personnaliser", "deleteWidget": "Supprimer {{label}}", "donations": "Dons", "edit": "Modifier", "embedHint": "Certains sites bloquent l’intégration. HTTPS et les adresses de développement locales sont pris en charge.", "empty": "Votre tableau de bord est vide", "finish": "Terminer", "followers": "Followers", "hidden": "Masqués", "hiddenHint": "Les widgets masqués apparaissent ici", "hideWidget": "Masquer {{label}}", "httpsOnly": "Utilisez une URL HTTPS ou une adresse de développement locale", "invalidSource": "Source navigateur invalide", "layoutSaveError": "Impossible d’enregistrer la disposition", "manage": "Gérer", "moveWidget": "Déplacer {{label}}", "nameOptional": "Nom (facultatif)", "noStreamInfo": "Aucune information de stream", "open": "Ouvrir", "recentActivity": "Activité récente", "resetDashboard": "Réinitialiser le tableau de bord", "resetError": "Impossible de réinitialiser la disposition", "resizeWidget": "Redimensionner {{label}}", "showWidget": "Afficher {{label}} — {{description}}", "sizeSaveError": "Impossible d’enregistrer la taille du widget", "sourceDeleteError": "Impossible de supprimer la source navigateur", "sourceName": "Nom de la source navigateur", "sourceSaveError": "Impossible d’enregistrer la source navigateur", "sourceUrl": "URL de la source navigateur", "streamDetails": "Détails du stream", "streamDuration": "Durée du stream", "streamStatus": "Statut du stream", "streamTitle": "Titre", "subscribers": "Abonnés", "validUrl": "Saisissez une URL valide", "viewAll": "Tout afficher", "widget": "Widget",
     "widgets": {
-      "activity": { "description": "Derniers événements en un coup d’œil", "label": "Activité récente" }, "bits": { "description": "Bits collectés localement", "label": "Bits" }, "connections": { "description": "État des services et comptes", "label": "Connexions" }, "donations": { "description": "Dons collectés localement", "label": "Dons" }, "duration": { "description": "Temps écoulé depuis le début du direct", "label": "Durée du stream" }, "eventCount": { "description": "Total de l’activité enregistrée", "label": "Nombre d’événements" }, "followers": { "description": "Followers Twitch actuels", "label": "Followers" }, "goals": { "description": "Progression vers vos objectifs", "label": "Objectifs" }, "livePreview": { "description": "Regarder votre stream Twitch", "label": "Aperçu en direct" }, "status": { "description": "État du direct et titre", "label": "Statut du stream" }, "streamDetails": { "description": "Titre et catégorie", "label": "Détails du stream" }, "subscribers": { "description": "Abonnements actifs actuels", "label": "Abonnés" }, "viewers": { "description": "Spectateurs actuels du direct", "label": "Spectateurs" }
+      "activity": { "description": "Derniers événements en un coup d’œil", "label": "Activité récente" }, "bits": { "description": "Bits collectés localement", "label": "Bits" }, "connections": { "description": "État des services et comptes", "label": "Connexions" }, "donations": { "description": "Dons collectés localement", "label": "Dons" }, "duration": { "description": "Temps écoulé depuis le début du direct", "label": "Durée du stream" }, "eventCount": { "description": "Total de l’activité enregistrée", "label": "Nombre d’événements" }, "followers": { "description": "Followers Twitch actuels", "label": "Followers" }, "goals": { "description": "Progression vers vos objectifs", "label": "Objectifs" }, "livePreview": { "description": "Regarder votre stream Twitch", "label": "Aperçu en direct" }, "obs": { "description": "État, scène et audio", "label": "OBS" }, "status": { "description": "État du direct et titre", "label": "Statut du stream" }, "streamDetails": { "description": "Titre et catégorie", "label": "Détails du stream" }, "subscribers": { "description": "Abonnements actifs actuels", "label": "Abonnés" }, "viewers": { "description": "Spectateurs actuels du direct", "label": "Spectateurs" }
     }, "zoomSaveError": "Impossible d’enregistrer le zoom du tableau de bord"
   },
   "events": {
@@ -144,6 +150,37 @@
   },
   "navigation": {
     "close": "Fermer la navigation rapide", "insights": "Analyses", "main": "Espace de travail", "manageConnections": "Gérer les connexions", "moveHint": "↑↓ Sélectionner", "noResults": "Aucune page correspondante", "openHint": "Entrée Ouvrir", "quickSwitch": "Accéder à une page", "searchPlaceholder": "Rechercher des pages…", "system": "Système"
+  },
+  "obs": {
+    "title": "OBS Studio",
+    "status": "État",
+    "streaming": "En direct",
+    "recording": "Enregistrement",
+    "recordingPaused": "Enregistrement en pause",
+    "idle": "Prêt",
+    "bitrate": "Débit",
+    "droppedFrames": "{{count}} perdus",
+    "scene": "Scène",
+    "audio": "Audio",
+    "mic": "Micro",
+    "desktop": "Desktop",
+    "mute": "Couper {{label}}",
+    "unmute": "Réactiver {{label}}",
+    "muted": "Coupé",
+    "replayBuffer": "Tampon de rediffusion actif",
+    "virtualCam": "Caméra virtuelle active",
+    "live": "En direct",
+    "connectHint": "Connectez OBS pour voir ici l'état, les scènes et l'audio.",
+    "connectingHint": "En attente d'OBS…",
+    "openConnection": "Connecter OBS",
+    "errors": {
+      "authRequired": "OBS demande un mot de passe. Ajoutez-le dans Connexions.",
+      "crypto": "Le hachage sécurisé est indisponible, l'authentification OBS a échoué.",
+      "password": "OBS a refusé le mot de passe. Vérifiez-le dans Connexions.",
+      "unreachable": "OBS est injoignable. Vérifiez qu'OBS est lancé et que le serveur WebSocket est activé.",
+      "exited": "OBS a été fermé.",
+      "action": "L'action OBS a échoué"
+    }
   },
   "pageDescriptions": {
     "connections": "Connectez vos comptes et vérifiez l’état des services.", "dashboard": "Votre stream, votre audience et votre activité en un coup d’œil.", "goals": "Définissez des objectifs et suivez votre progression.", "livePreview": "Surveillez votre stream Twitch public sans quitter StreamDash.", "settings": "Réglez l’apparence, le comportement, les notifications et les données.", "statistics": "Analysez les tendances à partir de vos événements enregistrés."

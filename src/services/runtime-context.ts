@@ -15,6 +15,11 @@ export interface RuntimeValue {
   disconnectStreamElements: () => Promise<void>;
   connectTipeeeStream: (apiKey: string) => Promise<void>;
   disconnectTipeeeStream: () => Promise<void>;
+  connectObs: (address: string, password: string) => Promise<void>;
+  disconnectObs: () => Promise<void>;
+  setObsScene: (scene: string) => Promise<void>;
+  setObsMute: (input: string, muted: boolean) => Promise<void>;
+  setObsVolume: (input: string, volume: number) => Promise<void>;
   sendChatMessage: (text: string) => Promise<void>;
   getChatUserProfile: (login: string) => Promise<ChatUserProfile>;
   moderateChatUser: (

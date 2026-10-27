@@ -26,7 +26,7 @@
       }
     ],
     "security": {
-      "csp": "default-src 'self'; connect-src 'self' ipc: http://ipc.localhost https://id.twitch.tv https://api.twitch.tv https://7tv.io https://api.7tv.app https://api.tipeeestream.com wss://eventsub.wss.twitch.tv wss://astro.streamelements.com wss://*.tipeeestream.com; frame-src https: http://localhost:* http://127.0.0.1:*; img-src 'self' asset: https://static-cdn.jtvnw.net https://cdn.7tv.app data:; style-src 'self' 'unsafe-inline'; script-src 'self'"
+      "csp": "default-src 'self'; connect-src 'self' ipc: http://ipc.localhost https://id.twitch.tv https://api.twitch.tv https://7tv.io https://api.7tv.app https://api.tipeeestream.com wss://eventsub.wss.twitch.tv wss://astro.streamelements.com wss://*.tipeeestream.com ws://127.0.0.1:* ws://localhost:*; frame-src https: http://localhost:* http://127.0.0.1:*; img-src 'self' asset: https://static-cdn.jtvnw.net https://cdn.7tv.app data:; style-src 'self' 'unsafe-inline'; script-src 'self'"
     }
   },
   "bundle": {

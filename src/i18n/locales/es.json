@@ -81,6 +81,12 @@
     "disconnect": "Desconectar",
     "enterCode": "Introduce este código en la página de Twitch abierta en tu navegador",
     "jwtPlaceholder": "Pega el JWT de tu cuenta",
+    "connectObs": "Conectar OBS",
+    "obsAddress": "Dirección",
+    "obsHint": "Activa el servidor WebSocket en OBS en Herramientas → Configuración del servidor WebSocket. El puerto 4455 es el predeterminado.",
+    "obsPassword": "Contraseña",
+    "obsPasswordPlaceholder": "Opcional",
+    "obsPurpose": "Estado, escenas y audio de OBS",
     "openActivation": "Abrir activación de Twitch",
     "openTokenInstructions": "Cómo obtener la credencial",
     "reconnectModeration": "Vuelve a conectar una vez para activar todas las funciones de moderación.",
@@ -97,7 +103,7 @@
   "dashboard": {
     "activityEvents": "Eventos de actividad", "add": "Añadir", "addBrowserSource": "Añadir fuente del navegador", "addWidgets": "Añadir widgets", "bitsCollected": "Bits recopilados", "browserSource": "Fuente del navegador", "cancel": "Cancelar", "currentViewers": "Espectadores actuales", "customize": "Personalizar", "deleteWidget": "Eliminar {{label}}", "donations": "Donaciones", "edit": "Editar", "embedHint": "Algunos sitios bloquean la inserción. Se admiten HTTPS y direcciones de desarrollo locales.", "empty": "Tu panel está vacío", "finish": "Terminar", "followers": "Seguidores", "hidden": "Ocultos", "hiddenHint": "Los widgets ocultos aparecen aquí", "hideWidget": "Ocultar {{label}}", "httpsOnly": "Usa una URL HTTPS o una dirección de desarrollo local", "invalidSource": "Fuente del navegador no válida", "layoutSaveError": "No se pudo guardar el diseño del panel", "manage": "Gestionar", "moveWidget": "Mover {{label}}", "nameOptional": "Nombre (opcional)", "noStreamInfo": "No hay información de la emisión", "open": "Abrir", "recentActivity": "Actividad reciente", "resetDashboard": "Restablecer panel", "resetError": "No se pudo restablecer el diseño del panel", "resizeWidget": "Cambiar tamaño de {{label}}", "showWidget": "Mostrar {{label}} — {{description}}", "sizeSaveError": "No se pudo guardar el tamaño del widget", "sourceDeleteError": "No se pudo eliminar la fuente del navegador", "sourceName": "Nombre de la fuente", "sourceSaveError": "No se pudo guardar la fuente del navegador", "sourceUrl": "URL de la fuente", "streamDetails": "Detalles de la emisión", "streamDuration": "Duración de la emisión", "streamStatus": "Estado de la emisión", "streamTitle": "Título", "subscribers": "Suscriptores", "validUrl": "Introduce una URL válida", "viewAll": "Ver todo", "widget": "Widget",
     "widgets": {
-      "activity": { "description": "Últimos eventos de un vistazo", "label": "Actividad reciente" }, "bits": { "description": "Bits recopilados localmente", "label": "Bits" }, "connections": { "description": "Estado de servicios y cuentas", "label": "Conexiones" }, "donations": { "description": "Donaciones recopiladas localmente", "label": "Donaciones" }, "duration": { "description": "Tiempo desde el inicio del directo", "label": "Duración de la emisión" }, "eventCount": { "description": "Total de actividad guardada", "label": "Número de eventos" }, "followers": { "description": "Seguidores actuales de Twitch", "label": "Seguidores" }, "goals": { "description": "Progreso hacia tus objetivos", "label": "Objetivos" }, "livePreview": { "description": "Ver tu emisión de Twitch", "label": "Vista previa en directo" }, "status": { "description": "Estado en directo y título", "label": "Estado de la emisión" }, "streamDetails": { "description": "Título y categoría", "label": "Detalles de la emisión" }, "subscribers": { "description": "Suscripciones activas actuales", "label": "Suscriptores" }, "viewers": { "description": "Espectadores actuales en directo", "label": "Espectadores" }
+      "activity": { "description": "Últimos eventos de un vistazo", "label": "Actividad reciente" }, "bits": { "description": "Bits recopilados localmente", "label": "Bits" }, "connections": { "description": "Estado de servicios y cuentas", "label": "Conexiones" }, "donations": { "description": "Donaciones recopiladas localmente", "label": "Donaciones" }, "duration": { "description": "Tiempo desde el inicio del directo", "label": "Duración de la emisión" }, "eventCount": { "description": "Total de actividad guardada", "label": "Número de eventos" }, "followers": { "description": "Seguidores actuales de Twitch", "label": "Seguidores" }, "goals": { "description": "Progreso hacia tus objetivos", "label": "Objetivos" }, "livePreview": { "description": "Ver tu emisión de Twitch", "label": "Vista previa en directo" }, "obs": { "description": "Estado, escena y audio", "label": "OBS" }, "status": { "description": "Estado en directo y título", "label": "Estado de la emisión" }, "streamDetails": { "description": "Título y categoría", "label": "Detalles de la emisión" }, "subscribers": { "description": "Suscripciones activas actuales", "label": "Suscriptores" }, "viewers": { "description": "Espectadores actuales en directo", "label": "Espectadores" }
     }, "zoomSaveError": "No se pudo guardar el zoom del panel"
   },
   "events": {
@@ -144,6 +150,37 @@
   },
   "navigation": {
     "close": "Cerrar navegación rápida", "insights": "Análisis", "main": "Espacio de trabajo", "manageConnections": "Gestionar conexiones", "moveHint": "↑↓ Seleccionar", "noResults": "No hay ninguna página coincidente", "openHint": "Enter Abrir", "quickSwitch": "Ir a una página", "searchPlaceholder": "Buscar páginas…", "system": "Sistema"
+  },
+  "obs": {
+    "title": "OBS Studio",
+    "status": "Estado",
+    "streaming": "Emitiendo",
+    "recording": "Grabando",
+    "recordingPaused": "Grabación en pausa",
+    "idle": "Listo",
+    "bitrate": "Tasa de bits",
+    "droppedFrames": "{{count}} perdidos",
+    "scene": "Escena",
+    "audio": "Audio",
+    "mic": "Micrófono",
+    "desktop": "Desktop",
+    "mute": "Silenciar {{label}}",
+    "unmute": "Activar {{label}}",
+    "muted": "Silenciado",
+    "replayBuffer": "Búfer de repetición activo",
+    "virtualCam": "Cámara virtual activa",
+    "live": "En directo",
+    "connectHint": "Conecta OBS para ver aquí el estado, las escenas y el audio.",
+    "connectingHint": "Esperando a OBS…",
+    "openConnection": "Conectar OBS",
+    "errors": {
+      "authRequired": "OBS requiere una contraseña. Añádela en Conexiones.",
+      "crypto": "El hash seguro no está disponible, la autenticación con OBS falló.",
+      "password": "OBS rechazó la contraseña. Compruébala en Conexiones.",
+      "unreachable": "No se puede acceder a OBS. Comprueba que OBS esté abierto y el servidor WebSocket activado.",
+      "exited": "OBS se cerró.",
+      "action": "La acción de OBS falló"
+    }
   },
   "pageDescriptions": {
     "connections": "Conecta cuentas y revisa el estado de los servicios.", "dashboard": "Tu stream, audiencia y actividad de un vistazo.", "goals": "Define objetivos y sigue tu progreso.", "livePreview": "Supervisa tu stream público de Twitch sin salir de StreamDash.", "settings": "Ajusta la apariencia, el comportamiento, las notificaciones y los datos.", "statistics": "Comprende las tendencias a partir de los eventos guardados."

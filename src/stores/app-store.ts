@@ -7,6 +7,7 @@ import type {
   ConnectionState,
   DashboardStats,
   DashboardItemId,
+  ObsSnapshot,
 } from "../types";
 
 export const defaultDashboardWidgets: DashboardItemId[] = [
@@ -50,6 +51,8 @@ export const defaultSettings: AppSettings = {
   chatHiddenUsers: [],
   chatHighlightIgnoredUsers: [],
   chatUserNotes: {},
+  obsAddress: "127.0.0.1:4455",
+  obsEnabled: false,
   notifications: true,
   notifyDonations: true,
   notifyRaids: true,
@@ -78,6 +81,10 @@ interface AppStore {
   setStreamElements: (state: ConnectionState) => void;
   tipeeStream: ConnectionState;
   setTipeeeStream: (state: ConnectionState) => void;
+  obs: ConnectionState;
+  setObs: (state: ConnectionState) => void;
+  obsSnapshot?: ObsSnapshot;
+  setObsSnapshot: (snapshot?: ObsSnapshot) => void;
   chat: ConnectionState;
   setChat: (state: ConnectionState) => void;
   chatEmotes: ChatEmote[];
@@ -139,6 +146,10 @@ export const useAppStore = create<AppStore>((set) => ({
   setStreamElements: (streamElements) => set({ streamElements }),
   tipeeStream: { phase: "disconnected" },
   setTipeeeStream: (tipeeStream) => set({ tipeeStream }),
+  obs: { phase: "disconnected" },
+  setObs: (obs) => set({ obs }),
+  obsSnapshot: undefined,
+  setObsSnapshot: (obsSnapshot) => set({ obsSnapshot }),
   chat: { phase: "disconnected" },
   setChat: (chat) => set({ chat }),
   chatEmotes: [],

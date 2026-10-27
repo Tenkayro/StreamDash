@@ -34,7 +34,8 @@ export async function saveSetting<K extends keyof AppSettings>(
 }
 type IntegrationSecret =
   | "streamelements-token"
-  | "tipeeestream-api-key";
+  | "tipeeestream-api-key"
+  | "obs-password";
 export async function secretSet(name: IntegrationSecret, value: string) {
   return invoke("secret_set", { name, value });
 }

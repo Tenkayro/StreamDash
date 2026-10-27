@@ -16,6 +16,7 @@ import { useCallback, useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import streamElementsIcon from "../assets/services/streamelements.webp";
 import tipeeStreamIcon from "../assets/services/tipeeestream.webp";
+import obsIcon from "../assets/services/obs.svg";
 import twitchIcon from "../assets/services/twitch.webp";
 import titlebarLogo from "../assets/branding/streamdash-logo-titlebar.webp";
 import { resolveLanguage } from "../i18n";
@@ -31,6 +32,7 @@ type TrayStatus = {
   twitchPhase: ConnectionPhase;
   streamElementsPhase: ConnectionPhase;
   tipeeStreamPhase: ConnectionPhase;
+  obsPhase: ConnectionPhase;
 };
 
 const initialStatus: TrayStatus = {
@@ -39,6 +41,7 @@ const initialStatus: TrayStatus = {
   twitchPhase: "disconnected",
   streamElementsPhase: "disconnected",
   tipeeStreamPhase: "disconnected",
+  obsPhase: "disconnected",
 };
 
 function statusColor(phase: ConnectionPhase) {
@@ -88,6 +91,7 @@ export function TrayBridge() {
   const twitch = useAppStore((state) => state.twitch);
   const streamElements = useAppStore((state) => state.streamElements);
   const tipeeStream = useAppStore((state) => state.tipeeStream);
+  const obs = useAppStore((state) => state.obs);
   const stats = useAppStore((state) => state.stats);
 
   const publish = useCallback(async () => {
@@ -100,6 +104,7 @@ export function TrayBridge() {
       twitchPhase: twitch.phase,
       streamElementsPhase: streamElements.phase,
       tipeeStreamPhase: tipeeStream.phase,
+      obsPhase: obs.phase,
     };
     await emit("tray-status", status);
     const streamStatus = stats.live ? t("tray.live") : t("tray.offline");
@@ -121,7 +126,7 @@ export function TrayBridge() {
     await invoke("tray_set_tooltip", {
       tooltip: t("tray.tooltip", { streamStatus, twitchStatus }),
     }).catch(() => undefined);
-  }, [settings.language, settings.trayStyle, stats.live, stats.viewers, streamElements.phase, t, tipeeStream.phase, twitch.account, twitch.phase]);
+  }, [obs.phase, settings.language, settings.trayStyle, stats.live, stats.viewers, streamElements.phase, t, tipeeStream.phase, twitch.account, twitch.phase]);
 
   useEffect(() => {
     if (!isTauri()) return;
@@ -144,7 +149,7 @@ export function TrayBridge() {
 export function TrayPanel() {
   const { t, i18n } = useTranslation();
   const [status, setStatus] = useState<TrayStatus>(initialStatus);
-  const reconnecting = [status.twitchPhase, status.streamElementsPhase, status.tipeeStreamPhase].some(
+  const reconnecting = [status.twitchPhase, status.streamElementsPhase, status.tipeeStreamPhase, status.obsPhase].some(
     (phase) => phase === "connecting" || phase === "reconnecting",
   );
 
@@ -212,6 +217,7 @@ export function TrayPanel() {
               <ServiceStatus icon={twitchIcon} name="Twitch" phase={status.twitchPhase} account={status.twitchAccount} />
               <ServiceStatus icon={streamElementsIcon} name="StreamElements" phase={status.streamElementsPhase} />
               <ServiceStatus icon={tipeeStreamIcon} name="TipeeeStream" phase={status.tipeeStreamPhase} />
+              <ServiceStatus icon={obsIcon} name="OBS" phase={status.obsPhase} />
             </div>
           </div>
 

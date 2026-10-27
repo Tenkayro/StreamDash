@@ -179,6 +179,7 @@ pub fn uninstall_cleanup() -> Result<(), String> {
         "twitch-oauth",
         "streamelements-token",
         "tipeeestream-api-key",
+        "obs-password",
     ] {
         delete_secret_value(secret)?;
     }
@@ -349,7 +350,7 @@ fn setting_save(
 fn secret_set(name: String, value: String) -> Result<(), String> {
     if !matches!(
         name.as_str(),
-        "streamelements-token" | "tipeeestream-api-key"
+        "streamelements-token" | "tipeeestream-api-key" | "obs-password"
     ) {
         return Err("Unsupported credential key".into());
     }
@@ -360,7 +361,7 @@ fn secret_set(name: String, value: String) -> Result<(), String> {
 fn secret_get(name: String) -> Result<Option<String>, String> {
     if !matches!(
         name.as_str(),
-        "streamelements-token" | "tipeeestream-api-key"
+        "streamelements-token" | "tipeeestream-api-key" | "obs-password"
     ) {
         return Err("Unsupported credential key".into());
     }
@@ -373,6 +374,7 @@ fn secret_delete(name: String) -> Result<(), String> {
         name.as_str(),
         "streamelements-token"
             | "tipeeestream-api-key"
+            | "obs-password"
             | "twitch-oauth"
     ) {
         return Err("Unsupported credential key".into());

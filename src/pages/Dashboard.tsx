@@ -36,6 +36,7 @@ import { useAppStore, defaultDashboardWidgets } from "../stores/app-store";
 import { saveSetting } from "../services/native";
 import { ActivityFeed } from "../components/ActivityFeed";
 import { TwitchPlayer } from "../components/TwitchPlayer";
+import { ObsWidget } from "../components/ObsCard";
 import {
   Badge,
   Button,
@@ -110,6 +111,7 @@ const widgetCatalog: WidgetCatalogEntry[] = [
     label: "Connections",
     description: "Service health and accounts",
   },
+  { id: "obs", label: "OBS", description: "Status, scene and audio" },
 ];
 const metricWidgetIds = new Set<DashboardItemId>([
   "followers",
@@ -273,6 +275,7 @@ function defaultWidgetDimensions(
   if (id === "livePreview") return { width: "full", height: 384 };
   if (id === "goals") return { width: "single", height: 208 };
   if (id === "connections") return { width: "single", height: 232 };
+  if (id === "obs") return { width: "single", height: 224 };
   return { width: "single", height: 320 };
 }
 
@@ -439,6 +442,7 @@ export function Dashboard() {
     twitch,
     streamElements,
     tipeeStream,
+    obs,
     statsLoading,
     setPage,
     setSettings,
@@ -978,6 +982,7 @@ export function Dashboard() {
         "livePreview",
         "goals",
         "connections",
+        "obs",
       ].includes(id)
     )
       return metric(id as DashboardWidgetId);
@@ -1170,6 +1175,7 @@ export function Dashboard() {
         </Card>
       );
     }
+    if (id === "obs") return <ObsWidget />;
     return (
       <Card className="p-4">
         <div className="mb-3 flex items-center justify-between">
@@ -1188,6 +1194,7 @@ export function Dashboard() {
           ["Twitch", twitch],
           ["StreamElements", streamElements],
           ["TipeeeStream", tipeeStream],
+          ["OBS", obs],
         ].map(([name, state]) => {
           const service = state as ConnectionState;
           return (

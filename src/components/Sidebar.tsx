@@ -7,6 +7,7 @@ import type { ConnectionState } from "../types";
 import twitchIcon from "../assets/services/twitch.webp";
 import streamElementsIcon from "../assets/services/streamelements.webp";
 import tipeeStreamIcon from "../assets/services/tipeeestream.webp";
+import obsIcon from "../assets/services/obs.svg";
 import { LoadingIndicator } from "./ui";
 import { useTranslation } from "react-i18next";
 import { navigationGroups, navigationItems, OPEN_COMMAND_PALETTE } from "../lib/navigation";
@@ -49,13 +50,14 @@ function Status({
 }
 export function Sidebar() {
   const { t } = useTranslation();
-  const { page, setPage, twitch, streamElements, tipeeStream, settings, setSettings } =
+  const { page, setPage, twitch, streamElements, tipeeStream, obs, settings, setSettings } =
     useAppStore();
   const collapsed = settings.sidebarCollapsed;
   const services = [
     { name: "Twitch", icon: twitchIcon, state: twitch },
     { name: "StreamElements", icon: streamElementsIcon, state: streamElements },
     { name: "TipeeeStream", icon: tipeeStreamIcon, state: tipeeStream },
+    { name: "OBS", icon: obsIcon, state: obs },
   ];
   const permissionAttention =
     twitch.phase === "connected" && needsTwitchPermissionUpdate(twitch.scopes);

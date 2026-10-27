@@ -21,6 +21,36 @@ export interface ActivityEvent {
 export type ConnectionPhase = 'disconnected' | 'connecting' | 'connected' | 'reconnecting' | 'expired' | 'error'
 export interface ConnectionState { phase: ConnectionPhase; account?: string; userId?: string; scopes?: string[]; detail?: string }
 
+export type ObsInputKind = 'mic' | 'desktop'
+export interface ObsAudioInput {
+  name: string
+  kind: ObsInputKind
+  muted: boolean
+  volume: number
+  volumeDb: number
+}
+
+export interface ObsSnapshot {
+  version?: string
+  profile?: string
+  sceneCollection?: string
+  scene?: string
+  scenes: string[]
+  streaming: boolean
+  streamSeconds: number
+  streamBitrate?: number
+  streamDropped?: number
+  recording: boolean
+  recordingPaused: boolean
+  recordingSeconds: number
+  replayBuffer: boolean
+  virtualCam: boolean
+  fps?: number
+  cpu?: number
+  audio: ObsAudioInput[]
+  updatedAt: number
+}
+
 export interface DashboardStats {
   followers?: number
   subscribers?: number
@@ -34,7 +64,7 @@ export interface DashboardStats {
   category?: string
 }
 
-export type DashboardWidgetId = 'followers' | 'subscribers' | 'viewers' | 'duration' | 'bits' | 'donations' | 'status' | 'eventCount' | 'activity' | 'streamDetails' | 'livePreview' | 'goals' | 'connections'
+export type DashboardWidgetId = 'followers' | 'subscribers' | 'viewers' | 'duration' | 'bits' | 'donations' | 'status' | 'eventCount' | 'activity' | 'streamDetails' | 'livePreview' | 'goals' | 'connections' | 'obs'
 export type DashboardItemId = DashboardWidgetId | `browser:${string}`
 export type DashboardWidgetWidth = 'single' | 'wide' | 'full'
 export interface DashboardWidgetDimensions { width: DashboardWidgetWidth; height: number }
@@ -74,6 +104,8 @@ export interface AppSettings {
   chatHiddenUsers: string[]
   chatHighlightIgnoredUsers: string[]
   chatUserNotes: Record<string, string>
+  obsAddress: string
+  obsEnabled: boolean
   notifications: boolean
   notifyDonations: boolean
   notifyRaids: boolean

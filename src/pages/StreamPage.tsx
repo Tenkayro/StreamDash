@@ -20,8 +20,8 @@ import {
   LoadingIndicator,
   PageHeader,
 } from "../components/ui";
-import { errorMessage, isTauri } from "../lib/utils";
-import { twitchNative } from "../services/native";
+import { ObsCard } from "../components/ObsCard";
+import { errorMessage, isTauri } from "../lib/utils";import { twitchNative } from "../services/native";
 import { TWITCH_CLIENT_ID } from "../services/twitch/config";
 import { useRuntime } from "../services/runtime-context";
 import { useAppStore } from "../stores/app-store";
@@ -286,48 +286,53 @@ export function StreamPage() {
     return (
       <>
         {header}
-        <Card>
-          {runtime.deviceAuth ? (
-            <div className="p-5">
-              <div className="text-xs text-muted">
-                {t("connections.enterCode")}
-              </div>
-              <div className="mt-2 font-mono text-2xl font-semibold tracking-[.16em]">
-                {runtime.deviceAuth.code}
-              </div>
-              <Button
-                className="mt-3"
-                onClick={() => openUrl(runtime.deviceAuth!.url)}
-              >
-                <ExternalLink size={14} />
-                {t("connections.openActivation")}
-              </Button>
-            </div>
-          ) : busy ? (
-            <div className="flex min-h-52 items-center justify-center gap-2 text-sm text-muted">
-              <LoaderCircle size={16} className="animate-spin" />
-              {t("stream.waitingAuthorization")}
-            </div>
-          ) : (
-            <EmptyState
-              icon={<RadioTower size={22} />}
-              title={t("stream.notConnected")}
-              body={t("stream.notConnectedDetail")}
-              action={
-                <Button
-                  variant="primary"
-                  disabled={!isTauri()}
-                  onClick={runtime.connectTwitch}
-                >
-                  {t("connections.connectTwitch")}
-                </Button>
-              }
-            />
-          )}
-        </Card>
-        {twitch.detail && (
-          <p className="mt-3 px-1 text-xs text-red-300">{twitch.detail}</p>
-        )}
+        <div className="grid grid-cols-[1fr_300px] gap-4">
+          <div>
+            <Card>
+              {runtime.deviceAuth ? (
+                <div className="p-5">
+                  <div className="text-xs text-muted">
+                    {t("connections.enterCode")}
+                  </div>
+                  <div className="mt-2 font-mono text-2xl font-semibold tracking-[.16em]">
+                    {runtime.deviceAuth.code}
+                  </div>
+                  <Button
+                    className="mt-3"
+                    onClick={() => openUrl(runtime.deviceAuth!.url)}
+                  >
+                    <ExternalLink size={14} />
+                    {t("connections.openActivation")}
+                  </Button>
+                </div>
+              ) : busy ? (
+                <div className="flex min-h-52 items-center justify-center gap-2 text-sm text-muted">
+                  <LoaderCircle size={16} className="animate-spin" />
+                  {t("stream.waitingAuthorization")}
+                </div>
+              ) : (
+                <EmptyState
+                  icon={<RadioTower size={22} />}
+                  title={t("stream.notConnected")}
+                  body={t("stream.notConnectedDetail")}
+                  action={
+                    <Button
+                      variant="primary"
+                      disabled={!isTauri()}
+                      onClick={runtime.connectTwitch}
+                    >
+                      {t("connections.connectTwitch")}
+                    </Button>
+                  }
+                />
+              )}
+            </Card>
+            {twitch.detail && (
+              <p className="mt-3 px-1 text-xs text-red-300">{twitch.detail}</p>
+            )}
+          </div>
+          <ObsCard />
+        </div>
       </>
     );
 
@@ -361,7 +366,7 @@ export function StreamPage() {
           </p>
           <div className="relative mt-3">
             {busyLoading ? (
-              <LoadingIndicator className="h-[34px] w-full" />
+              <LoadingIndicator className="h-8.5 w-full" />
             ) : (
               <>
                 <input
@@ -413,7 +418,7 @@ export function StreamPage() {
             )}
             <div className="relative mt-3">
               {busyLoading ? (
-                <LoadingIndicator className="h-[34px] w-full" />
+                <LoadingIndicator className="h-8.5 w-full" />
               ) : (
                 <>
               <Search
@@ -483,7 +488,7 @@ export function StreamPage() {
               {t("stream.languageDetail")}
             </p>
             {busyLoading ? (
-              <LoadingIndicator className="mt-3 h-[34px] w-full max-w-xs" />
+              <LoadingIndicator className="mt-3 h-8.5 w-full max-w-xs" />
             ) : (
             <select
               id="stream-language"
@@ -523,8 +528,10 @@ export function StreamPage() {
           </div>
         </Card>
 
-        <Card className="h-fit p-4">
-          <h2 className="text-sm font-semibold">{t("stream.channelPreview")}</h2>
+        <div className="space-y-3">
+          <ObsCard />
+          <Card className="h-fit p-4">
+            <h2 className="text-sm font-semibold">{t("stream.channelPreview")}</h2>
           <div className="mt-4 flex gap-3">
             {busyLoading ? (
               <LoadingIndicator className="h-24 w-16 shrink-0" />
@@ -578,7 +585,8 @@ export function StreamPage() {
               <span className="truncate pl-3">{twitch.account ?? "—"}</span>
             </div>
           </div>
-        </Card>
+          </Card>
+        </div>
       </div>
     </>
   );
