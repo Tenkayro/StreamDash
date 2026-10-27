@@ -209,7 +209,7 @@
     "minimizeToTray": "Minimizar para a bandeja",
     "minimizeToTrayDetail": "Manter conexões em tempo real ativas quando a janela for fechada.",
     "trayStyle": "Estilo da bandeja do sistema",
-    "trayStyleDetail": "Use o painel compacto do StreamDash ou o menu nativo do Windows. O clique direito sempre abre o menu nativo de segurança.",
+    "trayStyleDetail": "O clique esquerdo sempre abre o StreamDash. Escolha se o clique direito mostra o painel do StreamDash ou o menu nativo do Windows.",
     "trayStyleCustom": "Painel do StreamDash",
     "trayStyleClassic": "Menu do Windows",
     "normal": "Normal",

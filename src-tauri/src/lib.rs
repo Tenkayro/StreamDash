@@ -881,9 +881,8 @@ fn tray_configure(
     state: tauri::State<'_, TrayState>,
     config: TrayMenuConfig,
 ) -> Result<(), String> {
-    state
-        .custom
-        .store(config.mode != "classic", Ordering::Relaxed);
+    let use_custom = config.mode != "classic" && app.get_webview_window("tray").is_some();
+    state.custom.store(use_custom, Ordering::Relaxed);
 
     let status = MenuItemBuilder::with_id("tray-status", config.status)
         .enabled(false)
@@ -907,8 +906,13 @@ fn tray_configure(
     let tray = app
         .tray_by_id("main")
         .ok_or_else(|| "Tray icon is unavailable".to_string())?;
-    tray.set_menu(Some(menu))
-        .map_err(|error| error.to_string())?;
+    if use_custom {
+        tray.set_menu(None::<tauri::menu::Menu<tauri::Wry>>)
+            .map_err(|error| error.to_string())?;
+    } else {
+        tray.set_menu(Some(menu))
+            .map_err(|error| error.to_string())?;
+    }
     tray.set_show_menu_on_left_click(false)
         .map_err(|error| error.to_string())
 }
@@ -1004,6 +1008,7 @@ pub fn run() {
                     .visible(false)
                     .build()
                     .ok();
+            let custom_tray = custom_tray && tray_window.is_some();
             if let Some(tray_window) = tray_window {
                 let tray_window_on_blur = tray_window.clone();
                 tray_window.on_window_event(move |event| {
@@ -1037,10 +1042,9 @@ pub fn run() {
                 .separator()
                 .text("quit", "Quit StreamDash")
                 .build()?;
-            TrayIconBuilder::with_id("main")
+            let mut tray_builder = TrayIconBuilder::with_id("main")
                 .icon(tray_icon)
                 .tooltip("StreamDash")
-                .menu(&tray_menu)
                 .show_menu_on_left_click(false)
                 .on_menu_event(|app, event| {
                     let _ = tray_action(app.clone(), event.id().as_ref().to_string());
@@ -1048,14 +1052,19 @@ pub fn run() {
                 .on_tray_icon_event(|tray, event| {
                     if let tauri::tray::TrayIconEvent::Click {
                         position,
-                        button: tauri::tray::MouseButton::Left,
+                        button,
                         button_state: tauri::tray::MouseButtonState::Up,
                         ..
                     } = event
                     {
-                        let state = tray.app_handle().state::<TrayState>();
-                        if !state.custom.load(Ordering::Relaxed) {
+                        if button == tauri::tray::MouseButton::Left {
                             show_main_window(tray.app_handle(), None);
+                            return;
+                        }
+                        let state = tray.app_handle().state::<TrayState>();
+                        if button != tauri::tray::MouseButton::Right
+                            || !state.custom.load(Ordering::Relaxed)
+                        {
                             return;
                         }
                         if let Some(window) = tray.app_handle().get_webview_window("tray") {
@@ -1077,8 +1086,11 @@ pub fn run() {
                         }
                         show_main_window(tray.app_handle(), None);
                     }
-                })
-                .build(app)?;
+                });
+            if !custom_tray {
+                tray_builder = tray_builder.menu(&tray_menu);
+            }
+            tray_builder.build(app)?;
             Ok(())
         })
         .invoke_handler(tauri::generate_handler![

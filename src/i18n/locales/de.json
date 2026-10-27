@@ -294,7 +294,7 @@
     "minimizeToTray": "In den Infobereich minimieren",
     "minimizeToTrayDetail": "Echtzeitverbindungen aktiv halten, wenn das Fenster geschlossen wird.",
     "trayStyle": "System-Tray-Darstellung",
-    "trayStyleDetail": "Nutze das kompakte StreamDash-Panel oder das native Windows-Menü. Ein Rechtsklick öffnet immer das native Fallback-Menü.",
+    "trayStyleDetail": "Linksklick öffnet immer StreamDash. Wähle, ob ein Rechtsklick das StreamDash-Panel oder das native Windows-Menü zeigt.",
     "trayStyleCustom": "StreamDash-Panel",
     "trayStyleClassic": "Windows-Menü",
     "normal": "Normal",

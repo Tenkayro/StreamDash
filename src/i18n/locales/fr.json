@@ -209,7 +209,7 @@
     "minimizeToTray": "Réduire dans la zone de notification",
     "minimizeToTrayDetail": "Maintenir les connexions en temps réel actives lorsque la fenêtre est fermée.",
     "trayStyle": "Style de la zone de notification",
-    "trayStyleDetail": "Utilisez le panneau compact StreamDash ou le menu natif de Windows. Un clic droit ouvre toujours le menu natif de secours.",
+    "trayStyleDetail": "Un clic gauche ouvre toujours StreamDash. Choisissez si le clic droit affiche le panneau StreamDash ou le menu natif de Windows.",
     "trayStyleCustom": "Panneau StreamDash",
     "trayStyleClassic": "Menu Windows",
     "normal": "Normale",
