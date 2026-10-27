@@ -180,7 +180,7 @@
       "crypto": "O hash seguro não está disponível, a autenticação com o OBS falhou.",
       "password": "O OBS recusou a senha. Verifique-a em Conexões.",
       "unreachable": "O OBS não está acessível. Verifique se o OBS está aberto e o servidor WebSocket ativado.",
-      "exited": "O OBS foi fechado.",
+      "exited": "O OBS foi fechado. Reconectando automaticamente…",
       "action": "A ação do OBS falhou"
     }
   },

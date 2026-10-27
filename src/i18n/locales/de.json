@@ -248,7 +248,7 @@
       "crypto": "Sicheres Hashing ist nicht verfügbar, die OBS-Anmeldung ist fehlgeschlagen.",
       "password": "OBS hat das Passwort abgelehnt. Prüfe das Passwort unter Verbindungen.",
       "unreachable": "OBS ist nicht erreichbar. Prüfe, ob OBS läuft und der WebSocket-Server aktiviert ist.",
-      "exited": "OBS wurde beendet.",
+      "exited": "OBS wurde beendet. Verbinde automatisch neu…",
       "action": "OBS-Aktion fehlgeschlagen"
     }
   },

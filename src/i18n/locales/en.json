@@ -248,7 +248,7 @@
       "crypto": "Secure hashing is unavailable, so OBS authentication failed.",
       "password": "OBS rejected the password. Check the password under Connections.",
       "unreachable": "OBS is not reachable. Check that OBS is running and the WebSocket server is enabled.",
-      "exited": "OBS was closed.",
+      "exited": "OBS was closed. Reconnecting automatically…",
       "action": "OBS action failed"
     }
   },

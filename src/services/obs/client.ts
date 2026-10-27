@@ -20,7 +20,7 @@ const EVENT_SUBSCRIPTIONS = (1 << 0) | (1 << 1) | (1 << 2) | (1 << 3) | (1 << 6)
 
 const POLL_INTERVAL = 2_000;
 const REQUEST_TIMEOUT = 10_000;
-const MAX_RECONNECT_DELAY = 5_000;
+const MAX_RECONNECT_DELAY = 3_000;
 
 export const DEFAULT_OBS_ADDRESS = "127.0.0.1:4455";
 
@@ -488,12 +488,16 @@ export class ObsClient {
         });
         break;
       case "ExitStarted":
+        // OBS is shutting down. Keep retrying so StreamDash reconnects on its
+        // own as soon as OBS is started again.
+        this.identified = false;
+        this.attempts = Math.max(1, this.attempts);
+        this.cleanup();
         this.options.onState(
-          "disconnected",
+          "reconnecting",
           this.options.translate("obs.errors.exited"),
         );
-        this.stopped = true;
-        this.cleanup();
+        this.scheduleReconnect();
         break;
       default:
         break;

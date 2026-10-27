@@ -180,7 +180,7 @@
       "crypto": "Le hachage sécurisé est indisponible, l'authentification OBS a échoué.",
       "password": "OBS a refusé le mot de passe. Vérifiez-le dans Connexions.",
       "unreachable": "OBS est injoignable. Vérifiez qu'OBS est lancé et que le serveur WebSocket est activé.",
-      "exited": "OBS a été fermé.",
+      "exited": "OBS a été fermé. Reconnexion automatique…",
       "action": "L'action OBS a échoué"
     }
   },

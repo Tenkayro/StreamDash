@@ -454,9 +454,15 @@ export function Connections() {
           meta={
             obs.phase === "connected"
               ? (obsSnapshot?.scene ?? obsSnapshot?.version)
+              : obs.phase === "reconnecting"
+                ? obs.detail
+                : undefined
+          }
+          error={
+            obs.phase === "error" || obs.phase === "expired"
+              ? obs.detail
               : undefined
           }
-          error={obs.detail}
           action={
             obs.phase !== "disconnected" ? (
               <div className="flex shrink-0 items-center gap-1">
