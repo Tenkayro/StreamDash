@@ -195,6 +195,39 @@
     "statistics": "Statistiken",
     "stream": "Stream"
   },
+  "onboarding": {
+    "back": "Zurück",
+    "connectedAs": "Verbunden als {{account}}",
+    "continue": "Weiter",
+    "detectedLanguage": "Erkannt: {{language}}",
+    "finishError": "Die Einrichtung konnte nicht abgeschlossen werden",
+    "integrationsBody": "Verbinde StreamElements, um Spenden zu empfangen und sie im Dashboard und Aktivitätsfeed anzuzeigen. Du kannst diesen Schritt überspringen.",
+    "integrationsTitle": "Integrationen hinzufügen",
+    "jwtLabel": "StreamElements-Account-JWT",
+    "jwtPath": "Du findest es bei StreamElements unter Dashboard → Account → Channels → JWT.",
+    "languageBody": "Wähle deine gewünschte Sprache. Automatisch folgt deinem Computer und bleibt die empfohlene Standardeinstellung.",
+    "languageSummary": "Oberflächensprache",
+    "languageTitle": "Willkommen bei StreamDash",
+    "next": "Weiter",
+    "preferencesBody": "Lege fest, wie sich StreamDash unter Windows verhalten soll. Alle Optionen können später in den Einstellungen geändert werden.",
+    "preferencesTitle": "Einstellungen auswählen",
+    "readyBody": "Die wichtigsten Dinge sind eingerichtet. Übersprungene Dienste und weitere Optionen kannst du jederzeit in den Einstellungen konfigurieren.",
+    "readyTitle": "Du bist startklar",
+    "skipSetup": "Einrichtung überspringen",
+    "start": "Dashboard öffnen",
+    "steps": {
+      "integrations": "Integrationen",
+      "language": "Sprache",
+      "preferences": "Einstellungen",
+      "ready": "Fertig",
+      "twitch": "Twitch"
+    },
+    "streamElementsConnected": "StreamElements ist verbunden",
+    "twitchBody": "Verbinde deinen Broadcaster-Account, um Stream, Chat, Statistiken und Moderation direkt in StreamDash zu verwalten.",
+    "twitchConnectedDetail": "Streamdaten und Chat werden automatisch geladen.",
+    "twitchOptional": "Dieser Schritt ist optional. Du kannst Twitch später unter Verbindungen hinzufügen.",
+    "twitchTitle": "Twitch-Account verbinden"
+  },
   "runtime": { "codeExpired": "Der Twitch-Autorisierungscode ist abgelaufen", "connectError": "Twitch konnte nicht verbunden werden", "initializeError": "StreamDash konnte nicht initialisiert werden", "moderationPermission": "Verbinde Twitch erneut, um die erforderliche Moderationsberechtigung zu gewähren", "permissionsAttention": "Twitch-Berechtigungen erfordern Aufmerksamkeit", "permissionsDetail": "Verbinde Twitch erneut, um alle Moderations- und Kanalfunktionen zu aktivieren.", "someone": "Jemand", "statsUnavailable": "Einige Twitch-Statistiken sind nicht verfügbar", "twitchConnected": "Twitch verbunden", "userNotFound": "Twitch-Nutzer wurde nicht gefunden", "waitingAuthorization": "Warten auf Autorisierung" },
   "settings": {
     "accentColor": "Akzentfarbe",
@@ -263,6 +296,7 @@
     "normal": "Normal",
     "notifications": "BENACHRICHTIGUNGEN",
     "orange": "Orange",
+    "openSetupWizard": "Einrichtung öffnen",
     "raids": "Raids",
     "raidsDetail": "Benachrichtigen, wenn ein anderer Kanal dich raidet.",
     "resubs": "Erneute Abos",
@@ -271,6 +305,8 @@
     "streamOffline": "Stream offline",
     "streamOnline": "Stream online",
     "subscriptions": "Abonnements",
+    "setupWizard": "Einrichtungsassistent",
+    "setupWizardDetail": "Die Willkommen-Einrichtung für Sprache, Accounts und wichtige Optionen erneut starten.",
     "textSize": "Textgröße",
     "textSizeDetail": "Die Schriftgröße der Chatnachrichten ändern.",
     "timestamps": "Zeitstempel",
@@ -334,6 +370,16 @@
   },
   "titleBar": {
     "author": "Autor: Tenkayro", "checkAgain": "Erneut nach Updates suchen", "checkingStore": "Microsoft Store wird auf Updates geprüft", "close": "Schließen", "downloadVersion": "StreamDash {{version}} herunterladen", "downloading": "Update wird heruntergeladen: {{progress}} %", "installing": "Update wird installiert", "issues": "Probleme und Feedback", "loading": "wird geladen", "maximize": "Maximieren", "minimize": "Minimieren", "openGitHub": "GitHub-Repository öffnen", "resetZoom": "Dashboard-Zoom zurücksetzen", "updateStore": "StreamDash im Microsoft Store aktualisieren", "version": "Version {{version}}, {{channel}}", "zoomLabel": "Dashboard-Zoom {{zoom}} Prozent. Zoom zurücksetzen"
+  },
+  "tray": {
+    "currentViewers": "Aktuelle Zuschauer",
+    "live": "Live",
+    "offline": "Offline",
+    "quickActions": "Schnellaktionen",
+    "quit": "StreamDash beenden",
+    "reconnect": "Dienste neu verbinden",
+    "reconnecting": "Verbindung wird hergestellt…",
+    "tooltip": "StreamDash — {{streamStatus}} · Twitch: {{twitchStatus}}"
   },
   "updater": {
     "available": "StreamDash {{version}} ist verfügbar", "availableDetail": "Verwende die Download-Schaltfläche neben der Version in der Titelleiste.", "checkError": "Updates konnten nicht geprüft werden", "current": "StreamDash ist aktuell", "disabledDevelopment": "Updates sind im Entwicklungsmodus deaktiviert", "installError": "Update konnte nicht installiert werden", "storeAvailable": "Ein Microsoft-Store-Update ist verfügbar", "storeAvailableDetail": "Verwende zum Aktualisieren die Store-Schaltfläche neben der Version.", "storeOpenError": "Microsoft Store konnte nicht geöffnet werden"

@@ -25,6 +25,7 @@ import {
   RadioTower,
   RefreshCw,
   RotateCcw,
+  Rocket,
   Rows3,
   Settings,
   Settings2,
@@ -191,6 +192,15 @@ export function SettingsPage() {
                 <option value="pt-BR">{t("languages.pt-BR")}</option>
                 <option value="fr">{t("languages.fr")}</option>
               </select>
+            </Row>
+            <Row
+              icon={Rocket}
+              label={t("settings.setupWizard")}
+              detail={t("settings.setupWizardDetail")}
+            >
+              <Button onClick={() => void update("onboardingCompleted", false)}>
+                {t("settings.openSetupWizard")}
+              </Button>
             </Row>
             <Row
               icon={MonitorUp}

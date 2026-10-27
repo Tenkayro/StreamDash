@@ -48,6 +48,10 @@ let bootstrapPromise: Promise<Bootstrap> | undefined;
 function loadBootstrap() {
   bootstrapPromise ??= (async () => {
     const settings = await loadSettings();
+    if (typeof settings.onboardingCompleted !== "boolean") {
+      settings.onboardingCompleted = Object.keys(settings).length > 0;
+      await saveSetting("onboardingCompleted", settings.onboardingCompleted);
+    }
     if ((settings.dashboardLayoutVersion ?? 0) < 3) {
       if (
         Array.isArray(settings.dashboardWidgets) &&
@@ -252,7 +256,9 @@ export function RuntimeProvider({ children }: { children: ReactNode }) {
       if (isTauri()) {
         unlisten.push(
           await listen("tray-reconnect", reconnect),
-          await listen("tray-settings", () => state().setPage("settings")),
+          await listen<string>("tray-navigate", (event) =>
+            state().setPage(event.payload),
+          ),
         );
       }
     })();

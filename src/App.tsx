@@ -8,6 +8,7 @@ import { isTauri } from "./lib/utils";
 import { LoadingIndicator } from "./components/ui";
 import { useTranslation } from "react-i18next";
 import { resolveLanguage } from "./i18n";
+import { SetupWizard } from "./components/SetupWizard";
 
 const StreamPage = lazy(() =>
   import("./pages/StreamPage").then((module) => ({
@@ -124,6 +125,18 @@ export default function App() {
           alt={t("common.starting")}
           className="h-auto w-80 max-w-[70vw] object-contain animate-pulse"
         />
+      </div>
+    );
+  if (!settings.onboardingCompleted)
+    return (
+      <div
+        data-accent={settings.accentColor}
+        data-density={settings.uiDensity}
+        data-animations={settings.animations ? "on" : "off"}
+        className="flex h-screen flex-col bg-[#0b0c0f]"
+      >
+        <TitleBar setup />
+        <SetupWizard />
       </div>
     );
   return (

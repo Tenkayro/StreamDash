@@ -159,7 +159,7 @@ function UpdateControl() {
   return null;
 }
 
-export function TitleBar() {
+export function TitleBar({ setup = false }: { setup?: boolean }) {
   const { t } = useTranslation();
   const window = isTauri() ? getCurrentWindow() : null;
   const updater = useUpdater();
@@ -205,7 +205,7 @@ export function TitleBar() {
       </div>
       <div data-tauri-drag-region className="h-full min-w-8 flex-1" />
       <div className="no-drag flex h-full shrink-0 items-center">
-        <div className="flex items-center gap-0.5 px-1.5">
+        {!setup && <div className="flex items-center gap-0.5 px-1.5">
           {page === "dashboard" && (
             <button
               type="button"
@@ -244,7 +244,7 @@ export function TitleBar() {
             label={t("titleBar.author")}
             onClick={() => void openUrl("https://github.com/Tenkayro")}
           />
-        </div>
+        </div>}
         <span className="h-4 w-px bg-line" />
         <button
           aria-label={t("titleBar.minimize")}

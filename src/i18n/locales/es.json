@@ -138,6 +138,11 @@
     "statistics": "Estadísticas",
     "stream": "Emisión"
   },
+  "onboarding": {
+    "back": "Atrás", "connectedAs": "Conectado como {{account}}", "continue": "Continuar", "detectedLanguage": "Detectado: {{language}}", "finishError": "No se pudo completar la configuración", "integrationsBody": "Conecta StreamElements para recibir donaciones e incluirlas en el panel y la actividad. Puedes omitir este paso.", "integrationsTitle": "Añade tus integraciones", "jwtLabel": "JWT de la cuenta de StreamElements", "jwtPath": "Lo encontrarás en StreamElements, en Dashboard → Account → Channels → JWT.", "languageBody": "Elige el idioma que quieras usar. Automático sigue el idioma del equipo y es la opción recomendada.", "languageSummary": "Idioma de la interfaz", "languageTitle": "Te damos la bienvenida a StreamDash", "next": "Siguiente", "preferencesBody": "Define cómo se comporta StreamDash en Windows. Podrás cambiar todas las opciones más tarde.", "preferencesTitle": "Elige tus preferencias", "readyBody": "La configuración esencial está lista. Puedes conectar los servicios omitidos y ajustar el resto en cualquier momento.", "readyTitle": "Todo listo para emitir", "skipSetup": "Omitir configuración", "start": "Abrir panel",
+    "steps": { "integrations": "Integraciones", "language": "Idioma", "preferences": "Preferencias", "ready": "Listo", "twitch": "Twitch" },
+    "streamElementsConnected": "StreamElements está conectado", "twitchBody": "Conecta tu cuenta de streamer para gestionar la emisión, el chat, las estadísticas y la moderación desde StreamDash.", "twitchConnectedDetail": "Los datos de la emisión y el chat se cargarán automáticamente.", "twitchOptional": "Este paso es opcional. Puedes conectar Twitch más tarde en Conexiones.", "twitchTitle": "Conecta tu cuenta de Twitch"
+  },
   "runtime": { "codeExpired": "El código de autorización de Twitch ha caducado", "connectError": "No se pudo conectar Twitch", "initializeError": "No se pudo iniciar StreamDash", "moderationPermission": "Vuelve a conectar Twitch para conceder el permiso de moderación necesario", "permissionsAttention": "Los permisos de Twitch requieren atención", "permissionsDetail": "Vuelve a conectar Twitch para activar todas las funciones de moderación y del canal.", "someone": "Alguien", "statsUnavailable": "Algunas estadísticas de Twitch no están disponibles", "twitchConnected": "Twitch conectado", "userNotFound": "No se encontró al usuario de Twitch", "waitingAuthorization": "Esperando autorización" },
   "settings": {
     "accentColor": "Color de acento",
@@ -206,6 +211,7 @@
     "normal": "Normal",
     "notifications": "NOTIFICACIONES",
     "orange": "Naranja",
+    "openSetupWizard": "Abrir configuración",
     "raids": "Raids",
     "raidsDetail": "Notificar cuando otro canal te envíe un raid.",
     "resubs": "Renovaciones",
@@ -214,6 +220,8 @@
     "streamOffline": "Emisión desconectada",
     "streamOnline": "Emisión conectada",
     "subscriptions": "Suscripciones",
+    "setupWizard": "Asistente de configuración",
+    "setupWizardDetail": "Volver a ejecutar la bienvenida para configurar idioma, cuentas y preferencias esenciales.",
     "textSize": "Tamaño del texto",
     "textSizeDetail": "Cambiar el tamaño de la letra de los mensajes del chat.",
     "timestamps": "Marcas de tiempo",
@@ -277,6 +285,9 @@
   },
   "titleBar": {
     "author": "Autor: Tenkayro", "checkAgain": "Buscar actualizaciones de nuevo", "checkingStore": "Buscando actualizaciones en Microsoft Store", "close": "Cerrar", "downloadVersion": "Descargar StreamDash {{version}}", "downloading": "Descargando actualización: {{progress}} %", "installing": "Instalando actualización", "issues": "Problemas y comentarios", "loading": "cargando", "maximize": "Maximizar", "minimize": "Minimizar", "openGitHub": "Abrir repositorio de GitHub", "resetZoom": "Restablecer zoom del panel", "updateStore": "Actualizar StreamDash en Microsoft Store", "version": "Versión {{version}}, {{channel}}", "zoomLabel": "Zoom del panel al {{zoom}} por ciento. Restablecer zoom"
+  },
+  "tray": {
+    "currentViewers": "Espectadores actuales", "live": "En directo", "offline": "Desconectado", "quickActions": "Acciones rápidas", "quit": "Salir de StreamDash", "reconnect": "Volver a conectar servicios", "reconnecting": "Reconectando…", "tooltip": "StreamDash — {{streamStatus}} · Twitch: {{twitchStatus}}"
   },
   "updater": {
     "available": "StreamDash {{version}} está disponible", "availableDetail": "Usa el botón de descarga junto a la versión en la barra de título.", "checkError": "No se pudo buscar actualizaciones", "current": "StreamDash está actualizado", "disabledDevelopment": "Las actualizaciones están desactivadas durante el desarrollo", "installError": "No se pudo instalar la actualización", "storeAvailable": "Hay una actualización disponible en Microsoft Store", "storeAvailableDetail": "Usa el botón Store junto a la versión para actualizar.", "storeOpenError": "No se pudo abrir Microsoft Store"

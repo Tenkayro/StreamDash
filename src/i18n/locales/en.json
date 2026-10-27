@@ -195,6 +195,39 @@
     "statistics": "Statistics",
     "stream": "Stream"
   },
+  "onboarding": {
+    "back": "Back",
+    "connectedAs": "Connected as {{account}}",
+    "continue": "Continue",
+    "detectedLanguage": "Detected: {{language}}",
+    "finishError": "Setup could not be completed",
+    "integrationsBody": "Connect StreamElements to receive donations and include them in your dashboard and activity feed. You can skip this step.",
+    "integrationsTitle": "Add your integrations",
+    "jwtLabel": "StreamElements account JWT",
+    "jwtPath": "Find it in StreamElements under Dashboard → Account → Channels → JWT.",
+    "languageBody": "Choose the language you want to use. Automatic follows your computer and remains the recommended default.",
+    "languageSummary": "Interface language",
+    "languageTitle": "Welcome to StreamDash",
+    "next": "Next",
+    "preferencesBody": "Set how StreamDash behaves in Windows. You can change every option later in Settings.",
+    "preferencesTitle": "Choose your preferences",
+    "readyBody": "The essentials are configured. You can connect skipped services and fine-tune everything else in Settings at any time.",
+    "readyTitle": "You're ready to stream",
+    "skipSetup": "Skip setup",
+    "start": "Open dashboard",
+    "steps": {
+      "integrations": "Integrations",
+      "language": "Language",
+      "preferences": "Preferences",
+      "ready": "Ready",
+      "twitch": "Twitch"
+    },
+    "streamElementsConnected": "StreamElements is connected",
+    "twitchBody": "Connect your broadcaster account to manage your stream, chat, statistics and moderation directly in StreamDash.",
+    "twitchConnectedDetail": "Stream data and chat will load automatically.",
+    "twitchOptional": "This step is optional. You can connect Twitch later under Connections.",
+    "twitchTitle": "Connect your Twitch account"
+  },
   "runtime": { "codeExpired": "The Twitch authorization code expired", "connectError": "Could not connect Twitch", "initializeError": "StreamDash could not initialize", "moderationPermission": "Reconnect Twitch once to grant the required moderation permission", "permissionsAttention": "Twitch permissions need attention", "permissionsDetail": "Reconnect Twitch once to enable all moderation and channel features.", "someone": "Someone", "statsUnavailable": "Some Twitch statistics are unavailable", "twitchConnected": "Twitch connected", "userNotFound": "Twitch user was not found", "waitingAuthorization": "Waiting for authorization" },
   "settings": {
     "accentColor": "Accent color",
@@ -263,6 +296,7 @@
     "normal": "Normal",
     "notifications": "NOTIFICATIONS",
     "orange": "Orange",
+    "openSetupWizard": "Open setup",
     "raids": "Raids",
     "raidsDetail": "Notify when another channel raids you.",
     "resubs": "Resubs",
@@ -271,6 +305,8 @@
     "streamOffline": "Stream offline",
     "streamOnline": "Stream online",
     "subscriptions": "Subscriptions",
+    "setupWizard": "Setup assistant",
+    "setupWizardDetail": "Run the welcome setup again for language, accounts and essential preferences.",
     "textSize": "Text size",
     "textSizeDetail": "Change the chat message font size.",
     "timestamps": "Timestamps",
@@ -334,6 +370,16 @@
   },
   "titleBar": {
     "author": "Author: Tenkayro", "checkAgain": "Check for updates again", "checkingStore": "Checking Microsoft Store for updates", "close": "Close", "downloadVersion": "Download StreamDash {{version}}", "downloading": "Downloading update: {{progress}}%", "installing": "Installing update", "issues": "Issues and feedback", "loading": "loading", "maximize": "Maximize", "minimize": "Minimize", "openGitHub": "Open GitHub repository", "resetZoom": "Reset dashboard zoom", "updateStore": "Update StreamDash in Microsoft Store", "version": "Version {{version}}, {{channel}}", "zoomLabel": "Dashboard zoom {{zoom}} percent. Reset zoom"
+  },
+  "tray": {
+    "currentViewers": "Current viewers",
+    "live": "Live",
+    "offline": "Offline",
+    "quickActions": "Quick actions",
+    "quit": "Quit StreamDash",
+    "reconnect": "Reconnect services",
+    "reconnecting": "Reconnecting…",
+    "tooltip": "StreamDash — {{streamStatus}} · Twitch: {{twitchStatus}}"
   },
   "updater": {
     "available": "StreamDash {{version}} is available", "availableDetail": "Use the download button beside the version in the title bar.", "checkError": "Could not check for updates", "current": "StreamDash is up to date", "disabledDevelopment": "Updates are disabled in development", "installError": "Update installation failed", "storeAvailable": "A Microsoft Store update is available", "storeAvailableDetail": "Use the Store button beside the version to update.", "storeOpenError": "Could not open Microsoft Store"

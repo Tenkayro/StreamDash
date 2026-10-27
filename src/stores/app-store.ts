@@ -23,6 +23,7 @@ export const defaultDashboardWidgets: DashboardItemId[] = [
 ];
 
 export const defaultSettings: AppSettings = {
+  onboardingCompleted: false,
   language: "auto",
   launchAtStartup: false,
   keepUserData: true,

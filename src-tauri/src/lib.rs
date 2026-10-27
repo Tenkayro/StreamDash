@@ -16,9 +16,8 @@ static HTTP_CLIENT: std::sync::OnceLock<reqwest::Client> = std::sync::OnceLock::
 fn http() -> &'static reqwest::Client {
     HTTP_CLIENT.get_or_init(reqwest::Client::new)
 }
-use tauri::menu::{Menu, MenuItem};
 use tauri::tray::TrayIconBuilder;
-use tauri::{Emitter, Manager};
+use tauri::{Emitter, Manager, PhysicalPosition, WebviewUrl, WebviewWindowBuilder, WindowEvent};
 
 const CREDENTIAL_SERVICE: &str = "StreamDash";
 const PREFERENCES_REGISTRY_KEY: &str = r"HKCU\Software\Tenkayro\StreamDash";
@@ -814,6 +813,45 @@ fn app_quit(app: tauri::AppHandle) {
     shutdown(&app);
 }
 
+fn show_main_window(app: &tauri::AppHandle, page: Option<&str>) {
+    if let Some(window) = app.get_webview_window("main") {
+        let _ = window.show();
+        let _ = window.unminimize();
+        let _ = window.set_focus();
+    }
+    if let Some(page) = page {
+        let _ = app.emit("tray-navigate", page);
+    }
+}
+
+#[tauri::command]
+fn tray_action(app: tauri::AppHandle, action: String) -> Result<(), String> {
+    if let Some(window) = app.get_webview_window("tray") {
+        let _ = window.hide();
+    }
+    match action.as_str() {
+        "open" => show_main_window(&app, None),
+        "dashboard" | "stream" | "chat" | "activity" | "settings" => {
+            show_main_window(&app, Some(&action));
+        }
+        "reconnect" => {
+            let _ = app.emit("tray-reconnect", ());
+        }
+        "quit" => shutdown(&app),
+        _ => return Err("Unknown tray action".into()),
+    }
+    Ok(())
+}
+
+#[tauri::command]
+fn tray_set_tooltip(app: tauri::AppHandle, tooltip: String) -> Result<(), String> {
+    let tray = app
+        .tray_by_id("main")
+        .ok_or_else(|| "Tray icon is unavailable".to_string())?;
+    tray.set_tooltip(Some(tooltip))
+        .map_err(|error| error.to_string())
+}
+
 #[tauri::command]
 fn distribution_channel() -> &'static str {
     #[cfg(windows)]
@@ -884,55 +922,53 @@ pub fn run() {
                         .build(),
                 )?;
             }
-            let open = MenuItem::with_id(app, "open", "Open Dashboard", true, None::<&str>)?;
-            let reconnect =
-                MenuItem::with_id(app, "reconnect", "Reconnect Services", true, None::<&str>)?;
-            let settings = MenuItem::with_id(app, "settings", "Settings", true, None::<&str>)?;
-            let quit = MenuItem::with_id(app, "quit", "Quit", true, None::<&str>)?;
-            let menu = Menu::with_items(app, &[&open, &reconnect, &settings, &quit])?;
+            let tray_window =
+                WebviewWindowBuilder::new(app, "tray", WebviewUrl::App("index.html?tray=1".into()))
+                    .inner_size(320.0, 174.0)
+                    .resizable(false)
+                    .decorations(false)
+                    .always_on_top(true)
+                    .skip_taskbar(true)
+                    .shadow(true)
+                    .focused(false)
+                    .visible(false)
+                    .build()?;
+            let tray_window_on_blur = tray_window.clone();
+            tray_window.on_window_event(move |event| {
+                if matches!(event, WindowEvent::Focused(false)) {
+                    let _ = tray_window_on_blur.hide();
+                }
+            });
             let tray_icon = app
                 .default_window_icon()
                 .cloned()
                 .ok_or_else(|| std::io::Error::other("StreamDash application icon is missing"))?;
-            TrayIconBuilder::new()
+            TrayIconBuilder::with_id("main")
                 .icon(tray_icon)
-                .menu(&menu)
-                .show_menu_on_left_click(false)
+                .tooltip("StreamDash")
                 .on_tray_icon_event(|tray, event| {
                     if let tauri::tray::TrayIconEvent::Click {
-                        button: tauri::tray::MouseButton::Left,
+                        position,
                         button_state: tauri::tray::MouseButtonState::Up,
                         ..
                     } = event
                     {
-                        if let Some(w) = tray.app_handle().get_webview_window("main") {
-                            let _ = w.show();
-                            let _ = w.unminimize();
-                            let _ = w.set_focus();
+                        if let Some(window) = tray.app_handle().get_webview_window("tray") {
+                            if window.is_visible().unwrap_or(false) {
+                                let _ = window.hide();
+                                return;
+                            }
+                            if let Ok(size) = window.outer_size() {
+                                let x = (position.x.round() as i32 - size.width as i32 + 16).max(0);
+                                let y =
+                                    (position.y.round() as i32 - size.height as i32 - 12).max(0);
+                                let _ = window.set_position(PhysicalPosition::new(x, y));
+                            }
+                            let _ = window.show();
+                            let _ = window.set_focus();
+                            let _ = tray.app_handle().emit("tray-opened", ());
                         }
                     }
-                })
-                .on_menu_event(|app, event| match event.id.as_ref() {
-                    "open" => {
-                        if let Some(w) = app.get_webview_window("main") {
-                            let _ = w.show();
-                            let _ = w.unminimize();
-                            let _ = w.set_focus();
-                        }
-                    }
-                    "reconnect" => {
-                        let _ = app.emit("tray-reconnect", ());
-                    }
-                    "settings" => {
-                        if let Some(w) = app.get_webview_window("main") {
-                            let _ = w.show();
-                            let _ = w.unminimize();
-                            let _ = w.set_focus();
-                        }
-                        let _ = app.emit("tray-settings", ());
-                    }
-                    "quit" => shutdown(app),
-                    _ => {}
                 })
                 .build(app)?;
             Ok(())
@@ -960,7 +996,9 @@ pub fn run() {
             twitch_chat_stop,
             distribution_channel,
             store_update_available,
-            app_quit
+            app_quit,
+            tray_action,
+            tray_set_tooltip
         ])
         .build(tauri::generate_context!())
         .expect("error while building StreamDash")

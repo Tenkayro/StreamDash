@@ -45,6 +45,7 @@ export type AccentColor = 'violet' | 'blue' | 'emerald' | 'orange'
 export type AppLanguage = 'auto' | 'en' | 'de' | 'es' | 'pt-BR' | 'fr'
 
 export interface AppSettings {
+  onboardingCompleted: boolean
   language: AppLanguage
   launchAtStartup: boolean
   keepUserData: boolean

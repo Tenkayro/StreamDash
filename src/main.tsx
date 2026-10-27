@@ -6,14 +6,22 @@ import App from "./App";
 import { RuntimeProvider } from "./services/runtime";
 import { Toaster } from "sonner";
 import { UpdateProvider } from "./services/updater";
+import { TrayBridge, TrayPanel } from "./components/TrayPanel";
+
+const trayWindow = new URLSearchParams(window.location.search).has("tray");
 
 createRoot(document.getElementById("root")!).render(
   <StrictMode>
-    <UpdateProvider>
-      <RuntimeProvider>
-        <App />
-        <Toaster theme="dark" position="bottom-right" richColors />
-      </RuntimeProvider>
-    </UpdateProvider>
+    {trayWindow ? (
+      <TrayPanel />
+    ) : (
+      <UpdateProvider>
+        <RuntimeProvider>
+          <TrayBridge />
+          <App />
+          <Toaster theme="dark" position="bottom-right" richColors />
+        </RuntimeProvider>
+      </UpdateProvider>
+    )}
   </StrictMode>,
 );
