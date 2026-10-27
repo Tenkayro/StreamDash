@@ -75,6 +75,7 @@
     "reconnecting": "Reconnecting"
   },
   "connections": {
+    "addObsWidget": "Add widget",
     "cancelConnection": "Cancel connection",
     "connect": "Connect",
     "connectTwitch": "Connect Twitch",
@@ -87,6 +88,7 @@
     "obsPassword": "Password",
     "obsPasswordPlaceholder": "Password",
     "obsPurpose": "OBS status, scenes & audio",
+    "obsWidgetAdded": "OBS widget added to the dashboard",
     "openActivation": "Open Twitch activation",
     "openTokenInstructions": "How to get the credential",
     "reconnectModeration": "Reconnect once to enable all moderation features.",

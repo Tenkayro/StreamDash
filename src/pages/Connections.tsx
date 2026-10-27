@@ -3,10 +3,12 @@ import {
   ExternalLink,
   Link2,
   LoaderCircle,
+  Plus,
   ShieldCheck,
 } from "lucide-react";
 import { useState, type ReactNode } from "react";
 import { openUrl } from "@tauri-apps/plugin-opener";
+import { toast } from "sonner";
 import {
   Badge,
   Button,
@@ -15,6 +17,7 @@ import {
   PageHeader,
 } from "../components/ui";
 import { useAppStore } from "../stores/app-store";
+import { saveSetting } from "../services/native";
 import { useRuntime } from "../services/runtime-context";
 import { isTauri, cn } from "../lib/utils";
 import { needsTwitchPermissionUpdate } from "../services/twitch/client";
@@ -23,6 +26,7 @@ import streamElementsIcon from "../assets/services/streamelements.webp";
 import tipeeStreamIcon from "../assets/services/tipeeestream.webp";
 import obsIcon from "../assets/services/obs.svg";
 import { useTranslation } from "react-i18next";
+import type { DashboardItemId } from "../types";
 
 const streamElementsTokenUrl =
   "https://streamelements.com/dashboard/account/channels";
@@ -41,6 +45,25 @@ function RowAction({
       onClick={onClick}
       className="shrink-0 rounded-lg px-2.5 py-1.5 text-xs text-zinc-400 transition hover:bg-white/5 hover:text-red-300"
     >
+      {children}
+    </button>
+  );
+}
+
+function AddWidgetAction({
+  onClick,
+  children,
+}: {
+  onClick: () => void;
+  children: ReactNode;
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      className="inline-flex shrink-0 items-center gap-1 rounded-lg border border-accent/30 bg-accent/10 px-2.5 py-1.5 text-xs text-accent transition hover:bg-accent/20"
+    >
+      <Plus size={13} />
       {children}
     </button>
   );
@@ -265,6 +288,17 @@ export function Connections() {
   const obsBusy = ["connecting", "reconnecting"].includes(obs.phase);
   const missingModeration =
     twitch.phase === "connected" && needsTwitchPermissionUpdate(twitch.scopes);
+  const obsWidgetAdded = settings.dashboardWidgets.includes("obs");
+  const addObsWidget = () => {
+    if (obsWidgetAdded) return;
+    const next: DashboardItemId[] = [...settings.dashboardWidgets, "obs"];
+    useAppStore.getState().setSettings({ dashboardWidgets: next });
+    void saveSetting("dashboardWidgets", next).catch(() =>
+      toast.error(t("dashboard.layoutSaveError")),
+    );
+    toast.success(t("connections.obsWidgetAdded"));
+    useAppStore.getState().setPage("dashboard");
+  };
 
   return (
     <>
@@ -425,9 +459,16 @@ export function Connections() {
           error={obs.detail}
           action={
             obs.phase !== "disconnected" ? (
-              <RowAction onClick={runtime.disconnectObs}>
-                {t("connections.disconnect")}
-              </RowAction>
+              <div className="flex shrink-0 items-center gap-1">
+                {obs.phase === "connected" && !obsWidgetAdded && (
+                  <AddWidgetAction onClick={addObsWidget}>
+                    {t("connections.addObsWidget")}
+                  </AddWidgetAction>
+                )}
+                <RowAction onClick={runtime.disconnectObs}>
+                  {t("connections.disconnect")}
+                </RowAction>
+              </div>
             ) : undefined
           }
         >

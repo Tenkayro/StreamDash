@@ -75,6 +75,7 @@
     "reconnecting": "Reconectando"
   },
   "connections": {
+    "addObsWidget": "Añadir widget",
     "cancelConnection": "Cancelar conexión",
     "connect": "Conectar",
     "connectTwitch": "Conectar Twitch",
@@ -87,6 +88,7 @@
     "obsPassword": "Contraseña",
     "obsPasswordPlaceholder": "Contraseña",
     "obsPurpose": "Estado, escenas y audio de OBS",
+    "obsWidgetAdded": "Widget de OBS añadido al panel",
     "openActivation": "Abrir activación de Twitch",
     "openTokenInstructions": "Cómo obtener la credencial",
     "reconnectModeration": "Vuelve a conectar una vez para activar todas las funciones de moderación.",
