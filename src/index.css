@@ -144,6 +144,28 @@ button:focus-visible,
 .event-enter {
   animation: enter 0.24s ease-out;
 }
+@keyframes page-fade-out {
+  to {
+    opacity: 0;
+  }
+}
+@keyframes page-fade-in {
+  from {
+    opacity: 0;
+  }
+}
+::view-transition-old(root) {
+  animation: page-fade-out 0.18s ease-in both;
+}
+::view-transition-new(root) {
+  animation: page-fade-in 0.26s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+@media (prefers-reduced-motion: reduce) {
+  ::view-transition-old(root),
+  ::view-transition-new(root) {
+    animation: none;
+  }
+}
 .drag-region {
   -webkit-app-region: drag;
 }

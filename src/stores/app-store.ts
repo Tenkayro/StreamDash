@@ -1,4 +1,5 @@
 import { create } from "zustand";
+import { withPageTransition } from "../lib/page-transition";
 import type {
   ActivityEvent,
   AppSettings,
@@ -104,31 +105,52 @@ export const useAppStore = create<AppStore>((set) => ({
   page: "dashboard",
   pageHistory: ["dashboard"],
   pageHistoryIndex: 0,
-  setPage: (page) =>
-    set((s) => {
-      if (page === s.page) return s;
-      const history = [
-        ...s.pageHistory.slice(0, s.pageHistoryIndex + 1),
-        page,
-      ].slice(-50);
-      return {
-        page,
-        pageHistory: history,
-        pageHistoryIndex: history.length - 1,
-      };
-    }),
-  goBack: () =>
-    set((s) => {
-      if (s.pageHistoryIndex <= 0) return s;
-      const index = s.pageHistoryIndex - 1;
-      return { page: s.pageHistory[index], pageHistoryIndex: index };
-    }),
-  goForward: () =>
-    set((s) => {
-      if (s.pageHistoryIndex >= s.pageHistory.length - 1) return s;
-      const index = s.pageHistoryIndex + 1;
-      return { page: s.pageHistory[index], pageHistoryIndex: index };
-    }),
+  setPage: (page) => {
+    const current = useAppStore.getState();
+    if (page === current.page) return;
+    withPageTransition(
+      () =>
+        set((s) => {
+          if (page === s.page) return s;
+          const history = [
+            ...s.pageHistory.slice(0, s.pageHistoryIndex + 1),
+            page,
+          ].slice(-50);
+          return {
+            page,
+            pageHistory: history,
+            pageHistoryIndex: history.length - 1,
+          };
+        }),
+      current.settings.animations,
+    );
+  },
+  goBack: () => {
+    const current = useAppStore.getState();
+    if (current.pageHistoryIndex <= 0) return;
+    withPageTransition(
+      () =>
+        set((s) => {
+          if (s.pageHistoryIndex <= 0) return s;
+          const index = s.pageHistoryIndex - 1;
+          return { page: s.pageHistory[index], pageHistoryIndex: index };
+        }),
+      current.settings.animations,
+    );
+  },
+  goForward: () => {
+    const current = useAppStore.getState();
+    if (current.pageHistoryIndex >= current.pageHistory.length - 1) return;
+    withPageTransition(
+      () =>
+        set((s) => {
+          if (s.pageHistoryIndex >= s.pageHistory.length - 1) return s;
+          const index = s.pageHistoryIndex + 1;
+          return { page: s.pageHistory[index], pageHistoryIndex: index };
+        }),
+      current.settings.animations,
+    );
+  },
   ready: false,
   setReady: (ready) => set({ ready }),
   events: [],

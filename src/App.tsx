@@ -1,4 +1,4 @@
-import { lazy, Suspense, useEffect } from "react";
+import { lazy, Suspense, useEffect, useLayoutEffect, useRef } from "react";
 import { getCurrentWindow } from "@tauri-apps/api/window";
 import { Sidebar } from "./components/Sidebar";
 import { TitleBar } from "./components/TitleBar";
@@ -14,48 +14,53 @@ const CommandPalette = lazy(() =>
     default: module.CommandPalette,
   })),
 );
-const Dashboard = lazy(() =>
-  import("./pages/Dashboard").then((module) => ({
-    default: module.Dashboard,
-  })),
-);
+const pageLoaders = {
+  dashboard: () =>
+    import("./pages/Dashboard").then((module) => ({
+      default: module.Dashboard,
+    })),
+  stream: () =>
+    import("./pages/StreamPage").then((module) => ({
+      default: module.StreamPage,
+    })),
+  chat: () =>
+    import("./pages/ChatPage").then((module) => ({
+      default: module.ChatPage,
+    })),
+  activity: () =>
+    import("./pages/ActivityPage").then((module) => ({
+      default: module.ActivityPage,
+    })),
+  livePreview: () =>
+    import("./pages/LivePreview").then((module) => ({
+      default: module.LivePreview,
+    })),
+  statistics: () =>
+    import("./pages/Statistics").then((module) => ({
+      default: module.Statistics,
+    })),
+  goals: () =>
+    import("./pages/Goals").then((module) => ({ default: module.Goals })),
+  connections: () =>
+    import("./pages/Connections").then((module) => ({
+      default: module.Connections,
+    })),
+  settings: () =>
+    import("./pages/SettingsPage").then((module) => ({
+      default: module.SettingsPage,
+    })),
+};
 
-const StreamPage = lazy(() =>
-  import("./pages/StreamPage").then((module) => ({
-    default: module.StreamPage,
-  })),
-);
-const ChatPage = lazy(() =>
-  import("./pages/ChatPage").then((module) => ({ default: module.ChatPage })),
-);
-const ActivityPage = lazy(() =>
-  import("./pages/ActivityPage").then((module) => ({
-    default: module.ActivityPage,
-  })),
-);
-const LivePreview = lazy(() =>
-  import("./pages/LivePreview").then((module) => ({
-    default: module.LivePreview,
-  })),
-);
-const Statistics = lazy(() =>
-  import("./pages/Statistics").then((module) => ({
-    default: module.Statistics,
-  })),
-);
-const Goals = lazy(() =>
-  import("./pages/Goals").then((module) => ({ default: module.Goals })),
-);
-const Connections = lazy(() =>
-  import("./pages/Connections").then((module) => ({
-    default: module.Connections,
-  })),
-);
-const SettingsPage = lazy(() =>
-  import("./pages/SettingsPage").then((module) => ({
-    default: module.SettingsPage,
-  })),
-);
+const Dashboard = lazy(pageLoaders.dashboard);
+const StreamPage = lazy(pageLoaders.stream);
+const ChatPage = lazy(pageLoaders.chat);
+const ActivityPage = lazy(pageLoaders.activity);
+const LivePreview = lazy(pageLoaders.livePreview);
+const Statistics = lazy(pageLoaders.statistics);
+const Goals = lazy(pageLoaders.goals);
+const Connections = lazy(pageLoaders.connections);
+const SettingsPage = lazy(pageLoaders.settings);
+
 const pages: Record<string, React.ComponentType> = {
   dashboard: Dashboard,
   stream: StreamPage,
@@ -70,6 +75,7 @@ const pages: Record<string, React.ComponentType> = {
 export default function App() {
   const { page, ready, settings } = useAppStore();
   const { i18n, t } = useTranslation();
+  const mainRef = useRef<HTMLElement>(null);
   const Page = pages[page] ?? Dashboard;
   const loading = (
     <div
@@ -80,6 +86,17 @@ export default function App() {
       <LoadingIndicator className="h-8 w-16" />
     </div>
   );
+  useLayoutEffect(() => {
+    mainRef.current?.scrollTo({ top: 0, behavior: "auto" });
+  }, [page]);
+  useEffect(() => {
+    if (!ready) return;
+    const preload = () => {
+      for (const load of Object.values(pageLoaders)) void load();
+    };
+    const timer = window.setTimeout(preload, 200);
+    return () => window.clearTimeout(timer);
+  }, [ready]);
   useEffect(() => {
     const language = resolveLanguage(settings.language);
     if (i18n.resolvedLanguage !== language) void i18n.changeLanguage(language);
@@ -167,7 +184,7 @@ export default function App() {
         </Suspense>
         <div className="flex min-h-0 flex-1">
           <Sidebar />
-          <main className="min-w-0 flex-1 overflow-y-auto">
+          <main ref={mainRef} className="min-w-0 flex-1 overflow-y-auto">
             <div
               className={`mx-auto ${widths[settings.contentWidth]} ${settings.uiDensity === "compact" ? "p-4" : "p-6"}`}
             >

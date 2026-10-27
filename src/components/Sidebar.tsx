@@ -1,4 +1,5 @@
 import { AlertTriangle, PanelLeftClose, PanelLeftOpen, Search } from "lucide-react";
+import { useLayoutEffect, useRef, useState } from "react";
 import { useAppStore } from "../stores/app-store";
 import { saveSetting } from "../services/native";
 import { needsTwitchPermissionUpdate } from "../services/twitch/client";
@@ -53,6 +54,19 @@ export function Sidebar() {
   const { page, setPage, twitch, streamElements, tipeeStream, obs, settings, setSettings } =
     useAppStore();
   const collapsed = settings.sidebarCollapsed;
+  const navRef = useRef<HTMLElement>(null);
+  const [indicatorTop, setIndicatorTop] = useState<number | null>(null);
+  const [animateIndicator, setAnimateIndicator] = useState(false);
+  useLayoutEffect(() => {
+    const nav = navRef.current;
+    const active = nav?.querySelector<HTMLElement>('[data-active="true"]');
+    if (!nav || !active) return;
+    setIndicatorTop(active.offsetTop);
+    if (!animateIndicator) {
+      const frame = requestAnimationFrame(() => setAnimateIndicator(true));
+      return () => cancelAnimationFrame(frame);
+    }
+  }, [page, collapsed, animateIndicator]);
   const services = [
     { name: "Twitch", icon: twitchIcon, state: twitch },
     { name: "StreamElements", icon: streamElementsIcon, state: streamElements },
