@@ -284,6 +284,20 @@ export function RuntimeProvider({ children }: { children: ReactNode }) {
     ]);
   }, [startTwitch, startStreamElements, startTipeeeStream, startObs]);
 
+  const shutdown = useCallback(async () => {
+    twitchRef.current?.stop();
+    twitchRef.current = undefined;
+    seRef.current?.stop();
+    seRef.current = undefined;
+    tipeeStreamRef.current?.stop();
+    tipeeStreamRef.current = undefined;
+    obsRef.current?.stop();
+    obsRef.current = undefined;
+    chatRef.current?.stop();
+    chatRef.current = undefined;
+    if (isTauri()) await twitchNative.chatStop().catch(() => undefined);
+  }, []);
+
   useEffect(() => {
     let disposed = false;
     const unlisten: Array<() => void> = [];
@@ -636,6 +650,7 @@ export function RuntimeProvider({ children }: { children: ReactNode }) {
         deleteChatMessage,
         setChatUserRole,
         reconnect,
+        shutdown,
       }}
     >
       {children}

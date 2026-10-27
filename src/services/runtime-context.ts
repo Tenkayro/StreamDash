@@ -35,6 +35,7 @@ export interface RuntimeValue {
     enabled: boolean,
   ) => Promise<void>;
   reconnect: () => Promise<void>;
+  shutdown: () => Promise<void>;
 }
 export const RuntimeContext = createContext<RuntimeValue | null>(null);
 export const useRuntime = () => {

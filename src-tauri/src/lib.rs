@@ -849,8 +849,37 @@ fn shutdown(app: &tauri::AppHandle) {
     app.exit(0);
 }
 
+static SHUTDOWN_STARTED: AtomicBool = AtomicBool::new(false);
+
+fn request_shutdown(app: &tauri::AppHandle) {
+    if SHUTDOWN_STARTED.swap(true, Ordering::SeqCst) {
+        return;
+    }
+    if let Some(window) = app.get_webview_window("tray") {
+        let _ = window.hide();
+    }
+    let _ = app.emit("app-shutdown-requested", ());
+    let fallback = app.clone();
+    std::thread::spawn(move || {
+        std::thread::sleep(std::time::Duration::from_secs(5));
+        if SHUTDOWN_STARTED.load(Ordering::SeqCst) {
+            shutdown(&fallback);
+        }
+    });
+}
+
 #[tauri::command]
 fn app_quit(app: tauri::AppHandle) {
+    request_shutdown(&app);
+}
+
+#[tauri::command]
+fn app_shutdown_ready(app: tauri::AppHandle) {
+    show_main_window(&app, None);
+}
+
+#[tauri::command]
+fn app_quit_complete(app: tauri::AppHandle) {
     shutdown(&app);
 }
 
@@ -896,7 +925,7 @@ fn tray_action(app: tauri::AppHandle, action: String) -> Result<(), String> {
         "reconnect" => {
             let _ = app.emit("tray-reconnect", ());
         }
-        "quit" => shutdown(&app),
+        "quit" => request_shutdown(&app),
         _ => return Err("Unknown tray action".into()),
     }
     Ok(())
@@ -1162,6 +1191,8 @@ pub fn run() {
             distribution_channel,
             store_update_available,
             app_quit,
+            app_shutdown_ready,
+            app_quit_complete,
             reveal_window,
             tray_action,
             tray_configure,

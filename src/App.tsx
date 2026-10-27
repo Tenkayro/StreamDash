@@ -1,5 +1,7 @@
-import { lazy, Suspense, useEffect, useLayoutEffect, useRef } from "react";
+import { lazy, Suspense, useEffect, useLayoutEffect, useRef, useState } from "react";
 import { getCurrentWindow } from "@tauri-apps/api/window";
+import { invoke } from "@tauri-apps/api/core";
+import { listen } from "@tauri-apps/api/event";
 import { Sidebar } from "./components/Sidebar";
 import { TitleBar } from "./components/TitleBar";
 import { useAppStore } from "./stores/app-store";
@@ -8,6 +10,7 @@ import { LoadingIndicator } from "./components/ui";
 import { useTranslation } from "react-i18next";
 import { resolveLanguage } from "./i18n";
 import { SetupWizard } from "./components/SetupWizard";
+import { useRuntime } from "./services/runtime-context";
 
 const CommandPalette = lazy(() =>
   import("./components/CommandPalette").then((module) => ({
@@ -76,6 +79,9 @@ export default function App() {
   const { page, ready, settings } = useAppStore();
   const { i18n, t } = useTranslation();
   const mainRef = useRef<HTMLElement>(null);
+  const shutdownStarted = useRef(false);
+  const [shuttingDown, setShuttingDown] = useState(false);
+  const { shutdown } = useRuntime();
   const Page = pages[page] ?? Dashboard;
   const loading = (
     <div
@@ -124,13 +130,47 @@ export default function App() {
   }, []);
   useEffect(() => {
     if (!isTauri()) return;
+    let disposed = false;
+    let unlisten: (() => void) | undefined;
+    void listen("app-shutdown-requested", async () => {
+      if (disposed || shutdownStarted.current) return;
+      shutdownStarted.current = true;
+      const startedAt = performance.now();
+      setShuttingDown(true);
+      const logo = new Image();
+      logo.src = "/streamdash-logo-boot.webp";
+      await logo.decode().catch(() => undefined);
+      await new Promise<void>((resolve) => requestAnimationFrame(() => resolve()));
+      await new Promise<void>((resolve) => requestAnimationFrame(() => resolve()));
+      await invoke("app_shutdown_ready").catch(() => undefined);
+      try {
+        await shutdown();
+      } finally {
+        const remaining = 700 - (performance.now() - startedAt);
+        if (remaining > 0)
+          await new Promise((resolve) => window.setTimeout(resolve, remaining));
+        await invoke("app_quit_complete").catch(() => undefined);
+      }
+    }).then((stop) => {
+      if (disposed) stop();
+      else unlisten = stop;
+    });
+    return () => {
+      disposed = true;
+      unlisten?.();
+    };
+  }, [shutdown]);
+  useEffect(() => {
+    if (!isTauri()) return;
     const appWindow = getCurrentWindow();
     let unlisten: (() => void) | undefined;
     appWindow
       .onCloseRequested(async (event) => {
+        event.preventDefault();
         if (useAppStore.getState().settings.minimizeToTray) {
-          event.preventDefault();
           await appWindow.hide();
+        } else {
+          await invoke("app_quit");
         }
       })
       .then((fn) => (unlisten = fn));
@@ -141,6 +181,20 @@ export default function App() {
     wide: "max-w-[1500px]",
     full: "max-w-none",
   };
+  if (shuttingDown)
+    return (
+      <div
+        data-tauri-drag-region
+        className="grid h-screen place-items-center bg-[#0b0c0f]"
+      >
+        <img
+          src="/streamdash-logo-boot.webp"
+          alt=""
+          aria-hidden="true"
+          className="h-auto w-[min(70vw,360px)] object-contain"
+        />
+      </div>
+    );
   if (!ready)
     return (
       <div
