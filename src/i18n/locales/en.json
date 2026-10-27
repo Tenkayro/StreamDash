@@ -178,6 +178,30 @@
     "fr": "French",
     "pt-BR": "Portuguese (Brazil)"
   },
+  "livePreview": {
+    "notConnected": "Connect Twitch to show your preview",
+    "notConnectedDetail": "StreamDash will display your own channel here after you connect your broadcaster account."
+  },
+  "navigation": {
+    "close": "Close quick navigation",
+    "insights": "Insights",
+    "main": "Workspace",
+    "manageConnections": "Manage connections",
+    "moveHint": "↑↓ Select",
+    "noResults": "No matching page",
+    "openHint": "Enter Open",
+    "quickSwitch": "Go to page",
+    "searchPlaceholder": "Search pages…",
+    "system": "System"
+  },
+  "pageDescriptions": {
+    "connections": "Connect accounts and review service health.",
+    "dashboard": "Your stream, audience and activity at a glance.",
+    "goals": "Set targets and track your progress.",
+    "livePreview": "Monitor your public Twitch stream without leaving StreamDash.",
+    "settings": "Adjust appearance, behavior, notifications and data.",
+    "statistics": "Understand activity trends from your stored events."
+  },
   "nav": {
     "activity": "Activity",
     "chat": "Chat",
@@ -323,6 +347,10 @@
   },
   "statistics": {
     "activityOverTime": "Activity over time",
+    "empty": "No activity data yet",
+    "emptyConnected": "Connected — waiting for events",
+    "emptyConnectedDetail": "Everything is ready. Statistics will fill automatically when new follows, subscriptions, donations, or other activity arrives.",
+    "emptyDetail": "Connect your services and StreamDash will build useful statistics as events arrive.",
     "eventTypes": "Event types",
     "lastDays": "Last {{count}} days",
     "mostCommon": "Most common",

@@ -1182,6 +1182,7 @@ export function Dashboard() {
       <PageHeader
         icon={LayoutGrid}
         title={t("nav.dashboard")}
+        description={t("pageDescriptions.dashboard")}
         titleActions={
           <button
             onClick={() => setEditing(!editing)}

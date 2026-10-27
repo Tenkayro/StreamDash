@@ -69,6 +69,7 @@ function Toggle({
 }) {
   return (
     <button
+      type="button"
       role="switch"
       aria-checked={value}
       data-state={value ? "on" : "off"}
@@ -166,7 +167,11 @@ export function SettingsPage() {
   };
   return (
     <>
-      <PageHeader icon={Settings} title={t("settings.title")} />
+      <PageHeader
+        icon={Settings}
+        title={t("settings.title")}
+        description={t("pageDescriptions.settings")}
+      />
       <div className="space-y-4">
         <section>
           <SectionTitle icon={Settings2}>{t("settings.general")}</SectionTitle>

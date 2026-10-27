@@ -23,12 +23,14 @@ export function LoadingIndicator({
 export function Button({
   className,
   variant = "default",
+  type = "button",
   ...props
 }: ButtonHTMLAttributes<HTMLButtonElement> & {
   variant?: "default" | "primary" | "danger" | "ghost";
 }) {
   return (
     <button
+      type={type}
       className={cn(
         "button",
         variant === "primary" && "button-primary",

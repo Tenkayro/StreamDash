@@ -1,17 +1,4 @@
-import {
-  Activity,
-  AlertTriangle,
-  BarChart3,
-  Goal,
-  LayoutDashboard,
-  Link2,
-  MessageSquare,
-  MonitorPlay,
-  PanelLeftClose,
-  PanelLeftOpen,
-  RadioTower,
-  Settings,
-} from "lucide-react";
+import { AlertTriangle, PanelLeftClose, PanelLeftOpen, Search } from "lucide-react";
 import { useAppStore } from "../stores/app-store";
 import { saveSetting } from "../services/native";
 import { needsTwitchPermissionUpdate } from "../services/twitch/client";
@@ -21,17 +8,7 @@ import twitchIcon from "../assets/services/twitch.webp";
 import streamElementsIcon from "../assets/services/streamelements.webp";
 import { LoadingIndicator } from "./ui";
 import { useTranslation } from "react-i18next";
-const nav = [
-  { id: "dashboard", label: "dashboard", icon: LayoutDashboard },
-  { id: "stream", label: "stream", icon: RadioTower },
-  { id: "chat", label: "chat", icon: MessageSquare },
-  { id: "activity", label: "activity", icon: Activity },
-  { id: "livePreview", label: "livePreview", icon: MonitorPlay },
-  { id: "statistics", label: "statistics", icon: BarChart3 },
-  { id: "goals", label: "goals", icon: Goal },
-  { id: "connections", label: "connections", icon: Link2 },
-  { id: "settings", label: "settings", icon: Settings },
-];
+import { navigationGroups, navigationItems, OPEN_COMMAND_PALETTE } from "../lib/navigation";
 function Status({
   icon,
   label,
@@ -91,8 +68,36 @@ export function Sidebar() {
         collapsed ? "w-14.5" : "w-52",
       )}
     >
-      <nav className="space-y-0.5 pt-1">
-        {nav.map(({ id, label, icon: Icon }) => {
+      <button
+        type="button"
+        title={t("navigation.quickSwitch")}
+        aria-label={t("navigation.quickSwitch")}
+        onClick={() => window.dispatchEvent(new Event(OPEN_COMMAND_PALETTE))}
+        className={cn(
+          "mb-2 flex h-9 w-full items-center rounded-lg border border-line bg-black/15 text-zinc-500 transition hover:border-accent/30 hover:text-zinc-200",
+          collapsed ? "justify-center" : "gap-2 px-3",
+        )}
+      >
+        <Search size={15} />
+        {!collapsed && (
+          <>
+            <span className="min-w-0 flex-1 truncate text-left text-xs">{t("navigation.quickSwitch")}</span>
+            <kbd className="rounded border border-line px-1.5 py-0.5 text-[9px] text-zinc-600">Ctrl K</kbd>
+          </>
+        )}
+      </button>
+      <nav>
+        {navigationGroups.map((group, groupIndex) => (
+          <div key={group} className={cn(groupIndex > 0 && "mt-3")}>
+            {collapsed ? (
+              groupIndex > 0 && <div className="mx-2 mb-2 h-px bg-line" />
+            ) : (
+              <div className="mb-1 px-3 text-[9px] font-semibold uppercase tracking-[.14em] text-zinc-700">
+                {t(`navigation.${group}`)}
+              </div>
+            )}
+            <div className="space-y-0.5">
+              {navigationItems.filter((item) => item.group === group).map(({ id, label, icon: Icon }) => {
           const attention = id === "connections" && permissionAttention;
           const translatedLabel = t(`nav.${label}`);
           return (
@@ -113,6 +118,7 @@ export function Sidebar() {
                 page === id && "bg-accent-soft text-accent",
               )}
             >
+              {page === id && <span className="absolute left-0 h-4 w-0.5 rounded-full bg-accent" />}
               <Icon size={16} />
               {!collapsed && <span className="flex-1 text-left">{translatedLabel}</span>}
               {attention && (
@@ -128,7 +134,10 @@ export function Sidebar() {
               )}
             </button>
           );
-        })}
+              })}
+            </div>
+          </div>
+        ))}
       </nav>
       <div className="mt-auto">
         {collapsed ? (
@@ -182,7 +191,12 @@ export function Sidebar() {
             </div>
           </div>
         ) : (
-          <div className="mb-2 rounded-lg border border-line bg-panel px-2 py-1.5">
+          <button
+            type="button"
+            onClick={() => setPage("connections")}
+            title={t("navigation.manageConnections")}
+            className="mb-2 block w-full rounded-lg border border-line bg-panel px-2 py-1.5 text-left transition hover:border-accent/30 hover:bg-white/[.025]"
+          >
             <Status
               icon={twitchIcon}
               name="Twitch"
@@ -195,7 +209,7 @@ export function Sidebar() {
               label={t("nav.donations")}
               state={streamElements}
             />
-          </div>
+          </button>
         )}
         <button
           onClick={toggle}

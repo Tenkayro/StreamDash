@@ -2,8 +2,8 @@ import { useMemo } from "react";
 import { useTranslation } from "react-i18next";
 import { useAppStore } from "../stores/app-store";
 import { cn } from "../lib/utils";
-
-const FALLBACK_CHANNEL = "tenkayro";
+import { Button, EmptyState } from "./ui";
+import { MonitorOff } from "lucide-react";
 
 function playerUrl(channel: string) {
   const url = new URL("https://player.twitch.tv/");
@@ -17,14 +17,30 @@ function playerUrl(channel: string) {
 export function TwitchPlayer({ className }: { className?: string }) {
   const { t } = useTranslation();
   const account = useAppStore((state) => state.twitch.account);
-  const channel = account || FALLBACK_CHANNEL;
-  const src = useMemo(() => playerUrl(channel), [channel]);
+  const setPage = useAppStore((state) => state.setPage);
+  const src = useMemo(() => (account ? playerUrl(account) : ""), [account]);
+
+  if (!account)
+    return (
+      <div className={cn("grid min-h-64 place-items-center bg-panel", className)}>
+        <EmptyState
+          icon={<MonitorOff size={22} />}
+          title={t("livePreview.notConnected")}
+          body={t("livePreview.notConnectedDetail")}
+          action={
+            <Button variant="primary" onClick={() => setPage("connections")}>
+              {t("chat.openConnections")}
+            </Button>
+          }
+        />
+      </div>
+    );
 
   return (
     <iframe
       key={src}
       src={src}
-      title={t("stream.playerTitle", { channel })}
+      title={t("stream.playerTitle", { channel: account })}
       allow="autoplay; fullscreen"
       allowFullScreen
       className={cn("block min-h-[300px] min-w-[400px] border-0", className)}

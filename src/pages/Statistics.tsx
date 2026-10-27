@@ -9,7 +9,7 @@ import {
 } from "recharts";
 import { BarChart3 } from "lucide-react";
 import { useMemo, useState } from "react";
-import { Card, PageHeader } from "../components/ui";
+import { Button, Card, EmptyState, PageHeader } from "../components/ui";
 import { useAppStore } from "../stores/app-store";
 import { format, subDays } from "date-fns";
 import { useTranslation } from "react-i18next";
@@ -17,7 +17,9 @@ import { de, enUS, es, fr, ptBR } from "date-fns/locale";
 export function Statistics() {
   const { t, i18n } = useTranslation();
   const dateLocale = { de, en: enUS, es, fr, "pt-BR": ptBR }[i18n.language] ?? enUS;
-  const events = useAppStore((s) => s.events);
+  const { events, setPage, twitch, streamElements } = useAppStore();
+  const connected =
+    twitch.phase === "connected" || streamElements.phase === "connected";
   const [today] = useState(() => new Date());
   const data = useMemo(
     () =>
@@ -47,7 +49,26 @@ export function Statistics() {
   );
   return (
     <>
-      <PageHeader icon={BarChart3} title={t("statistics.title")} />
+      <PageHeader
+        icon={BarChart3}
+        title={t("statistics.title")}
+        description={t("pageDescriptions.statistics")}
+      />
+      {!events.length ? (
+        <Card>
+          <EmptyState
+            icon={<BarChart3 size={24} />}
+            title={t(connected ? "statistics.emptyConnected" : "statistics.empty")}
+            body={t(connected ? "statistics.emptyConnectedDetail" : "statistics.emptyDetail")}
+            action={!connected ? (
+              <Button variant="primary" onClick={() => setPage("connections")}>
+                {t("chat.openConnections")}
+              </Button>
+            ) : undefined}
+          />
+        </Card>
+      ) : (
+        <>
       <Card className="p-5">
         <div className="mb-5">
           <h2 className="text-sm font-semibold">{t("statistics.activityOverTime")}</h2>
@@ -107,6 +128,8 @@ export function Statistics() {
           </div>
         </Card>
       </div>
+        </>
+      )}
     </>
   );
 }

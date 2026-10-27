@@ -178,6 +178,30 @@
     "fr": "Französisch",
     "pt-BR": "Portugiesisch (Brasilien)"
   },
+  "livePreview": {
+    "notConnected": "Twitch verbinden, um die Vorschau anzuzeigen",
+    "notConnectedDetail": "Nach dem Verbinden deines Broadcaster-Accounts zeigt StreamDash hier deinen eigenen Kanal."
+  },
+  "navigation": {
+    "close": "Schnellnavigation schließen",
+    "insights": "Auswertung",
+    "main": "Arbeitsbereich",
+    "manageConnections": "Verbindungen verwalten",
+    "moveHint": "↑↓ Auswählen",
+    "noResults": "Keine passende Seite",
+    "openHint": "Enter Öffnen",
+    "quickSwitch": "Seite öffnen",
+    "searchPlaceholder": "Seiten durchsuchen…",
+    "system": "System"
+  },
+  "pageDescriptions": {
+    "connections": "Accounts verbinden und den Zustand der Dienste prüfen.",
+    "dashboard": "Stream, Publikum und Aktivitäten auf einen Blick.",
+    "goals": "Ziele festlegen und Fortschritte verfolgen.",
+    "livePreview": "Den öffentlichen Twitch-Stream direkt in StreamDash überwachen.",
+    "settings": "Darstellung, Verhalten, Benachrichtigungen und Daten anpassen.",
+    "statistics": "Aktivitätstrends aus den gespeicherten Ereignissen verstehen."
+  },
   "nav": {
     "activity": "Aktivität",
     "chat": "Chat",
@@ -323,6 +347,10 @@
   },
   "statistics": {
     "activityOverTime": "Aktivität im Zeitverlauf",
+    "empty": "Noch keine Aktivitätsdaten",
+    "emptyConnected": "Verbunden – noch keine Ereignisse",
+    "emptyConnectedDetail": "Alles ist bereit. Die Statistik füllt sich automatisch, sobald neue Follows, Abos, Spenden oder andere Aktivitäten eintreffen.",
+    "emptyDetail": "Verbinde deine Dienste. StreamDash erstellt automatisch Statistiken, sobald Ereignisse eintreffen.",
     "eventTypes": "Ereignistypen",
     "lastDays": "Letzte {{count}} Tage",
     "mostCommon": "Am häufigsten",

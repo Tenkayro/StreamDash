@@ -43,7 +43,11 @@ export function Connections() {
     twitch.phase === "connected" && needsTwitchPermissionUpdate(twitch.scopes);
   return (
     <>
-      <PageHeader icon={Link2} title={t("connections.title")} />
+      <PageHeader
+        icon={Link2}
+        title={t("connections.title")}
+        description={t("pageDescriptions.connections")}
+      />
       <div className="space-y-4">
         <Card className="p-5">
           <div className="flex items-start justify-between gap-5">
@@ -185,7 +189,7 @@ export function Connections() {
                 </Button>
               </div>
               <p className="mt-2 text-xs leading-5 text-zinc-600">
-                Dashboard → Account → Channels → JWT
+                {t("onboarding.jwtPath")}
               </p>
             </div>
           )}

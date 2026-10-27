@@ -172,7 +172,7 @@ export function TrayPanel() {
   const viewerCount = status.live ? (status.viewers?.toLocaleString(i18n.language) ?? "—") : "—";
 
   return (
-    <main className="h-screen overflow-hidden rounded-xl border border-line bg-panel shadow-2xl shadow-black/60">
+    <main className="h-screen overflow-hidden rounded-xl bg-panel shadow-2xl shadow-black/60">
         <header className="flex h-12 items-center gap-3 border-b border-line px-3">
           <img src={titlebarLogo} alt="StreamDash" className="h-4 w-auto object-contain" />
           <span

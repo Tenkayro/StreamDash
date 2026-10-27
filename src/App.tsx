@@ -2,13 +2,23 @@ import { lazy, Suspense, useEffect } from "react";
 import { getCurrentWindow } from "@tauri-apps/api/window";
 import { Sidebar } from "./components/Sidebar";
 import { TitleBar } from "./components/TitleBar";
-import { Dashboard } from "./pages/Dashboard";
 import { useAppStore } from "./stores/app-store";
 import { isTauri } from "./lib/utils";
 import { LoadingIndicator } from "./components/ui";
 import { useTranslation } from "react-i18next";
 import { resolveLanguage } from "./i18n";
 import { SetupWizard } from "./components/SetupWizard";
+
+const CommandPalette = lazy(() =>
+  import("./components/CommandPalette").then((module) => ({
+    default: module.CommandPalette,
+  })),
+);
+const Dashboard = lazy(() =>
+  import("./pages/Dashboard").then((module) => ({
+    default: module.Dashboard,
+  })),
+);
 
 const StreamPage = lazy(() =>
   import("./pages/StreamPage").then((module) => ({
@@ -152,6 +162,9 @@ export default function App() {
     >
       <div className="flex h-screen flex-col bg-[#0b0c0f]">
         <TitleBar />
+        <Suspense fallback={null}>
+          <CommandPalette />
+        </Suspense>
         <div className="flex min-h-0 flex-1">
           <Sidebar />
           <main className="min-w-0 flex-1 overflow-y-auto">

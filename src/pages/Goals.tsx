@@ -1,10 +1,10 @@
 import { useState } from "react";
-import { Card, LoadingIndicator, PageHeader } from "../components/ui";
+import { Button, Card, LoadingIndicator, PageHeader } from "../components/ui";
 import { useAppStore } from "../stores/app-store";
 import { saveSetting } from "../services/native";
 import { money } from "../lib/utils";
 import { useTranslation } from "react-i18next";
-import { Target } from "lucide-react";
+import { Link2, Target } from "lucide-react";
 function GoalRow({
   label,
   value,
@@ -63,7 +63,7 @@ function GoalRow({
 }
 export function Goals() {
   const { t } = useTranslation();
-  const { stats, statsLoading, settings, setSettings } = useAppStore();
+  const { stats, statsLoading, settings, setSettings, twitch, setPage } = useAppStore();
   const update = async (
     key: "followers" | "subscribers" | "donations",
     value?: number,
@@ -74,7 +74,19 @@ export function Goals() {
   };
   return (
     <>
-      <PageHeader icon={Target} title={t("goals.title")} />
+      <PageHeader
+        icon={Target}
+        title={t("goals.title")}
+        description={t("pageDescriptions.goals")}
+        actions={
+          twitch.phase !== "connected" ? (
+            <Button onClick={() => setPage("connections")}>
+              <Link2 size={14} />
+              {t("chat.openConnections")}
+            </Button>
+          ) : undefined
+        }
+      />
       <Card className="px-5">
         <GoalRow
           label={t("goals.followers")}
