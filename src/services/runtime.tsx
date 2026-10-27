@@ -34,6 +34,7 @@ import {
 import { TWITCH_CLIENT_ID } from "./twitch/config";
 import { TwitchChatClient } from "./twitch/chat";
 import { StreamElementsClient } from "./streamelements/client";
+import { TipeeeStreamClient } from "./tipeeestream/client";
 import type { ActivityEvent, AppSettings, ChatUserProfile } from "../types";
 import { RuntimeContext, type DeviceAuth } from "./runtime-context";
 import i18n from "../i18n";
@@ -81,6 +82,7 @@ export function RuntimeProvider({ children }: { children: ReactNode }) {
   const state = useAppStore.getState;
   const twitchRef = useRef<TwitchEventSub | undefined>(undefined);
   const seRef = useRef<StreamElementsClient | undefined>(undefined);
+  const tipeeStreamRef = useRef<TipeeeStreamClient | undefined>(undefined);
   const chatRef = useRef<TwitchChatClient | undefined>(undefined);
   const [deviceAuth, setDeviceAuth] = useState<DeviceAuth>();
 
@@ -225,9 +227,32 @@ export function RuntimeProvider({ children }: { children: ReactNode }) {
     }
   }, [ingest, state]);
 
+  const startTipeeeStream = useCallback(async () => {
+    if (!isTauri()) return;
+    try {
+      const apiKey = await secretGet("tipeeestream-api-key");
+      if (!apiKey) {
+        state().setTipeeeStream({ phase: "disconnected" });
+        return;
+      }
+      tipeeStreamRef.current?.stop();
+      state().setTipeeeStream({ phase: "connecting" });
+      tipeeStreamRef.current = new TipeeeStreamClient(apiKey, ingest, (phase, detail) =>
+        state().setTipeeeStream({ phase, detail }),
+      );
+      await tipeeStreamRef.current.start();
+    } catch (error) {
+      state().setTipeeeStream({ phase: "error", detail: errorMessage(error) });
+    }
+  }, [ingest, state]);
+
   const reconnect = useCallback(async () => {
-    await Promise.all([startTwitch(), startStreamElements()]);
-  }, [startTwitch, startStreamElements]);
+    await Promise.all([
+      startTwitch(),
+      startStreamElements(),
+      startTipeeeStream(),
+    ]);
+  }, [startTwitch, startStreamElements, startTipeeeStream]);
 
   useEffect(() => {
     let disposed = false;
@@ -267,6 +292,7 @@ export function RuntimeProvider({ children }: { children: ReactNode }) {
       unlisten.forEach((f) => f());
       twitchRef.current?.stop();
       seRef.current?.stop();
+      tipeeStreamRef.current?.stop();
       chatRef.current?.stop();
     };
   }, [reconnect, setEvents, setReady, setSettings, state]);
@@ -342,6 +368,17 @@ export function RuntimeProvider({ children }: { children: ReactNode }) {
     seRef.current?.stop();
     await secretDelete("streamelements-token");
     state().setStreamElements({ phase: "disconnected" });
+  };
+  const connectTipeeeStream = async (apiKey: string) => {
+    if (!apiKey.trim()) return;
+    await secretSet("tipeeestream-api-key", apiKey.trim());
+    await startTipeeeStream();
+  };
+  const disconnectTipeeeStream = async () => {
+    tipeeStreamRef.current?.stop();
+    tipeeStreamRef.current = undefined;
+    state().setTipeeeStream({ phase: "disconnected" });
+    await secretDelete("tipeeestream-api-key").catch(() => undefined);
   };
   const sendChatMessage = async (text: string) => {
     const message = text.trim();
@@ -522,6 +559,8 @@ export function RuntimeProvider({ children }: { children: ReactNode }) {
         reauthorizeTwitch,
         connectStreamElements,
         disconnectStreamElements,
+        connectTipeeeStream,
+        disconnectTipeeeStream,
         sendChatMessage,
         getChatUserProfile,
         moderateChatUser,

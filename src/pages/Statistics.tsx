@@ -17,9 +17,11 @@ import { de, enUS, es, fr, ptBR } from "date-fns/locale";
 export function Statistics() {
   const { t, i18n } = useTranslation();
   const dateLocale = { de, en: enUS, es, fr, "pt-BR": ptBR }[i18n.language] ?? enUS;
-  const { events, setPage, twitch, streamElements } = useAppStore();
-  const connected =
-    twitch.phase === "connected" || streamElements.phase === "connected";
+  const { events, setPage, twitch, streamElements, tipeeStream } =
+    useAppStore();
+  const connected = [twitch, streamElements, tipeeStream].some(
+    (service) => service.phase === "connected",
+  );
   const [today] = useState(() => new Date());
   const data = useMemo(
     () =>

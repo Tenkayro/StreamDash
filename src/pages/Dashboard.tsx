@@ -271,8 +271,8 @@ function defaultWidgetDimensions(
   if (id === "activity") return { width: "wide", height: 288 };
   if (id === "streamDetails") return { width: "single", height: 224 };
   if (id === "livePreview") return { width: "full", height: 384 };
-  if (id === "goals" || id === "connections")
-    return { width: "single", height: 208 };
+  if (id === "goals") return { width: "single", height: 208 };
+  if (id === "connections") return { width: "single", height: 232 };
   return { width: "single", height: 320 };
 }
 
@@ -438,6 +438,7 @@ export function Dashboard() {
     settings,
     twitch,
     streamElements,
+    tipeeStream,
     statsLoading,
     setPage,
     setSettings,
@@ -499,8 +500,9 @@ export function Dashboard() {
       clearTimeout(zoomSaveTimer.current);
     };
   }, [t]);
-  const connected =
-    twitch.phase === "connected" || streamElements.phase === "connected";
+  const connected = [twitch, streamElements, tipeeStream].some(
+    (service) => service.phase === "connected",
+  );
   const browserWidgets = useMemo<WidgetCatalogEntry[]>(
     () =>
       settings.dashboardBrowserSources.map((source) => ({
@@ -1185,6 +1187,7 @@ export function Dashboard() {
         {[
           ["Twitch", twitch],
           ["StreamElements", streamElements],
+          ["TipeeeStream", tipeeStream],
         ].map(([name, state]) => {
           const service = state as ConnectionState;
           return (

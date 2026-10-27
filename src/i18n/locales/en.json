@@ -42,6 +42,7 @@
     "waitingFirstMessage": "Waiting for the first chat message…"
   },
   "activity": {
+    "anonymous": "Anonymous",
     "allSources": "All sources",
     "allTypes": "All event types",
     "bits": "{{count}} bits",
@@ -74,13 +75,19 @@
     "reconnecting": "Reconnecting"
   },
   "connections": {
+    "cancelConnection": "Cancel connection",
     "connect": "Connect",
     "connectTwitch": "Connect Twitch",
     "disconnect": "Disconnect",
     "enterCode": "Enter this code in the Twitch page opened in your browser",
     "jwtPlaceholder": "Paste your account JWT",
     "openActivation": "Open Twitch activation",
+    "openTokenInstructions": "How to get the credential",
     "reconnectModeration": "Reconnect once to enable all moderation features.",
+    "removeConnection": "Remove connection",
+    "tipeeStreamApiKey": "TipeeeStream API key",
+    "tipeeStreamApiKeyPlaceholder": "Paste API key",
+    "tipeeStreamDetail": "Receive TipeeeStream donations in real time using your personal API key.",
     "title": "Connections",
     "updatePermissions": "Update permissions"
   },

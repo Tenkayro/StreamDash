@@ -175,8 +175,13 @@ fn remove_directory_if_present(path: PathBuf) -> Result<(), String> {
 }
 
 pub fn uninstall_cleanup() -> Result<(), String> {
-    delete_secret_value("twitch-oauth")?;
-    delete_secret_value("streamelements-token")?;
+    for secret in [
+        "twitch-oauth",
+        "streamelements-token",
+        "tipeeestream-api-key",
+    ] {
+        delete_secret_value(secret)?;
+    }
 
     if let Some(roaming) = std::env::var_os("APPDATA").map(PathBuf::from) {
         remove_directory_if_present(roaming.join("StreamDash"))?;
@@ -342,7 +347,10 @@ fn setting_save(
 
 #[tauri::command]
 fn secret_set(name: String, value: String) -> Result<(), String> {
-    if name != "streamelements-token" {
+    if !matches!(
+        name.as_str(),
+        "streamelements-token" | "tipeeestream-api-key"
+    ) {
         return Err("Unsupported credential key".into());
     }
     save_secret(&name, &value)
@@ -350,7 +358,10 @@ fn secret_set(name: String, value: String) -> Result<(), String> {
 
 #[tauri::command]
 fn secret_get(name: String) -> Result<Option<String>, String> {
-    if name != "streamelements-token" {
+    if !matches!(
+        name.as_str(),
+        "streamelements-token" | "tipeeestream-api-key"
+    ) {
         return Err("Unsupported credential key".into());
     }
     load_secret(&name)
@@ -358,7 +369,12 @@ fn secret_get(name: String) -> Result<Option<String>, String> {
 
 #[tauri::command]
 fn secret_delete(name: String) -> Result<(), String> {
-    if !matches!(name.as_str(), "streamelements-token" | "twitch-oauth") {
+    if !matches!(
+        name.as_str(),
+        "streamelements-token"
+            | "tipeeestream-api-key"
+            | "twitch-oauth"
+    ) {
         return Err("Unsupported credential key".into());
     }
     delete_secret_value(&name)

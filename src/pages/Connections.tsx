@@ -1,6 +1,7 @@
 import {
   CheckCircle2,
   ExternalLink,
+  HandCoins,
   Link2,
   LoaderCircle,
   ShieldCheck,
@@ -34,11 +35,13 @@ function phaseTone(phase: string) {
 
 export function Connections() {
   const { t } = useTranslation();
-  const { twitch, streamElements } = useAppStore();
+  const { twitch, streamElements, tipeeStream } = useAppStore();
   const runtime = useRuntime();
   const [token, setToken] = useState("");
+  const [tipeeeStreamKey, setTipeeeStreamKey] = useState("");
   const twitchBusy = ["connecting", "reconnecting"].includes(twitch.phase);
   const seBusy = ["connecting", "reconnecting"].includes(streamElements.phase);
+  const tipeeStreamBusy = ["connecting", "reconnecting"].includes(tipeeStream.phase);
   const missingModeration =
     twitch.phase === "connected" && needsTwitchPermissionUpdate(twitch.scopes);
   return (
@@ -191,6 +194,69 @@ export function Connections() {
               <p className="mt-2 text-xs leading-5 text-zinc-600">
                 {t("onboarding.jwtPath")}
               </p>
+            </div>
+          )}
+        </Card>
+        <Card className="p-5">
+          <div className="flex items-start justify-between gap-6">
+            <div className="flex gap-4">
+              <div className="grid size-11 place-items-center rounded-xl bg-rose-400/10 text-rose-300">
+                <HandCoins size={24} />
+              </div>
+              <div>
+                <div className="flex items-center gap-2">
+                  <h2 className="font-semibold">TipeeeStream</h2>
+                  <Badge tone={phaseTone(tipeeStream.phase)}>{t(`connectionPhases.${tipeeStream.phase}`)}</Badge>
+                </div>
+                <p className="mt-1 max-w-xl text-xs leading-5 text-muted">
+                  {t("connections.tipeeStreamDetail")}
+                </p>
+                {tipeeStream.detail && <p className="mt-2 text-xs text-red-300">{tipeeStream.detail}</p>}
+              </div>
+            </div>
+            {tipeeStream.phase !== "disconnected" && (
+              <Button variant="danger" onClick={runtime.disconnectTipeeeStream}>
+                {tipeeStreamBusy
+                  ? t("connections.cancelConnection")
+                  : tipeeStream.phase === "connected"
+                    ? t("connections.disconnect")
+                    : t("connections.removeConnection")}
+              </Button>
+            )}
+          </div>
+          {tipeeStream.phase !== "connected" && !tipeeStreamBusy && (
+            <div className="mt-5 max-w-2xl">
+              <label className="label" htmlFor="tipeeestream-key">{t("connections.tipeeStreamApiKey")}</label>
+              <div className="mt-2 flex gap-2">
+                <input
+                  id="tipeeestream-key"
+                  className="input"
+                  type="password"
+                  autoComplete="off"
+                  placeholder={t("connections.tipeeStreamApiKeyPlaceholder")}
+                  value={tipeeeStreamKey}
+                  onChange={(event) => setTipeeeStreamKey(event.target.value)}
+                />
+                <Button
+                  variant="primary"
+                  disabled={!tipeeeStreamKey.trim() || tipeeStreamBusy || !isTauri()}
+                  onClick={async () => {
+                    await runtime.connectTipeeeStream(tipeeeStreamKey);
+                    setTipeeeStreamKey("");
+                  }}
+                >
+                  {tipeeStreamBusy ? <LoaderCircle className="animate-spin" size={15} /> : <Link2 size={15} />}
+                  {t("connections.connect")}
+                </Button>
+              </div>
+              <button
+                type="button"
+                onClick={() => void openUrl("https://api.tipeeestream.com/api-doc/")}
+                className="mt-2 inline-flex items-center gap-1.5 text-xs text-accent hover:brightness-125"
+              >
+                <ExternalLink size={12} />
+                {t("connections.openTokenInstructions")}
+              </button>
             </div>
           )}
         </Card>

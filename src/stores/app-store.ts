@@ -76,6 +76,8 @@ interface AppStore {
   setTwitch: (state: ConnectionState) => void;
   streamElements: ConnectionState;
   setStreamElements: (state: ConnectionState) => void;
+  tipeeStream: ConnectionState;
+  setTipeeeStream: (state: ConnectionState) => void;
   chat: ConnectionState;
   setChat: (state: ConnectionState) => void;
   chatEmotes: ChatEmote[];
@@ -135,6 +137,8 @@ export const useAppStore = create<AppStore>((set) => ({
   setTwitch: (twitch) => set({ twitch }),
   streamElements: { phase: "disconnected" },
   setStreamElements: (streamElements) => set({ streamElements }),
+  tipeeStream: { phase: "disconnected" },
+  setTipeeeStream: (tipeeStream) => set({ tipeeStream }),
   chat: { phase: "disconnected" },
   setChat: (chat) => set({ chat }),
   chatEmotes: [],

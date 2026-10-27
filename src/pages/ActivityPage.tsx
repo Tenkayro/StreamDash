@@ -131,6 +131,7 @@ export function ActivityPage() {
               <option value="all">{t("activity.allSources")}</option>
               <option value="twitch">Twitch</option>
               <option value="streamelements">StreamElements</option>
+              <option value="tipeeestream">TipeeeStream</option>
             </select>
             <ChevronDown
               size={13}

@@ -13,6 +13,8 @@ export interface RuntimeValue {
   reauthorizeTwitch: () => Promise<void>;
   connectStreamElements: (token: string) => Promise<void>;
   disconnectStreamElements: () => Promise<void>;
+  connectTipeeeStream: (apiKey: string) => Promise<void>;
+  disconnectTipeeeStream: () => Promise<void>;
   sendChatMessage: (text: string) => Promise<void>;
   getChatUserProfile: (login: string) => Promise<ChatUserProfile>;
   moderateChatUser: (

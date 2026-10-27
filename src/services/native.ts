@@ -32,16 +32,17 @@ export async function saveSetting<K extends keyof AppSettings>(
     );
   }
 }
-export async function secretSet(name: "streamelements-token", value: string) {
+type IntegrationSecret =
+  | "streamelements-token"
+  | "tipeeestream-api-key";
+export async function secretSet(name: IntegrationSecret, value: string) {
   return invoke("secret_set", { name, value });
 }
-export async function secretGet(
-  name: "streamelements-token",
-): Promise<string | null> {
+export async function secretGet(name: IntegrationSecret): Promise<string | null> {
   return invoke("secret_get", { name });
 }
 export async function secretDelete(
-  name: "streamelements-token" | "twitch-oauth",
+  name: IntegrationSecret | "twitch-oauth",
 ) {
   return invoke("secret_delete", { name });
 }

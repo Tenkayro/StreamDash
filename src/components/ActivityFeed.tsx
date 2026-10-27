@@ -62,7 +62,7 @@ export function ActivityFeed({
     <div>
       {shown.map((event) => {
         const [Icon, label, color] = presentation[event.eventType];
-        const who = event.displayName || event.username || "Anonymous";
+        const who = event.displayName || event.username || t("activity.anonymous");
         let detail: string = t(`events.${label}`);
         if (event.amount != null) detail = money(event.amount, event.currency);
         else if (event.bits)

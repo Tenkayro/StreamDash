@@ -1,4 +1,4 @@
-export type ActivitySource = 'twitch' | 'streamelements'
+export type ActivitySource = 'twitch' | 'streamelements' | 'tipeeestream'
 export type ActivityType = 'follow' | 'subscription' | 'resubscription' | 'gift_subscription' | 'community_gift' | 'cheer' | 'raid' | 'donation' | 'channel_point' | 'stream_online' | 'stream_offline' | 'other'
 
 export interface ActivityEvent {
