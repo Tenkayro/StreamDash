@@ -4,6 +4,7 @@ import {
   Link2,
   LoaderCircle,
   Plus,
+  RefreshCw,
   ShieldCheck,
 } from "lucide-react";
 import { useState, type ReactNode } from "react";
@@ -124,7 +125,7 @@ function ServiceRow({
           </div>
           <div className="mt-0.5 truncate text-[11px] text-muted">{purpose}</div>
           {error && (
-            <div className="mt-0.5 truncate text-[11px] text-red-300">
+            <div className="mt-0.5 text-[11px] leading-4 text-red-300">
               {error}
             </div>
           )}
@@ -307,7 +308,7 @@ export function Connections() {
         title={t("connections.title")}
         description={t("pageDescriptions.connections")}
       />
-      <Card className="max-w-3xl divide-y divide-line overflow-hidden">
+      <Card className="max-w-4xl divide-y divide-line overflow-hidden">
         <ServiceRow
           name="Twitch"
           icon={twitchIcon}
@@ -387,10 +388,24 @@ export function Connections() {
               <RowAction onClick={runtime.disconnectStreamElements}>
                 {t("connections.disconnect")}
               </RowAction>
+            ) : streamElements.phase === "error" ? (
+              <div className="flex shrink-0 items-center gap-1">
+                <Button onClick={() => void runtime.retryStreamElements()}>
+                  <RefreshCw size={14} />
+                  {t("connections.retry")}
+                </Button>
+                <RowAction onClick={runtime.disconnectStreamElements}>
+                  {t("connections.removeConnection")}
+                </RowAction>
+              </div>
+            ) : streamElements.phase === "reconnecting" ? (
+              <RowAction onClick={runtime.disconnectStreamElements}>
+                {t("connections.cancelConnection")}
+              </RowAction>
             ) : undefined
           }
         >
-          {streamElements.phase !== "connected" && (
+          {streamElements.phase === "disconnected" && (
             <TokenForm
               id="se-token"
               label={t("onboarding.jwtLabel")}
@@ -416,7 +431,17 @@ export function Connections() {
           purpose={t("connections.tipeeStreamPurpose")}
           error={tipeeStream.detail}
           action={
-            tipeeStream.phase !== "disconnected" ? (
+            tipeeStream.phase === "error" ? (
+              <div className="flex shrink-0 items-center gap-1">
+                <Button onClick={() => void runtime.retryTipeeeStream()}>
+                  <RefreshCw size={14} />
+                  {t("connections.retry")}
+                </Button>
+                <RowAction onClick={runtime.disconnectTipeeeStream}>
+                  {t("connections.removeConnection")}
+                </RowAction>
+              </div>
+            ) : tipeeStream.phase !== "disconnected" ? (
               <RowAction onClick={runtime.disconnectTipeeeStream}>
                 {tipeeStreamBusy
                   ? t("connections.cancelConnection")
@@ -427,7 +452,7 @@ export function Connections() {
             ) : undefined
           }
         >
-          {tipeeStream.phase !== "connected" && !tipeeStreamBusy && (
+          {tipeeStream.phase === "disconnected" && (
             <TokenForm
               id="tipeeestream-key"
               label={t("connections.tipeeStreamApiKey")}
@@ -470,6 +495,12 @@ export function Connections() {
                   <AddWidgetAction onClick={addObsWidget}>
                     {t("connections.addObsWidget")}
                   </AddWidgetAction>
+                )}
+                {obs.phase === "error" && (
+                  <Button onClick={() => void runtime.retryObs()}>
+                    <RefreshCw size={14} />
+                    {t("connections.retry")}
+                  </Button>
                 )}
                 <RowAction onClick={runtime.disconnectObs}>
                   {t("connections.disconnect")}

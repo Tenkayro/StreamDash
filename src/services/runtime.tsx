@@ -239,8 +239,11 @@ export function RuntimeProvider({ children }: { children: ReactNode }) {
       }
       tipeeStreamRef.current?.stop();
       state().setTipeeeStream({ phase: "connecting" });
-      tipeeStreamRef.current = new TipeeeStreamClient(apiKey, ingest, (phase, detail) =>
-        state().setTipeeeStream({ phase, detail }),
+      tipeeStreamRef.current = new TipeeeStreamClient(
+        apiKey,
+        ingest,
+        (phase, detail) => state().setTipeeeStream({ phase, detail }),
+        (key, options) => i18n.t(key, options),
       );
       await tipeeStreamRef.current.start();
     } catch (error) {
@@ -411,6 +414,7 @@ export function RuntimeProvider({ children }: { children: ReactNode }) {
   };
   const disconnectStreamElements = async () => {
     seRef.current?.stop();
+    seRef.current = undefined;
     await secretDelete("streamelements-token");
     state().setStreamElements({ phase: "disconnected" });
   };
@@ -635,10 +639,13 @@ export function RuntimeProvider({ children }: { children: ReactNode }) {
         disconnectTwitch,
         reauthorizeTwitch,
         connectStreamElements,
+        retryStreamElements: startStreamElements,
         disconnectStreamElements,
         connectTipeeeStream,
+        retryTipeeeStream: startTipeeeStream,
         disconnectTipeeeStream,
         connectObs,
+        retryObs: startObs,
         disconnectObs,
         setObsScene,
         setObsMute,

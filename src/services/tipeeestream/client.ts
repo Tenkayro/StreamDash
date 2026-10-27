@@ -2,11 +2,13 @@ import type { ActivityEvent } from "../../types";
 import { LegacySocketIoClient } from "../socketio";
 
 type Json = Record<string, unknown>;
+type Translator = (key: string, options?: Record<string, unknown>) => string;
 
 export class TipeeeStreamClient {
   private readonly apiKey: string;
   private readonly onEvent: (event: ActivityEvent) => void;
   private readonly onState: (state: "connected" | "reconnecting" | "error", detail?: string) => void;
+  private readonly translate: Translator;
   private socket?: LegacySocketIoClient;
   private stopped = false;
 
@@ -14,28 +16,40 @@ export class TipeeeStreamClient {
     apiKey: string,
     onEvent: (event: ActivityEvent) => void,
     onState: (state: "connected" | "reconnecting" | "error", detail?: string) => void,
+    translate: Translator,
   ) {
     this.apiKey = apiKey;
     this.onEvent = onEvent;
     this.onState = onState;
+    this.translate = translate;
   }
 
   async start() {
     this.stopped = false;
+    const controller = new AbortController();
+    const timeout = window.setTimeout(() => controller.abort(), 15_000);
     try {
       const [siteResponse, userResponse] = await Promise.all([
-        fetch("https://api.tipeeestream.com/v2.0/site/socket"),
-        fetch(`https://api.tipeeestream.com/v1.0/me.json?apiKey=${encodeURIComponent(this.apiKey)}`),
+        fetch("https://api.tipeeestream.com/v2.0/site/socket", {
+          signal: controller.signal,
+        }),
+        fetch(`https://api.tipeeestream.com/v1.0/me.json?apiKey=${encodeURIComponent(this.apiKey)}`, {
+          signal: controller.signal,
+        }),
       ]);
-      if (!siteResponse.ok || !userResponse.ok) throw new Error();
+      if (!siteResponse.ok)
+        throw new Error(this.translate("connections.tipeeeSocketDiscoveryError", { status: siteResponse.status }));
+      if (!userResponse.ok)
+        throw new Error(this.translate("connections.tipeeeApiKeyRejected", { status: userResponse.status }));
       const site = (await siteResponse.json()) as Json;
       const user = (await userResponse.json()) as Json;
       const socketData = site.datas as Json;
       const host = String(socketData?.host ?? "");
       const port = String(socketData?.port ?? "443");
       const username = String(user.username ?? "");
-      if (!host || !username) throw new Error();
-      const socketUrl = `${host.replace(/\/$/, "")}:${port}?access_token=${encodeURIComponent(this.apiKey)}`;
+      if (!host || !username)
+        throw new Error(this.translate("connections.tipeeeIncompleteResponse"));
+      const socketUrl = `${host.replace(/\/$/, "")}:${port}`;
       if (this.stopped) return;
       this.socket = new LegacySocketIoClient(
         socketUrl,
@@ -45,11 +59,27 @@ export class TipeeeStreamClient {
           const event = normalizeTipeeeStream(payload);
           if (event) this.onEvent(event);
         },
-        this.onState,
+        (phase, detail) =>
+          this.onState(
+            phase,
+            detail ??
+              (phase === "error"
+                ? this.translate("connections.tipeeeRealtimeError")
+                : undefined),
+          ),
+        { access_token: this.apiKey },
       );
       this.socket.start();
-    } catch {
-      this.onState("error");
+    } catch (error) {
+      const detail =
+        error instanceof DOMException && error.name === "AbortError"
+          ? this.translate("connections.tipeeeTimeout")
+          : error instanceof Error
+            ? error.message
+            : String(error);
+      this.onState("error", detail);
+    } finally {
+      window.clearTimeout(timeout);
     }
   }
 

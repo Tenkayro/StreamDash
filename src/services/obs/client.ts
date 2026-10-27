@@ -20,7 +20,9 @@ const EVENT_SUBSCRIPTIONS = (1 << 0) | (1 << 1) | (1 << 2) | (1 << 3) | (1 << 6)
 
 const POLL_INTERVAL = 2_000;
 const REQUEST_TIMEOUT = 10_000;
-const MAX_RECONNECT_DELAY = 3_000;
+const CONNECT_TIMEOUT = 12_000;
+const LIVENESS_TIMEOUT = 18_000;
+const MAX_RECONNECT_DELAY = 30_000;
 
 export const DEFAULT_OBS_ADDRESS = "127.0.0.1:4455";
 
@@ -33,11 +35,12 @@ type Options = {
 };
 
 function normaliseAddress(input: string) {
-  let value = input.trim();
-  value = value.replace(/^(wss?|https?):\/\//i, "").replace(/\/+$/, "");
-  if (!value) return DEFAULT_OBS_ADDRESS;
-  if (!/:\d+$/.test(value) && !value.includes(":")) value += ":4455";
-  return value;
+  let value = input.trim() || DEFAULT_OBS_ADDRESS;
+  value = value.replace(/^http:/i, "ws:").replace(/^https:/i, "wss:");
+  if (!/^wss?:\/\//i.test(value)) value = `ws://${value}`;
+  const url = new URL(value);
+  if (!url.port) url.port = "4455";
+  return url.toString();
 }
 
 async function sha256Base64(value: string) {
@@ -91,11 +94,13 @@ export class ObsClient {
   private everIdentified = false;
   private attempts = 0;
   private polling = false;
+  private connectTimer?: ReturnType<typeof setTimeout>;
   private reconnectTimer?: ReturnType<typeof setTimeout>;
   private pollTimer?: ReturnType<typeof setInterval>;
   private requestCounter = 0;
   private pending = new Map<string, PendingRequest>();
   private lastBytes?: { bytes: number; at: number };
+  private lastResponseAt = 0;
   private snapshot: ObsSnapshot = emptySnapshot();
 
   constructor(options: Options) {
@@ -144,25 +149,39 @@ export class ObsClient {
       this.options.onState("connecting");
     let socket: WebSocket;
     try {
-      socket = new WebSocket(`ws://${normaliseAddress(this.options.address)}`);
+      socket = new WebSocket(normaliseAddress(this.options.address));
     } catch {
       this.options.onState("error", this.options.translate("obs.errors.unreachable"));
+      this.attempts += 1;
       this.scheduleReconnect();
       return;
     }
     this.socket = socket;
     socket.onmessage = (event) => {
+      if (this.socket !== socket) return;
       void this.handleMessage(event.data);
     };
-    socket.onclose = (event) => this.handleClose(event.code);
+    socket.onclose = (event) => {
+      if (this.socket === socket) this.handleClose(event.code);
+    };
     socket.onerror = () => {
       /* handled by onclose */
     };
+    this.connectTimer = setTimeout(() => {
+      if (this.socket !== socket || this.identified) return;
+      try {
+        socket.close();
+      } catch {
+        this.handleClose();
+      }
+    }, CONNECT_TIMEOUT);
   }
 
   private cleanup() {
+    if (this.connectTimer) clearTimeout(this.connectTimer);
     if (this.reconnectTimer) clearTimeout(this.reconnectTimer);
     if (this.pollTimer) clearInterval(this.pollTimer);
+    this.connectTimer = undefined;
     this.reconnectTimer = undefined;
     this.pollTimer = undefined;
     this.identified = false;
@@ -186,6 +205,8 @@ export class ObsClient {
   }
 
   private handleClose(code?: number) {
+    if (this.connectTimer) clearTimeout(this.connectTimer);
+    this.connectTimer = undefined;
     const wasIdentified = this.identified;
     this.identified = false;
     this.stopPolling();
@@ -208,12 +229,13 @@ export class ObsClient {
     if (this.stopped || this.reconnectTimer) return;
     const delay = Math.min(
       MAX_RECONNECT_DELAY,
-      1_000 * Math.max(1, this.attempts),
+      1_000 * 2 ** Math.min(5, Math.max(0, this.attempts - 1)),
     );
+    const jitteredDelay = delay + Math.random() * Math.min(1_000, delay / 4);
     this.reconnectTimer = setTimeout(() => {
       this.reconnectTimer = undefined;
       this.connect();
-    }, delay);
+    }, jitteredDelay);
   }
 
   private async handleMessage(raw: unknown) {
@@ -280,9 +302,12 @@ export class ObsClient {
   }
 
   private handleIdentified() {
+    if (this.connectTimer) clearTimeout(this.connectTimer);
+    this.connectTimer = undefined;
     this.identified = true;
     this.everIdentified = true;
     this.attempts = 0;
+    this.lastResponseAt = Date.now();
     this.options.onState("connected");
     void this.bootstrap();
     this.startPolling();
@@ -448,6 +473,17 @@ export class ObsClient {
       ]);
     } finally {
       this.polling = false;
+      if (
+        this.identified &&
+        this.lastResponseAt > 0 &&
+        Date.now() - this.lastResponseAt > LIVENESS_TIMEOUT
+      ) {
+        this.options.onState(
+          "reconnecting",
+          this.options.translate("obs.errors.unreachable"),
+        );
+        this.socket?.close();
+      }
     }
   }
 
@@ -551,6 +587,7 @@ export class ObsClient {
     if (!entry) return;
     clearTimeout(entry.timer);
     this.pending.delete(requestId);
+    this.lastResponseAt = Date.now();
     const status = (data.requestStatus ?? {}) as Json;
     const code = Number(status.code ?? 100);
     if (code !== 100) {

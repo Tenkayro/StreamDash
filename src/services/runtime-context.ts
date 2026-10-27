@@ -12,10 +12,13 @@ export interface RuntimeValue {
   disconnectTwitch: () => Promise<void>;
   reauthorizeTwitch: () => Promise<void>;
   connectStreamElements: (token: string) => Promise<void>;
+  retryStreamElements: () => Promise<void>;
   disconnectStreamElements: () => Promise<void>;
   connectTipeeeStream: (apiKey: string) => Promise<void>;
+  retryTipeeeStream: () => Promise<void>;
   disconnectTipeeeStream: () => Promise<void>;
   connectObs: (address: string, password: string) => Promise<void>;
+  retryObs: () => Promise<void>;
   disconnectObs: () => Promise<void>;
   setObsScene: (scene: string) => Promise<void>;
   setObsMute: (input: string, muted: boolean) => Promise<void>;

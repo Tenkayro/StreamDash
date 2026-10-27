@@ -5,22 +5,26 @@ type SocketState = "connected" | "reconnecting" | "error";
 export class LegacySocketIoClient {
   private socket?: Socket;
   private stopped = false;
+  private failures = 0;
 
   private readonly url: string;
   private readonly onConnected: (emit: (event: string, payload: unknown) => void) => void;
   private readonly onEvent: (event: string, payload: unknown) => void;
   private readonly onState: (state: SocketState, detail?: string) => void;
+  private readonly query?: Record<string, string>;
 
   constructor(
     url: string,
     onConnected: (emit: (event: string, payload: unknown) => void) => void,
     onEvent: (event: string, payload: unknown) => void,
     onState: (state: SocketState, detail?: string) => void,
+    query?: Record<string, string>,
   ) {
     this.url = url;
     this.onConnected = onConnected;
     this.onEvent = onEvent;
     this.onState = onState;
+    this.query = query;
   }
 
   start() {
@@ -29,14 +33,17 @@ export class LegacySocketIoClient {
     const socket = io(this.url, {
       forceNew: true,
       reconnection: true,
-      reconnectionAttempts: 5,
+      reconnectionAttempts: Number.POSITIVE_INFINITY,
       reconnectionDelay: 1_000,
       reconnectionDelayMax: 30_000,
+      timeout: 15_000,
+      query: this.query,
     });
     this.socket = socket;
 
     socket.on("connect", () => {
       if (this.stopped || this.socket !== socket) return;
+      this.failures = 0;
       this.onState("connected");
       this.onConnected((event, payload) => socket.emit(event, payload));
     });
@@ -53,7 +60,9 @@ export class LegacySocketIoClient {
       if (!this.stopped && this.socket === socket) this.onState("error");
     });
     socket.on("connect_error", () => {
-      if (!this.stopped && this.socket === socket) this.onState("reconnecting");
+      if (this.stopped || this.socket !== socket) return;
+      this.failures += 1;
+      this.onState(this.failures >= 5 ? "error" : "reconnecting");
     });
   }
 
