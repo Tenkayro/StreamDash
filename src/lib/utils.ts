@@ -8,13 +8,16 @@ export function errorMessage(error: unknown) {
   return error instanceof Error ? error.message : String(error);
 }
 export const isTauri = () => "__TAURI_INTERNALS__" in window;
-export function money(value: number, currency = "USD") {
+export function money(value: number, currency?: string) {
+  const locale = document.documentElement.lang || navigator.language;
   try {
-    return new Intl.NumberFormat("en-US", {
-      style: "currency",
-      currency,
-    }).format(value);
+    return new Intl.NumberFormat(
+      locale,
+      currency
+        ? { style: "currency", currency }
+        : { minimumFractionDigits: 2, maximumFractionDigits: 2 },
+    ).format(value);
   } catch {
-    return `${value.toFixed(2)} ${currency}`;
+    return currency ? `${value.toFixed(2)} ${currency}` : value.toFixed(2);
   }
 }

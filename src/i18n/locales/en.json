@@ -162,11 +162,19 @@
     "subscription": "Subscription"
   },
   "goals": {
+    "bits": "Bits",
+    "configureHint": "Set goals to track their progress here.",
     "donations": "Donations",
     "followers": "Followers",
+    "giftSubscriptions": "Gift subscriptions",
+    "moreGoals_one": "Show {{count}} more goal",
+    "moreGoals_other": "Show {{count}} more goals",
     "noTarget": "No target",
+    "raids": "Raids",
+    "saveError": "The goal could not be saved",
     "subscribers": "Subscribers",
     "target": "Target",
+    "targetValue": "Target: {{value}}",
     "targetLabel": "{{label}} target",
     "title": "Goals",
     "unavailable": "Unavailable until the service is connected"

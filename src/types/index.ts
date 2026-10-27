@@ -44,6 +44,7 @@ export type ContentWidth = 'compact' | 'wide' | 'full'
 export type AccentColor = 'violet' | 'blue' | 'emerald' | 'orange'
 export type AppLanguage = 'auto' | 'en' | 'de' | 'es' | 'pt-BR' | 'fr'
 export type TrayStyle = 'custom' | 'classic'
+export type GoalMetric = 'followers' | 'subscribers' | 'donations' | 'bits' | 'raids' | 'giftSubscriptions'
 
 export interface AppSettings {
   onboardingCompleted: boolean
@@ -79,7 +80,7 @@ export interface AppSettings {
   notifyGiftSubs: boolean
   maximumEvents: number
   disabledEventTypes: ActivityType[]
-  goals: { followers?: number; subscribers?: number; donations?: number }
+  goals: Partial<Record<GoalMetric, number>>
 }
 
 export interface TwitchSession { userId: string; login: string; scopes: string[]; expiresIn: number }

@@ -1055,23 +1055,56 @@ export function Dashboard() {
         </Card>
       );
     if (id === "goals") {
+      const raidCount = events.filter((event) => event.eventType === "raid").length;
+      const giftSubscriptionCount = events.reduce(
+        (total, event) =>
+          total +
+          (event.eventType === "community_gift"
+            ? (event.giftCount ?? 1)
+            : event.eventType === "gift_subscription"
+              ? 1
+              : 0),
+        0,
+      );
       const goals = [
         {
           label: t("dashboard.followers"),
           value: stats.followers,
           target: settings.goals.followers,
+          loading: statsLoading,
         },
         {
           label: t("dashboard.subscribers"),
           value: stats.subscribers,
           target: settings.goals.subscribers,
+          loading: statsLoading,
         },
         {
           label: t("dashboard.donations"),
           value: stats.donations,
           target: settings.goals.donations,
+          loading: false,
+        },
+        {
+          label: t("goals.bits"),
+          value: stats.bits,
+          target: settings.goals.bits,
+          loading: false,
+        },
+        {
+          label: t("goals.raids"),
+          value: raidCount,
+          target: settings.goals.raids,
+          loading: false,
+        },
+        {
+          label: t("goals.giftSubscriptions"),
+          value: giftSubscriptionCount,
+          target: settings.goals.giftSubscriptions,
+          loading: false,
         },
       ];
+      const configuredGoals = goals.filter((goal) => goal.target);
       return (
         <Card className="p-4">
           <div className="mb-3 flex items-center justify-between">
@@ -1087,7 +1120,12 @@ export function Dashboard() {
             </button>
           </div>
           <div className="space-y-3">
-            {goals.map((goal) => {
+            {!configuredGoals.length && (
+              <div className="py-5 text-center text-[11px] leading-5 text-muted">
+                {t("goals.configureHint")}
+              </div>
+            )}
+            {configuredGoals.slice(0, 3).map((goal) => {
               const percent =
                 goal.value != null && goal.target
                   ? Math.min(100, (goal.value / goal.target) * 100)
@@ -1096,7 +1134,7 @@ export function Dashboard() {
                 <div key={goal.label}>
                   <div className="mb-1 flex justify-between text-[10px]">
                     <span className="text-muted">{goal.label}</span>
-                    {statsLoading && goal.label !== "Donations" ? (
+                    {goal.loading ? (
                       <LoadingIndicator className="h-2.5 w-10" />
                     ) : (
                       <span>
@@ -1105,7 +1143,7 @@ export function Dashboard() {
                     )}
                   </div>
                   <div className="h-1.5 overflow-hidden rounded-full bg-white/5">
-                    {statsLoading && goal.label !== "Donations" ? (
+                    {goal.loading ? (
                       <LoadingIndicator className="h-full w-2/5" />
                     ) : (
                       <div
@@ -1117,6 +1155,15 @@ export function Dashboard() {
                 </div>
               );
             })}
+            {configuredGoals.length > 3 && (
+              <button
+                type="button"
+                onClick={() => setPage("goals")}
+                className="text-[10px] text-accent hover:brightness-125"
+              >
+                {t("goals.moreGoals", { count: configuredGoals.length - 3 })}
+              </button>
+            )}
           </div>
         </Card>
       );

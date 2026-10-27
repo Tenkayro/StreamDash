@@ -162,11 +162,19 @@
     "subscription": "Abonnement"
   },
   "goals": {
+    "bits": "Bits",
+    "configureHint": "Lege Ziele fest, um ihren Fortschritt hier zu sehen.",
     "donations": "Spenden",
     "followers": "Follower",
+    "giftSubscriptions": "Geschenkabos",
+    "moreGoals_one": "{{count}} weiteres Ziel anzeigen",
+    "moreGoals_other": "{{count}} weitere Ziele anzeigen",
     "noTarget": "Kein Ziel",
+    "raids": "Raids",
+    "saveError": "Das Ziel konnte nicht gespeichert werden",
     "subscribers": "Abonnenten",
     "target": "Ziel",
+    "targetValue": "Ziel: {{value}}",
     "targetLabel": "Ziel für {{label}}",
     "title": "Ziele",
     "unavailable": "Nicht verfügbar, bis der Dienst verbunden ist"

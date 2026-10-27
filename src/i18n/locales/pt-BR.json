@@ -105,11 +105,19 @@
     "subscription": "Inscrição"
   },
   "goals": {
+    "bits": "Bits",
+    "configureHint": "Defina metas para acompanhar o progresso aqui.",
     "donations": "Doações",
     "followers": "Seguidores",
+    "giftSubscriptions": "Inscrições de presente",
+    "moreGoals_one": "Mostrar mais {{count}} meta",
+    "moreGoals_other": "Mostrar mais {{count}} metas",
     "noTarget": "Sem meta",
+    "raids": "Raids",
+    "saveError": "Não foi possível salvar a meta",
     "subscribers": "Inscritos",
     "target": "Meta",
+    "targetValue": "Meta: {{value}}",
     "targetLabel": "Meta de {{label}}",
     "title": "Metas",
     "unavailable": "Indisponível até que o serviço esteja conectado"

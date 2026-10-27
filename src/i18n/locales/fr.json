@@ -105,11 +105,19 @@
     "subscription": "Abonnement"
   },
   "goals": {
+    "bits": "Bits",
+    "configureHint": "Définissez des objectifs pour suivre leur progression ici.",
     "donations": "Dons",
     "followers": "Followers",
+    "giftSubscriptions": "Abonnements offerts",
+    "moreGoals_one": "Afficher {{count}} objectif supplémentaire",
+    "moreGoals_other": "Afficher {{count}} objectifs supplémentaires",
     "noTarget": "Aucun objectif",
+    "raids": "Raids",
+    "saveError": "Impossible d’enregistrer l’objectif",
     "subscribers": "Abonnés",
     "target": "Objectif",
+    "targetValue": "Objectif : {{value}}",
     "targetLabel": "Objectif de {{label}}",
     "title": "Objectifs",
     "unavailable": "Indisponible tant que le service n’est pas connecté"
