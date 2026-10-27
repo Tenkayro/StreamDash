@@ -6,32 +6,32 @@ import { cn } from "../lib/utils";
 import type { ConnectionState } from "../types";
 import twitchIcon from "../assets/services/twitch.webp";
 import streamElementsIcon from "../assets/services/streamelements.webp";
+import tipeeStreamIcon from "../assets/services/tipeeestream.webp";
 import { LoadingIndicator } from "./ui";
 import { useTranslation } from "react-i18next";
 import { navigationGroups, navigationItems, OPEN_COMMAND_PALETTE } from "../lib/navigation";
+function phaseColor(phase: ConnectionState["phase"]) {
+  return phase === "connected"
+    ? "bg-emerald-400"
+    : phase === "connecting" || phase === "reconnecting"
+      ? "bg-amber-400"
+      : phase === "error" || phase === "expired"
+        ? "bg-red-400"
+        : "bg-zinc-600";
+}
 function Status({
   icon,
-  label,
   name,
   state,
 }: {
   icon: string;
-  label: string;
   name: string;
   state: ConnectionState;
 }) {
   const { t } = useTranslation();
-  const color =
-    state.phase === "connected"
-      ? "bg-emerald-400"
-      : state.phase === "connecting" || state.phase === "reconnecting"
-        ? "bg-amber-400"
-        : state.phase === "error" || state.phase === "expired"
-          ? "bg-red-400"
-          : "bg-zinc-600";
   return (
     <div
-      title={`${name}: ${t(`connectionPhases.${state.phase}`)}`}
+      title={`${name}${state.account ? ` · ${state.account}` : ""}: ${t(`connectionPhases.${state.phase}`)}`}
       className="flex h-8 items-center gap-2"
     >
       <img src={icon} alt="" className="size-4 shrink-0 object-contain" />
@@ -40,18 +40,23 @@ function Status({
         !state.account ? (
           <LoadingIndicator className="h-2.5 w-16" />
         ) : (
-          label
+          name
         )}
       </span>
-      <span className={cn("size-1.5 shrink-0 rounded-full", color)} />
+      <span className={cn("size-1.5 shrink-0 rounded-full", phaseColor(state.phase))} />
     </div>
   );
 }
 export function Sidebar() {
   const { t } = useTranslation();
-  const { page, setPage, twitch, streamElements, settings, setSettings } =
+  const { page, setPage, twitch, streamElements, tipeeStream, settings, setSettings } =
     useAppStore();
   const collapsed = settings.sidebarCollapsed;
+  const services = [
+    { name: "Twitch", icon: twitchIcon, state: twitch },
+    { name: "StreamElements", icon: streamElementsIcon, state: streamElements },
+    { name: "TipeeeStream", icon: tipeeStreamIcon, state: tipeeStream },
+  ];
   const permissionAttention =
     twitch.phase === "connected" && needsTwitchPermissionUpdate(twitch.scopes);
   const toggle = () => {
@@ -142,73 +147,27 @@ export function Sidebar() {
       <div className="mt-auto">
         {collapsed ? (
           <div className="mb-2 space-y-1">
-            <div
-              title={`Twitch: ${t(`connectionPhases.${twitch.phase}`)}`}
-              className="flex h-6 items-center justify-center gap-1.5"
-            >
-              <img
-                src={twitchIcon}
-                alt="Twitch"
-                className="size-4 object-contain"
-              />
-              <span
-                className={cn(
-                  "size-1.5 rounded-full",
-                  twitch.phase === "connected"
-                    ? "bg-emerald-400"
-                    : twitch.phase === "connecting" ||
-                        twitch.phase === "reconnecting"
-                      ? "bg-amber-400"
-                      : twitch.phase === "error" || twitch.phase === "expired"
-                        ? "bg-red-400"
-                        : "bg-zinc-600",
-                )}
-              />
-            </div>
-            <div
-              title={`StreamElements: ${t(`connectionPhases.${streamElements.phase}`)}`}
-              className="flex h-6 items-center justify-center gap-1.5"
-            >
-              <img
-                src={streamElementsIcon}
-                alt="StreamElements"
-                className="size-4 object-contain"
-              />
-              <span
-                className={cn(
-                  "size-1.5 rounded-full",
-                  streamElements.phase === "connected"
-                    ? "bg-emerald-400"
-                    : streamElements.phase === "connecting" ||
-                        streamElements.phase === "reconnecting"
-                      ? "bg-amber-400"
-                      : streamElements.phase === "error" ||
-                          streamElements.phase === "expired"
-                        ? "bg-red-400"
-                        : "bg-zinc-600",
-                )}
-              />
-            </div>
+            {services.map(({ name, icon, state }) => (
+              <div
+                key={name}
+                title={`${name}: ${t(`connectionPhases.${state.phase}`)}`}
+                className="flex h-6 items-center justify-center gap-1.5"
+              >
+                <img src={icon} alt={name} className="size-4 object-contain" />
+                <span className={cn("size-1.5 rounded-full", phaseColor(state.phase))} />
+              </div>
+            ))}
           </div>
         ) : (
           <button
             type="button"
             onClick={() => setPage("connections")}
             title={t("navigation.manageConnections")}
-            className="mb-2 block w-full rounded-lg border border-line bg-panel px-2 py-1.5 text-left transition hover:border-accent/30 hover:bg-white/[.025]"
+            className="mb-2 block w-full rounded-lg border border-line bg-panel px-2 py-1.5 text-left transition hover:border-accent/30 hover:bg-white/2.5"
           >
-            <Status
-              icon={twitchIcon}
-              name="Twitch"
-              label={twitch.account || "Twitch"}
-              state={twitch}
-            />
-            <Status
-              icon={streamElementsIcon}
-              name="StreamElements"
-              label={t("nav.donations")}
-              state={streamElements}
-            />
+            {services.map(({ name, icon, state }) => (
+              <Status key={name} icon={icon} name={name} state={state} />
+            ))}
           </button>
         )}
         <button

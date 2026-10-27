@@ -89,7 +89,7 @@ export function ActivityFeed({
                 onUser?.(event.username);
               }
             }}
-            className={`event-enter flex gap-3 border-b border-line/70 px-4 transition-colors ${compact ? "py-2.5" : "py-3.5"} ${canOpenUser ? "cursor-pointer outline-none hover:bg-white/[.025] focus-visible:bg-accent-soft" : ""} last:border-0`}
+            className={`event-enter flex gap-3 border-b border-line/70 px-4 transition-colors ${compact ? "py-2.5" : "py-3.5"} ${canOpenUser ? "cursor-pointer outline-none hover:bg-white/2.5 focus-visible:bg-accent-soft" : ""} last:border-0`}
           >
             <div
               className={`mt-0.5 grid size-8 shrink-0 place-items-center rounded-lg ${color}`}

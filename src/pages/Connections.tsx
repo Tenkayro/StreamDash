@@ -1,7 +1,6 @@
 import {
   CheckCircle2,
   ExternalLink,
-  HandCoins,
   Link2,
   LoaderCircle,
   ShieldCheck,
@@ -21,6 +20,7 @@ import { isTauri } from "../lib/utils";
 import { needsTwitchPermissionUpdate } from "../services/twitch/client";
 import twitchIcon from "../assets/services/twitch.webp";
 import streamElementsIcon from "../assets/services/streamelements.webp";
+import tipeeStreamIcon from "../assets/services/tipeeestream.webp";
 import { useTranslation } from "react-i18next";
 
 function phaseTone(phase: string) {
@@ -191,17 +191,30 @@ export function Connections() {
                   {t("connections.connect")}
                 </Button>
               </div>
-              <p className="mt-2 text-xs leading-5 text-zinc-600">
-                {t("onboarding.jwtPath")}
-              </p>
+              <button
+                type="button"
+                onClick={() =>
+                  void openUrl(
+                    "https://streamelements.com/dashboard/account/channels",
+                  )
+                }
+                className="mt-2 inline-flex items-center gap-1.5 text-xs text-accent hover:brightness-125"
+              >
+                <ExternalLink size={12} />
+                {t("connections.openTokenInstructions")}
+              </button>
             </div>
           )}
         </Card>
         <Card className="p-5">
           <div className="flex items-start justify-between gap-6">
             <div className="flex gap-4">
-              <div className="grid size-11 place-items-center rounded-xl bg-rose-400/10 text-rose-300">
-                <HandCoins size={24} />
+              <div className="grid size-11 place-items-center rounded-xl bg-rose-400/10">
+                <img
+                  src={tipeeStreamIcon}
+                  alt=""
+                  className="size-7 object-contain"
+                />
               </div>
               <div>
                 <div className="flex items-center gap-2">
@@ -251,7 +264,7 @@ export function Connections() {
               </div>
               <button
                 type="button"
-                onClick={() => void openUrl("https://api.tipeeestream.com/api-doc/")}
+                onClick={() => void openUrl("https://www.tipeeestream.com/dashboard/api-key")}
                 className="mt-2 inline-flex items-center gap-1.5 text-xs text-accent hover:brightness-125"
               >
                 <ExternalLink size={12} />
