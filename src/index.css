@@ -22,6 +22,11 @@ body,
 body {
   user-select: none;
 }
+html.tray-window,
+html.tray-window body,
+html.tray-window #root {
+  background: transparent;
+}
 input,
 textarea,
 [contenteditable="true"] {

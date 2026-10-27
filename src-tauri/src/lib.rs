@@ -907,7 +907,10 @@ fn tray_configure(
     let tray = app
         .tray_by_id("main")
         .ok_or_else(|| "Tray icon is unavailable".to_string())?;
-    tray.set_menu(Some(menu)).map_err(|error| error.to_string())
+    tray.set_menu(Some(menu))
+        .map_err(|error| error.to_string())?;
+    tray.set_show_menu_on_left_click(false)
+        .map_err(|error| error.to_string())
 }
 
 #[tauri::command]
@@ -990,12 +993,13 @@ pub fn run() {
             }
             let tray_window =
                 WebviewWindowBuilder::new(app, "tray", WebviewUrl::App("index.html?tray=1".into()))
-                    .inner_size(320.0, 174.0)
+                    .inner_size(336.0, 224.0)
                     .resizable(false)
                     .decorations(false)
                     .always_on_top(true)
                     .skip_taskbar(true)
                     .shadow(true)
+                    .transparent(true)
                     .focused(false)
                     .visible(false)
                     .build()

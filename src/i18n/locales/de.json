@@ -384,6 +384,7 @@
     "quit": "StreamDash beenden",
     "reconnect": "Dienste neu verbinden",
     "reconnecting": "Verbindung wird hergestellt…",
+    "retry": "Neu verbinden",
     "statusSummary": "{{streamStatus}} · Twitch: {{twitchStatus}}",
     "tooltip": "StreamDash — {{streamStatus}} · Twitch: {{twitchStatus}}"
   },

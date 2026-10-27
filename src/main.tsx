@@ -9,6 +9,7 @@ import { UpdateProvider } from "./services/updater";
 import { TrayBridge, TrayPanel } from "./components/TrayPanel";
 
 const trayWindow = new URLSearchParams(window.location.search).has("tray");
+if (trayWindow) document.documentElement.classList.add("tray-window");
 
 createRoot(document.getElementById("root")!).render(
   <StrictMode>
