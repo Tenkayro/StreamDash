@@ -85,10 +85,13 @@
     "openTokenInstructions": "How to get the credential",
     "reconnectModeration": "Reconnect once to enable all moderation features.",
     "removeConnection": "Remove connection",
+    "streamElementsPurpose": "Reads donations",
     "tipeeStreamApiKey": "TipeeeStream API key",
     "tipeeStreamApiKeyPlaceholder": "Paste API key",
     "tipeeStreamDetail": "Receive TipeeeStream donations in real time using your personal API key.",
+    "tipeeStreamPurpose": "Reads donations",
     "title": "Connections",
+    "twitchPurpose": "Stream stats, chat & moderation",
     "updatePermissions": "Update permissions"
   },
   "dashboard": {

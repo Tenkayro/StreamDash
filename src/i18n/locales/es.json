@@ -85,10 +85,13 @@
     "openTokenInstructions": "Cómo obtener la credencial",
     "reconnectModeration": "Vuelve a conectar una vez para activar todas las funciones de moderación.",
     "removeConnection": "Eliminar conexión",
+    "streamElementsPurpose": "Lee donaciones",
     "tipeeStreamApiKey": "Clave API de TipeeeStream",
     "tipeeStreamApiKeyPlaceholder": "Pega la clave API",
     "tipeeStreamDetail": "Recibe donaciones de TipeeeStream en tiempo real con tu clave API personal.",
+    "tipeeStreamPurpose": "Lee donaciones",
     "title": "Conexiones",
+    "twitchPurpose": "Estadísticas del stream, chat y moderación",
     "updatePermissions": "Actualizar permisos"
   },
   "dashboard": {
