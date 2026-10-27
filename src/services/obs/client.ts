@@ -143,6 +143,42 @@ export class ObsClient {
     });
   }
 
+  async setStreaming(active: boolean) {
+    await this.request(active ? "StartStream" : "StopStream");
+    this.snapshot.streaming = active;
+    if (!active) this.snapshot.streamBitrate = undefined;
+    this.emit();
+  }
+
+  async setRecording(active: boolean) {
+    await this.request(active ? "StartRecord" : "StopRecord");
+    this.snapshot.recording = active;
+    this.snapshot.recordingPaused = false;
+    this.emit();
+  }
+
+  async setRecordingPaused(paused: boolean) {
+    await this.request(paused ? "PauseRecord" : "ResumeRecord");
+    this.snapshot.recordingPaused = paused;
+    this.emit();
+  }
+
+  async setReplayBuffer(active: boolean) {
+    await this.request(active ? "StartReplayBuffer" : "StopReplayBuffer");
+    this.snapshot.replayBuffer = active;
+    this.emit();
+  }
+
+  async saveReplayBuffer() {
+    await this.request("SaveReplayBuffer");
+  }
+
+  async setVirtualCam(active: boolean) {
+    await this.request(active ? "StartVirtualCam" : "StopVirtualCam");
+    this.snapshot.virtualCam = active;
+    this.emit();
+  }
+
   private connect() {
     if (this.stopped) return;
     if (!this.everIdentified && this.attempts === 0)

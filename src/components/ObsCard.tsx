@@ -1,4 +1,4 @@
-import { Link2, Mic, Monitor, Radio, RotateCcw, Video } from "lucide-react";
+import { Circle, Link2, Mic, Monitor, Pause, Play, Radio, RotateCcw, Save, Video, type LucideIcon } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { Badge, Button, Card } from "./ui";
 import { cn } from "../lib/utils";
@@ -114,6 +114,88 @@ function ObsMeta({ snapshot }: { snapshot: ObsSnapshot }) {
   );
 }
 
+function ObsControl({
+  icon: Icon,
+  label,
+  active = false,
+  danger = false,
+  onClick,
+}: {
+  icon: LucideIcon;
+  label: string;
+  active?: boolean;
+  danger?: boolean;
+  onClick: () => void;
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      className={cn(
+        "flex min-w-0 items-center gap-1.5 rounded-md border px-2 py-1.5 text-[11px] transition",
+        active
+          ? danger
+            ? "border-red-400/30 bg-red-400/10 text-red-200"
+            : "border-accent/30 bg-accent-soft text-accent"
+          : "border-line bg-black/15 text-zinc-400 hover:bg-white/3 hover:text-zinc-200",
+      )}
+    >
+      <Icon size={12} className="shrink-0" />
+      <span className="truncate">{label}</span>
+    </button>
+  );
+}
+
+function ObsControls({ snapshot }: { snapshot: ObsSnapshot }) {
+  const { t } = useTranslation();
+  const runtime = useRuntime();
+  return (
+    <div className="grid grid-cols-2 gap-1.5 border-t border-line pt-2">
+      <ObsControl
+        icon={Radio}
+        label={t(snapshot.streaming ? "obs.stopStream" : "obs.startStream")}
+        active={snapshot.streaming}
+        danger={snapshot.streaming}
+        onClick={() => void runtime.setObsStreaming(!snapshot.streaming)}
+      />
+      <ObsControl
+        icon={Circle}
+        label={t(snapshot.recording ? "obs.stopRecording" : "obs.startRecording")}
+        active={snapshot.recording}
+        danger={snapshot.recording}
+        onClick={() => void runtime.setObsRecording(!snapshot.recording)}
+      />
+      {snapshot.recording && (
+        <ObsControl
+          icon={snapshot.recordingPaused ? Play : Pause}
+          label={t(snapshot.recordingPaused ? "obs.resumeRecording" : "obs.pauseRecording")}
+          active={snapshot.recordingPaused}
+          onClick={() => void runtime.setObsRecordingPaused(!snapshot.recordingPaused)}
+        />
+      )}
+      <ObsControl
+        icon={RotateCcw}
+        label={t(snapshot.replayBuffer ? "obs.stopReplayBuffer" : "obs.startReplayBuffer")}
+        active={snapshot.replayBuffer}
+        onClick={() => void runtime.setObsReplayBuffer(!snapshot.replayBuffer)}
+      />
+      {snapshot.replayBuffer && (
+        <ObsControl
+          icon={Save}
+          label={t("obs.saveReplay")}
+          onClick={() => void runtime.saveObsReplayBuffer()}
+        />
+      )}
+      <ObsControl
+        icon={Video}
+        label={t(snapshot.virtualCam ? "obs.stopVirtualCam" : "obs.startVirtualCam")}
+        active={snapshot.virtualCam}
+        onClick={() => void runtime.setObsVirtualCam(!snapshot.virtualCam)}
+      />
+    </div>
+  );
+}
+
 export function ObsBody({ snapshot }: { snapshot: ObsSnapshot }) {
   const { t } = useTranslation();
   return (
@@ -144,6 +226,7 @@ export function ObsBody({ snapshot }: { snapshot: ObsSnapshot }) {
           <span className="text-muted">{t("obs.scene")}</span>
           <ObsSceneSelect snapshot={snapshot} />
         </div>
+        <ObsControls snapshot={snapshot} />
         {snapshot.audio.length > 0 && (
           <div className="flex items-center gap-1.5 pt-1">
             {snapshot.audio.map((input) => (

@@ -462,6 +462,18 @@ export function RuntimeProvider({ children }: { children: ReactNode }) {
     obsAction((client) => client.setMute(input, muted));
   const setObsVolume = (input: string, volume: number) =>
     obsAction((client) => client.setVolume(input, volume));
+  const setObsStreaming = (active: boolean) =>
+    obsAction((client) => client.setStreaming(active));
+  const setObsRecording = (active: boolean) =>
+    obsAction((client) => client.setRecording(active));
+  const setObsRecordingPaused = (paused: boolean) =>
+    obsAction((client) => client.setRecordingPaused(paused));
+  const setObsReplayBuffer = (active: boolean) =>
+    obsAction((client) => client.setReplayBuffer(active));
+  const saveObsReplayBuffer = () =>
+    obsAction((client) => client.saveReplayBuffer());
+  const setObsVirtualCam = (active: boolean) =>
+    obsAction((client) => client.setVirtualCam(active));
   const sendChatMessage = async (text: string) => {    const message = text.trim();
     const userId = state().twitch.userId;
     if (!message) return;
@@ -650,6 +662,12 @@ export function RuntimeProvider({ children }: { children: ReactNode }) {
         setObsScene,
         setObsMute,
         setObsVolume,
+        setObsStreaming,
+        setObsRecording,
+        setObsRecordingPaused,
+        setObsReplayBuffer,
+        saveObsReplayBuffer,
+        setObsVirtualCam,
         sendChatMessage,
         getChatUserProfile,
         moderateChatUser,

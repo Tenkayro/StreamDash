@@ -23,6 +23,12 @@ export interface RuntimeValue {
   setObsScene: (scene: string) => Promise<void>;
   setObsMute: (input: string, muted: boolean) => Promise<void>;
   setObsVolume: (input: string, volume: number) => Promise<void>;
+  setObsStreaming: (active: boolean) => Promise<void>;
+  setObsRecording: (active: boolean) => Promise<void>;
+  setObsRecordingPaused: (paused: boolean) => Promise<void>;
+  setObsReplayBuffer: (active: boolean) => Promise<void>;
+  saveObsReplayBuffer: () => Promise<void>;
+  setObsVirtualCam: (active: boolean) => Promise<void>;
   sendChatMessage: (text: string) => Promise<void>;
   getChatUserProfile: (login: string) => Promise<ChatUserProfile>;
   moderateChatUser: (
