@@ -18,6 +18,7 @@ import { useRuntime } from "../../services/runtime-context";
 import { useAppStore } from "../../stores/app-store";
 import type { ChatMessage, ChatUserProfile } from "../../types";
 import { LoadingIndicator } from "../ui";
+import { useTranslation } from "react-i18next";
 
 const timeouts = [
   { label: "1s", seconds: 1 },
@@ -29,14 +30,14 @@ const timeouts = [
   { label: "1d", seconds: 86400 },
   { label: "1w", seconds: 604800 },
 ];
-function date(value?: string) {
+function date(value: string | undefined, locale: string, unknown: string) {
   return value
-    ? new Date(value).toLocaleDateString([], {
+    ? new Date(value).toLocaleDateString(locale, {
         year: "numeric",
         month: "short",
         day: "2-digit",
       })
-    : "Unknown";
+    : unknown;
 }
 
 export function UserCard({
@@ -50,6 +51,7 @@ export function UserCard({
   onClose: () => void;
   onMention?: (name: string) => void;
 }) {
+  const { t, i18n } = useTranslation();
   const runtime = useRuntime();
   const { settings, setSettings, twitch } = useAppStore();
   const [profile, setProfile] = useState<ChatUserProfile>();
@@ -84,7 +86,7 @@ export function UserCard({
       })
       .catch((error) => {
         if (active)
-          toast.error("User profile could not be loaded", {
+          toast.error(t("userCard.profileLoadError"), {
             description: errorMessage(error),
           });
       })
@@ -94,7 +96,7 @@ export function UserCard({
     return () => {
       active = false;
     };
-  }, [login, runtime]);
+  }, [login, runtime, t]);
   useEffect(() => {
     const close = (event: KeyboardEvent) => {
       if (event.key === "Escape") onClose();
@@ -115,7 +117,7 @@ export function UserCard({
       await saveSetting(key, next);
     } catch (error) {
       setSettings({ [key]: current });
-      toast.error("Chat preference could not be saved", {
+      toast.error(t("userCard.preferenceSaveError"), {
         description: errorMessage(error),
       });
     }
@@ -130,7 +132,7 @@ export function UserCard({
       await saveSetting("chatUserNotes", notes);
     } catch (error) {
       setSettings({ chatUserNotes: previous });
-      toast.error("Note could not be saved", {
+      toast.error(t("userCard.noteSaveError"), {
         description: errorMessage(error),
       });
     }
@@ -142,7 +144,7 @@ export function UserCard({
     if (!profile || busy) return;
     if (
       action === "ban" &&
-      !confirm(`Permanently ban ${profile.displayName} from your chat?`)
+      !confirm(t("userCard.banConfirm", { name: profile.displayName }))
     )
       return;
     setBusy(action);
@@ -151,14 +153,14 @@ export function UserCard({
       else await runtime.moderateChatUser(profile.id, seconds, reason);
       toast.success(
         action === "ban"
-          ? `${profile.displayName} was banned`
+          ? t("userCard.bannedSuccess", { name: profile.displayName })
           : action === "unban"
-            ? `${profile.displayName} was unbanned`
-            : `${profile.displayName} was timed out for ${timeouts.find((item) => item.seconds === seconds)?.label}`,
+            ? t("userCard.unbannedSuccess", { name: profile.displayName })
+            : t("userCard.timeoutSuccess", { name: profile.displayName, duration: timeouts.find((item) => item.seconds === seconds)?.label }),
       );
       setProfile(await runtime.getChatUserProfile(login));
     } catch (error) {
-      toast.error(`Could not ${action} user`, {
+      toast.error(t("userCard.moderationError", { action: t(`userCard.actions.${action}`) }), {
         description: errorMessage(error),
       });
     } finally {
@@ -169,9 +171,9 @@ export function UserCard({
     if (message.deleted || message.id.startsWith("local-")) return;
     try {
       await runtime.deleteChatMessage(message.id);
-      toast.success("Message deleted");
+      toast.success(t("userCard.messageDeleted"));
     } catch (error) {
-      toast.error("Message could not be deleted", {
+      toast.error(t("userCard.messageDeleteError"), {
         description: errorMessage(error),
       });
     }
@@ -191,7 +193,7 @@ export function UserCard({
       }
       await runtime.setChatUserRole(profile.id, role, enabled);
       toast.success(
-        `${profile.displayName} is ${enabled ? "now" : "no longer"} ${role === "vip" ? "a VIP" : "a moderator"}`,
+        t(enabled ? "userCard.roleAdded" : "userCard.roleRemoved", { name: profile.displayName, role: t(role === "vip" ? "userCard.vipRole" : "userCard.moderatorRole") }),
       );
       setProfile(await runtime.getChatUserProfile(login));
     } catch (error) {
@@ -202,7 +204,7 @@ export function UserCard({
           /* best-effort rollback */
         }
       }
-      toast.error("Role could not be changed", {
+      toast.error(t("userCard.roleError"), {
         description: errorMessage(error),
       });
     } finally {
@@ -228,7 +230,7 @@ export function UserCard({
       <section
         role="dialog"
         aria-modal="true"
-        aria-label={`User information for ${login}`}
+        aria-label={t("userCard.dialogLabel", { login })}
         className="flex max-h-[86vh] w-full max-w-3xl flex-col overflow-hidden rounded-xl border border-zinc-700 bg-[#101115] shadow-2xl"
       >
         <header className="flex items-start gap-4 border-b border-line p-4">
@@ -265,7 +267,7 @@ export function UserCard({
               ))}
               {profile?.moderator && (
                 <span className="rounded bg-emerald-400/10 px-1.5 py-0.5 text-[10px] font-semibold text-emerald-300">
-                  Moderator
+                  {t("userCard.moderator")}
                 </span>
               )}
               {profile?.vip && (
@@ -276,8 +278,8 @@ export function UserCard({
               {profile?.banned && (
                 <span className="rounded bg-red-400/10 px-1.5 py-0.5 text-[10px] font-semibold text-red-300">
                   {profile.bannedUntil
-                    ? `Timed out until ${new Date(profile.bannedUntil).toLocaleTimeString()}`
-                    : "Banned"}
+                    ? t("userCard.timedOutUntil", { time: new Date(profile.bannedUntil).toLocaleTimeString(i18n.language) })
+                    : t("userCard.banned")}
                 </span>
               )}
             </div>
@@ -298,48 +300,48 @@ export function UserCard({
                 )}
               </span>
               <span>
-                Created:{" "}
+                {t("userCard.created")}: {" "}
                 {loading ? (
                   <LoadingIndicator className="h-2.5 w-16 align-middle" />
                 ) : (
                   <span className="text-zinc-300">
-                    {date(profile?.createdAt)}
+                    {date(profile?.createdAt, i18n.language, t("userCard.unknown"))}
                   </span>
                 )}
               </span>
               <span>
-                Follows you:{" "}
+                {t("userCard.followsYou")}: {" "}
                 {loading ? (
                   <LoadingIndicator className="h-2.5 w-14 align-middle" />
                 ) : (
                   <span className="text-zinc-300">
                     {profile?.followedAt
-                      ? `Since ${date(profile.followedAt)}`
-                      : "No"}
+                      ? t("userCard.since", { date: date(profile.followedAt, i18n.language, t("userCard.unknown")) })
+                      : t("userCard.no")}
                   </span>
                 )}
               </span>
               <span>
-                Messages:{" "}
+                {t("userCard.messages")}: {" "}
                 <span className="text-zinc-300">{userMessages.length}</span>
               </span>
             </div>
             {profile?.banReason && (
               <div className="mt-2 text-[10px] text-red-300/70">
-                Reason: {profile.banReason}
+                {t("userCard.reason")}: {profile.banReason}
               </div>
             )}
           </div>
           <button
-            aria-label="Open Twitch profile"
-            title="Open Twitch profile"
+            aria-label={t("userCard.openProfile")}
+            title={t("userCard.openProfile")}
             onClick={() => void openUrl(`https://www.twitch.tv/${login}`)}
             className="grid size-8 place-items-center rounded-lg text-zinc-500 hover:bg-white/5 hover:text-zinc-200"
           >
             <ExternalLink size={15} />
           </button>
           <button
-            aria-label="Close user card"
+            aria-label={t("userCard.close")}
             onClick={onClose}
             className="grid size-8 place-items-center rounded-lg text-zinc-500 hover:bg-white/5 hover:text-zinc-200"
           >
@@ -356,7 +358,7 @@ export function UserCard({
                   void updateList("chatHiddenUsers", event.target.checked)
                 }
               />
-              Hide in chat
+              {t("userCard.hideInChat")}
             </label>
             <label className="flex items-center gap-2">
               <input
@@ -369,7 +371,7 @@ export function UserCard({
                   )
                 }
               />
-              Ignore highlights
+              {t("userCard.ignoreHighlights")}
             </label>
             {onMention && (
               <>
@@ -380,7 +382,7 @@ export function UserCard({
                     onClose();
                   }}
                 >
-                  Mention
+                  {t("userCard.mention")}
                 </button>
                 <span className="h-4 w-px bg-line" />
               </>
@@ -391,7 +393,7 @@ export function UserCard({
               className={`inline-flex items-center gap-1.5 rounded-md px-2 py-1 font-medium disabled:opacity-30 ${profile?.vip ? "bg-fuchsia-400/15 text-fuchsia-300" : "bg-white/5 text-zinc-400 hover:text-fuchsia-300"}`}
             >
               <Crown size={13} />
-              {profile?.vip ? "Remove VIP" : "Make VIP"}
+              {profile?.vip ? t("userCard.removeVip") : t("userCard.makeVip")}
             </button>
             <button
               disabled={!canManageModerators || isSelf || Boolean(busy)}
@@ -399,12 +401,12 @@ export function UserCard({
               className={`inline-flex items-center gap-1.5 rounded-md px-2 py-1 font-medium disabled:opacity-30 ${profile?.moderator ? "bg-emerald-400/15 text-emerald-300" : "bg-white/5 text-zinc-400 hover:text-emerald-300"}`}
             >
               <ShieldCheck size={13} />
-              {profile?.moderator ? "Remove mod" : "Make mod"}
+              {profile?.moderator ? t("userCard.removeMod") : t("userCard.makeMod")}
             </button>
           </div>
           <textarea
             className="input mt-3 min-h-16 resize-y py-2 text-xs"
-            placeholder="Private notes about this user…"
+            placeholder={t("userCard.notesPlaceholder")}
             value={note}
             onChange={(event) => setNote(event.target.value)}
             onBlur={() => void saveNote()}
@@ -413,7 +415,7 @@ export function UserCard({
         <div className="border-b border-line p-4">
           <div className="mb-2 flex items-center justify-between">
             <span className="text-[10px] font-semibold uppercase tracking-[.12em] text-zinc-600">
-              Moderation
+              {t("userCard.moderation")}
             </span>
             {(!canBan ||
               !canDelete ||
@@ -426,22 +428,22 @@ export function UserCard({
                   useAppStore.getState().setPage("connections");
                 }}
               >
-                Reconnect Twitch to grant moderation permissions
+                {t("userCard.reconnectPermissions")}
               </button>
             )}
           </div>
           <input
             className="input mb-2"
             maxLength={500}
-            placeholder="Optional moderation reason"
+            placeholder={t("userCard.reasonPlaceholder")}
             value={reason}
             onChange={(event) => setReason(event.target.value)}
           />
           <div className="flex items-end gap-2">
             <div className="text-center">
-              <div className="mb-1 text-[10px] text-zinc-600">Unban</div>
+              <div className="mb-1 text-[10px] text-zinc-600">{t("userCard.unban")}</div>
               <button
-                aria-label="Unban user"
+                aria-label={t("userCard.unbanUser")}
                 disabled={
                   !canBan || !profile?.banned || Boolean(busy) || isSelf
                 }
@@ -453,7 +455,7 @@ export function UserCard({
             </div>
             <div className="flex-1">
               <div className="mb-1 text-center text-[10px] text-zinc-600">
-                Timeouts
+                {t("userCard.timeouts")}
               </div>
               <div className="grid grid-cols-8">
                 {timeouts.map((timeout) => (
@@ -471,9 +473,9 @@ export function UserCard({
               </div>
             </div>
             <div className="text-center">
-              <div className="mb-1 text-[10px] text-zinc-600">Ban</div>
+              <div className="mb-1 text-[10px] text-zinc-600">{t("userCard.ban")}</div>
               <button
-                aria-label="Ban user"
+                aria-label={t("userCard.banUser")}
                 disabled={
                   !canBan || Boolean(busy) || isSelf || permanentlyBanned
                 }
@@ -489,7 +491,7 @@ export function UserCard({
           <div className="border-b border-line px-4 py-2.5">
             <div className="flex items-center gap-2 text-xs font-semibold">
               <MessageSquare size={14} />
-              Recent messages
+              {t("userCard.recentMessages")}
             </div>
           </div>
           <div className="flex-1 overflow-y-auto p-2">
@@ -512,12 +514,12 @@ export function UserCard({
                   </span>
                   {message.deleted ? (
                     <span className="text-[9px] uppercase text-zinc-600">
-                      deleted
+                      {t("userCard.deleted")}
                     </span>
                   ) : (
                     canRemove(message) && (
                       <button
-                        title="Delete message"
+                        title={t("userCard.deleteMessage")}
                         onClick={() => void removeMessage(message)}
                         className="invisible text-zinc-600 hover:text-red-300 group-hover:visible"
                       >
@@ -529,7 +531,7 @@ export function UserCard({
               ))
             ) : (
               <div className="grid h-full place-items-center text-xs text-zinc-600">
-                No messages from this user.
+                {t("userCard.noMessages")}
               </div>
             )}
           </div>

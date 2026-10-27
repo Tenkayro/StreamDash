@@ -1,4 +1,5 @@
 import {
+  Activity,
   ChevronDown,
   ListFilter,
   RadioTower,
@@ -13,7 +14,9 @@ import { Button, Card, PageHeader } from "../components/ui";
 import { useAppStore } from "../stores/app-store";
 import { clearEvents as clearNativeEvents } from "../services/native";
 import type { ActivitySource, ActivityType } from "../types";
+import { useTranslation } from "react-i18next";
 export function ActivityPage() {
+  const { t, i18n } = useTranslation();
   const { events, chatMessages, settings, twitch, clearEvents } = useAppStore();
   const [search, setSearch] = useState("");
   const [type, setType] = useState<ActivityType | "all">("all");
@@ -32,23 +35,24 @@ export function ActivityPage() {
     [events, search, type, source],
   );
   const remove = async () => {
-    if (!confirm("Clear all activity? This cannot be undone.")) return;
+    if (!confirm(t("activity.clearConfirm"))) return;
     await clearNativeEvents();
     clearEvents();
   };
   return (
     <>
       <PageHeader
-        title="Activity"
+        icon={Activity}
+        title={t("activity.title")}
         description={
           filtered.length === events.length
-            ? `${events.length.toLocaleString("en-US")} events`
-            : `${filtered.length.toLocaleString("en-US")} of ${events.length.toLocaleString("en-US")} events`
+            ? t("activity.eventCount", { count: events.length })
+            : t("activity.filteredCount", { filtered: filtered.length.toLocaleString(i18n.language), total: events.length.toLocaleString(i18n.language) })
         }
         actions={
           <Button variant="danger" disabled={!events.length} onClick={remove}>
             <Trash2 size={14} />
-            Clear history
+            {t("activity.clearHistory")}
           </Button>
         }
       />
@@ -61,16 +65,16 @@ export function ActivityPage() {
             />
             <input
               className="input pl-9 pr-9"
-              aria-label="Search activity"
-              placeholder="Search people, messages or events"
+              aria-label={t("activity.searchLabel")}
+              placeholder={t("activity.searchPlaceholder")}
               value={search}
               onChange={(e) => setSearch(e.target.value)}
             />
             {search && (
               <button
                 type="button"
-                title="Clear search"
-                aria-label="Clear search"
+                title={t("activity.clearSearch")}
+                aria-label={t("activity.clearSearch")}
                 onClick={() => setSearch("")}
                 className="absolute right-2 top-1/2 grid size-6 -translate-y-1/2 place-items-center rounded-md text-zinc-600 hover:bg-white/5 hover:text-zinc-300"
               >
@@ -85,11 +89,11 @@ export function ActivityPage() {
             />
             <select
               className="input appearance-none pl-9 pr-8 capitalize"
-              aria-label="Filter by event type"
+              aria-label={t("activity.filterType")}
               value={type}
               onChange={(e) => setType(e.target.value as ActivityType | "all")}
             >
-              <option value="all">All event types</option>
+              <option value="all">{t("activity.allTypes")}</option>
               {[
                 "follow",
                 "subscription",
@@ -102,7 +106,7 @@ export function ActivityPage() {
                 "channel_point",
               ].map((v) => (
                 <option value={v} key={v}>
-                  {v.replaceAll("_", " ")}
+                  {t(`events.${v}`)}
                 </option>
               ))}
             </select>
@@ -118,13 +122,13 @@ export function ActivityPage() {
             />
             <select
               className="input appearance-none pl-9 pr-8"
-              aria-label="Filter by source"
+              aria-label={t("activity.filterSource")}
               value={source}
               onChange={(e) =>
                 setSource(e.target.value as ActivitySource | "all")
               }
             >
-              <option value="all">All sources</option>
+              <option value="all">{t("activity.allSources")}</option>
               <option value="twitch">Twitch</option>
               <option value="streamelements">StreamElements</option>
             </select>
@@ -141,10 +145,10 @@ export function ActivityPage() {
             onUser={
               twitch.phase === "connected" ? setSelectedUser : undefined
             }
-            emptyTitle={events.length ? "No matching activity" : "No activity yet"}
+            emptyTitle={events.length ? t("activity.noMatches") : t("activity.empty")}
             emptyBody={
               events.length
-                ? "Try a different search or reset one of the filters."
+                ? t("activity.tryFilters")
                 : undefined
             }
           />

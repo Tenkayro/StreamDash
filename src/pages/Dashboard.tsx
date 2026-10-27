@@ -52,6 +52,7 @@ import type {
   DashboardWidgetId,
   DashboardWidgetWidth,
 } from "../types";
+import { useTranslation } from "react-i18next";
 
 type WidgetCatalogEntry = {
   id: DashboardItemId;
@@ -205,6 +206,7 @@ function DashboardWidget({
   onResizeStart: (event: ReactPointerEvent<HTMLButtonElement>) => void;
   children: ReactNode;
 }) {
+  const { t } = useTranslation();
   return (
     <div
       data-dashboard-widget={id}
@@ -217,8 +219,8 @@ function DashboardWidget({
         <div className="absolute -top-2 right-2 z-20 flex items-center rounded-md border border-line bg-raised shadow-lg">
           <button
             type="button"
-            title={`Move ${label}`}
-            aria-label={`Move ${label}`}
+            title={t("dashboard.moveWidget", { label })}
+            aria-label={t("dashboard.moveWidget", { label })}
             onPointerDown={onMoveStart}
             className="grid size-6 touch-none cursor-grab place-items-center text-zinc-500 outline-none hover:bg-white/5 hover:text-zinc-200 active:cursor-grabbing"
           >
@@ -226,8 +228,8 @@ function DashboardWidget({
           </button>
           <button
             type="button"
-            title={`Hide ${label}`}
-            aria-label={`Hide ${label}`}
+            title={t("dashboard.hideWidget", { label })}
+            aria-label={t("dashboard.hideWidget", { label })}
             onClick={onHide}
             className="grid size-6 place-items-center border-l border-line text-zinc-500 hover:bg-white/5 hover:text-zinc-200"
           >
@@ -236,8 +238,8 @@ function DashboardWidget({
           {onDelete && (
             <button
               type="button"
-              title={`Delete ${label}`}
-              aria-label={`Delete ${label}`}
+              title={t("dashboard.deleteWidget", { label })}
+              aria-label={t("dashboard.deleteWidget", { label })}
               onClick={onDelete}
               className="grid size-6 place-items-center border-l border-line text-zinc-500 hover:bg-red-400/10 hover:text-red-300"
             >
@@ -250,8 +252,8 @@ function DashboardWidget({
       {editing && (
         <button
           type="button"
-          title={`Resize ${label}`}
-          aria-label={`Resize ${label}`}
+          title={t("dashboard.resizeWidget", { label })}
+          aria-label={t("dashboard.resizeWidget", { label })}
           onPointerDown={onResizeStart}
           className="absolute bottom-0 right-0 z-20 grid size-7 touch-none cursor-se-resize place-items-center rounded-tl-md border-l border-t border-line bg-raised/95 text-accent outline-none hover:bg-raised"
         >
@@ -293,13 +295,14 @@ function HiddenWidgets({
   onDeleteBrowser: (id: DashboardItemId) => void;
   onReset: () => void;
 }) {
+  const { t } = useTranslation();
   return (
     <div
       className="card mb-2 flex min-h-10 items-center gap-2 border-dashed px-2.5 py-1.5 transition"
     >
       <div className="flex shrink-0 items-center gap-2 text-[11px] font-medium text-zinc-500">
         <EyeOff size={13} />
-        Hidden{" "}
+        {t("dashboard.hidden")}{" "}
         <span className="rounded bg-white/5 px-1.5 py-0.5 text-[9px] tabular-nums text-zinc-600">
           {widgets.length}
         </span>
@@ -312,7 +315,7 @@ function HiddenWidgets({
               className="inline-flex h-7 overflow-hidden rounded-md border border-line bg-black/15"
             >
               <button
-                title={`Show ${widget.label} - ${widget.description}`}
+                title={t("dashboard.showWidget", { label: widget.label, description: widget.description })}
                 onClick={() => onShow(widget.id)}
                 className="inline-flex items-center gap-1.5 px-2 text-[10px] text-zinc-500 transition hover:text-zinc-200"
               >
@@ -322,8 +325,8 @@ function HiddenWidgets({
               {isBrowserWidget(widget.id) && (
                 <button
                   type="button"
-                  title={`Delete ${widget.label}`}
-                  aria-label={`Delete ${widget.label}`}
+                  title={t("dashboard.deleteWidget", { label: widget.label })}
+                  aria-label={t("dashboard.deleteWidget", { label: widget.label })}
                   onClick={() => onDeleteBrowser(widget.id)}
                   className="grid w-7 place-items-center border-l border-line text-zinc-600 hover:bg-red-400/10 hover:text-red-300"
                 >
@@ -334,22 +337,22 @@ function HiddenWidgets({
           ))
         ) : (
           <span className="text-[10px] text-zinc-700">
-            Hidden widgets appear here
+            {t("dashboard.hiddenHint")}
           </span>
         )}
       </div>
       <button
         type="button"
-        title="Add browser source"
+        title={t("dashboard.addBrowserSource")}
         onClick={onAddBrowser}
         className="inline-flex h-7 shrink-0 items-center gap-1.5 rounded-md border border-line bg-black/15 px-2 text-[10px] text-zinc-400 transition hover:border-accent/50 hover:text-accent"
       >
         <Plus size={11} />
-        Browser source
+        {t("dashboard.browserSource")}
       </button>
       <button
-        title="Reset dashboard"
-        aria-label="Reset dashboard"
+        title={t("dashboard.resetDashboard")}
+        aria-label={t("dashboard.resetDashboard")}
         onClick={onReset}
         className="grid size-7 shrink-0 place-items-center rounded-md text-zinc-600 hover:bg-white/5 hover:text-zinc-300"
       >
@@ -366,6 +369,7 @@ function BrowserSourceForm({
   onAdd: (name: string, url: string) => void;
   onCancel: () => void;
 }) {
+  const { t } = useTranslation();
   const [name, setName] = useState("");
   const [url, setUrl] = useState("");
   const submit = (event: FormEvent) => {
@@ -376,12 +380,12 @@ function BrowserSourceForm({
         parsed.protocol === "http:" &&
         ["localhost", "127.0.0.1"].includes(parsed.hostname);
       if (parsed.protocol !== "https:" && !localHttp)
-        throw new Error("Use an HTTPS URL or a local development address");
+        throw new Error(t("dashboard.httpsOnly"));
       onAdd(name.trim() || parsed.hostname, parsed.toString());
     } catch (error) {
-      toast.error("Invalid browser source", {
+      toast.error(t("dashboard.invalidSource"), {
         description:
-          error instanceof Error ? error.message : "Enter a valid URL",
+          error instanceof Error ? error.message : t("dashboard.validUrl"),
       });
     }
   };
@@ -390,7 +394,7 @@ function BrowserSourceForm({
       <form onSubmit={submit}>
         <div className="mb-3 flex items-center gap-2 text-xs font-semibold">
           <Globe2 size={14} className="text-accent" />
-          Add browser source
+          {t("dashboard.addBrowserSource")}
         </div>
         <div className="grid gap-3 sm:grid-cols-[minmax(140px,0.35fr)_minmax(260px,1fr)_auto]">
           <input
@@ -398,29 +402,28 @@ function BrowserSourceForm({
             value={name}
             maxLength={50}
             onChange={(event) => setName(event.target.value)}
-            placeholder="Name (optional)"
-            aria-label="Browser source name"
+            placeholder={t("dashboard.nameOptional")}
+            aria-label={t("dashboard.sourceName")}
           />
           <input
             className="input"
             value={url}
             onChange={(event) => setUrl(event.target.value)}
             placeholder="https://example.com/widget"
-            aria-label="Browser source URL"
+            aria-label={t("dashboard.sourceUrl")}
             required
           />
           <div className="flex gap-2">
             <Button type="button" onClick={onCancel}>
-              Cancel
+              {t("dashboard.cancel")}
             </Button>
             <Button type="submit" variant="primary">
-              Add
+              {t("dashboard.add")}
             </Button>
           </div>
         </div>
         <p className="mt-2 text-[10px] text-zinc-600">
-          Some websites block embedding. HTTPS and local development URLs are
-          supported.
+          {t("dashboard.embedHint")}
         </p>
       </form>
     </Card>
@@ -428,6 +431,7 @@ function BrowserSourceForm({
 }
 
 export function Dashboard() {
+  const { t, i18n } = useTranslation();
   const {
     stats,
     events,
@@ -469,7 +473,7 @@ export function Dashboard() {
       clearTimeout(zoomSaveTimer.current);
       zoomSaveTimer.current = setTimeout(() => {
         void saveSetting("dashboardZoom", next).catch(() =>
-          toast.error("Dashboard zoom could not be saved"),
+          toast.error(t("dashboard.zoomSaveError")),
         );
       }, 200);
     };
@@ -494,7 +498,7 @@ export function Dashboard() {
       window.removeEventListener("blur", cancelZoomGesture);
       clearTimeout(zoomSaveTimer.current);
     };
-  }, []);
+  }, [t]);
   const connected =
     twitch.phase === "connected" || streamElements.phase === "connected";
   const browserWidgets = useMemo<WidgetCatalogEntry[]>(
@@ -507,8 +511,15 @@ export function Dashboard() {
     [settings.dashboardBrowserSources],
   );
   const availableWidgets = useMemo(
-    () => [...widgetCatalog, ...browserWidgets],
-    [browserWidgets],
+    () => [
+      ...widgetCatalog.map((widget) => ({
+        ...widget,
+        label: t(`dashboard.widgets.${widget.id}.label`),
+        description: t(`dashboard.widgets.${widget.id}.description`),
+      })),
+      ...browserWidgets,
+    ],
+    [browserWidgets, t],
   );
   const validWidgetIds = useMemo(
     () => new Set(availableWidgets.map((widget) => widget.id)),
@@ -534,7 +545,7 @@ export function Dashboard() {
   const updateWidgets = (next: DashboardItemId[]) => {
     setSettings({ dashboardWidgets: next });
     void saveSetting("dashboardWidgets", next).catch(() =>
-      toast.error("Dashboard layout could not be saved"),
+      toast.error(t("dashboard.layoutSaveError")),
     );
   };
   const hideWidget = (id: DashboardItemId) =>
@@ -786,7 +797,7 @@ export function Dashboard() {
       };
       setSettings({ dashboardWidgetDimensions: next });
       void saveSetting("dashboardWidgetDimensions", next).catch(() =>
-        toast.error("Widget size could not be saved"),
+        toast.error(t("dashboard.sizeSaveError")),
       );
     };
     const cancel = (pointerEvent: PointerEvent) => {
@@ -808,7 +819,7 @@ export function Dashboard() {
     void Promise.all([
       saveSetting("dashboardWidgets", defaultDashboardWidgets),
       saveSetting("dashboardWidgetDimensions", {}),
-    ]).catch(() => toast.error("Dashboard layout could not be reset"));
+    ]).catch(() => toast.error(t("dashboard.resetError")));
   };
   const addBrowserSource = (name: string, url: string) => {
     const source: DashboardBrowserSource = {
@@ -830,7 +841,7 @@ export function Dashboard() {
     void Promise.all([
       saveSetting("dashboardBrowserSources", sources),
       saveSetting("dashboardWidgets", nextWidgets),
-    ]).catch(() => toast.error("Browser source could not be saved"));
+    ]).catch(() => toast.error(t("dashboard.sourceSaveError")));
   };
   const deleteBrowserSource = (id: DashboardItemId) => {
     if (!isBrowserWidget(id)) return;
@@ -850,14 +861,14 @@ export function Dashboard() {
       saveSetting("dashboardBrowserSources", sources),
       saveSetting("dashboardWidgets", nextWidgets),
       saveSetting("dashboardWidgetDimensions", dimensions),
-    ]).catch(() => toast.error("Browser source could not be deleted"));
+    ]).catch(() => toast.error(t("dashboard.sourceDeleteError")));
   };
   const metric = (id: DashboardWidgetId) => {
     if (id === "followers")
       return (
         <Metric
-          label="Followers"
-          value={stats.followers?.toLocaleString("en-US") ?? "—"}
+          label={t("dashboard.followers")}
+          value={stats.followers?.toLocaleString(i18n.language) ?? "—"}
           loading={statsLoading}
           loadingWidth="w-12"
           icon={Heart}
@@ -866,8 +877,8 @@ export function Dashboard() {
     if (id === "subscribers")
       return (
         <Metric
-          label="Subscribers"
-          value={stats.subscribers?.toLocaleString("en-US") ?? "—"}
+          label={t("dashboard.subscribers")}
+          value={stats.subscribers?.toLocaleString(i18n.language) ?? "—"}
           loading={statsLoading}
           loadingWidth="w-10"
           icon={Star}
@@ -876,8 +887,8 @@ export function Dashboard() {
     if (id === "viewers")
       return (
         <Metric
-          label="Current viewers"
-          value={stats.viewers?.toLocaleString("en-US") ?? "—"}
+          label={t("dashboard.currentViewers")}
+          value={stats.viewers?.toLocaleString(i18n.language) ?? "—"}
           loading={statsLoading}
           loadingWidth="w-11"
           icon={Eye}
@@ -886,7 +897,7 @@ export function Dashboard() {
     if (id === "duration")
       return (
         <Metric
-          label="Stream duration"
+          label={t("dashboard.streamDuration")}
           value={duration(stats.startedAt)}
           loading={statsLoading}
           loadingWidth="w-20"
@@ -896,15 +907,15 @@ export function Dashboard() {
     if (id === "bits")
       return (
         <Metric
-          label="Bits collected"
-          value={stats.bits.toLocaleString("en-US")}
+          label={t("dashboard.bitsCollected")}
+          value={stats.bits.toLocaleString(i18n.language)}
           icon={Sparkles}
         />
       );
     if (id === "donations")
       return (
         <Metric
-          label="Donations"
+          label={t("dashboard.donations")}
           value={money(stats.donations, stats.donationCurrency)}
           icon={Wallet}
         />
@@ -912,8 +923,8 @@ export function Dashboard() {
     if (id === "status")
       return (
         <Metric
-          label="Stream status"
-          value={stats.live ? "Live" : "Offline"}
+          label={t("dashboard.streamStatus")}
+          value={stats.live ? t("stream.live") : t("stream.offline")}
           note={statsLoading ? "" : stats.title}
           loading={statsLoading}
           loadingWidth="w-16"
@@ -922,8 +933,8 @@ export function Dashboard() {
       );
     return (
       <Metric
-        label="Activity events"
-        value={events.length.toLocaleString("en-US")}
+        label={t("dashboard.activityEvents")}
+        value={events.length.toLocaleString(i18n.language)}
         icon={Activity}
       />
     );
@@ -972,12 +983,12 @@ export function Dashboard() {
       return (
         <Card className="overflow-hidden">
           <div className="flex items-center justify-between border-b border-line px-4 py-3">
-            <h2 className="text-xs font-semibold">Recent activity</h2>
+            <h2 className="text-xs font-semibold">{t("dashboard.recentActivity")}</h2>
             <button
               className="text-[11px] text-accent hover:brightness-125"
               onClick={() => setPage("activity")}
             >
-              View all
+              {t("dashboard.viewAll")}
             </button>
           </div>
           <ActivityFeed
@@ -991,27 +1002,27 @@ export function Dashboard() {
       return (
         <Card className="p-4">
           <div className="flex items-center justify-between">
-            <h2 className="text-xs font-semibold">Stream details</h2>
+            <h2 className="text-xs font-semibold">{t("dashboard.streamDetails")}</h2>
             <button
               className="text-[11px] text-accent hover:brightness-125"
               onClick={() => setPage("stream")}
             >
-              Edit
+              {t("dashboard.edit")}
             </button>
           </div>
           <div className="mt-4 space-y-4">
             <div>
-              <div className="text-[10px] text-muted">Title</div>
+              <div className="text-[10px] text-muted">{t("dashboard.streamTitle")}</div>
               <div className="mt-1 text-xs">
                 {statsLoading ? (
                   <LoadingIndicator className="h-3.5 w-4/5" />
                 ) : (
-                  stats.title || "No stream information"
+                  stats.title || t("dashboard.noStreamInfo")
                 )}
               </div>
             </div>
             <div>
-              <div className="text-[10px] text-muted">Category</div>
+              <div className="text-[10px] text-muted">{t("stream.category")}</div>
               <div className="mt-1 text-xs">
                 {statsLoading ? (
                   <LoadingIndicator className="h-3.5 w-24" />
@@ -1029,13 +1040,13 @@ export function Dashboard() {
           <div className="flex items-center justify-between border-b border-line px-4 py-3">
             <div className="flex items-center gap-2 text-xs font-semibold">
               <MonitorPlay size={14} className="text-accent" />
-              Live Preview
+              {t("nav.livePreview")}
             </div>
             <button
               className="text-[11px] text-accent hover:brightness-125"
               onClick={() => setPage("livePreview")}
             >
-              Open
+              {t("dashboard.open")}
             </button>
           </div>
           <div className="min-h-0 flex-1 overflow-hidden bg-black">
@@ -1046,17 +1057,17 @@ export function Dashboard() {
     if (id === "goals") {
       const goals = [
         {
-          label: "Followers",
+          label: t("dashboard.followers"),
           value: stats.followers,
           target: settings.goals.followers,
         },
         {
-          label: "Subscribers",
+          label: t("dashboard.subscribers"),
           value: stats.subscribers,
           target: settings.goals.subscribers,
         },
         {
-          label: "Donations",
+          label: t("dashboard.donations"),
           value: stats.donations,
           target: settings.goals.donations,
         },
@@ -1066,13 +1077,13 @@ export function Dashboard() {
           <div className="mb-3 flex items-center justify-between">
             <div className="flex items-center gap-2 text-xs font-semibold">
               <Target size={14} className="text-accent" />
-              Goals
+              {t("nav.goals")}
             </div>
             <button
               className="text-[11px] text-accent"
               onClick={() => setPage("goals")}
             >
-              Manage
+              {t("dashboard.manage")}
             </button>
           </div>
           <div className="space-y-3">
@@ -1089,7 +1100,7 @@ export function Dashboard() {
                       <LoadingIndicator className="h-2.5 w-10" />
                     ) : (
                       <span>
-                        {goal.target ? `${Math.round(percent)}%` : "No target"}
+                        {goal.target ? `${Math.round(percent)}%` : t("goals.noTarget")}
                       </span>
                     )}
                   </div>
@@ -1115,13 +1126,13 @@ export function Dashboard() {
         <div className="mb-3 flex items-center justify-between">
           <div className="flex items-center gap-2 text-xs font-semibold">
             <Link2 size={14} className="text-accent" />
-            Connections
+            {t("nav.connections")}
           </div>
           <button
             className="text-[11px] text-accent"
             onClick={() => setPage("connections")}
           >
-            Manage
+            {t("dashboard.manage")}
           </button>
         </div>
         {[
@@ -1141,7 +1152,7 @@ export function Dashboard() {
                   !service.account ? (
                     <LoadingIndicator className="h-2.5 w-16" />
                   ) : (
-                    service.account || service.phase
+                    service.account || t(`connectionPhases.${service.phase}`)
                   )}
                 </div>
               </div>
@@ -1169,14 +1180,15 @@ export function Dashboard() {
       style={{ zoom: zoom / 100, width: `${10_000 / zoom}%` }}
     >
       <PageHeader
-        title="Dashboard"
+        icon={LayoutGrid}
+        title={t("nav.dashboard")}
         titleActions={
           <button
             onClick={() => setEditing(!editing)}
             className={`inline-flex items-center gap-1.5 rounded-md px-2 py-1 text-[11px] transition ${editing ? "bg-accent-soft text-accent" : "text-zinc-600 hover:bg-white/4 hover:text-zinc-300"}`}
           >
             {editing ? <LayoutGrid size={12} /> : <Settings2 size={12} />}{" "}
-            {editing ? "Finish" : "Customize"}
+            {editing ? t("dashboard.finish") : t("dashboard.customize")}
           </button>
         }
         actions={
@@ -1186,7 +1198,7 @@ export function Dashboard() {
             <Badge
               tone={stats.live ? "green" : connected ? "neutral" : "amber"}
             >
-              {stats.live ? "Live" : connected ? "Offline" : "Disconnected"}
+              {stats.live ? t("stream.live") : connected ? t("stream.offline") : t("connectionPhases.disconnected")}
             </Badge>
           )
         }
@@ -1217,7 +1229,7 @@ export function Dashboard() {
           {visibleMetricWidgets.map((id) => {
             const label =
               availableWidgets.find((widget) => widget.id === id)?.label ??
-              "Widget";
+              t("dashboard.widget");
             const dimensions = dimensionsFor(id);
             return (
               <div
@@ -1259,7 +1271,7 @@ export function Dashboard() {
           {visibleContentWidgets.map((id) => {
             const label =
               availableWidgets.find((widget) => widget.id === id)?.label ??
-              "Widget";
+              t("dashboard.widget");
             const dimensions = dimensionsFor(id);
             return (
               <div
@@ -1297,14 +1309,14 @@ export function Dashboard() {
           <div>
             <LayoutGrid size={24} className="mx-auto text-zinc-600" />
             <div className="mt-3 text-sm font-medium">
-              Your dashboard is empty
+              {t("dashboard.empty")}
             </div>
             {!editing && (
               <button
                 className="mt-2 text-xs text-accent"
                 onClick={() => setEditing(true)}
               >
-                Add widgets
+                {t("dashboard.addWidgets")}
               </button>
             )}
           </div>

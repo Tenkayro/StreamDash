@@ -1,5 +1,40 @@
 import { enable, disable } from "@tauri-apps/plugin-autostart";
-import { RotateCcw } from "lucide-react";
+import {
+  Archive,
+  AtSign,
+  BadgeCheck,
+  Bell,
+  CircleDollarSign,
+  Clock3,
+  Database,
+  DatabaseBackup,
+  EyeOff,
+  Gift,
+  Highlighter,
+  Heart,
+  Languages,
+  LayoutDashboard,
+  ListFilter,
+  Maximize2,
+  MessageSquare,
+  MessagesSquare,
+  MonitorUp,
+  Palette,
+  PanelBottom,
+  PanelLeft,
+  RadioTower,
+  RefreshCw,
+  RotateCcw,
+  Rows3,
+  Settings,
+  Settings2,
+  Smile,
+  Sparkles,
+  Star,
+  Type,
+  Users,
+  type LucideIcon,
+} from "lucide-react";
 import { useState, type ReactNode } from "react";
 import { toast } from "sonner";
 import { Button, Card, PageHeader } from "../components/ui";
@@ -7,19 +42,20 @@ import { defaultDashboardWidgets, useAppStore } from "../stores/app-store";
 import { saveSetting } from "../services/native";
 import { errorMessage, isTauri } from "../lib/utils";
 import type { ActivityType, AppSettings } from "../types";
+import { useTranslation } from "react-i18next";
 
-const eventOptions: Array<{ id: ActivityType; label: string }> = [
-  { id: "follow", label: "Follows" },
-  { id: "subscription", label: "Subscriptions" },
-  { id: "resubscription", label: "Resubs" },
-  { id: "gift_subscription", label: "Gift subs" },
-  { id: "community_gift", label: "Community gifts" },
-  { id: "cheer", label: "Cheers" },
-  { id: "raid", label: "Raids" },
-  { id: "donation", label: "Donations" },
-  { id: "channel_point", label: "Channel points" },
-  { id: "stream_online", label: "Stream online" },
-  { id: "stream_offline", label: "Stream offline" },
+const eventOptions: Array<{ id: ActivityType; label: string; icon: LucideIcon }> = [
+  { id: "follow", label: "follows", icon: Heart },
+  { id: "subscription", label: "subscriptions", icon: Star },
+  { id: "resubscription", label: "resubs", icon: RefreshCw },
+  { id: "gift_subscription", label: "giftSubs", icon: Gift },
+  { id: "community_gift", label: "communityGifts", icon: Users },
+  { id: "cheer", label: "cheers", icon: Sparkles },
+  { id: "raid", label: "raids", icon: RadioTower },
+  { id: "donation", label: "donations", icon: CircleDollarSign },
+  { id: "channel_point", label: "channelPoints", icon: Sparkles },
+  { id: "stream_online", label: "streamOnline", icon: RadioTower },
+  { id: "stream_offline", label: "streamOffline", icon: RadioTower },
 ];
 
 function Toggle({
@@ -44,22 +80,37 @@ function Toggle({
   );
 }
 function Row({
+  icon: Icon,
   label,
   detail,
   children,
 }: {
+  icon: LucideIcon;
   label: string;
   detail: string;
   children: ReactNode;
 }) {
   return (
     <div className="flex items-center justify-between gap-6 border-b border-line py-4 last:border-0">
-      <div>
-        <div className="text-sm">{label}</div>
-        <div className="mt-1 text-xs text-muted">{detail}</div>
+      <div className="flex min-w-0 items-start gap-3">
+        <span className="mt-0.5 grid size-8 shrink-0 place-items-center rounded-lg bg-white/[.035] text-zinc-500">
+          <Icon size={15} aria-hidden="true" />
+        </span>
+        <div className="min-w-0">
+          <div className="text-sm">{label}</div>
+          <div className="mt-1 text-xs text-muted">{detail}</div>
+        </div>
       </div>
       {children}
     </div>
+  );
+}
+function SectionTitle({ icon: Icon, children }: { icon: LucideIcon; children: ReactNode }) {
+  return (
+    <h2 className="mb-2 flex items-center gap-1.5 px-1 text-[10px] font-bold tracking-[.14em] text-zinc-600">
+      <Icon size={12} aria-hidden="true" />
+      {children}
+    </h2>
   );
 }
 function HighlightWords({
@@ -69,12 +120,13 @@ function HighlightWords({
   value: string[];
   onSave: (value: string[]) => void;
 }) {
+  const { t } = useTranslation();
   const [draft, setDraft] = useState(value.join(", "));
   return (
     <input
-      aria-label="Highlight words"
+      aria-label={t("settings.highlightWords")}
       className="input max-w-72"
-      placeholder="important, giveaway, your name"
+      placeholder={t("settings.highlightWordsPlaceholder")}
       value={draft}
       onChange={(event) => setDraft(event.target.value)}
       onBlur={() =>
@@ -93,6 +145,7 @@ function HighlightWords({
 
 export function SettingsPage() {
   const { settings, setSettings } = useAppStore();
+  const { t } = useTranslation();
 
   const update = async <K extends keyof AppSettings>(
     key: K,
@@ -104,23 +157,45 @@ export function SettingsPage() {
       setSettings({ [key]: value });
       await saveSetting(key, value);
     } catch (error) {
-      toast.error("Setting could not be saved", {
+      toast.error(t("settings.saveError"), {
         description: errorMessage(error),
       });
     }
   };
   return (
     <>
-      <PageHeader title="Settings" />
+      <PageHeader icon={Settings} title={t("settings.title")} />
       <div className="space-y-4">
         <section>
-          <h2 className="mb-2 px-1 text-[10px] font-bold tracking-[.14em] text-zinc-600">
-            GENERAL
-          </h2>
+          <SectionTitle icon={Settings2}>{t("settings.general")}</SectionTitle>
           <Card className="px-5">
             <Row
-              label="Launch with Windows"
-              detail="Open StreamDash automatically after you sign in."
+              icon={Languages}
+              label={t("settings.language")}
+              detail={t("settings.languageDetail")}
+            >
+              <select
+                className="input w-52"
+                value={settings.language}
+                onChange={(event) =>
+                  update(
+                    "language",
+                    event.target.value as AppSettings["language"],
+                  )
+                }
+              >
+                <option value="auto">{t("common.automatic")}</option>
+                <option value="en">{t("languages.en")}</option>
+                <option value="de">{t("languages.de")}</option>
+                <option value="es">{t("languages.es")}</option>
+                <option value="pt-BR">{t("languages.pt-BR")}</option>
+                <option value="fr">{t("languages.fr")}</option>
+              </select>
+            </Row>
+            <Row
+              icon={MonitorUp}
+              label={t("settings.launchWithWindows")}
+              detail={t("settings.launchWithWindowsDetail")}
             >
               <Toggle
                 value={settings.launchAtStartup}
@@ -128,8 +203,9 @@ export function SettingsPage() {
               />
             </Row>
             <Row
-              label="Minimize to tray"
-              detail="Keep realtime connections active when the window is closed."
+              icon={PanelBottom}
+              label={t("settings.minimizeToTray")}
+              detail={t("settings.minimizeToTrayDetail")}
             >
               <Toggle
                 value={settings.minimizeToTray}
@@ -137,8 +213,9 @@ export function SettingsPage() {
               />
             </Row>
             <Row
-              label="Keep user data on uninstall"
-              detail="Keep the database, settings, and credentials when uninstalling."
+              icon={DatabaseBackup}
+              label={t("settings.keepData")}
+              detail={t("settings.keepDataDetail")}
             >
               <Toggle
                 value={settings.keepUserData}
@@ -148,13 +225,12 @@ export function SettingsPage() {
           </Card>
         </section>
         <section>
-          <h2 className="mb-2 px-1 text-[10px] font-bold tracking-[.14em] text-zinc-600">
-            APPEARANCE
-          </h2>
+          <SectionTitle icon={Palette}>{t("settings.appearance")}</SectionTitle>
           <Card className="px-5">
             <Row
-              label="Interface density"
-              detail="Choose how much information fits on screen."
+              icon={Rows3}
+              label={t("settings.interfaceDensity")}
+              detail={t("settings.interfaceDensityDetail")}
             >
               <select
                 className="input w-40"
@@ -166,13 +242,14 @@ export function SettingsPage() {
                   )
                 }
               >
-                <option value="compact">Compact</option>
-                <option value="comfortable">Comfortable</option>
+                <option value="compact">{t("settings.compact")}</option>
+                <option value="comfortable">{t("settings.comfortable")}</option>
               </select>
             </Row>
             <Row
-              label="Content width"
-              detail="Limit the workspace or use all available room."
+              icon={Maximize2}
+              label={t("settings.contentWidth")}
+              detail={t("settings.contentWidthDetail")}
             >
               <select
                 className="input w-40"
@@ -184,14 +261,15 @@ export function SettingsPage() {
                   )
                 }
               >
-                <option value="compact">Focused</option>
-                <option value="wide">Wide</option>
-                <option value="full">Full width</option>
+                <option value="compact">{t("settings.focused")}</option>
+                <option value="wide">{t("settings.wide")}</option>
+                <option value="full">{t("settings.fullWidth")}</option>
               </select>
             </Row>
             <Row
-              label="Accent color"
-              detail="Used for actions, progress and selection."
+              icon={Palette}
+              label={t("settings.accentColor")}
+              detail={t("settings.accentColorDetail")}
             >
               <select
                 className="input w-40"
@@ -203,15 +281,16 @@ export function SettingsPage() {
                   )
                 }
               >
-                <option value="violet">Violet</option>
-                <option value="blue">Blue</option>
-                <option value="emerald">Emerald</option>
-                <option value="orange">Orange</option>
+                <option value="violet">{t("settings.violet")}</option>
+                <option value="blue">{t("settings.blue")}</option>
+                <option value="emerald">{t("settings.emerald")}</option>
+                <option value="orange">{t("settings.orange")}</option>
               </select>
             </Row>
             <Row
-              label="Compact navigation"
-              detail="Show only icons in the sidebar."
+              icon={PanelLeft}
+              label={t("settings.compactNavigation")}
+              detail={t("settings.compactNavigationDetail")}
             >
               <Toggle
                 value={settings.sidebarCollapsed}
@@ -219,23 +298,25 @@ export function SettingsPage() {
               />
             </Row>
             <Row
-              label="Compact activity feed"
-              detail="Use less vertical space between events."
+              icon={Rows3}
+              label={t("settings.compactActivity")}
+              detail={t("settings.compactActivityDetail")}
             >
               <Toggle
                 value={settings.compactFeed}
                 onChange={(value) => update("compactFeed", value)}
               />
             </Row>
-            <Row label="Animations" detail="Fade new events in smoothly.">
+            <Row icon={Sparkles} label={t("settings.animations")} detail={t("settings.animationsDetail")}>
               <Toggle
                 value={settings.animations}
                 onChange={(value) => update("animations", value)}
               />
             </Row>
             <Row
-              label="Dashboard layout"
-              detail={`${settings.dashboardWidgets.length} widgets are currently visible.`}
+              icon={LayoutDashboard}
+              label={t("settings.dashboardLayout")}
+              detail={t("settings.dashboardLayoutDetail", { count: settings.dashboardWidgets.length })}
             >
               <Button
                 onClick={async () => {
@@ -251,47 +332,47 @@ export function SettingsPage() {
                       saveSetting("dashboardZoom", 100),
                     ]);
                   } catch (error) {
-                    toast.error("Dashboard layout could not be reset", {
+                    toast.error(t("settings.dashboardResetError"), {
                       description: errorMessage(error),
                     });
                   }
                 }}
               >
                 <RotateCcw size={14} />
-                Reset
+                {t("common.reset")}
               </Button>
             </Row>
           </Card>
         </section>
         <section>
-          <h2 className="mb-2 px-1 text-[10px] font-bold tracking-[.14em] text-zinc-600">
-            NOTIFICATIONS
-          </h2>
+          <SectionTitle icon={Bell}>{t("settings.notifications")}</SectionTitle>
           <Card className="px-5">
             <Row
-              label="Windows notifications"
-              detail="Show selected stream events as native notifications."
+              icon={Bell}
+              label={t("settings.windowsNotifications")}
+              detail={t("settings.windowsNotificationsDetail")}
             >
               <Toggle
                 value={settings.notifications}
                 onChange={(value) => update("notifications", value)}
               />
             </Row>
-            <Row label="Donations" detail="Notify when a donation is received.">
+            <Row icon={CircleDollarSign} label={t("settings.donations")} detail={t("settings.donationsDetail")}>
               <Toggle
                 value={settings.notifyDonations}
                 onChange={(value) => update("notifyDonations", value)}
               />
             </Row>
-            <Row label="Raids" detail="Notify when another channel raids you.">
+            <Row icon={RadioTower} label={t("settings.raids")} detail={t("settings.raidsDetail")}>
               <Toggle
                 value={settings.notifyRaids}
                 onChange={(value) => update("notifyRaids", value)}
               />
             </Row>
             <Row
-              label="Gift subscriptions"
-              detail="Notify for gifted and community subscriptions."
+              icon={Gift}
+              label={t("settings.giftSubscriptions")}
+              detail={t("settings.giftSubscriptionsDetail")}
             >
               <Toggle
                 value={settings.notifyGiftSubs}
@@ -301,13 +382,12 @@ export function SettingsPage() {
           </Card>
         </section>
         <section>
-          <h2 className="mb-2 px-1 text-[10px] font-bold tracking-[.14em] text-zinc-600">
-            CHAT
-          </h2>
+          <SectionTitle icon={MessageSquare}>{t("settings.chat")}</SectionTitle>
           <Card className="px-5">
             <Row
-              label="Timestamps"
-              detail="Show the receive time beside every message."
+              icon={Clock3}
+              label={t("settings.timestamps")}
+              detail={t("settings.timestampsDetail")}
             >
               <Toggle
                 value={settings.chatTimestamps}
@@ -315,8 +395,9 @@ export function SettingsPage() {
               />
             </Row>
             <Row
-              label="Badges"
-              detail="Show Twitch broadcaster, moderator and subscriber badges."
+              icon={BadgeCheck}
+              label={t("settings.badges")}
+              detail={t("settings.badgesDetail")}
             >
               <Toggle
                 value={settings.chatBadges}
@@ -324,8 +405,9 @@ export function SettingsPage() {
               />
             </Row>
             <Row
-              label="Highlight mentions"
-              detail="Highlight messages that mention your Twitch account."
+              icon={AtSign}
+              label={t("settings.highlightMentions")}
+              detail={t("settings.highlightMentionsDetail")}
             >
               <Toggle
                 value={settings.chatHighlightMentions}
@@ -333,15 +415,16 @@ export function SettingsPage() {
               />
             </Row>
             <Row
-              label="Highlight words"
-              detail="Comma-separated words or phrases; matching is case-insensitive."
+              icon={Highlighter}
+              label={t("settings.highlightWords")}
+              detail={t("settings.highlightWordsDetail")}
             >
               <HighlightWords
                 value={settings.chatHighlightWords}
                 onSave={(value) => update("chatHighlightWords", value)}
               />
             </Row>
-            <Row label="Text size" detail="Change the chat message font size.">
+            <Row icon={Type} label={t("settings.textSize")} detail={t("settings.textSizeDetail")}>
               <select
                 className="input w-32"
                 value={settings.chatFontSize}
@@ -349,15 +432,16 @@ export function SettingsPage() {
                   update("chatFontSize", Number(event.target.value))
                 }
               >
-                <option value={12}>Small</option>
-                <option value={13}>Normal</option>
-                <option value={14}>Large</option>
-                <option value={16}>Extra large</option>
+                <option value={12}>{t("settings.small")}</option>
+                <option value={13}>{t("settings.normal")}</option>
+                <option value={14}>{t("settings.large")}</option>
+                <option value={16}>{t("settings.extraLarge")}</option>
               </select>
             </Row>
             <Row
-              label="Emote size"
-              detail="Set the height of Twitch and 7TV emotes."
+              icon={Smile}
+              label={t("settings.emoteSize")}
+              detail={t("settings.emoteSizeDetail")}
             >
               <select
                 className="input w-32"
@@ -366,15 +450,16 @@ export function SettingsPage() {
                   update("chatEmoteSize", Number(event.target.value))
                 }
               >
-                <option value={24}>Small</option>
-                <option value={28}>Normal</option>
-                <option value={34}>Large</option>
-                <option value={40}>Extra large</option>
+                <option value={24}>{t("settings.small")}</option>
+                <option value={28}>{t("settings.normal")}</option>
+                <option value={34}>{t("settings.large")}</option>
+                <option value={40}>{t("settings.extraLarge")}</option>
               </select>
             </Row>
             <Row
-              label="Message buffer"
-              detail="Older chat messages are discarded to keep memory usage stable."
+              icon={MessagesSquare}
+              label={t("settings.messageBuffer")}
+              detail={t("settings.messageBufferDetail")}
             >
               <select
                 className="input w-32"
@@ -390,39 +475,40 @@ export function SettingsPage() {
               </select>
             </Row>
             <Row
-              label="Hidden users"
-              detail={`${settings.chatHiddenUsers.length} users are hidden from the chat view.`}
+              icon={EyeOff}
+              label={t("settings.hiddenUsers")}
+              detail={t("settings.hiddenUsersDetail", { count: settings.chatHiddenUsers.length })}
             >
               <Button
                 disabled={!settings.chatHiddenUsers.length}
                 onClick={() => update("chatHiddenUsers", [])}
               >
-                Show all
+                {t("common.showAll")}
               </Button>
             </Row>
             <Row
-              label="Highlight exclusions"
-              detail={`${settings.chatHighlightIgnoredUsers.length} users are excluded from highlights.`}
+              icon={Highlighter}
+              label={t("settings.highlightExclusions")}
+              detail={t("settings.highlightExclusionsDetail", { count: settings.chatHighlightIgnoredUsers.length })}
             >
               <Button
                 disabled={!settings.chatHighlightIgnoredUsers.length}
                 onClick={() => update("chatHighlightIgnoredUsers", [])}
               >
-                Reset
+                {t("common.reset")}
               </Button>
             </Row>
           </Card>
         </section>
         <section>
-          <h2 className="mb-2 px-1 text-[10px] font-bold tracking-[.14em] text-zinc-600">
-            EVENTS
-          </h2>
+          <SectionTitle icon={ListFilter}>{t("settings.events")}</SectionTitle>
           <Card className="p-4">
             <p className="mb-3 text-xs text-muted">
-              Choose which incoming events StreamDash records and displays.
+              {t("settings.eventsDetail")}
             </p>
             <div className="grid grid-cols-2 gap-2 md:grid-cols-3 xl:grid-cols-4">
               {eventOptions.map((option) => {
+                const Icon = option.icon;
                 const enabled = !settings.disabledEventTypes.includes(
                   option.id,
                 );
@@ -441,7 +527,10 @@ export function SettingsPage() {
                     }
                     className={`flex items-center justify-between rounded-lg border px-3 py-2 text-xs transition ${enabled ? "border-accent/30 bg-accent-soft text-zinc-200" : "border-line bg-black/10 text-zinc-600"}`}
                   >
-                    <span>{option.label}</span>
+                    <span className="flex items-center gap-2">
+                      <Icon size={13} aria-hidden="true" />
+                      {t(`settings.${option.label}`)}
+                    </span>
                     <span
                       className={`size-1.5 rounded-full ${enabled ? "bg-accent" : "bg-zinc-700"}`}
                     />
@@ -452,13 +541,12 @@ export function SettingsPage() {
           </Card>
         </section>
         <section>
-          <h2 className="mb-2 px-1 text-[10px] font-bold tracking-[.14em] text-zinc-600">
-            DATA
-          </h2>
+          <SectionTitle icon={Database}>{t("settings.data")}</SectionTitle>
           <Card className="px-5">
             <Row
-              label="Maximum stored events"
-              detail="Older entries are removed automatically once this limit is reached."
+              icon={Archive}
+              label={t("settings.maximumEvents")}
+              detail={t("settings.maximumEventsDetail")}
             >
               <select
                 className="input w-32"

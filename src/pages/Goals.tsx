@@ -3,6 +3,8 @@ import { Card, LoadingIndicator, PageHeader } from "../components/ui";
 import { useAppStore } from "../stores/app-store";
 import { saveSetting } from "../services/native";
 import { money } from "../lib/utils";
+import { useTranslation } from "react-i18next";
+import { Target } from "lucide-react";
 function GoalRow({
   label,
   value,
@@ -18,6 +20,7 @@ function GoalRow({
   display?: (n: number) => string;
   loading?: boolean;
 }) {
+  const { t, i18n } = useTranslation();
   const percent =
     value != null && target ? Math.min(100, (value / target) * 100) : 0;
   const [draft, setDraft] = useState(target?.toString() ?? "");
@@ -30,16 +33,16 @@ function GoalRow({
             {loading ? (
               <LoadingIndicator className="h-3 w-32" />
             ) : value == null
-              ? "Unavailable until the service is connected"
-              : `${display?.(value) ?? value.toLocaleString("en-US")} / ${target ? (display?.(target) ?? target.toLocaleString("en-US")) : "No target"}`}
+              ? t("goals.unavailable")
+              : `${display?.(value) ?? value.toLocaleString(i18n.language)} / ${target ? (display?.(target) ?? target.toLocaleString(i18n.language)) : t("goals.noTarget")}`}
           </div>
         </div>
         <input
-          aria-label={`${label} target`}
+          aria-label={t("goals.targetLabel", { label })}
           type="number"
           min="1"
           className="input w-32"
-          placeholder="Target"
+          placeholder={t("goals.target")}
           value={draft}
           onChange={(e) => setDraft(e.target.value)}
           onBlur={() => onTarget(draft ? Number(draft) : undefined)}
@@ -59,6 +62,7 @@ function GoalRow({
   );
 }
 export function Goals() {
+  const { t } = useTranslation();
   const { stats, statsLoading, settings, setSettings } = useAppStore();
   const update = async (
     key: "followers" | "subscribers" | "donations",
@@ -70,24 +74,24 @@ export function Goals() {
   };
   return (
     <>
-      <PageHeader title="Goals" />
+      <PageHeader icon={Target} title={t("goals.title")} />
       <Card className="px-5">
         <GoalRow
-          label="Followers"
+          label={t("goals.followers")}
           value={stats.followers}
           loading={statsLoading}
           target={settings.goals.followers}
           onTarget={(v) => update("followers", v)}
         />
         <GoalRow
-          label="Subscribers"
+          label={t("goals.subscribers")}
           value={stats.subscribers}
           loading={statsLoading}
           target={settings.goals.subscribers}
           onTarget={(v) => update("subscribers", v)}
         />
         <GoalRow
-          label="Donations"
+          label={t("goals.donations")}
           value={stats.donations}
           target={settings.goals.donations}
           onTarget={(v) => update("donations", v)}

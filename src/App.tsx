@@ -6,6 +6,8 @@ import { Dashboard } from "./pages/Dashboard";
 import { useAppStore } from "./stores/app-store";
 import { isTauri } from "./lib/utils";
 import { LoadingIndicator } from "./components/ui";
+import { useTranslation } from "react-i18next";
+import { resolveLanguage } from "./i18n";
 
 const StreamPage = lazy(() =>
   import("./pages/StreamPage").then((module) => ({
@@ -54,18 +56,24 @@ const pages: Record<string, React.ComponentType> = {
   connections: Connections,
   settings: SettingsPage,
 };
-const loading = (
-  <div
-    aria-label="Loading page"
-    role="status"
-    className="grid h-[55vh] place-items-center"
-  >
-    <LoadingIndicator className="h-8 w-16" />
-  </div>
-);
 export default function App() {
   const { page, ready, settings } = useAppStore();
+  const { i18n, t } = useTranslation();
   const Page = pages[page] ?? Dashboard;
+  const loading = (
+    <div
+      aria-label={t("common.loadingPage")}
+      role="status"
+      className="grid h-[55vh] place-items-center"
+    >
+      <LoadingIndicator className="h-8 w-16" />
+    </div>
+  );
+  useEffect(() => {
+    const language = resolveLanguage(settings.language);
+    if (i18n.resolvedLanguage !== language) void i18n.changeLanguage(language);
+    document.documentElement.lang = language;
+  }, [i18n, settings.language]);
   useEffect(() => {
     const handleMouseButton = (event: MouseEvent) => {
       if (!event.isTrusted) return;
@@ -113,7 +121,7 @@ export default function App() {
       >
         <img
           src="/streamdash-logo-boot.webp"
-          alt="StreamDash is starting"
+          alt={t("common.starting")}
           className="h-auto w-80 max-w-[70vw] object-contain animate-pulse"
         />
       </div>

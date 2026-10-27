@@ -12,29 +12,31 @@ import { formatDistanceToNow } from "date-fns";
 import type { ActivityEvent } from "../types";
 import { money } from "../lib/utils";
 import { EmptyState } from "./ui";
+import { useTranslation } from "react-i18next";
+import { de, enUS, es, fr, ptBR } from "date-fns/locale";
 const presentation = {
-  follow: [Heart, "Follow", "text-pink-300 bg-pink-400/10"],
-  subscription: [Star, "Subscription", "text-violet-300 bg-violet-400/10"],
-  resubscription: [Star, "Resubscription", "text-violet-300 bg-violet-400/10"],
-  gift_subscription: [Gift, "Gifted sub", "text-sky-300 bg-sky-400/10"],
-  community_gift: [Gift, "Community gift", "text-sky-300 bg-sky-400/10"],
-  cheer: [Sparkles, "Cheer", "text-amber-300 bg-amber-400/10"],
-  raid: [Users, "Raid", "text-orange-300 bg-orange-400/10"],
+  follow: [Heart, "follow", "text-pink-300 bg-pink-400/10"],
+  subscription: [Star, "subscription", "text-violet-300 bg-violet-400/10"],
+  resubscription: [Star, "resubscription", "text-violet-300 bg-violet-400/10"],
+  gift_subscription: [Gift, "gift_subscription", "text-sky-300 bg-sky-400/10"],
+  community_gift: [Gift, "community_gift", "text-sky-300 bg-sky-400/10"],
+  cheer: [Sparkles, "cheer", "text-amber-300 bg-amber-400/10"],
+  raid: [Users, "raid", "text-orange-300 bg-orange-400/10"],
   donation: [
     CircleDollarSign,
-    "Donation",
+    "donation",
     "text-emerald-300 bg-emerald-400/10",
   ],
-  channel_point: [Sparkles, "Redemption", "text-cyan-300 bg-cyan-400/10"],
-  stream_online: [Radio, "Stream online", "text-emerald-300 bg-emerald-400/10"],
-  stream_offline: [Radio, "Stream offline", "text-zinc-400 bg-white/5"],
-  other: [Radio, "Activity", "text-zinc-400 bg-white/5"],
+  channel_point: [Sparkles, "channel_point", "text-cyan-300 bg-cyan-400/10"],
+  stream_online: [Radio, "stream_online", "text-emerald-300 bg-emerald-400/10"],
+  stream_offline: [Radio, "stream_offline", "text-zinc-400 bg-white/5"],
+  other: [Radio, "other", "text-zinc-400 bg-white/5"],
 } as const;
 export function ActivityFeed({
   events,
   limit,
   compact = false,
-  emptyTitle = "No activity yet",
+  emptyTitle,
   emptyBody,
   onUser,
 }: {
@@ -45,12 +47,14 @@ export function ActivityFeed({
   emptyBody?: string;
   onUser?: (login: string) => void;
 }) {
+  const { t, i18n } = useTranslation();
+  const dateLocale = { de, en: enUS, es, fr, "pt-BR": ptBR }[i18n.language] ?? enUS;
   const shown = limit ? events.slice(0, limit) : events;
   if (!shown.length)
     return (
       <EmptyState
         icon={<BellOff size={24} />}
-        title={emptyTitle}
+        title={emptyTitle ?? t("activity.empty")}
         body={emptyBody}
       />
     );
@@ -59,20 +63,20 @@ export function ActivityFeed({
       {shown.map((event) => {
         const [Icon, label, color] = presentation[event.eventType];
         const who = event.displayName || event.username || "Anonymous";
-        let detail: string = label;
+        let detail: string = t(`events.${label}`);
         if (event.amount != null) detail = money(event.amount, event.currency);
         else if (event.bits)
-          detail = `${event.bits.toLocaleString("en-US")} bits`;
-        else if (event.giftCount) detail = `${event.giftCount} gifted subs`;
+          detail = t("activity.bits", { count: event.bits });
+        else if (event.giftCount) detail = t("activity.giftedSubs", { count: event.giftCount });
         else if (event.viewerCount)
-          detail = `${event.viewerCount.toLocaleString("en-US")} viewers`;
+          detail = t("activity.viewers", { count: event.viewerCount });
         const canOpenUser = Boolean(event.username && onUser);
         return (
           <div
             key={event.id}
             role={canOpenUser ? "button" : undefined}
             tabIndex={canOpenUser ? 0 : undefined}
-            title={canOpenUser ? `Open ${who}'s user card` : undefined}
+            title={canOpenUser ? t("activity.openUser", { name: who }) : undefined}
             onClick={() => {
               if (event.username) onUser?.(event.username);
             }}
@@ -106,6 +110,7 @@ export function ActivityFeed({
             <div className="shrink-0 text-[11px] text-zinc-600">
               {formatDistanceToNow(new Date(event.timestamp), {
                 addSuffix: true,
+                locale: dateLocale,
               })}
             </div>
           </div>

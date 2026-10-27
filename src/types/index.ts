@@ -42,8 +42,10 @@ export interface DashboardBrowserSource { id: string; name: string; url: string 
 export type UiDensity = 'compact' | 'comfortable'
 export type ContentWidth = 'compact' | 'wide' | 'full'
 export type AccentColor = 'violet' | 'blue' | 'emerald' | 'orange'
+export type AppLanguage = 'auto' | 'en' | 'de' | 'es' | 'pt-BR' | 'fr'
 
 export interface AppSettings {
+  language: AppLanguage
   launchAtStartup: boolean
   keepUserData: boolean
   minimizeToTray: boolean

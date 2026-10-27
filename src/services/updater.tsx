@@ -16,6 +16,7 @@ import {
   type UpdateChannel,
   type UpdateContextValue,
 } from "./updater-context";
+import { useTranslation } from "react-i18next";
 
 type UpdateState = Omit<
   UpdateContextValue,
@@ -25,6 +26,7 @@ let automaticCheckStarted = false;
 const STORE_UPDATES_URL = "ms-windows-store://downloadsandupdates";
 
 export function UpdateProvider({ children }: { children: ReactNode }) {
+  const { t } = useTranslation();
   const updateRef = useRef<Update | null>(null);
   const channelRef = useRef<UpdateChannel | null>(
     import.meta.env.DEV ? "dev" : null,
@@ -47,7 +49,7 @@ export function UpdateProvider({ children }: { children: ReactNode }) {
     if (!isTauri()) return;
     if (import.meta.env.DEV) {
       setState({ phase: "current", channel: "dev" });
-      if (notifyWhenCurrent) toast.info("Updates are disabled in development");
+      if (notifyWhenCurrent) toast.info(t("updater.disabledDevelopment"));
       return;
     }
     setState((current) => ({ ...current, phase: "checking" }));
@@ -61,12 +63,12 @@ export function UpdateProvider({ children }: { children: ReactNode }) {
           channel: "store",
         });
         if (available) {
-          toast.info("A Microsoft Store update is available", {
-            description: "Use the Store button beside the version to update.",
+          toast.info(t("updater.storeAvailable"), {
+            description: t("updater.storeAvailableDetail"),
             duration: 12_000,
           });
         } else if (notifyWhenCurrent) {
-          toast.success("StreamDash is up to date");
+          toast.success(t("updater.current"));
         }
         return;
       }
@@ -76,7 +78,7 @@ export function UpdateProvider({ children }: { children: ReactNode }) {
       updateRef.current = available;
       if (!available) {
         setState({ phase: "current", channel: "standalone" });
-        if (notifyWhenCurrent) toast.success("StreamDash is up to date");
+        if (notifyWhenCurrent) toast.success(t("updater.current"));
         return;
       }
       setState({
@@ -86,18 +88,17 @@ export function UpdateProvider({ children }: { children: ReactNode }) {
         currentVersion: available.currentVersion,
         notes: available.body,
       });
-      toast.info(`StreamDash ${available.version} is available`, {
-        description:
-          "Use the download button beside the version in the title bar.",
+      toast.info(t("updater.available", { version: available.version }), {
+        description: t("updater.availableDetail"),
         duration: 12_000,
       });
     } catch (error) {
       const message = error instanceof Error ? error.message : String(error);
       setState((current) => ({ ...current, phase: "error", error: message }));
       if (notifyWhenCurrent)
-        toast.error("Could not check for updates", { description: message });
+        toast.error(t("updater.checkError"), { description: message });
     }
-  }, [resolveChannel]);
+  }, [resolveChannel, t]);
 
   const installUpdate = useCallback(async () => {
     if (channelRef.current === "store") {
@@ -106,7 +107,7 @@ export function UpdateProvider({ children }: { children: ReactNode }) {
       } catch (error) {
         const message = error instanceof Error ? error.message : String(error);
         setState((current) => ({ ...current, phase: "error", error: message }));
-        toast.error("Could not open Microsoft Store", { description: message });
+        toast.error(t("updater.storeOpenError"), { description: message });
       }
       return;
     }
@@ -138,9 +139,9 @@ export function UpdateProvider({ children }: { children: ReactNode }) {
     } catch (error) {
       const message = error instanceof Error ? error.message : String(error);
       setState((current) => ({ ...current, phase: "error", error: message }));
-      toast.error("Update installation failed", { description: message });
+      toast.error(t("updater.installError"), { description: message });
     }
-  }, []);
+  }, [t]);
 
   useEffect(() => {
     if (!isTauri() || automaticCheckStarted) return;

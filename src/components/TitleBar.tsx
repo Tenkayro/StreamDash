@@ -23,6 +23,7 @@ import titlebarLogo from "../assets/branding/streamdash-logo-titlebar.webp";
 import { LoadingIndicator } from "./ui";
 import { useAppStore } from "../stores/app-store";
 import { saveSetting } from "../services/native";
+import { useTranslation } from "react-i18next";
 
 function TitleAction({
   icon: Icon,
@@ -47,6 +48,7 @@ function TitleAction({
 }
 
 function UpdateControl() {
+  const { t } = useTranslation();
   const updater = useUpdater();
   const downloading =
     updater.phase === "downloading" || updater.phase === "installing";
@@ -57,8 +59,8 @@ function UpdateControl() {
     return (
       <div
         role="status"
-        title="Checking Microsoft Store for updates"
-        aria-label="Checking Microsoft Store for updates"
+        title={t("titleBar.checkingStore")}
+        aria-label={t("titleBar.checkingStore")}
         className="grid size-7 place-items-center text-zinc-500"
       >
         <LoaderCircle size={13} className="animate-spin" />
@@ -69,8 +71,8 @@ function UpdateControl() {
     return (
       <button
         type="button"
-        title="Update StreamDash in Microsoft Store"
-        aria-label="Update StreamDash in Microsoft Store"
+        title={t("titleBar.updateStore")}
+        aria-label={t("titleBar.updateStore")}
         onClick={() => void updater.installUpdate()}
         className="grid size-7 place-items-center rounded-md border border-accent/40 bg-accent-soft text-accent transition hover:border-accent/70 hover:brightness-125"
       >
@@ -84,13 +86,13 @@ function UpdateControl() {
         role="status"
         title={
           updater.phase === "installing"
-            ? "Installing update"
-            : `Downloading update: ${progress}%`
+            ? t("titleBar.installing")
+            : t("titleBar.downloading", { progress })
         }
         aria-label={
           updater.phase === "installing"
-            ? "Installing update"
-            : `Downloading update: ${progress}%`
+            ? t("titleBar.installing")
+            : t("titleBar.downloading", { progress })
         }
         className="relative grid size-7 place-items-center"
       >
@@ -132,8 +134,8 @@ function UpdateControl() {
     return (
       <button
         type="button"
-        title={`Download StreamDash ${updater.version}`}
-        aria-label={`Download StreamDash ${updater.version}`}
+        title={t("titleBar.downloadVersion", { version: updater.version })}
+        aria-label={t("titleBar.downloadVersion", { version: updater.version })}
         onClick={() => void updater.installUpdate()}
         className="grid size-7 place-items-center rounded-md border border-accent/40 bg-accent-soft text-accent transition hover:border-accent/70 hover:brightness-125"
       >
@@ -145,8 +147,8 @@ function UpdateControl() {
     return (
       <button
         type="button"
-        title="Check for updates again"
-        aria-label="Check for updates again"
+        title={t("titleBar.checkAgain")}
+        aria-label={t("titleBar.checkAgain")}
         onClick={() => void updater.checkForUpdates()}
         className="grid size-7 place-items-center rounded-md text-red-300 transition hover:bg-red-400/10"
       >
@@ -158,6 +160,7 @@ function UpdateControl() {
 }
 
 export function TitleBar() {
+  const { t } = useTranslation();
   const window = isTauri() ? getCurrentWindow() : null;
   const updater = useUpdater();
   const [version, setVersion] = useState("");
@@ -186,7 +189,7 @@ export function TitleBar() {
           className="h-5 w-auto object-contain"
         />
         <span
-          aria-label={`Version ${version || "loading"}, ${channel}`}
+          aria-label={t("titleBar.version", { version: version || t("titleBar.loading"), channel })}
           className="flex items-center gap-1 text-[9px] tabular-nums text-zinc-600"
         >
           <Tag size={9} />
@@ -206,8 +209,8 @@ export function TitleBar() {
           {page === "dashboard" && (
             <button
               type="button"
-              title="Reset dashboard zoom"
-              aria-label={`Dashboard zoom ${settings.dashboardZoom} percent. Reset zoom`}
+              title={t("titleBar.resetZoom")}
+              aria-label={t("titleBar.zoomLabel", { zoom: settings.dashboardZoom })}
               onClick={() => {
                 setSettings({ dashboardZoom: 100 });
                 void saveSetting("dashboardZoom", 100);
@@ -224,41 +227,41 @@ export function TitleBar() {
           <UpdateControl />
           <TitleAction
             icon={GitFork}
-            label="Open GitHub repository"
+            label={t("titleBar.openGitHub")}
             onClick={() =>
               void openUrl("https://github.com/Tenkayro/StreamDash")
             }
           />
           <TitleAction
             icon={Bug}
-            label="Issues and feedback"
+            label={t("titleBar.issues")}
             onClick={() =>
               void openUrl("https://github.com/Tenkayro/StreamDash/issues")
             }
           />
           <TitleAction
             icon={UserRound}
-            label="Author: Tenkayro"
+            label={t("titleBar.author")}
             onClick={() => void openUrl("https://github.com/Tenkayro")}
           />
         </div>
         <span className="h-4 w-px bg-line" />
         <button
-          aria-label="Minimize"
+          aria-label={t("titleBar.minimize")}
           className="grid h-full w-11 place-items-center hover:bg-white/5"
           onClick={() => window?.minimize()}
         >
           <Minus size={13} />
         </button>
         <button
-          aria-label="Maximize"
+          aria-label={t("titleBar.maximize")}
           className="grid h-full w-11 place-items-center hover:bg-white/5"
           onClick={() => window?.toggleMaximize()}
         >
           <Square size={11} />
         </button>
         <button
-          aria-label="Close"
+          aria-label={t("titleBar.close")}
           className="grid h-full w-11 place-items-center hover:bg-red-600 hover:text-white"
           onClick={() => window?.close()}
         >

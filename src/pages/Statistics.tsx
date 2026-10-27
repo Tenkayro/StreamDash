@@ -7,11 +7,16 @@ import {
   XAxis,
   YAxis,
 } from "recharts";
+import { BarChart3 } from "lucide-react";
 import { useMemo, useState } from "react";
 import { Card, PageHeader } from "../components/ui";
 import { useAppStore } from "../stores/app-store";
 import { format, subDays } from "date-fns";
+import { useTranslation } from "react-i18next";
+import { de, enUS, es, fr, ptBR } from "date-fns/locale";
 export function Statistics() {
+  const { t, i18n } = useTranslation();
+  const dateLocale = { de, en: enUS, es, fr, "pt-BR": ptBR }[i18n.language] ?? enUS;
   const events = useAppStore((s) => s.events);
   const [today] = useState(() => new Date());
   const data = useMemo(
@@ -23,12 +28,12 @@ export function Statistics() {
           (e) => e.timestamp.slice(0, 10) === key,
         );
         return {
-          day: format(day, "MMM d"),
+          day: format(day, "MMM d", { locale: dateLocale }),
           events: dayEvents.length,
           donations: dayEvents.reduce((n, e) => n + (e.amount ?? 0), 0),
         };
       }),
-    [events, today],
+    [dateLocale, events, today],
   );
   const types = useMemo(
     () =>
@@ -42,11 +47,11 @@ export function Statistics() {
   );
   return (
     <>
-      <PageHeader title="Statistics" />
+      <PageHeader icon={BarChart3} title={t("statistics.title")} />
       <Card className="p-5">
         <div className="mb-5">
-          <h2 className="text-sm font-semibold">Activity over time</h2>
-          <p className="mt-1 text-xs text-muted">Last 14 days</p>
+          <h2 className="text-sm font-semibold">{t("statistics.activityOverTime")}</h2>
+          <p className="mt-1 text-xs text-muted">{t("statistics.lastDays", { count: 14 })}</p>
         </div>
         <div className="h-64">
           <ResponsiveContainer width="100%" height="100%">
@@ -86,19 +91,19 @@ export function Statistics() {
       </Card>
       <div className="mt-4 grid grid-cols-3 gap-4">
         <Card className="p-5">
-          <div className="text-xs text-muted">Total events</div>
+          <div className="text-xs text-muted">{t("statistics.totalEvents")}</div>
           <div className="mt-2 text-3xl font-semibold">
-            {events.length.toLocaleString("en-US")}
+            {events.length.toLocaleString(i18n.language)}
           </div>
         </Card>
         <Card className="p-5">
-          <div className="text-xs text-muted">Event types</div>
+          <div className="text-xs text-muted">{t("statistics.eventTypes")}</div>
           <div className="mt-2 text-3xl font-semibold">{types.length}</div>
         </Card>
         <Card className="p-5">
-          <div className="text-xs text-muted">Most common</div>
+          <div className="text-xs text-muted">{t("statistics.mostCommon")}</div>
           <div className="mt-2 text-xl font-semibold capitalize">
-            {types[0]?.[0].replaceAll("_", " ") || "—"}
+            {types[0] ? t(`events.${types[0][0]}`) : "—"}
           </div>
         </Card>
       </div>

@@ -20,16 +20,17 @@ import type { ConnectionState } from "../types";
 import twitchIcon from "../assets/services/twitch.webp";
 import streamElementsIcon from "../assets/services/streamelements.webp";
 import { LoadingIndicator } from "./ui";
+import { useTranslation } from "react-i18next";
 const nav = [
-  { id: "dashboard", label: "Dashboard", icon: LayoutDashboard },
-  { id: "stream", label: "Stream", icon: RadioTower },
-  { id: "chat", label: "Chat", icon: MessageSquare },
-  { id: "activity", label: "Activity", icon: Activity },
-  { id: "livePreview", label: "Live Preview", icon: MonitorPlay },
-  { id: "statistics", label: "Statistics", icon: BarChart3 },
-  { id: "goals", label: "Goals", icon: Goal },
-  { id: "connections", label: "Connections", icon: Link2 },
-  { id: "settings", label: "Settings", icon: Settings },
+  { id: "dashboard", label: "dashboard", icon: LayoutDashboard },
+  { id: "stream", label: "stream", icon: RadioTower },
+  { id: "chat", label: "chat", icon: MessageSquare },
+  { id: "activity", label: "activity", icon: Activity },
+  { id: "livePreview", label: "livePreview", icon: MonitorPlay },
+  { id: "statistics", label: "statistics", icon: BarChart3 },
+  { id: "goals", label: "goals", icon: Goal },
+  { id: "connections", label: "connections", icon: Link2 },
+  { id: "settings", label: "settings", icon: Settings },
 ];
 function Status({
   icon,
@@ -42,6 +43,7 @@ function Status({
   name: string;
   state: ConnectionState;
 }) {
+  const { t } = useTranslation();
   const color =
     state.phase === "connected"
       ? "bg-emerald-400"
@@ -52,7 +54,7 @@ function Status({
           : "bg-zinc-600";
   return (
     <div
-      title={`${name}: ${state.phase}`}
+      title={`${name}: ${t(`connectionPhases.${state.phase}`)}`}
       className="flex h-8 items-center gap-2"
     >
       <img src={icon} alt="" className="size-4 shrink-0 object-contain" />
@@ -69,6 +71,7 @@ function Status({
   );
 }
 export function Sidebar() {
+  const { t } = useTranslation();
   const { page, setPage, twitch, streamElements, settings, setSettings } =
     useAppStore();
   const collapsed = settings.sidebarCollapsed;
@@ -91,16 +94,17 @@ export function Sidebar() {
       <nav className="space-y-0.5 pt-1">
         {nav.map(({ id, label, icon: Icon }) => {
           const attention = id === "connections" && permissionAttention;
+          const translatedLabel = t(`nav.${label}`);
           return (
             <button
               title={
                 attention
-                  ? "Twitch permissions need to be updated"
+                  ? t("nav.permissionAttention")
                   : collapsed
-                    ? label
+                    ? translatedLabel
                     : undefined
               }
-              aria-label={attention ? `${label}: attention required` : label}
+              aria-label={attention ? t("nav.requiredAttention", { label: translatedLabel }) : translatedLabel}
               key={id}
               onClick={() => setPage(id)}
               className={cn(
@@ -110,7 +114,7 @@ export function Sidebar() {
               )}
             >
               <Icon size={16} />
-              {!collapsed && <span className="flex-1 text-left">{label}</span>}
+              {!collapsed && <span className="flex-1 text-left">{translatedLabel}</span>}
               {attention && (
                 <AlertTriangle
                   size={14}
@@ -130,7 +134,7 @@ export function Sidebar() {
         {collapsed ? (
           <div className="mb-2 space-y-1">
             <div
-              title={`Twitch: ${twitch.phase}`}
+              title={`Twitch: ${t(`connectionPhases.${twitch.phase}`)}`}
               className="flex h-6 items-center justify-center gap-1.5"
             >
               <img
@@ -153,7 +157,7 @@ export function Sidebar() {
               />
             </div>
             <div
-              title={`StreamElements: ${streamElements.phase}`}
+              title={`StreamElements: ${t(`connectionPhases.${streamElements.phase}`)}`}
               className="flex h-6 items-center justify-center gap-1.5"
             >
               <img
@@ -188,15 +192,15 @@ export function Sidebar() {
             <Status
               icon={streamElementsIcon}
               name="StreamElements"
-              label="Donations"
+              label={t("nav.donations")}
               state={streamElements}
             />
           </div>
         )}
         <button
           onClick={toggle}
-          title={collapsed ? "Expand navigation" : "Collapse navigation"}
-          aria-label={collapsed ? "Expand navigation" : "Collapse navigation"}
+          title={collapsed ? t("nav.expandNavigation") : t("nav.collapseNavigation")}
+          aria-label={collapsed ? t("nav.expandNavigation") : t("nav.collapseNavigation")}
           className={cn(
             "flex h-8 w-full items-center rounded-lg text-xs text-zinc-600 hover:bg-white/4 hover:text-zinc-300",
             collapsed ? "justify-center" : "gap-2 px-3",
@@ -207,7 +211,7 @@ export function Sidebar() {
           ) : (
             <>
               <PanelLeftClose size={15} />
-              Collapse
+              {t("nav.collapse")}
             </>
           )}
         </button>

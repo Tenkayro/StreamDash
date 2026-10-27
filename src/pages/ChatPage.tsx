@@ -25,6 +25,7 @@ import type {
   ChatPart,
   ConnectionPhase,
 } from "../types";
+import { Trans, useTranslation } from "react-i18next";
 
 function tone(phase: ConnectionPhase) {
   return phase === "connected"
@@ -109,6 +110,7 @@ function ChatRow({
   settings: AppSettings;
   onUser: (login: string) => void;
 }) {
+  const { t } = useTranslation();
   const highlighted = isHighlighted(message, account, settings);
   return (
     <div
@@ -125,7 +127,7 @@ function ChatRow({
       >
         {message.reply && (
           <div className="mb-0.5 truncate border-l border-zinc-700 pl-2 text-[10px] leading-4 text-zinc-600">
-            Replying to{" "}
+            {t("chat.replyingTo")}{" "}
             <span className="text-zinc-400">{message.reply.displayName}</span>:{" "}
             {message.reply.body}
           </div>
@@ -144,14 +146,14 @@ function ChatRow({
         <button
           className="font-semibold hover:underline"
           style={{ color: message.color }}
-          title={`Open user card for ${message.login}`}
+          title={t("activity.openUser", { name: message.login })}
           onClick={() => onUser(message.login)}
         >
           {message.displayName}
         </button>
         {message.firstMessage && (
           <span className="ml-1 rounded bg-sky-400/10 px-1 py-0.5 text-[9px] font-semibold uppercase tracking-wide text-sky-300">
-            first
+            {t("chat.first")}
           </span>
         )}
         <span className="text-zinc-500">{message.action ? " " : ": "}</span>
@@ -162,7 +164,7 @@ function ChatRow({
         </span>
         {message.deleted && (
           <span className="ml-2 text-[9px] uppercase text-zinc-600">
-            deleted
+            {t("userCard.deleted")}
           </span>
         )}
       </div>
@@ -229,6 +231,7 @@ function getCompletion(
 }
 
 export function ChatPage() {
+  const { t } = useTranslation();
   const {
     chat,
     chatEmotes,
@@ -402,7 +405,7 @@ export function ChatPage() {
     try {
       await runtime.sendChatMessage(message);
     } catch (error) {
-      toast.error("Message could not be sent", {
+      toast.error(t("chat.sendError"), {
         description: errorMessage(error),
       });
       setDraft((current) => current || message);
@@ -467,9 +470,9 @@ export function ChatPage() {
       );
       const active = response.data?.[0]?.is_active ?? next;
       setShield({ account: twitch.account, active });
-      toast.success(active ? "Shield Mode enabled" : "Shield Mode disabled");
+      toast.success(active ? t("chat.shieldEnabled") : t("chat.shieldDisabled"));
     } catch (error) {
-      toast.error("Shield Mode could not be changed", {
+      toast.error(t("chat.shieldError"), {
         description: errorMessage(error),
       });
     } finally {
@@ -479,19 +482,20 @@ export function ChatPage() {
 
   const header = (
     <PageHeader
-      title="Chat"
+      icon={MessageSquare}
+      title={t("chat.title")}
       actions={
         <div className="flex items-center gap-1.5">
-          <Badge tone={tone(chat.phase)}>{chat.phase}</Badge>
+      <Badge tone={tone(chat.phase)}>{t(`connectionPhases.${chat.phase}`)}</Badge>
           {twitch.phase === "connected" && (
             <Button
               variant={shieldActive ? "danger" : "ghost"}
               title={
                 canManageShield
                   ? shieldActive
-                    ? "Disable Twitch Shield Mode"
-                    : "Enable Twitch Shield Mode"
-                  : "Reconnect Twitch to enable Shield Mode control"
+                    ? t("chat.disableShield")
+                    : t("chat.enableShield")
+                  : t("chat.reconnectShield")
               }
               onClick={() => void toggleShield()}
               disabled={shieldBusy || (canManageShield && shieldActive == null)}
@@ -501,7 +505,7 @@ export function ChatPage() {
               ) : (
                 <Shield size={14} />
               )}
-              {shieldActive ? "Shield on" : "Shield"}
+              {shieldActive ? t("chat.shieldOn") : t("chat.shield")}
             </Button>
           )}
           <Button
@@ -520,7 +524,7 @@ export function ChatPage() {
             }}
           >
             <Trash2 size={14} />
-            Clear
+            {t("chat.clear")}
           </Button>
         </div>
       }
@@ -533,11 +537,11 @@ export function ChatPage() {
         <Card>
           <EmptyState
             icon={<MessageSquare size={22} />}
-            title="Twitch is not connected"
-            body="Connect your Twitch account first. Chat reads and sends through your authenticated Twitch connection."
+            title={t("stream.notConnected")}
+            body={t("chat.notConnectedDetail")}
             action={
               <Button variant="primary" onClick={() => setPage("connections")}>
-                Open Connections
+                {t("chat.openConnections")}
               </Button>
             }
           />
@@ -551,12 +555,9 @@ export function ChatPage() {
       {missingScope && (
         <div className="mb-3 flex items-center justify-between gap-3 rounded-lg border border-amber-500/30 bg-amber-400/6 px-3 py-2 text-xs leading-5 text-amber-200">
           <span>
-            Twitch chat requires the{" "}
-            <span className="font-mono">chat:read</span> and{" "}
-            <span className="font-mono">chat:edit</span> permissions. Reconnect
-            once to grant them.
+            <Trans i18nKey="chat.permissions" components={{ read: <span className="font-mono" />, edit: <span className="font-mono" /> }} />
           </span>
-          <Button onClick={() => setPage("connections")}>Reconnect</Button>
+          <Button onClick={() => setPage("connections")}>{t("chat.reconnect")}</Button>
         </div>
       )}
       {chat.detail && chat.phase === "error" && (
@@ -573,7 +574,7 @@ export function ChatPage() {
               <input
                 autoFocus
                 className="h-8 w-full bg-transparent pl-8 pr-8 text-xs outline-none"
-                placeholder="Filter messages or users…"
+                placeholder={t("chat.filterPlaceholder")}
                 value={search}
                 onChange={(event) => setSearch(event.target.value)}
               />
@@ -589,14 +590,14 @@ export function ChatPage() {
           ) : (
             <div className="text-[11px] text-muted">
               #{twitch.account} <span className="text-zinc-700">•</span>{" "}
-              {chatEmotes.length.toLocaleString()} emotes{" "}
+              {t("chat.emoteCount", { count: chatEmotes.length })}{" "}
               <span className="text-zinc-700">•</span>{" "}
-              {chatMessages.length.toLocaleString()} messages
+              {t("chat.messageCount", { count: chatMessages.length })}
             </div>
           )}
           {search && (
             <span className="shrink-0 text-[10px] text-zinc-600">
-              {visibleMessages.length} matches
+              {t("chat.matchCount", { count: visibleMessages.length })}
             </span>
           )}
         </div>
@@ -608,10 +609,10 @@ export function ChatPage() {
           {visibleMessages.length === 0 ? (
             <div className="grid h-full place-items-center px-6 text-center text-sm text-muted">
               {search
-                ? "No messages match this filter."
+                ? t("chat.noMatches")
                 : chat.phase === "connecting" || chat.phase === "reconnecting"
-                  ? "Connecting to Twitch chat…"
-                  : "Waiting for the first chat message…"}
+                  ? t("chat.connecting")
+                  : t("chat.waitingFirstMessage")}
             </div>
           ) : (
             visibleMessages.map((message) => (
@@ -632,8 +633,8 @@ export function ChatPage() {
           >
             <ChevronDown size={13} />
             {unread
-              ? `${unread} new message${unread === 1 ? "" : "s"}`
-              : "Jump to latest"}
+              ? t("chat.newMessages", { count: unread })
+              : t("chat.jumpLatest")}
           </button>
         )}
         <div className="relative border-t border-line p-2.5">
@@ -673,7 +674,7 @@ export function ChatPage() {
             <input
               ref={inputRef}
               className="input"
-              placeholder={`Message #${twitch.account} · type :emote: or @user`}
+              placeholder={t("chat.messagePlaceholder", { account: twitch.account })}
               value={draft}
               maxLength={500}
               autoComplete="off"
@@ -702,13 +703,12 @@ export function ChatPage() {
               ) : (
                 <Send size={15} />
               )}
-              Send
+              {t("chat.send")}
             </Button>
           </form>
           <div className="mt-1.5 flex justify-between px-1 text-[9px] text-zinc-700">
             <span>
-              Tab/Enter completes · ↑ recalls sent messages · click a name to
-              mention
+              {t("chat.inputHint")}
             </span>
             <span>{draft.length}/500</span>
           </div>

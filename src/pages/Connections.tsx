@@ -20,6 +20,7 @@ import { isTauri } from "../lib/utils";
 import { needsTwitchPermissionUpdate } from "../services/twitch/client";
 import twitchIcon from "../assets/services/twitch.webp";
 import streamElementsIcon from "../assets/services/streamelements.webp";
+import { useTranslation } from "react-i18next";
 
 function phaseTone(phase: string) {
   return phase === "connected"
@@ -32,6 +33,7 @@ function phaseTone(phase: string) {
 }
 
 export function Connections() {
+  const { t } = useTranslation();
   const { twitch, streamElements } = useAppStore();
   const runtime = useRuntime();
   const [token, setToken] = useState("");
@@ -41,7 +43,7 @@ export function Connections() {
     twitch.phase === "connected" && needsTwitchPermissionUpdate(twitch.scopes);
   return (
     <>
-      <PageHeader title="Connections" />
+      <PageHeader icon={Link2} title={t("connections.title")} />
       <div className="space-y-4">
         <Card className="p-5">
           <div className="flex items-start justify-between gap-5">
@@ -56,7 +58,7 @@ export function Connections() {
               <div>
                 <div className="flex items-center gap-2">
                   <h2 className="font-semibold">Twitch</h2>
-                  <Badge tone={phaseTone(twitch.phase)}>{twitch.phase}</Badge>
+                  <Badge tone={phaseTone(twitch.phase)}>{t(`connectionPhases.${twitch.phase}`)}</Badge>
                 </div>
                 {twitchBusy && !twitch.account ? (
                   <LoadingIndicator className="mt-2 h-3.5 w-24" />
@@ -68,7 +70,7 @@ export function Connections() {
                 )}
                 {missingModeration && (
                   <p className="mt-2 text-xs text-amber-300">
-                    Reconnect once to enable all moderation features.
+                    {t("connections.reconnectModeration")}
                   </p>
                 )}
               </div>
@@ -77,12 +79,12 @@ export function Connections() {
               {missingModeration && (
                 <Button variant="primary" onClick={runtime.reauthorizeTwitch}>
                   <ShieldCheck size={14} />
-                  Update permissions
+                  {t("connections.updatePermissions")}
                 </Button>
               )}
               {twitch.phase === "connected" ? (
                 <Button variant="danger" onClick={runtime.disconnectTwitch}>
-                  Disconnect
+                  {t("connections.disconnect")}
                 </Button>
               ) : (
                 <Button
@@ -95,7 +97,7 @@ export function Connections() {
                   ) : (
                     <Link2 size={15} />
                   )}
-                  Connect Twitch
+                  {t("connections.connectTwitch")}
                 </Button>
               )}
             </div>
@@ -103,7 +105,7 @@ export function Connections() {
           {runtime.deviceAuth && (
             <div className="mt-5 rounded-xl border border-violet-500/30 bg-violet-500/6 p-4">
               <div className="text-xs text-muted">
-                Enter this code in the Twitch page opened in your browser
+                {t("connections.enterCode")}
               </div>
               <div className="mt-2 font-mono text-2xl font-semibold tracking-[.16em]">
                 {runtime.deviceAuth.code}
@@ -113,7 +115,7 @@ export function Connections() {
                 onClick={() => openUrl(runtime.deviceAuth!.url)}
               >
                 <ExternalLink size={14} />
-                Open Twitch activation
+                {t("connections.openActivation")}
               </Button>
             </div>
           )}
@@ -132,7 +134,7 @@ export function Connections() {
                 <div className="flex items-center gap-2">
                   <h2 className="font-semibold">StreamElements</h2>
                   <Badge tone={phaseTone(streamElements.phase)}>
-                    {streamElements.phase}
+                    {t(`connectionPhases.${streamElements.phase}`)}
                   </Badge>
                 </div>
                 {streamElements.detail && (
@@ -147,7 +149,7 @@ export function Connections() {
                 variant="danger"
                 onClick={runtime.disconnectStreamElements}
               >
-                Disconnect
+                {t("connections.disconnect")}
               </Button>
             ) : null}
           </div>
@@ -162,7 +164,7 @@ export function Connections() {
                   className="input"
                   type="password"
                   autoComplete="off"
-                  placeholder="Paste your account JWT"
+                  placeholder={t("connections.jwtPlaceholder")}
                   value={token}
                   onChange={(event) => setToken(event.target.value)}
                 />
@@ -179,7 +181,7 @@ export function Connections() {
                   ) : (
                     <CheckCircle2 size={15} />
                   )}
-                  Connect
+                  {t("connections.connect")}
                 </Button>
               </div>
               <p className="mt-2 text-xs leading-5 text-zinc-600">

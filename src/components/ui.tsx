@@ -1,5 +1,6 @@
 import type { ButtonHTMLAttributes, HTMLAttributes, ReactNode } from "react";
 import { cn } from "../lib/utils";
+import type { LucideIcon } from "lucide-react";
 export function Card({ className, ...props }: HTMLAttributes<HTMLDivElement>) {
   return <div className={cn("card", className)} {...props} />;
 }
@@ -65,11 +66,13 @@ export function Badge({
   );
 }
 export function PageHeader({
+  icon: Icon,
   title,
   description,
   titleActions,
   actions,
 }: {
+  icon?: LucideIcon;
   title: string;
   description?: string;
   titleActions?: ReactNode;
@@ -79,6 +82,11 @@ export function PageHeader({
     <div className="mb-4 flex items-start justify-between gap-4">
       <div>
         <div className="flex items-center gap-2">
+          {Icon && (
+            <span className="grid size-8 shrink-0 place-items-center rounded-lg bg-accent-soft text-accent">
+              <Icon size={16} aria-hidden="true" />
+            </span>
+          )}
           <h1 className="text-xl font-semibold tracking-[-.02em]">{title}</h1>
           {titleActions}
         </div>

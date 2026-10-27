@@ -25,6 +25,7 @@ import { twitchNative } from "../services/native";
 import { TWITCH_CLIENT_ID } from "../services/twitch/config";
 import { useRuntime } from "../services/runtime-context";
 import { useAppStore } from "../stores/app-store";
+import { Trans, useTranslation } from "react-i18next";
 
 const MANAGE_SCOPE = "channel:manage:broadcast";
 const LANGUAGES = [
@@ -97,6 +98,7 @@ function BoxArt({
 }
 
 export function StreamPage() {
+  const { t, i18n } = useTranslation();
   const { stats, statsLoading, twitch, setStats } = useAppStore();
   const runtime = useRuntime();
   const clientId = TWITCH_CLIENT_ID;
@@ -142,7 +144,7 @@ export function StreamPage() {
         }
       } catch (error) {
         if (!cancelled)
-          toast.error("Could not load stream details", {
+          toast.error(t("stream.loadError"), {
             description: errorMessage(error),
           });
       } finally {
@@ -152,7 +154,7 @@ export function StreamPage() {
     return () => {
       cancelled = true;
     };
-  }, [clientId, connected, userId]);
+  }, [clientId, connected, t, userId]);
 
   useEffect(() => {
     if (!connected || term.length < 2) return;
@@ -188,11 +190,11 @@ export function StreamPage() {
     if (!connected || !userId) return;
     const value = title.trim();
     if (!value) {
-      toast.error("Please enter a stream title");
+      toast.error(t("stream.enterTitle"));
       return;
     }
     if (value.length > 140) {
-      toast.error("Twitch allows at most 140 characters");
+      toast.error(t("stream.titleTooLong"));
       return;
     }
     setSaving(true);
@@ -208,12 +210,11 @@ export function StreamPage() {
         },
       );
       setStats({ title: value, category: category?.name });
-      toast.success("Stream details updated", {
-        description:
-          "Your Twitch channel now shows the new title, category, and language.",
+      toast.success(t("stream.updated"), {
+        description: t("stream.updatedDetail"),
       });
     } catch (error) {
-      toast.error("Could not update stream details", {
+      toast.error(t("stream.updateError"), {
         description: errorMessage(error),
       });
     } finally {
@@ -229,14 +230,14 @@ export function StreamPage() {
         data?: Array<{ position_seconds?: number }>;
       }>(clientId, "streams/markers", [], { user_id: userId });
       const position = result.data?.[0]?.position_seconds;
-      toast.success("Stream marker added", {
+      toast.success(t("stream.markerAdded"), {
         description:
           position == null
-            ? "The current moment was saved for your highlight workflow."
-            : `Saved at ${Math.floor(position / 60)}:${String(position % 60).padStart(2, "0")}.`,
+            ? t("stream.markerSaved")
+            : t("stream.markerPosition", { position: `${Math.floor(position / 60)}:${String(position % 60).padStart(2, "0")}` }),
       });
     } catch (error) {
-      toast.error("Could not add stream marker", {
+      toast.error(t("stream.markerError"), {
         description: errorMessage(error),
       });
     } finally {
@@ -246,7 +247,8 @@ export function StreamPage() {
 
   const header = (
     <PageHeader
-      title="Stream"
+      icon={RadioTower}
+      title={t("stream.title")}
       actions={
         <div className="flex items-center gap-1.5">
           {connected && (
@@ -254,8 +256,8 @@ export function StreamPage() {
               variant="ghost"
               title={
                 stats.live
-                  ? "Mark this moment for a future highlight"
-                  : "Stream markers are available while live"
+                  ? t("stream.markMoment")
+                  : t("stream.markersWhileLive")
               }
               disabled={statsLoading || !stats.live || marking || missingScope}
               onClick={() => void markStream()}
@@ -265,14 +267,14 @@ export function StreamPage() {
               ) : (
                 <Flag size={14} />
               )}
-              Add marker
+              {t("stream.addMarker")}
             </Button>
           )}
           {statsLoading ? (
             <LoadingIndicator className="h-6 w-14" />
           ) : (
             <Badge tone={stats.live ? "green" : "neutral"}>
-              {stats.live ? "Live" : "Offline"}
+              {stats.live ? t("stream.live") : t("stream.offline")}
             </Badge>
           )}
         </div>
@@ -288,7 +290,7 @@ export function StreamPage() {
           {runtime.deviceAuth ? (
             <div className="p-5">
               <div className="text-xs text-muted">
-                Enter this code in the Twitch page opened in your browser
+                {t("connections.enterCode")}
               </div>
               <div className="mt-2 font-mono text-2xl font-semibold tracking-[.16em]">
                 {runtime.deviceAuth.code}
@@ -298,26 +300,26 @@ export function StreamPage() {
                 onClick={() => openUrl(runtime.deviceAuth!.url)}
               >
                 <ExternalLink size={14} />
-                Open Twitch activation
+                {t("connections.openActivation")}
               </Button>
             </div>
           ) : busy ? (
             <div className="flex min-h-52 items-center justify-center gap-2 text-sm text-muted">
               <LoaderCircle size={16} className="animate-spin" />
-              Waiting for Twitch authorization…
+              {t("stream.waitingAuthorization")}
             </div>
           ) : (
             <EmptyState
               icon={<RadioTower size={22} />}
-              title="Twitch is not connected"
-              body="Connect your broadcaster account to edit the title, category, and language of your channel from StreamDash."
+              title={t("stream.notConnected")}
+              body={t("stream.notConnectedDetail")}
               action={
                 <Button
                   variant="primary"
                   disabled={!isTauri()}
                   onClick={runtime.connectTwitch}
                 >
-                  Connect Twitch
+                  {t("connections.connectTwitch")}
                 </Button>
               }
             />
@@ -337,28 +339,25 @@ export function StreamPage() {
           <TriangleAlert size={16} className="mt-0.5 shrink-0 text-amber-300" />
           <div className="flex-1">
             <div className="text-sm font-medium text-amber-200">
-              Twitch permission is missing
+              {t("stream.permissionMissing")}
             </div>
             <p className="mt-1 text-xs leading-5 text-muted">
-              StreamDash needs the{" "}
-              <span className="font-mono">channel:manage:broadcast</span> scope
-              to edit your channel. Reconnect once to grant it.
+              <Trans i18nKey="stream.permissionDetail" components={{ scope: <span className="font-mono" /> }} />
             </p>
           </div>
           <Button onClick={runtime.connectTwitch}>
             <RadioTower size={14} />
-            Reconnect Twitch
+            {t("stream.reconnectTwitch")}
           </Button>
         </Card>
       )}
       <div className="grid grid-cols-[1fr_300px] gap-4">
         <Card className="p-5">
           <label className="label" htmlFor="stream-title">
-            Stream title
+            {t("stream.streamTitle")}
           </label>
           <p className="mt-1 text-xs leading-5 text-muted">
-            Shown on your channel page, in the Twitch directory, and in search
-            results.
+            {t("stream.streamTitleDetail")}
           </p>
           <div className="relative mt-3">
             {busyLoading ? (
@@ -370,7 +369,7 @@ export function StreamPage() {
                   className="input pr-16"
                   maxLength={140}
                   autoComplete="off"
-                  placeholder="What are you streaming today?"
+                  placeholder={t("stream.titlePlaceholder")}
                   value={title}
                   disabled={missingScope}
                   onChange={(event) => setTitle(event.target.value)}
@@ -388,11 +387,10 @@ export function StreamPage() {
               htmlFor="stream-category"
             >
               <Gamepad2 size={13} />
-              Category
+              {t("stream.category")}
             </label>
             <p className="mt-1 text-xs leading-5 text-muted">
-              Search Twitch’s directory for the game or category you are
-              streaming.
+              {t("stream.categoryDetail")}
             </p>
             {busyLoading ? (
               <div className="mt-3 flex items-center gap-3 rounded-xl border border-line bg-[#101116] p-2.5">
@@ -408,7 +406,7 @@ export function StreamPage() {
                 <div className="min-w-0 flex-1">
                   <div className="truncate text-sm">{category.name}</div>
                   <div className="mt-0.5 text-[11px] text-zinc-600">
-                    Current category
+                    {t("stream.currentCategory")}
                   </div>
                 </div>
               </div>
@@ -427,7 +425,7 @@ export function StreamPage() {
                 className="input pl-9"
                 autoComplete="off"
                 spellCheck={false}
-                placeholder="Search categories, e.g. Minecraft"
+                placeholder={t("stream.categoryPlaceholder")}
                 value={query}
                 disabled={missingScope}
                 onChange={(event) => setQuery(event.target.value)}
@@ -448,7 +446,7 @@ export function StreamPage() {
                   )}
                   {!searching && lookup.items.length === 0 && (
                     <div className="px-3 py-2 text-xs text-muted">
-                      No categories found
+                      {t("stream.noCategories")}
                     </div>
                   )}
                   {!searching &&
@@ -479,10 +477,10 @@ export function StreamPage() {
               htmlFor="stream-language"
             >
               <Languages size={13} />
-              Language
+              {t("stream.language")}
             </label>
             <p className="mt-1 text-xs leading-5 text-muted">
-              Used for the language filter in the Twitch directory.
+              {t("stream.languageDetail")}
             </p>
             {busyLoading ? (
               <LoadingIndicator className="mt-3 h-[34px] w-full max-w-xs" />
@@ -508,7 +506,7 @@ export function StreamPage() {
 
           <div className="mt-6 flex items-center justify-between gap-4 border-t border-line pt-5">
             <p className="text-[11px] leading-5 text-zinc-600">
-              Changes apply immediately, also while you are offline.
+              {t("stream.changesImmediate")}
             </p>
             <Button
               variant="primary"
@@ -520,13 +518,13 @@ export function StreamPage() {
               ) : (
                 <Save size={15} />
               )}
-              Save changes
+              {t("stream.saveChanges")}
             </Button>
           </div>
         </Card>
 
         <Card className="h-fit p-4">
-          <h2 className="text-sm font-semibold">Channel preview</h2>
+          <h2 className="text-sm font-semibold">{t("stream.channelPreview")}</h2>
           <div className="mt-4 flex gap-3">
             {busyLoading ? (
               <LoadingIndicator className="h-24 w-16 shrink-0" />
@@ -543,10 +541,10 @@ export function StreamPage() {
               ) : (
                 <>
                   <div className="line-clamp-3 text-sm font-medium leading-5">
-                    {title.trim() || "No title yet"}
+                    {title.trim() || t("stream.noTitle")}
                   </div>
                   <div className="mt-1 truncate text-xs text-muted">
-                    {category?.name || "No category selected"}
+                    {category?.name || t("stream.noCategory")}
                   </div>
                   <div className="mt-0.5 text-[11px] text-zinc-600">
                     {LANGUAGES.find((item) => item.value === language)?.label ??
@@ -558,25 +556,25 @@ export function StreamPage() {
           </div>
           <div className="mt-4 space-y-2 border-t border-line pt-3 text-xs">
             <div className="flex items-center justify-between">
-              <span className="text-muted">Status</span>
+              <span className="text-muted">{t("stream.status")}</span>
               {statsLoading ? (
                 <LoadingIndicator className="h-3 w-12" />
               ) : (
-                <span>{stats.live ? "Live" : "Offline"}</span>
+                <span>{stats.live ? t("stream.live") : t("stream.offline")}</span>
               )}
             </div>
             <div className="flex items-center justify-between">
-              <span className="text-muted">Viewers</span>
+              <span className="text-muted">{t("stream.viewers")}</span>
               <span className="tabular-nums">
                 {statsLoading ? (
                   <LoadingIndicator className="h-3 w-8" />
                 ) : (
-                  stats.viewers?.toLocaleString("en-US") ?? "—"
+                  stats.viewers?.toLocaleString(i18n.language) ?? "—"
                 )}
               </span>
             </div>
             <div className="flex items-center justify-between">
-              <span className="text-muted">Account</span>
+              <span className="text-muted">{t("stream.account")}</span>
               <span className="truncate pl-3">{twitch.account ?? "—"}</span>
             </div>
           </div>

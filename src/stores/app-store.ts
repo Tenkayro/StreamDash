@@ -23,6 +23,7 @@ export const defaultDashboardWidgets: DashboardItemId[] = [
 ];
 
 export const defaultSettings: AppSettings = {
+  language: "auto",
   launchAtStartup: false,
   keepUserData: true,
   minimizeToTray: true,

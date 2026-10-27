@@ -36,6 +36,7 @@ import { TwitchChatClient } from "./twitch/chat";
 import { StreamElementsClient } from "./streamelements/client";
 import type { ActivityEvent, AppSettings, ChatUserProfile } from "../types";
 import { RuntimeContext, type DeviceAuth } from "./runtime-context";
+import i18n from "../i18n";
 
 type Bootstrap = {
   settings: Partial<AppSettings>;
@@ -109,9 +110,9 @@ export function RuntimeProvider({ children }: { children: ReactNode }) {
           sendNotification({
             title:
               event.eventType === "donation"
-                ? `Donation · ${money(event.amount ?? 0, event.currency)}`
-                : event.eventType.replaceAll("_", " "),
-            body: `${event.displayName || event.username || "Someone"}${event.message ? ` — ${event.message}` : ""}`,
+                ? `${i18n.t("events.donation")} · ${money(event.amount ?? 0, event.currency)}`
+                : i18n.t(`events.${event.eventType}`),
+            body: `${event.displayName || event.username || i18n.t("runtime.someone")}${event.message ? ` — ${event.message}` : ""}`,
           });
       }
     },
@@ -137,12 +138,12 @@ export function RuntimeProvider({ children }: { children: ReactNode }) {
         return;
       }
       if (needsTwitchPermissionUpdate(session.scopes))
-        toast.warning("Twitch permissions need attention", {
+        toast.warning(i18n.t("runtime.permissionsAttention"), {
           id: "twitch-permissions",
           description:
-            "Reconnect Twitch once to enable all moderation and channel features.",
+            i18n.t("runtime.permissionsDetail"),
           action: {
-            label: "Open Connections",
+            label: i18n.t("chat.openConnections"),
             onClick: () => state().setPage("connections"),
           },
           duration: 12_000,
@@ -158,7 +159,7 @@ export function RuntimeProvider({ children }: { children: ReactNode }) {
       try {
         state().setStats(await loadTwitchSnapshot(TWITCH_CLIENT_ID, session));
       } catch (error) {
-        toast.error("Some Twitch statistics are unavailable", {
+        toast.error(i18n.t("runtime.statsUnavailable"), {
           description: errorMessage(error),
         });
       } finally {
@@ -243,7 +244,7 @@ export function RuntimeProvider({ children }: { children: ReactNode }) {
         setReady(true);
         await reconnect();
       } catch (error) {
-        toast.error("StreamDash could not initialize", {
+        toast.error(i18n.t("runtime.initializeError"), {
           description: errorMessage(error),
         });
         setReady(true);
@@ -268,7 +269,7 @@ export function RuntimeProvider({ children }: { children: ReactNode }) {
     try {
       state().setTwitch({
         phase: "connecting",
-        detail: "Waiting for authorization",
+        detail: i18n.t("runtime.waitingAuthorization"),
       });
       const device = await twitchNative.deviceStart(
         TWITCH_CLIENT_ID,
@@ -291,17 +292,17 @@ export function RuntimeProvider({ children }: { children: ReactNode }) {
         );
         if (result.status === "authorized") {
           setDeviceAuth(undefined);
-          toast.success("Twitch connected");
+          toast.success(i18n.t("runtime.twitchConnected"));
           await startTwitch();
           return;
         }
         if (result.status === "slow_down") interval += 5000;
       }
-      throw new Error("The Twitch authorization code expired");
+      throw new Error(i18n.t("runtime.codeExpired"));
     } catch (error) {
       setDeviceAuth(undefined);
       state().setTwitch({ phase: "error", detail: errorMessage(error) });
-      toast.error("Could not connect Twitch", {
+      toast.error(i18n.t("runtime.connectError"), {
         description: errorMessage(error),
       });
     }
@@ -340,7 +341,7 @@ export function RuntimeProvider({ children }: { children: ReactNode }) {
     const message = text.trim();
     const userId = state().twitch.userId;
     if (!message) return;
-    if (!userId) throw new Error("Twitch is not connected");
+    if (!userId) throw new Error(i18n.t("stream.notConnected"));
     try {
       await twitchNative.chatSend(state().twitch.account ?? "", message);
       chatRef.current?.echo(message);
@@ -365,10 +366,10 @@ export function RuntimeProvider({ children }: { children: ReactNode }) {
   const moderationContext = (scope: string) => {
     const current = state();
     const broadcasterId = current.twitch.userId;
-    if (!broadcasterId) throw new Error("Twitch is not connected");
+    if (!broadcasterId) throw new Error(i18n.t("stream.notConnected"));
     if (!current.twitch.scopes?.includes(scope))
       throw new Error(
-        "Reconnect Twitch once to grant the required moderation permission",
+        i18n.t("runtime.moderationPermission"),
       );
     return { clientId: TWITCH_CLIENT_ID, broadcasterId };
   };
@@ -377,7 +378,7 @@ export function RuntimeProvider({ children }: { children: ReactNode }) {
   ): Promise<ChatUserProfile> => {
     const current = state();
     const broadcasterId = current.twitch.userId;
-    if (!broadcasterId) throw new Error("Twitch is not connected");
+    if (!broadcasterId) throw new Error(i18n.t("stream.notConnected"));
     const clientId = TWITCH_CLIENT_ID;
     const users = await twitchNative.helix<{
       data?: Array<{
@@ -389,7 +390,7 @@ export function RuntimeProvider({ children }: { children: ReactNode }) {
       }>;
     }>(clientId, "users", [["login", login]]);
     const user = users.data?.[0];
-    if (!user) throw new Error("Twitch user was not found");
+    if (!user) throw new Error(i18n.t("runtime.userNotFound"));
     const [follow, ban, moderator, vip] = await Promise.allSettled([
       twitchNative.helix<{ data?: Array<{ followed_at?: string }> }>(
         clientId,

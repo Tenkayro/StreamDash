@@ -1,4 +1,5 @@
 import { useMemo } from "react";
+import { useTranslation } from "react-i18next";
 import { useAppStore } from "../stores/app-store";
 import { cn } from "../lib/utils";
 
@@ -14,6 +15,7 @@ function playerUrl(channel: string) {
 }
 
 export function TwitchPlayer({ className }: { className?: string }) {
+  const { t } = useTranslation();
   const account = useAppStore((state) => state.twitch.account);
   const channel = account || FALLBACK_CHANNEL;
   const src = useMemo(() => playerUrl(channel), [channel]);
@@ -22,7 +24,7 @@ export function TwitchPlayer({ className }: { className?: string }) {
     <iframe
       key={src}
       src={src}
-      title={`${channel}'s Twitch live stream`}
+      title={t("stream.playerTitle", { channel })}
       allow="autoplay; fullscreen"
       allowFullScreen
       className={cn("block min-h-[300px] min-w-[400px] border-0", className)}
