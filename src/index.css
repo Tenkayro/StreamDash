@@ -197,6 +197,15 @@ button:focus-visible,
   border-color: var(--app-accent);
   box-shadow: 0 0 0 3px color-mix(in srgb, var(--app-accent) 16%, transparent);
 }
+.input-leading-icon {
+  padding-left: 2.25rem;
+}
+.input-trailing-action {
+  padding-right: 2.25rem;
+}
+.input-trailing-wide {
+  padding-right: 4rem;
+}
 .toggle-switch[data-state="off"] {
   background: #3f3f46;
 }

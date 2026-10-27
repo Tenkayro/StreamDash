@@ -64,7 +64,7 @@ export function ActivityPage() {
               className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-zinc-600"
             />
             <input
-              className="input pl-9 pr-9"
+              className="input input-leading-icon input-trailing-action"
               aria-label={t("activity.searchLabel")}
               placeholder={t("activity.searchPlaceholder")}
               value={search}
@@ -88,7 +88,7 @@ export function ActivityPage() {
               className={`pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 ${type === "all" ? "text-zinc-600" : "text-accent"}`}
             />
             <select
-              className="input appearance-none pl-9 pr-8 capitalize"
+              className="input input-leading-icon input-trailing-action appearance-none capitalize"
               aria-label={t("activity.filterType")}
               value={type}
               onChange={(e) => setType(e.target.value as ActivityType | "all")}
@@ -121,7 +121,7 @@ export function ActivityPage() {
               className={`pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 ${source === "all" ? "text-zinc-600" : "text-accent"}`}
             />
             <select
-              className="input appearance-none pl-9 pr-8"
+              className="input input-leading-icon input-trailing-action appearance-none"
               aria-label={t("activity.filterSource")}
               value={source}
               onChange={(e) =>

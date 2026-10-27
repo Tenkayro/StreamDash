@@ -366,7 +366,7 @@ export function StreamPage() {
               <>
                 <input
                   id="stream-title"
-                  className="input pr-16"
+                  className="input input-trailing-wide"
                   maxLength={140}
                   autoComplete="off"
                   placeholder={t("stream.titlePlaceholder")}
@@ -422,7 +422,7 @@ export function StreamPage() {
               />
               <input
                 id="stream-category"
-                className="input pl-9"
+                className="input input-leading-icon"
                 autoComplete="off"
                 spellCheck={false}
                 placeholder={t("stream.categoryPlaceholder")}
