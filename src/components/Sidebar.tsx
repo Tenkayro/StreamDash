@@ -107,7 +107,20 @@ export function Sidebar() {
           </>
         )}
       </button>
-      <nav>
+      <nav ref={navRef} className="relative">
+        <span
+          aria-hidden="true"
+          className={cn(
+            "pointer-events-none absolute inset-x-0 top-0 h-9 rounded-lg bg-accent-soft",
+            animateIndicator && settings.animations && "nav-indicator",
+          )}
+          style={{
+            transform: `translateY(${indicatorTop ?? 0}px)`,
+            opacity: indicatorTop === null ? 0 : 1,
+          }}
+        >
+          <span className="absolute left-0 top-1/2 h-4 w-0.5 -translate-y-1/2 rounded-full bg-accent" />
+        </span>
         {navigationGroups.map((group, groupIndex) => (
           <div key={group} className={cn(groupIndex > 0 && "mt-3")}>
             {collapsed ? (
@@ -123,6 +136,7 @@ export function Sidebar() {
           const translatedLabel = t(`nav.${label}`);
           return (
             <button
+              data-active={page === id ? "true" : undefined}
               title={
                 attention
                   ? t("nav.permissionAttention")
@@ -134,12 +148,11 @@ export function Sidebar() {
               key={id}
               onClick={() => setPage(id)}
               className={cn(
-                "relative flex h-9 w-full items-center rounded-lg text-sm text-zinc-500 transition hover:bg-white/4 hover:text-zinc-200",
+                "relative flex h-9 w-full items-center rounded-lg text-sm text-zinc-500 transition-colors hover:bg-white/4 hover:text-zinc-200",
                 collapsed ? "justify-center" : "gap-3 px-3",
-                page === id && "bg-accent-soft text-accent",
+                page === id && "text-accent",
               )}
             >
-              {page === id && <span className="absolute left-0 h-4 w-0.5 rounded-full bg-accent" />}
               <Icon size={16} />
               {!collapsed && <span className="flex-1 text-left">{translatedLabel}</span>}
               {attention && (
