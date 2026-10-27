@@ -1,5 +1,5 @@
 import { AlertTriangle, PanelLeftClose, PanelLeftOpen, Search } from "lucide-react";
-import { useLayoutEffect, useRef, useState } from "react";
+import { useLayoutEffect, useRef } from "react";
 import { useAppStore } from "../stores/app-store";
 import { saveSetting } from "../services/native";
 import { needsTwitchPermissionUpdate } from "../services/twitch/client";
@@ -12,6 +12,11 @@ import obsIcon from "../assets/services/obs.svg";
 import { LoadingIndicator } from "./ui";
 import { useTranslation } from "react-i18next";
 import { navigationGroups, navigationItems, OPEN_COMMAND_PALETTE } from "../lib/navigation";
+function currentTranslateY(element: HTMLElement) {
+  const transform = getComputedStyle(element).transform;
+  if (!transform || transform === "none") return 0;
+  return new DOMMatrixReadOnly(transform).m42;
+}
 function phaseColor(phase: ConnectionState["phase"]) {
   return phase === "connected"
     ? "bg-emerald-400"
@@ -55,18 +60,58 @@ export function Sidebar() {
     useAppStore();
   const collapsed = settings.sidebarCollapsed;
   const navRef = useRef<HTMLElement>(null);
-  const [indicatorTop, setIndicatorTop] = useState<number | null>(null);
-  const [animateIndicator, setAnimateIndicator] = useState(false);
+  const indicatorRef = useRef<HTMLSpanElement>(null);
+  const indicatorAnimation = useRef<Animation | null>(null);
+  const indicatorTop = useRef(0);
+  const indicatorReady = useRef(false);
   useLayoutEffect(() => {
     const nav = navRef.current;
+    const indicator = indicatorRef.current;
     const active = nav?.querySelector<HTMLElement>('[data-active="true"]');
-    if (!nav || !active) return;
-    setIndicatorTop(active.offsetTop);
-    if (!animateIndicator) {
-      const frame = requestAnimationFrame(() => setAnimateIndicator(true));
-      return () => cancelAnimationFrame(frame);
+    if (!nav || !indicator || !active) return;
+    const target = active.offsetTop;
+    const animated =
+      settings.animations &&
+      !window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+
+    // Start from the element's current on-screen position so rapid clicks
+    // continue the motion instead of jumping back to the previous item.
+    const from =
+      indicatorAnimation.current !== null
+        ? currentTranslateY(indicator)
+        : indicatorTop.current;
+
+    indicatorAnimation.current?.cancel();
+    indicatorAnimation.current = null;
+    indicator.style.transform = `translateY(${target}px)`;
+    indicatorTop.current = target;
+
+    if (!indicatorReady.current) {
+      indicatorReady.current = true;
+      return;
     }
-  }, [page, collapsed, animateIndicator]);
+    if (!animated || Math.abs(target - from) < 1) return;
+    const distance = target - from;
+    const overshoot = Math.min(10, Math.abs(distance) * 0.08);
+    const animation = indicator.animate(
+      [
+        { transform: `translateY(${from}px)` },
+        { transform: `translateY(${target + overshoot}px)`, offset: 0.6 },
+        { transform: `translateY(${target - overshoot * 0.4}px)`, offset: 0.78 },
+        { transform: `translateY(${target + overshoot * 0.15}px)`, offset: 0.91 },
+        { transform: `translateY(${target}px)` },
+      ],
+      {
+        duration: Math.min(440, 240 + Math.abs(distance) * 1.1),
+        easing: "ease-in-out",
+      },
+    );
+    indicatorAnimation.current = animation;
+    animation.onfinish = () => {
+      if (indicatorAnimation.current === animation)
+        indicatorAnimation.current = null;
+    };
+  }, [page, collapsed, settings.animations]);
   const services = [
     { name: "Twitch", icon: twitchIcon, state: twitch },
     { name: "StreamElements", icon: streamElementsIcon, state: streamElements },
@@ -110,14 +155,8 @@ export function Sidebar() {
       <nav ref={navRef} className="relative">
         <span
           aria-hidden="true"
-          className={cn(
-            "pointer-events-none absolute inset-x-0 top-0 h-9 rounded-lg bg-accent-soft",
-            animateIndicator && settings.animations && "nav-indicator",
-          )}
-          style={{
-            transform: `translateY(${indicatorTop ?? 0}px)`,
-            opacity: indicatorTop === null ? 0 : 1,
-          }}
+          ref={indicatorRef}
+          className="nav-indicator pointer-events-none absolute inset-x-0 top-0 h-9 rounded-lg bg-accent-soft"
         >
           <span className="absolute left-0 top-1/2 h-4 w-0.5 -translate-y-1/2 rounded-full bg-accent" />
         </span>
