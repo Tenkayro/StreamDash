@@ -90,18 +90,18 @@ function Row({
 }: {
   icon: LucideIcon;
   label: string;
-  detail: string;
+  detail?: string;
   children: ReactNode;
 }) {
   return (
-    <div className="flex items-center justify-between gap-6 border-b border-line py-4 last:border-0">
-      <div className="flex min-w-0 items-start gap-3">
-        <span className="mt-0.5 grid size-8 shrink-0 place-items-center rounded-lg bg-white/[.035] text-zinc-500">
+    <div className={`flex items-center justify-between gap-6 border-b border-line last:border-0 ${detail ? "py-4" : "py-3"}`}>
+      <div className={`flex min-w-0 gap-3 ${detail ? "items-start" : "items-center"}`}>
+        <span className={`grid size-8 shrink-0 place-items-center rounded-lg bg-white/[.035] text-zinc-500 ${detail ? "mt-0.5" : ""}`}>
           <Icon size={15} aria-hidden="true" />
         </span>
         <div className="min-w-0">
           <div className="text-sm">{label}</div>
-          <div className="mt-1 text-xs text-muted">{detail}</div>
+          {detail && <div className="mt-1 text-xs text-muted">{detail}</div>}
         </div>
       </div>
       {children}
@@ -170,7 +170,6 @@ export function SettingsPage() {
       <PageHeader
         icon={Settings}
         title={t("settings.title")}
-        description={t("pageDescriptions.settings")}
       />
       <div className="space-y-4">
         <section>
@@ -179,7 +178,6 @@ export function SettingsPage() {
             <Row
               icon={Languages}
               label={t("settings.language")}
-              detail={t("settings.languageDetail")}
             >
               <select
                 className="input w-52"
@@ -202,7 +200,6 @@ export function SettingsPage() {
             <Row
               icon={Rocket}
               label={t("settings.setupWizard")}
-              detail={t("settings.setupWizardDetail")}
             >
               <Button onClick={() => void update("onboardingCompleted", false)}>
                 {t("settings.openSetupWizard")}
@@ -211,7 +208,6 @@ export function SettingsPage() {
             <Row
               icon={MonitorUp}
               label={t("settings.launchWithWindows")}
-              detail={t("settings.launchWithWindowsDetail")}
             >
               <Toggle
                 value={settings.launchAtStartup}
@@ -265,7 +261,6 @@ export function SettingsPage() {
             <Row
               icon={Rows3}
               label={t("settings.interfaceDensity")}
-              detail={t("settings.interfaceDensityDetail")}
             >
               <select
                 className="input w-40"
@@ -284,7 +279,6 @@ export function SettingsPage() {
             <Row
               icon={Maximize2}
               label={t("settings.contentWidth")}
-              detail={t("settings.contentWidthDetail")}
             >
               <select
                 className="input w-40"
@@ -304,7 +298,6 @@ export function SettingsPage() {
             <Row
               icon={Palette}
               label={t("settings.accentColor")}
-              detail={t("settings.accentColorDetail")}
             >
               <select
                 className="input w-40"
@@ -325,7 +318,6 @@ export function SettingsPage() {
             <Row
               icon={PanelLeft}
               label={t("settings.compactNavigation")}
-              detail={t("settings.compactNavigationDetail")}
             >
               <Toggle
                 value={settings.sidebarCollapsed}
@@ -335,14 +327,13 @@ export function SettingsPage() {
             <Row
               icon={Rows3}
               label={t("settings.compactActivity")}
-              detail={t("settings.compactActivityDetail")}
             >
               <Toggle
                 value={settings.compactFeed}
                 onChange={(value) => update("compactFeed", value)}
               />
             </Row>
-            <Row icon={Sparkles} label={t("settings.animations")} detail={t("settings.animationsDetail")}>
+            <Row icon={Sparkles} label={t("settings.animations")}>
               <Toggle
                 value={settings.animations}
                 onChange={(value) => update("animations", value)}
@@ -385,20 +376,19 @@ export function SettingsPage() {
             <Row
               icon={Bell}
               label={t("settings.windowsNotifications")}
-              detail={t("settings.windowsNotificationsDetail")}
             >
               <Toggle
                 value={settings.notifications}
                 onChange={(value) => update("notifications", value)}
               />
             </Row>
-            <Row icon={CircleDollarSign} label={t("settings.donations")} detail={t("settings.donationsDetail")}>
+            <Row icon={CircleDollarSign} label={t("settings.donations")}>
               <Toggle
                 value={settings.notifyDonations}
                 onChange={(value) => update("notifyDonations", value)}
               />
             </Row>
-            <Row icon={RadioTower} label={t("settings.raids")} detail={t("settings.raidsDetail")}>
+            <Row icon={RadioTower} label={t("settings.raids")}>
               <Toggle
                 value={settings.notifyRaids}
                 onChange={(value) => update("notifyRaids", value)}
@@ -407,7 +397,6 @@ export function SettingsPage() {
             <Row
               icon={Gift}
               label={t("settings.giftSubscriptions")}
-              detail={t("settings.giftSubscriptionsDetail")}
             >
               <Toggle
                 value={settings.notifyGiftSubs}
@@ -422,7 +411,6 @@ export function SettingsPage() {
             <Row
               icon={Clock3}
               label={t("settings.timestamps")}
-              detail={t("settings.timestampsDetail")}
             >
               <Toggle
                 value={settings.chatTimestamps}
@@ -432,7 +420,6 @@ export function SettingsPage() {
             <Row
               icon={BadgeCheck}
               label={t("settings.badges")}
-              detail={t("settings.badgesDetail")}
             >
               <Toggle
                 value={settings.chatBadges}
@@ -442,7 +429,6 @@ export function SettingsPage() {
             <Row
               icon={AtSign}
               label={t("settings.highlightMentions")}
-              detail={t("settings.highlightMentionsDetail")}
             >
               <Toggle
                 value={settings.chatHighlightMentions}
@@ -459,7 +445,7 @@ export function SettingsPage() {
                 onSave={(value) => update("chatHighlightWords", value)}
               />
             </Row>
-            <Row icon={Type} label={t("settings.textSize")} detail={t("settings.textSizeDetail")}>
+            <Row icon={Type} label={t("settings.textSize")}>
               <select
                 className="input w-32"
                 value={settings.chatFontSize}
@@ -476,7 +462,6 @@ export function SettingsPage() {
             <Row
               icon={Smile}
               label={t("settings.emoteSize")}
-              detail={t("settings.emoteSizeDetail")}
             >
               <select
                 className="input w-32"

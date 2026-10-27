@@ -91,6 +91,12 @@
     "tryFilters": "Essayez une autre recherche ou réinitialisez un filtre.",
     "waiting": "Tout est connecté. Les nouveaux dons apparaîtront ici automatiquement."
   },
+  "contextMenu": {
+    "back": "Retour",
+    "forward": "Suivant",
+    "label": "Actions de la page",
+    "refresh": "Actualiser"
+  },
   "connectionPhases": {
     "connected": "Connecté",
     "connecting": "Connexion",

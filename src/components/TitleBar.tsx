@@ -290,6 +290,7 @@ export function TitleBar({ setup = false }: { setup?: boolean }) {
           }}
           onContextMenu={(event) => {
             event.preventDefault();
+            event.stopPropagation();
             setCloseMenuOpen(true);
           }}
         >
@@ -301,7 +302,7 @@ export function TitleBar({ setup = false }: { setup?: boolean }) {
           ref={closeMenuRef}
           role="menu"
           aria-label={t("titleBar.closeOptions")}
-          className="no-drag absolute right-1 top-[calc(100%+4px)] z-50 w-52 rounded-lg border border-line bg-[#17181e] p-1 text-zinc-200 shadow-xl shadow-black/40"
+          className="no-drag absolute right-1 top-[calc(100%+4px)] z-50 w-52 rounded-lg border border-line bg-raised p-1 text-zinc-200 shadow-xl shadow-black/40"
         >
           <button
             type="button"

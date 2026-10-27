@@ -91,6 +91,12 @@
     "tryFilters": "Prueba otra búsqueda o restablece un filtro.",
     "waiting": "Todo está conectado. Las nuevas donaciones aparecerán aquí automáticamente."
   },
+  "contextMenu": {
+    "back": "Atrás",
+    "forward": "Adelante",
+    "label": "Acciones de página",
+    "refresh": "Actualizar"
+  },
   "connectionPhases": {
     "connected": "Conectado",
     "connecting": "Conectando",

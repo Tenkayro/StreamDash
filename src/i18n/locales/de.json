@@ -91,6 +91,12 @@
     "tryFilters": "Probiere eine andere Suche oder setze einen Filter zurück.",
     "waiting": "Alles ist verbunden. Neue Spenden erscheinen hier automatisch."
   },
+  "contextMenu": {
+    "back": "Zurück",
+    "forward": "Vorwärts",
+    "label": "Seitenaktionen",
+    "refresh": "Aktualisieren"
+  },
   "connectionPhases": {
     "connected": "Verbunden",
     "connecting": "Verbindung wird hergestellt",

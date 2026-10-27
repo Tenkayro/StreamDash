@@ -91,6 +91,12 @@
     "tryFilters": "Try a different search or reset a filter.",
     "waiting": "Everything is connected. New donations will appear here automatically."
   },
+  "contextMenu": {
+    "back": "Back",
+    "forward": "Forward",
+    "label": "Page actions",
+    "refresh": "Refresh"
+  },
   "connectionPhases": {
     "connected": "Connected",
     "connecting": "Connecting",

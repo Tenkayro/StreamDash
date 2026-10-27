@@ -11,6 +11,7 @@ import { useTranslation } from "react-i18next";
 import { resolveLanguage } from "./i18n";
 import { SetupWizard } from "./components/SetupWizard";
 import { useRuntime } from "./services/runtime-context";
+import { AppContextMenu } from "./components/AppContextMenu";
 
 const CommandPalette = lazy(() =>
   import("./components/CommandPalette").then((module) => ({
@@ -223,6 +224,7 @@ export default function App() {
         className="flex h-screen flex-col bg-[#0b0c0f]"
       >
         <TitleBar setup />
+        <AppContextMenu />
         <SetupWizard />
       </div>
     );
@@ -239,6 +241,7 @@ export default function App() {
     >
       <div className="flex h-screen flex-col bg-[#0b0c0f]">
         <TitleBar />
+        <AppContextMenu />
         <Suspense fallback={null}>
           <CommandPalette />
         </Suspense>
