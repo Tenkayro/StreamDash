@@ -1,6 +1,7 @@
 import {
   Activity,
   BarChart3,
+  CircleDollarSign,
   Goal,
   LayoutDashboard,
   Link2,
@@ -26,6 +27,7 @@ export const navigationItems: NavigationItem[] = [
   { id: "stream", label: "stream", icon: RadioTower, group: "main" },
   { id: "chat", label: "chat", icon: MessageSquare, group: "main" },
   { id: "activity", label: "activity", icon: Activity, group: "main" },
+  { id: "donations", label: "donations", icon: CircleDollarSign, group: "main" },
   { id: "livePreview", label: "livePreview", icon: MonitorPlay, group: "insights" },
   { id: "statistics", label: "statistics", icon: BarChart3, group: "insights" },
   { id: "goals", label: "goals", icon: Goal, group: "insights" },

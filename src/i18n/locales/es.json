@@ -66,6 +66,31 @@
     "viewers_one": "{{count}} espectador",
     "viewers_other": "{{count}} espectadores"
   },
+  "donations": {
+    "allSources": "Todas las fuentes",
+    "anonymous": "Anónimo",
+    "clearSearch": "Borrar búsqueda",
+    "collapseDonation": "Ocultar detalles de {{name}}",
+    "connectServices": "Conectar servicio de donaciones",
+    "donationCount_one": "{{count}} donación",
+    "donationCount_other": "{{count}} donaciones",
+    "empty": "Aún no hay donaciones",
+    "emptyDetail": "Conecta StreamElements o TipeeeStream para recibir donaciones aquí en tiempo real.",
+    "expandDonation": "Mostrar detalles de {{name}}",
+    "filterSource": "Filtrar por fuente",
+    "largest": "Mayor primero",
+    "newest": "Más reciente primero",
+    "noMatches": "No hay donaciones coincidentes",
+    "noMessage": "No se incluyó ningún mensaje.",
+    "received": "Actividad",
+    "searchLabel": "Buscar donaciones",
+    "searchPlaceholder": "Buscar donantes o mensajes",
+    "sortLabel": "Ordenar donaciones",
+    "topDonation": "Mayor donación",
+    "totalReceived": "Total recibido",
+    "tryFilters": "Prueba otra búsqueda o restablece un filtro.",
+    "waiting": "Todo está conectado. Las nuevas donaciones aparecerán aquí automáticamente."
+  },
   "connectionPhases": {
     "connected": "Conectado",
     "connecting": "Conectando",
@@ -185,6 +210,7 @@
     }
   },
   "pageDescriptions": {
+    "donations": "Revisa mensajes, importes y fuentes de donaciones en una bandeja específica.",
     "connections": "Conecta cuentas y revisa el estado de los servicios.", "dashboard": "Tu stream, audiencia y actividad de un vistazo.", "goals": "Define objetivos y sigue tu progreso.", "livePreview": "Supervisa tu stream público de Twitch sin salir de StreamDash.", "settings": "Ajusta la apariencia, el comportamiento, las notificaciones y los datos.", "statistics": "Comprende las tendencias a partir de los eventos guardados."
   },
   "nav": {
@@ -358,7 +384,10 @@
     "waitingAuthorization": "Esperando la autorización de Twitch…"
   },
   "titleBar": {
-    "author": "Autor: Tenkayro", "checkAgain": "Buscar actualizaciones de nuevo", "checkingStore": "Buscando actualizaciones en Microsoft Store", "close": "Cerrar", "downloadVersion": "Descargar StreamDash {{version}}", "downloading": "Descargando actualización: {{progress}} %", "installing": "Instalando actualización", "issues": "Problemas y comentarios", "loading": "cargando", "maximize": "Maximizar", "minimize": "Minimizar", "openGitHub": "Abrir repositorio de GitHub", "resetZoom": "Restablecer zoom del panel", "updateStore": "Actualizar StreamDash en Microsoft Store", "version": "Versión {{version}}, {{channel}}", "zoomLabel": "Zoom del panel al {{zoom}} por ciento. Restablecer zoom"
+    "author": "Autor: Tenkayro", "checkAgain": "Buscar actualizaciones de nuevo", "checkingStore": "Buscando actualizaciones en Microsoft Store", "close": "Cerrar", "downloadVersion": "Descargar StreamDash {{version}}", "downloading": "Descargando actualización: {{progress}} %", "installing": "Instalando actualización", "issues": "Problemas y comentarios", "loading": "cargando", "maximize": "Maximizar", "minimize": "Minimizar", "openGitHub": "Abrir repositorio de GitHub", "resetZoom": "Restablecer zoom del panel", "updateStore": "Actualizar StreamDash en Microsoft Store", "version": "Versión {{version}}, {{channel}}", "zoomLabel": "Zoom del panel al {{zoom}} por ciento. Restablecer zoom",
+    "closeOptions": "Opciones de cierre",
+    "closeToTray": "Minimizar a la bandeja",
+    "quitApp": "Salir de StreamDash"
   },
   "tray": {
     "currentViewers": "Espectadores actuales", "live": "En directo", "offline": "Desconectado", "open": "Abrir StreamDash", "quickActions": "Acciones rápidas", "quit": "Salir de StreamDash", "reconnect": "Volver a conectar servicios", "reconnecting": "Reconectando…", "retry": "Reconectar", "statusSummary": "{{streamStatus}} · Twitch: {{twitchStatus}}", "tooltip": "StreamDash — {{streamStatus}} · Twitch: {{twitchStatus}}"

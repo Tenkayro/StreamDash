@@ -66,6 +66,31 @@
     "viewers_one": "{{count}} spectateur",
     "viewers_other": "{{count}} spectateurs"
   },
+  "donations": {
+    "allSources": "Toutes les sources",
+    "anonymous": "Anonyme",
+    "clearSearch": "Effacer la recherche",
+    "collapseDonation": "Masquer les détails de {{name}}",
+    "connectServices": "Connecter un service de dons",
+    "donationCount_one": "{{count}} don",
+    "donationCount_other": "{{count}} dons",
+    "empty": "Aucun don pour le moment",
+    "emptyDetail": "Connectez StreamElements ou TipeeeStream pour recevoir les dons ici en temps réel.",
+    "expandDonation": "Afficher les détails de {{name}}",
+    "filterSource": "Filtrer par source",
+    "largest": "Montant décroissant",
+    "newest": "Plus récents d’abord",
+    "noMatches": "Aucun don correspondant",
+    "noMessage": "Aucun message n’a été ajouté.",
+    "received": "Activité",
+    "searchLabel": "Rechercher des dons",
+    "searchPlaceholder": "Rechercher des donateurs ou messages",
+    "sortLabel": "Trier les dons",
+    "topDonation": "Don le plus élevé",
+    "totalReceived": "Total reçu",
+    "tryFilters": "Essayez une autre recherche ou réinitialisez un filtre.",
+    "waiting": "Tout est connecté. Les nouveaux dons apparaîtront ici automatiquement."
+  },
   "connectionPhases": {
     "connected": "Connecté",
     "connecting": "Connexion",
@@ -185,6 +210,7 @@
     }
   },
   "pageDescriptions": {
+    "donations": "Consultez les messages, montants et sources des dons dans une boîte dédiée.",
     "connections": "Connectez vos comptes et vérifiez l’état des services.", "dashboard": "Votre stream, votre audience et votre activité en un coup d’œil.", "goals": "Définissez des objectifs et suivez votre progression.", "livePreview": "Surveillez votre stream Twitch public sans quitter StreamDash.", "settings": "Réglez l’apparence, le comportement, les notifications et les données.", "statistics": "Analysez les tendances à partir de vos événements enregistrés."
   },
   "nav": {
@@ -358,7 +384,10 @@
     "waitingAuthorization": "En attente de l’autorisation Twitch…"
   },
   "titleBar": {
-    "author": "Auteur : Tenkayro", "checkAgain": "Rechercher à nouveau les mises à jour", "checkingStore": "Recherche de mises à jour dans le Microsoft Store", "close": "Fermer", "downloadVersion": "Télécharger StreamDash {{version}}", "downloading": "Téléchargement de la mise à jour : {{progress}} %", "installing": "Installation de la mise à jour", "issues": "Problèmes et commentaires", "loading": "chargement", "maximize": "Agrandir", "minimize": "Réduire", "openGitHub": "Ouvrir le dépôt GitHub", "resetZoom": "Réinitialiser le zoom du tableau de bord", "updateStore": "Mettre à jour StreamDash dans le Microsoft Store", "version": "Version {{version}}, {{channel}}", "zoomLabel": "Zoom du tableau de bord à {{zoom}} pour cent. Réinitialiser le zoom"
+    "author": "Auteur : Tenkayro", "checkAgain": "Rechercher à nouveau les mises à jour", "checkingStore": "Recherche de mises à jour dans le Microsoft Store", "close": "Fermer", "downloadVersion": "Télécharger StreamDash {{version}}", "downloading": "Téléchargement de la mise à jour : {{progress}} %", "installing": "Installation de la mise à jour", "issues": "Problèmes et commentaires", "loading": "chargement", "maximize": "Agrandir", "minimize": "Réduire", "openGitHub": "Ouvrir le dépôt GitHub", "resetZoom": "Réinitialiser le zoom du tableau de bord", "updateStore": "Mettre à jour StreamDash dans le Microsoft Store", "version": "Version {{version}}, {{channel}}", "zoomLabel": "Zoom du tableau de bord à {{zoom}} pour cent. Réinitialiser le zoom",
+    "closeOptions": "Options de fermeture",
+    "closeToTray": "Réduire dans la zone système",
+    "quitApp": "Quitter StreamDash"
   },
   "tray": {
     "currentViewers": "Spectateurs actuels", "live": "En direct", "offline": "Hors ligne", "open": "Ouvrir StreamDash", "quickActions": "Actions rapides", "quit": "Quitter StreamDash", "reconnect": "Reconnecter les services", "reconnecting": "Reconnexion…", "retry": "Reconnecter", "statusSummary": "{{streamStatus}} · Twitch : {{twitchStatus}}", "tooltip": "StreamDash — {{streamStatus}} · Twitch : {{twitchStatus}}"

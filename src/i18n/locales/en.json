@@ -66,6 +66,31 @@
     "viewers_one": "{{count}} viewer",
     "viewers_other": "{{count}} viewers"
   },
+  "donations": {
+    "allSources": "All sources",
+    "anonymous": "Anonymous",
+    "clearSearch": "Clear search",
+    "collapseDonation": "Hide details for {{name}}",
+    "connectServices": "Connect donation service",
+    "donationCount_one": "{{count}} donation",
+    "donationCount_other": "{{count}} donations",
+    "empty": "No donations yet",
+    "emptyDetail": "Connect StreamElements or TipeeeStream to receive donations here in real time.",
+    "expandDonation": "Show details for {{name}}",
+    "filterSource": "Filter by source",
+    "largest": "Largest first",
+    "newest": "Newest first",
+    "noMatches": "No matching donations",
+    "noMessage": "No message was included.",
+    "received": "Activity",
+    "searchLabel": "Search donations",
+    "searchPlaceholder": "Search donors or messages",
+    "sortLabel": "Sort donations",
+    "topDonation": "Top donation",
+    "totalReceived": "Total received",
+    "tryFilters": "Try a different search or reset a filter.",
+    "waiting": "Everything is connected. New donations will appear here automatically."
+  },
   "connectionPhases": {
     "connected": "Connected",
     "connecting": "Connecting",
@@ -253,6 +278,7 @@
     }
   },
   "pageDescriptions": {
+    "donations": "Review donation messages, amounts and sources in one focused inbox.",
     "connections": "Connect accounts and review service health.",
     "dashboard": "Your stream, audience and activity at a glance.",
     "goals": "Set targets and track your progress.",
@@ -457,7 +483,10 @@
     "waitingAuthorization": "Waiting for Twitch authorization…"
   },
   "titleBar": {
-    "author": "Author: Tenkayro", "checkAgain": "Check for updates again", "checkingStore": "Checking Microsoft Store for updates", "close": "Close", "downloadVersion": "Download StreamDash {{version}}", "downloading": "Downloading update: {{progress}}%", "installing": "Installing update", "issues": "Issues and feedback", "loading": "loading", "maximize": "Maximize", "minimize": "Minimize", "openGitHub": "Open GitHub repository", "resetZoom": "Reset dashboard zoom", "updateStore": "Update StreamDash in Microsoft Store", "version": "Version {{version}}, {{channel}}", "zoomLabel": "Dashboard zoom {{zoom}} percent. Reset zoom"
+    "author": "Author: Tenkayro", "checkAgain": "Check for updates again", "checkingStore": "Checking Microsoft Store for updates", "close": "Close", "downloadVersion": "Download StreamDash {{version}}", "downloading": "Downloading update: {{progress}}%", "installing": "Installing update", "issues": "Issues and feedback", "loading": "loading", "maximize": "Maximize", "minimize": "Minimize", "openGitHub": "Open GitHub repository", "resetZoom": "Reset dashboard zoom", "updateStore": "Update StreamDash in Microsoft Store", "version": "Version {{version}}, {{channel}}", "zoomLabel": "Dashboard zoom {{zoom}} percent. Reset zoom",
+    "closeOptions": "Close options",
+    "closeToTray": "Minimize to tray",
+    "quitApp": "Quit StreamDash"
   },
   "tray": {
     "currentViewers": "Current viewers",

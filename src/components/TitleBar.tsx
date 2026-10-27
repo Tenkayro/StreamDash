@@ -1,4 +1,5 @@
 import { getVersion } from "@tauri-apps/api/app";
+import { invoke } from "@tauri-apps/api/core";
 import { getCurrentWindow } from "@tauri-apps/api/window";
 import { openUrl } from "@tauri-apps/plugin-opener";
 import {
@@ -7,6 +8,8 @@ import {
   GitFork,
   LoaderCircle,
   Minus,
+  PanelBottomClose,
+  Power,
   RotateCcw,
   Square,
   Store,
@@ -16,7 +19,7 @@ import {
   X,
   type LucideIcon,
 } from "lucide-react";
-import { useEffect, useState, type MouseEventHandler } from "react";
+import { useEffect, useRef, useState, type MouseEventHandler } from "react";
 import { isTauri } from "../lib/utils";
 import { useUpdater } from "../services/updater-context";
 import titlebarLogo from "../assets/branding/streamdash-logo-titlebar.webp";
@@ -164,6 +167,8 @@ export function TitleBar({ setup = false }: { setup?: boolean }) {
   const window = isTauri() ? getCurrentWindow() : null;
   const updater = useUpdater();
   const [version, setVersion] = useState("");
+  const [closeMenuOpen, setCloseMenuOpen] = useState(false);
+  const closeMenuRef = useRef<HTMLDivElement>(null);
   const { page, settings, setSettings } = useAppStore();
   const channel = import.meta.env.DEV
     ? "DEV"
@@ -173,11 +178,27 @@ export function TitleBar({ setup = false }: { setup?: boolean }) {
   useEffect(() => {
     if (isTauri()) void getVersion().then(setVersion);
   }, []);
+  useEffect(() => {
+    if (!closeMenuOpen) return;
+    const closeMenu = (event: PointerEvent) => {
+      if (!closeMenuRef.current?.contains(event.target as Node))
+        setCloseMenuOpen(false);
+    };
+    const closeOnEscape = (event: KeyboardEvent) => {
+      if (event.key === "Escape") setCloseMenuOpen(false);
+    };
+    document.addEventListener("pointerdown", closeMenu);
+    document.addEventListener("keydown", closeOnEscape);
+    return () => {
+      document.removeEventListener("pointerdown", closeMenu);
+      document.removeEventListener("keydown", closeOnEscape);
+    };
+  }, [closeMenuOpen]);
 
   return (
     <div
       data-tauri-drag-region
-      className="drag-region flex h-9 shrink-0 items-center border-b border-line bg-[#0f1014] pl-3 text-[11px] text-muted"
+      className="drag-region relative flex h-9 shrink-0 items-center border-b border-line bg-[#0f1014] pl-3 text-[11px] text-muted"
     >
       <div
         data-tauri-drag-region
@@ -263,11 +284,55 @@ export function TitleBar({ setup = false }: { setup?: boolean }) {
         <button
           aria-label={t("titleBar.close")}
           className="grid h-full w-11 place-items-center hover:bg-red-600 hover:text-white"
-          onClick={() => window?.close()}
+          onClick={() => {
+            setCloseMenuOpen(false);
+            void window?.close();
+          }}
+          onContextMenu={(event) => {
+            event.preventDefault();
+            setCloseMenuOpen(true);
+          }}
         >
           <X size={14} />
         </button>
       </div>
+      {closeMenuOpen && (
+        <div
+          ref={closeMenuRef}
+          role="menu"
+          aria-label={t("titleBar.closeOptions")}
+          className="no-drag absolute right-1 top-[calc(100%+4px)] z-50 w-52 rounded-lg border border-line bg-[#17181e] p-1 text-zinc-200 shadow-xl shadow-black/40"
+        >
+          <button
+            type="button"
+            role="menuitem"
+            className="flex w-full items-center gap-2.5 rounded-md px-2.5 py-2 text-left text-xs transition hover:bg-white/5"
+            onClick={() => {
+              setCloseMenuOpen(false);
+              void window?.hide();
+            }}
+          >
+            <span className="grid size-5 shrink-0 place-items-center text-accent">
+              <PanelBottomClose size={13} />
+            </span>
+            <span className="truncate font-medium">{t("titleBar.closeToTray")}</span>
+          </button>
+          <button
+            type="button"
+            role="menuitem"
+            className="flex w-full items-center gap-2.5 rounded-md px-2.5 py-2 text-left text-xs transition hover:bg-red-400/10"
+            onClick={() => {
+              setCloseMenuOpen(false);
+              if (isTauri()) void invoke("app_quit");
+            }}
+          >
+            <span className="grid size-5 shrink-0 place-items-center text-red-300">
+              <Power size={13} />
+            </span>
+            <span className="truncate font-medium text-red-200">{t("titleBar.quitApp")}</span>
+          </button>
+        </div>
+      )}
     </div>
   );
 }
