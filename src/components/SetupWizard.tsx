@@ -23,17 +23,22 @@ import { useState, type ReactNode } from "react";
 import { useTranslation } from "react-i18next";
 import { toast } from "sonner";
 import { resolveLanguage } from "../i18n";
-import { errorMessage, isTauri } from "../lib/utils";
+import { cn, errorMessage, isTauri } from "../lib/utils";
 import { saveSetting } from "../services/native";
 import { useRuntime } from "../services/runtime-context";
 import { useAppStore } from "../stores/app-store";
-import type { AppLanguage, AppSettings } from "../types";
+import type { AppLanguage, AppSettings, ConnectionPhase } from "../types";
 import { Button, LoadingIndicator } from "./ui";
 import streamElementsIcon from "../assets/services/streamelements.webp";
+import tipeeStreamIcon from "../assets/services/tipeeestream.webp";
+import obsIcon from "../assets/services/obs.svg";
 import twitchIcon from "../assets/services/twitch.webp";
 
-const languages: Array<{ value: AppLanguage; label: string }> = [
-  { value: "auto", label: "common.automatic" },
+const streamElementsTokenUrl =
+  "https://streamelements.com/dashboard/account/channels";
+const tipeeStreamTokenUrl = "https://www.tipeeestream.com/dashboard/api-key";
+
+const languages: Array<{ value: AppLanguage; label: string }> = [  { value: "auto", label: "common.automatic" },
   { value: "en", label: "languages.en" },
   { value: "de", label: "languages.de" },
   { value: "es", label: "languages.es" },
@@ -71,13 +76,76 @@ function ChoiceRow({ icon: Icon, title, detail, children }: { icon: LucideIcon; 
   );
 }
 
+function IntegrationRow({
+  icon,
+  tint,
+  name,
+  phase,
+  error,
+  helpUrl,
+  children,
+}: {
+  icon: string;
+  tint: string;
+  name: string;
+  phase: ConnectionPhase;
+  error?: string;
+  helpUrl?: string;
+  children: ReactNode;
+}) {
+  const { t } = useTranslation();
+  const connected = phase === "connected";
+  const failed = phase === "error" || phase === "expired";
+  return (
+    <div className="rounded-xl border border-line bg-black/10 px-3 py-2">
+      <div className="flex items-center gap-2">
+        <span className={cn("grid size-7 shrink-0 place-items-center rounded-lg", tint)}>
+          <img src={icon} alt="" className="size-4 object-contain" />
+        </span>
+        <span className="shrink-0 text-xs font-medium">{name}</span>
+        {connected ? (
+          <span className="ml-auto flex shrink-0 items-center gap-1 text-[11px] text-emerald-300">
+            <CheckCircle2 size={12} />
+            {t("connectionPhases.connected")}
+          </span>
+        ) : (
+          helpUrl && (
+            <button
+              type="button"
+              onClick={() => void openUrl(helpUrl)}
+              className="ml-auto inline-flex shrink-0 items-center gap-1 text-[10px] text-accent hover:brightness-125"
+            >
+              <ExternalLink size={10} />
+              {t("connections.openTokenInstructions")}
+            </button>
+          )
+        )}
+      </div>
+      {connected ? null : (
+        <>
+          <div className="mt-2 flex items-center gap-1.5">{children}</div>
+          {failed && error && (
+            <p className="mt-1.5 text-[10px] leading-4 text-red-300">{error}</p>
+          )}
+        </>
+      )}
+    </div>
+  );
+}
+
 export function SetupWizard() {
   const { t, i18n } = useTranslation();
   const runtime = useRuntime();
-  const { settings, setSettings, twitch, streamElements } = useAppStore();
+  const { settings, setSettings, twitch, streamElements, tipeeStream, obs } =
+    useAppStore();
   const [step, setStep] = useState(0);
   const [token, setToken] = useState("");
   const [streamElementsBusy, setStreamElementsBusy] = useState(false);
+  const [tipeeStreamKey, setTipeeeStreamKey] = useState("");
+  const [tipeeStreamBusy, setTipeeeStreamBusy] = useState(false);
+  const [obsAddress, setObsAddress] = useState(settings.obsAddress);
+  const [obsPassword, setObsPassword] = useState("");
+  const [obsBusy, setObsBusy] = useState(false);
   const [finishing, setFinishing] = useState(false);
 
   const steps: Array<{ icon: LucideIcon; label: string }> = [
@@ -114,6 +182,28 @@ export function SetupWizard() {
       setToken("");
     } finally {
       setStreamElementsBusy(false);
+    }
+  };
+
+  const connectTipeeeStream = async () => {
+    if (!tipeeStreamKey.trim() || tipeeStreamBusy) return;
+    setTipeeeStreamBusy(true);
+    try {
+      await runtime.connectTipeeeStream(tipeeStreamKey);
+      setTipeeeStreamKey("");
+    } finally {
+      setTipeeeStreamBusy(false);
+    }
+  };
+
+  const connectObs = async () => {
+    if (obsBusy) return;
+    setObsBusy(true);
+    try {
+      await runtime.connectObs(obsAddress, obsPassword);
+      setObsPassword("");
+    } finally {
+      setObsBusy(false);
     }
   };
 
@@ -195,40 +285,135 @@ export function SetupWizard() {
       )}
     </div>,
     <div key="integrations">
-      <div className="mb-6 text-center">
-        <span className="mx-auto grid size-14 place-items-center rounded-2xl bg-cyan-400/10">
-          <img src={streamElementsIcon} alt="" className="size-8 object-contain" />
-        </span>
-        <h1 className="mt-4 text-2xl font-semibold tracking-[-.03em]">{t("onboarding.integrationsTitle")}</h1>
-        <p className="mx-auto mt-2 max-w-lg text-sm leading-6 text-muted">{t("onboarding.integrationsBody")}</p>
+      <div className="mb-4 text-center">
+        <div className="mx-auto flex items-center justify-center gap-2">
+          {[
+            { icon: streamElementsIcon, tint: "bg-cyan-400/10" },
+            { icon: tipeeStreamIcon, tint: "bg-rose-400/10" },
+            { icon: obsIcon, tint: "bg-zinc-300/10" },
+          ].map(({ icon, tint }) => (
+            <span
+              key={icon}
+              className={cn(
+                "grid size-11 place-items-center rounded-2xl",
+                tint,
+              )}
+            >
+              <img src={icon} alt="" className="size-6 object-contain" />
+            </span>
+          ))}
+        </div>
+        <h1 className="mt-3 text-2xl font-semibold tracking-[-.03em]">{t("onboarding.integrationsTitle")}</h1>
+        <p className="mx-auto mt-2 max-w-xl text-sm leading-6 text-muted">{t("onboarding.integrationsBody")}</p>
       </div>
-      {streamElements.phase === "connected" ? (
-        <div className="mx-auto flex max-w-md items-center gap-3 rounded-xl border border-emerald-500/30 bg-emerald-400/7 p-4">
-          <CheckCircle2 size={22} className="text-emerald-400" />
-          <div className="text-sm font-medium text-emerald-200">{t("onboarding.streamElementsConnected")}</div>
-        </div>
-      ) : (
-        <div className="mx-auto max-w-lg">
-          <label className="label" htmlFor="setup-se-token">{t("onboarding.jwtLabel")}</label>
-          <div className="mt-2 flex gap-2">
+      <div className="mx-auto max-w-xl space-y-1.5">
+        <IntegrationRow
+          icon={streamElementsIcon}
+          tint="bg-cyan-400/10"
+          name="StreamElements"
+          phase={streamElements.phase}
+          error={streamElements.detail}
+          helpUrl={streamElementsTokenUrl}
+        >
+          <input
+            id="setup-se-token"
+            className="input min-w-0 text-xs"
+            type="password"
+            autoComplete="off"
+            aria-label={t("onboarding.jwtLabel")}
+            placeholder={t("connections.jwtPlaceholder")}
+            value={token}
+            onChange={(event) => setToken(event.target.value)}
+            onKeyDown={(event) => {
+              if (event.key === "Enter" && token.trim() && !streamElementsBusy && isTauri())
+                void connectStreamElements();
+            }}
+          />
+          <Button
+            className="shrink-0 whitespace-nowrap px-3 text-xs"
+            variant="primary"
+            disabled={!token.trim() || streamElementsBusy || !isTauri()}
+            onClick={() => void connectStreamElements()}
+          >
+            {streamElementsBusy ? <LoaderCircle size={14} className="animate-spin" /> : <KeyRound size={14} />}
+            {t("connections.connect")}
+          </Button>
+        </IntegrationRow>
+        <IntegrationRow
+          icon={tipeeStreamIcon}
+          tint="bg-rose-400/10"
+          name="TipeeeStream"
+          phase={tipeeStream.phase}
+          error={tipeeStream.detail}
+          helpUrl={tipeeStreamTokenUrl}
+        >
+          <input
+            id="setup-tipee-key"
+            className="input min-w-0 text-xs"
+            type="password"
+            autoComplete="off"
+            aria-label={t("connections.tipeeStreamApiKey")}
+            placeholder={t("connections.tipeeStreamApiKeyPlaceholder")}
+            value={tipeeStreamKey}
+            onChange={(event) => setTipeeeStreamKey(event.target.value)}
+            onKeyDown={(event) => {
+              if (event.key === "Enter" && tipeeStreamKey.trim() && !tipeeStreamBusy && isTauri())
+                void connectTipeeeStream();
+            }}
+          />
+          <Button
+            className="shrink-0 whitespace-nowrap px-3 text-xs"
+            variant="primary"
+            disabled={!tipeeStreamKey.trim() || tipeeStreamBusy || !isTauri()}
+            onClick={() => void connectTipeeeStream()}
+          >
+            {tipeeStreamBusy ? <LoaderCircle size={14} className="animate-spin" /> : <KeyRound size={14} />}
+            {t("connections.connect")}
+          </Button>
+        </IntegrationRow>
+        <IntegrationRow
+          icon={obsIcon}
+          tint="bg-zinc-300/10"
+          name="OBS"
+          phase={obs.phase}
+          error={obs.detail}
+        >
+          <div className="w-36 shrink-0">
             <input
-              id="setup-se-token"
-              className="input"
-              type="password"
+              id="setup-obs-address"
+              className="input text-xs"
               autoComplete="off"
-              placeholder={t("connections.jwtPlaceholder")}
-              value={token}
-              onChange={(event) => setToken(event.target.value)}
+              spellCheck={false}
+              aria-label={t("connections.obsAddress")}
+              placeholder="127.0.0.1:4455"
+              value={obsAddress}
+              onChange={(event) => setObsAddress(event.target.value)}
             />
-            <Button variant="primary" disabled={!token.trim() || streamElementsBusy || !isTauri()} onClick={() => void connectStreamElements()}>
-              {streamElementsBusy ? <LoaderCircle size={15} className="animate-spin" /> : <KeyRound size={15} />}
-              {t("connections.connect")}
-            </Button>
           </div>
-          <p className="mt-2 text-xs leading-5 text-zinc-600">{t("onboarding.jwtPath")}</p>
-          {streamElements.detail && <p className="mt-2 text-xs text-red-300">{streamElements.detail}</p>}
-        </div>
-      )}
+          <input
+            id="setup-obs-password"
+            className="input min-w-0 flex-1 text-xs"
+            type="password"
+            autoComplete="off"
+            aria-label={t("connections.obsPassword")}
+            placeholder={t("connections.obsPasswordPlaceholder")}
+            value={obsPassword}
+            onChange={(event) => setObsPassword(event.target.value)}
+            onKeyDown={(event) => {
+              if (event.key === "Enter" && !obsBusy && isTauri()) void connectObs();
+            }}
+          />
+          <Button
+            className="shrink-0 whitespace-nowrap px-3 text-xs"
+            variant="primary"
+            disabled={obsBusy || !isTauri()}
+            onClick={() => void connectObs()}
+          >
+            {obsBusy ? <LoaderCircle size={14} className="animate-spin" /> : <Link2 size={14} />}
+            {t("connections.connect")}
+          </Button>
+        </IntegrationRow>
+      </div>
     </div>,
     <div key="preferences">
       <div className="mb-6 text-center">
@@ -276,7 +461,7 @@ export function SetupWizard() {
   return (
     <main className="min-h-0 flex-1 overflow-y-auto bg-[#0b0c0f] p-4 sm:p-8">
       <div className="mx-auto grid min-h-full max-w-5xl place-items-center">
-        <div className="grid w-full overflow-hidden rounded-2xl border border-line bg-panel shadow-2xl shadow-black/35 md:grid-cols-[220px_1fr]">
+        <div className="grid w-full overflow-hidden rounded-2xl border border-line bg-panel shadow-2xl shadow-black/35 md:grid-cols-[220px_minmax(0,1fr)]">
           <aside className="border-b border-line bg-black/10 p-5 md:border-b-0 md:border-r">
             <img src="/streamdash-logo-boot.webp" alt="StreamDash" className="h-auto w-40 max-w-full object-contain" />
             <div className="mt-7 flex gap-2 overflow-x-auto md:block md:space-y-1">
