@@ -10,3 +10,5 @@ src-tauri/target/
 src-tauri/gen/
 todo
 AGENTS.md
+
+.manim/
