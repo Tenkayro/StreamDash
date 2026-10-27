@@ -15,6 +15,7 @@ import {
 import { useCallback, useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import streamElementsIcon from "../assets/services/streamelements.webp";
+import tipeeStreamIcon from "../assets/services/tipeeestream.webp";
 import twitchIcon from "../assets/services/twitch.webp";
 import titlebarLogo from "../assets/branding/streamdash-logo-titlebar.webp";
 import { resolveLanguage } from "../i18n";
@@ -29,6 +30,7 @@ type TrayStatus = {
   twitchAccount?: string;
   twitchPhase: ConnectionPhase;
   streamElementsPhase: ConnectionPhase;
+  tipeeStreamPhase: ConnectionPhase;
 };
 
 const initialStatus: TrayStatus = {
@@ -36,6 +38,7 @@ const initialStatus: TrayStatus = {
   live: false,
   twitchPhase: "disconnected",
   streamElementsPhase: "disconnected",
+  tipeeStreamPhase: "disconnected",
 };
 
 function statusColor(phase: ConnectionPhase) {
@@ -45,21 +48,21 @@ function statusColor(phase: ConnectionPhase) {
   return "bg-zinc-600";
 }
 
-function ServiceStatus({ icon, name, label, phase, account }: { icon: string; name: string; label: string; phase: ConnectionPhase; account?: string }) {
+function ServiceStatus({ icon, name, phase, account }: { icon: string; name: string; phase: ConnectionPhase; account?: string }) {
   const { t } = useTranslation();
   const detail = account || t(`connectionPhases.${phase}`);
 
   return (
     <div
+      role="img"
       title={`${name} · ${detail}`}
       aria-label={`${name}: ${detail}`}
-      className="flex h-9 min-w-0 items-center gap-1.5 rounded-lg px-1.5 text-[10px] text-zinc-400"
+      className="flex h-9 items-center px-1"
     >
       <span className="relative shrink-0">
         <img src={icon} alt="" className="size-4 object-contain" />
         <span className={`absolute -bottom-1 -right-1 size-2 rounded-full border-2 border-panel ${statusColor(phase)}`} />
       </span>
-      <span className="truncate">{label}</span>
     </div>
   );
 }
@@ -84,6 +87,7 @@ export function TrayBridge() {
   const settings = useAppStore((state) => state.settings);
   const twitch = useAppStore((state) => state.twitch);
   const streamElements = useAppStore((state) => state.streamElements);
+  const tipeeStream = useAppStore((state) => state.tipeeStream);
   const stats = useAppStore((state) => state.stats);
 
   const publish = useCallback(async () => {
@@ -95,6 +99,7 @@ export function TrayBridge() {
       twitchAccount: twitch.account,
       twitchPhase: twitch.phase,
       streamElementsPhase: streamElements.phase,
+      tipeeStreamPhase: tipeeStream.phase,
     };
     await emit("tray-status", status);
     const streamStatus = stats.live ? t("tray.live") : t("tray.offline");
@@ -116,7 +121,7 @@ export function TrayBridge() {
     await invoke("tray_set_tooltip", {
       tooltip: t("tray.tooltip", { streamStatus, twitchStatus }),
     }).catch(() => undefined);
-  }, [settings.language, settings.trayStyle, stats.live, stats.viewers, streamElements.phase, t, twitch.account, twitch.phase]);
+  }, [settings.language, settings.trayStyle, stats.live, stats.viewers, streamElements.phase, t, tipeeStream.phase, twitch.account, twitch.phase]);
 
   useEffect(() => {
     if (!isTauri()) return;
@@ -139,7 +144,7 @@ export function TrayBridge() {
 export function TrayPanel() {
   const { t, i18n } = useTranslation();
   const [status, setStatus] = useState<TrayStatus>(initialStatus);
-  const reconnecting = [status.twitchPhase, status.streamElementsPhase].some(
+  const reconnecting = [status.twitchPhase, status.streamElementsPhase, status.tipeeStreamPhase].some(
     (phase) => phase === "connecting" || phase === "reconnecting",
   );
 
@@ -203,9 +208,10 @@ export function TrayPanel() {
               <span className="text-xs text-zinc-500">{t("stream.viewers")}</span>
               <span className="text-sm font-semibold tabular-nums text-zinc-200">{viewerCount}</span>
             </div>
-            <div className="ml-auto flex items-center">
-              <ServiceStatus icon={twitchIcon} name="Twitch" label="Twitch" phase={status.twitchPhase} account={status.twitchAccount} />
-              <ServiceStatus icon={streamElementsIcon} name="StreamElements" label="Elements" phase={status.streamElementsPhase} />
+            <div className="ml-auto flex items-center gap-2">
+              <ServiceStatus icon={twitchIcon} name="Twitch" phase={status.twitchPhase} account={status.twitchAccount} />
+              <ServiceStatus icon={streamElementsIcon} name="StreamElements" phase={status.streamElementsPhase} />
+              <ServiceStatus icon={tipeeStreamIcon} name="TipeeeStream" phase={status.tipeeStreamPhase} />
             </div>
           </div>
 
