@@ -21,24 +21,33 @@
         background: #0b0c0f;
       }
       .boot-splash {
+        position: fixed;
+        inset: 0;
+        z-index: 9999;
         display: grid;
-        width: 100%;
-        height: 100%;
         place-items: center;
+        background: #0b0c0f;
+        transition: opacity 180ms ease-out;
+      }
+      .boot-splash[data-hidden="true"] {
+        opacity: 0;
+        pointer-events: none;
       }
       .boot-splash img {
         width: min(70vw, 360px);
         height: auto;
         object-fit: contain;
       }
+      html.tray-window .boot-splash {
+        display: none;
+      }
     </style>
     <title>StreamDash</title>
   </head>
   <body>
-    <div id="root">
-      <div class="boot-splash">
-        <img src="/streamdash-logo-boot.webp" alt="" />
-      </div>
+    <div id="root"></div>
+    <div id="boot-splash" class="boot-splash" aria-hidden="true">
+      <img src="/streamdash-logo-boot.webp" alt="" />
     </div>
     <script type="module" src="/src/main.tsx"></script>
   </body>

@@ -865,6 +865,24 @@ fn show_main_window(app: &tauri::AppHandle, page: Option<&str>) {
     }
 }
 
+static MAIN_WINDOW_REVEALED: AtomicBool = AtomicBool::new(false);
+
+fn reveal_main_window(app: &tauri::AppHandle) {
+    MAIN_WINDOW_REVEALED.store(true, Ordering::Relaxed);
+    if let Some(window) = app.get_webview_window("main") {
+        let _ = window.show();
+        let _ = window.unminimize();
+        let _ = window.set_focus();
+    }
+}
+
+/// Called by the frontend once the boot splash is painted, so the window never
+/// flashes an empty surface before the logo is visible.
+#[tauri::command]
+fn reveal_window(app: tauri::AppHandle) {
+    reveal_main_window(&app);
+}
+
 #[tauri::command]
 fn tray_action(app: tauri::AppHandle, action: String) -> Result<(), String> {
     if let Some(window) = app.get_webview_window("tray") {
@@ -1109,6 +1127,15 @@ pub fn run() {
                 tray_builder = tray_builder.menu(&tray_menu);
             }
             tray_builder.build(app)?;
+            // Safety net: if the frontend never reports in (e.g. a broken
+            // bundle), still show the window instead of staying invisible.
+            let fallback = app.handle().clone();
+            std::thread::spawn(move || {
+                std::thread::sleep(std::time::Duration::from_millis(2500));
+                if !MAIN_WINDOW_REVEALED.load(Ordering::Relaxed) {
+                    reveal_main_window(&fallback);
+                }
+            });
             Ok(())
         })
         .invoke_handler(tauri::generate_handler![
@@ -1135,6 +1162,7 @@ pub fn run() {
             distribution_channel,
             store_update_available,
             app_quit,
+            reveal_window,
             tray_action,
             tray_configure,
             tray_set_tooltip

@@ -150,7 +150,7 @@ export default function App() {
         <img
           src="/streamdash-logo-boot.webp"
           alt={t("common.starting")}
-          className="h-auto w-80 max-w-[70vw] object-contain animate-pulse"
+          className="h-auto w-[min(70vw,360px)] object-contain"
         />
       </div>
     );

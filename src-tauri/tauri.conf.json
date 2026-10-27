@@ -19,6 +19,7 @@
         "minWidth": 980,
         "minHeight": 640,
         "backgroundColor": "#0b0c0f",
+        "visible": false,
         "useHttpsScheme": true,
         "decorations": false,
         "resizable": true,
@@ -34,9 +35,7 @@
     "publisher": "Tenkayro",
     "copyright": "Copyright © 2026 Tenkayro",
     "createUpdaterArtifacts": true,
-    "targets": [
-      "msi"
-    ],
+    "targets": ["msi"],
     "icon": [
       "icons/32x32.png",
       "icons/128x128.png",
@@ -50,15 +49,9 @@
         "silent": true
       },
       "wix": {
-        "language": [
-          "en-US"
-        ],
-        "fragmentPaths": [
-          "wix/user-data.wxs"
-        ],
-        "componentRefs": [
-          "UserDataPreference"
-        ]
+        "language": ["en-US"],
+        "fragmentPaths": ["wix/user-data.wxs"],
+        "componentRefs": ["UserDataPreference"]
       }
     },
     "android": {
