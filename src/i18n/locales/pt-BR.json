@@ -208,6 +208,10 @@
     "messageBufferDetail": "Mensagens antigas são descartadas para manter estável o uso de memória.",
     "minimizeToTray": "Minimizar para a bandeja",
     "minimizeToTrayDetail": "Manter conexões em tempo real ativas quando a janela for fechada.",
+    "trayStyle": "Estilo da bandeja do sistema",
+    "trayStyleDetail": "Use o painel compacto do StreamDash ou o menu nativo do Windows. O clique direito sempre abre o menu nativo de segurança.",
+    "trayStyleCustom": "Painel do StreamDash",
+    "trayStyleClassic": "Menu do Windows",
     "normal": "Normal",
     "notifications": "NOTIFICAÇÕES",
     "orange": "Laranja",
@@ -287,7 +291,7 @@
     "author": "Autor: Tenkayro", "checkAgain": "Verificar atualizações novamente", "checkingStore": "Verificando atualizações na Microsoft Store", "close": "Fechar", "downloadVersion": "Baixar StreamDash {{version}}", "downloading": "Baixando atualização: {{progress}}%", "installing": "Instalando atualização", "issues": "Problemas e feedback", "loading": "carregando", "maximize": "Maximizar", "minimize": "Minimizar", "openGitHub": "Abrir repositório no GitHub", "resetZoom": "Redefinir zoom do painel", "updateStore": "Atualizar o StreamDash na Microsoft Store", "version": "Versão {{version}}, {{channel}}", "zoomLabel": "Zoom do painel em {{zoom}} por cento. Redefinir zoom"
   },
   "tray": {
-    "currentViewers": "Espectadores atuais", "live": "Ao vivo", "offline": "Offline", "quickActions": "Ações rápidas", "quit": "Sair do StreamDash", "reconnect": "Reconectar serviços", "reconnecting": "Reconectando…", "tooltip": "StreamDash — {{streamStatus}} · Twitch: {{twitchStatus}}"
+    "currentViewers": "Espectadores atuais", "live": "Ao vivo", "offline": "Offline", "open": "Abrir o StreamDash", "quickActions": "Ações rápidas", "quit": "Sair do StreamDash", "reconnect": "Reconectar serviços", "reconnecting": "Reconectando…", "statusSummary": "{{streamStatus}} · Twitch: {{twitchStatus}}", "tooltip": "StreamDash — {{streamStatus}} · Twitch: {{twitchStatus}}"
   },
   "updater": {
     "available": "StreamDash {{version}} está disponível", "availableDetail": "Use o botão de download ao lado da versão na barra de título.", "checkError": "Não foi possível verificar atualizações", "current": "O StreamDash está atualizado", "disabledDevelopment": "As atualizações estão desativadas durante o desenvolvimento", "installError": "Falha na instalação da atualização", "storeAvailable": "Há uma atualização disponível na Microsoft Store", "storeAvailableDetail": "Use o botão da Store ao lado da versão para atualizar.", "storeOpenError": "Não foi possível abrir a Microsoft Store"

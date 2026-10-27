@@ -28,6 +28,7 @@ export const defaultSettings: AppSettings = {
   launchAtStartup: false,
   keepUserData: true,
   minimizeToTray: true,
+  trayStyle: "custom",
   compactFeed: false,
   animations: true,
   uiDensity: "compact",

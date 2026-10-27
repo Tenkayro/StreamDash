@@ -43,6 +43,7 @@ export type UiDensity = 'compact' | 'comfortable'
 export type ContentWidth = 'compact' | 'wide' | 'full'
 export type AccentColor = 'violet' | 'blue' | 'emerald' | 'orange'
 export type AppLanguage = 'auto' | 'en' | 'de' | 'es' | 'pt-BR' | 'fr'
+export type TrayStyle = 'custom' | 'classic'
 
 export interface AppSettings {
   onboardingCompleted: boolean
@@ -50,6 +51,7 @@ export interface AppSettings {
   launchAtStartup: boolean
   keepUserData: boolean
   minimizeToTray: boolean
+  trayStyle: TrayStyle
   compactFeed: boolean
   animations: boolean
   uiDensity: UiDensity

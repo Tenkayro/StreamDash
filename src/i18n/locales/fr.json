@@ -208,6 +208,10 @@
     "messageBufferDetail": "Les anciens messages sont supprimés pour stabiliser l’utilisation de la mémoire.",
     "minimizeToTray": "Réduire dans la zone de notification",
     "minimizeToTrayDetail": "Maintenir les connexions en temps réel actives lorsque la fenêtre est fermée.",
+    "trayStyle": "Style de la zone de notification",
+    "trayStyleDetail": "Utilisez le panneau compact StreamDash ou le menu natif de Windows. Un clic droit ouvre toujours le menu natif de secours.",
+    "trayStyleCustom": "Panneau StreamDash",
+    "trayStyleClassic": "Menu Windows",
     "normal": "Normale",
     "notifications": "NOTIFICATIONS",
     "orange": "Orange",
@@ -287,7 +291,7 @@
     "author": "Auteur : Tenkayro", "checkAgain": "Rechercher à nouveau les mises à jour", "checkingStore": "Recherche de mises à jour dans le Microsoft Store", "close": "Fermer", "downloadVersion": "Télécharger StreamDash {{version}}", "downloading": "Téléchargement de la mise à jour : {{progress}} %", "installing": "Installation de la mise à jour", "issues": "Problèmes et commentaires", "loading": "chargement", "maximize": "Agrandir", "minimize": "Réduire", "openGitHub": "Ouvrir le dépôt GitHub", "resetZoom": "Réinitialiser le zoom du tableau de bord", "updateStore": "Mettre à jour StreamDash dans le Microsoft Store", "version": "Version {{version}}, {{channel}}", "zoomLabel": "Zoom du tableau de bord à {{zoom}} pour cent. Réinitialiser le zoom"
   },
   "tray": {
-    "currentViewers": "Spectateurs actuels", "live": "En direct", "offline": "Hors ligne", "quickActions": "Actions rapides", "quit": "Quitter StreamDash", "reconnect": "Reconnecter les services", "reconnecting": "Reconnexion…", "tooltip": "StreamDash — {{streamStatus}} · Twitch : {{twitchStatus}}"
+    "currentViewers": "Spectateurs actuels", "live": "En direct", "offline": "Hors ligne", "open": "Ouvrir StreamDash", "quickActions": "Actions rapides", "quit": "Quitter StreamDash", "reconnect": "Reconnecter les services", "reconnecting": "Reconnexion…", "statusSummary": "{{streamStatus}} · Twitch : {{twitchStatus}}", "tooltip": "StreamDash — {{streamStatus}} · Twitch : {{twitchStatus}}"
   },
   "updater": {
     "available": "StreamDash {{version}} est disponible", "availableDetail": "Utilisez le bouton de téléchargement à côté de la version dans la barre de titre.", "checkError": "Impossible de rechercher les mises à jour", "current": "StreamDash est à jour", "disabledDevelopment": "Les mises à jour sont désactivées en développement", "installError": "Échec de l’installation de la mise à jour", "storeAvailable": "Une mise à jour du Microsoft Store est disponible", "storeAvailableDetail": "Utilisez le bouton Store à côté de la version pour mettre à jour.", "storeOpenError": "Impossible d’ouvrir le Microsoft Store"

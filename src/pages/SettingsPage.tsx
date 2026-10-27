@@ -2,6 +2,7 @@ import { enable, disable } from "@tauri-apps/plugin-autostart";
 import {
   Archive,
   AtSign,
+  AppWindow,
   BadgeCheck,
   Bell,
   CircleDollarSign,
@@ -221,6 +222,25 @@ export function SettingsPage() {
                 value={settings.minimizeToTray}
                 onChange={(value) => update("minimizeToTray", value)}
               />
+            </Row>
+            <Row
+              icon={AppWindow}
+              label={t("settings.trayStyle")}
+              detail={t("settings.trayStyleDetail")}
+            >
+              <select
+                className="input w-52"
+                value={settings.trayStyle}
+                onChange={(event) =>
+                  update(
+                    "trayStyle",
+                    event.target.value as AppSettings["trayStyle"],
+                  )
+                }
+              >
+                <option value="custom">{t("settings.trayStyleCustom")}</option>
+                <option value="classic">{t("settings.trayStyleClassic")}</option>
+              </select>
             </Row>
             <Row
               icon={DatabaseBackup}

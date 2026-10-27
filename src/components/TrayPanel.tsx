@@ -95,10 +95,24 @@ export function TrayBridge() {
     await emit("tray-status", status);
     const streamStatus = stats.live ? t("tray.live") : t("tray.offline");
     const twitchStatus = twitch.account || t(`connectionPhases.${twitch.phase}`);
+    await invoke("tray_configure", {
+      config: {
+        mode: settings.trayStyle,
+        status: t("tray.statusSummary", { streamStatus, twitchStatus }),
+        open: t("tray.open"),
+        dashboard: t("nav.dashboard"),
+        stream: t("nav.stream"),
+        chat: t("nav.chat"),
+        activity: t("nav.activity"),
+        reconnect: t("tray.reconnect"),
+        settings: t("nav.settings"),
+        quit: t("tray.quit"),
+      },
+    }).catch(() => undefined);
     await invoke("tray_set_tooltip", {
       tooltip: t("tray.tooltip", { streamStatus, twitchStatus }),
     }).catch(() => undefined);
-  }, [settings.language, stats.live, stats.viewers, streamElements.phase, t, twitch.account, twitch.phase]);
+  }, [settings.language, settings.trayStyle, stats.live, stats.viewers, streamElements.phase, t, twitch.account, twitch.phase]);
 
   useEffect(() => {
     if (!isTauri()) return;

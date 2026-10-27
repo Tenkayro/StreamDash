@@ -293,6 +293,10 @@
     "messageBufferDetail": "Ältere Chatnachrichten werden verworfen, damit die Speichernutzung stabil bleibt.",
     "minimizeToTray": "In den Infobereich minimieren",
     "minimizeToTrayDetail": "Echtzeitverbindungen aktiv halten, wenn das Fenster geschlossen wird.",
+    "trayStyle": "System-Tray-Darstellung",
+    "trayStyleDetail": "Nutze das kompakte StreamDash-Panel oder das native Windows-Menü. Ein Rechtsklick öffnet immer das native Fallback-Menü.",
+    "trayStyleCustom": "StreamDash-Panel",
+    "trayStyleClassic": "Windows-Menü",
     "normal": "Normal",
     "notifications": "BENACHRICHTIGUNGEN",
     "orange": "Orange",
@@ -375,10 +379,12 @@
     "currentViewers": "Aktuelle Zuschauer",
     "live": "Live",
     "offline": "Offline",
+    "open": "StreamDash öffnen",
     "quickActions": "Schnellaktionen",
     "quit": "StreamDash beenden",
     "reconnect": "Dienste neu verbinden",
     "reconnecting": "Verbindung wird hergestellt…",
+    "statusSummary": "{{streamStatus}} · Twitch: {{twitchStatus}}",
     "tooltip": "StreamDash — {{streamStatus}} · Twitch: {{twitchStatus}}"
   },
   "updater": {

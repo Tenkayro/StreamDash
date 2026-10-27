@@ -1,11 +1,14 @@
 use futures_util::{SinkExt, StreamExt};
-use rusqlite::{Connection, params};
+use rusqlite::{params, Connection};
 use serde::{Deserialize, Serialize};
-use serde_json::{Value, json};
+use serde_json::{json, Value};
 use std::{
     path::{Path, PathBuf},
     process::Command,
-    sync::Mutex,
+    sync::{
+        atomic::{AtomicBool, Ordering},
+        Mutex,
+    },
     time::{SystemTime, UNIX_EPOCH},
 };
 use tokio::sync::mpsc;
@@ -16,6 +19,7 @@ static HTTP_CLIENT: std::sync::OnceLock<reqwest::Client> = std::sync::OnceLock::
 fn http() -> &'static reqwest::Client {
     HTTP_CLIENT.get_or_init(reqwest::Client::new)
 }
+use tauri::menu::{MenuBuilder, MenuItemBuilder};
 use tauri::tray::TrayIconBuilder;
 use tauri::{Emitter, Manager, PhysicalPosition, WebviewUrl, WebviewWindowBuilder, WindowEvent};
 
@@ -24,6 +28,25 @@ const PREFERENCES_REGISTRY_KEY: &str = r"HKCU\Software\Tenkayro\StreamDash";
 
 struct AppState {
     db: Mutex<Connection>,
+}
+
+struct TrayState {
+    custom: AtomicBool,
+}
+
+#[derive(Debug, Deserialize)]
+#[serde(rename_all = "camelCase")]
+struct TrayMenuConfig {
+    mode: String,
+    status: String,
+    open: String,
+    dashboard: String,
+    stream: String,
+    chat: String,
+    activity: String,
+    reconnect: String,
+    settings: String,
+    quit: String,
 }
 
 #[derive(Debug, Serialize, Deserialize)]
@@ -853,6 +876,41 @@ fn tray_set_tooltip(app: tauri::AppHandle, tooltip: String) -> Result<(), String
 }
 
 #[tauri::command]
+fn tray_configure(
+    app: tauri::AppHandle,
+    state: tauri::State<'_, TrayState>,
+    config: TrayMenuConfig,
+) -> Result<(), String> {
+    state
+        .custom
+        .store(config.mode != "classic", Ordering::Relaxed);
+
+    let status = MenuItemBuilder::with_id("tray-status", config.status)
+        .enabled(false)
+        .build(&app)
+        .map_err(|error| error.to_string())?;
+    let menu = MenuBuilder::new(&app)
+        .item(&status)
+        .separator()
+        .text("open", config.open)
+        .text("dashboard", config.dashboard)
+        .text("stream", config.stream)
+        .text("chat", config.chat)
+        .text("activity", config.activity)
+        .separator()
+        .text("reconnect", config.reconnect)
+        .text("settings", config.settings)
+        .separator()
+        .text("quit", config.quit)
+        .build()
+        .map_err(|error| error.to_string())?;
+    let tray = app
+        .tray_by_id("main")
+        .ok_or_else(|| "Tray icon is unavailable".to_string())?;
+    tray.set_menu(Some(menu)).map_err(|error| error.to_string())
+}
+
+#[tauri::command]
 fn distribution_channel() -> &'static str {
     #[cfg(windows)]
     {
@@ -912,9 +970,17 @@ pub fn run() {
             if let Some(data_directory) = db_path.parent() {
                 migrate_legacy_data(data_directory).map_err(std::io::Error::other)?;
             }
-            app.manage(AppState {
-                db: Mutex::new(init_database(db_path).map_err(std::io::Error::other)?),
-            });
+            let db = init_database(db_path).map_err(std::io::Error::other)?;
+            let custom_tray = db
+                .query_row(
+                    "SELECT value FROM settings WHERE key = 'trayStyle'",
+                    [],
+                    |row| row.get::<_, String>(0),
+                )
+                .ok()
+                .map(|value| serde_json::from_str::<String>(&value).unwrap_or(value) != "classic")
+                .unwrap_or(true);
+            app.manage(AppState { db: Mutex::new(db) });
             if cfg!(debug_assertions) {
                 app.handle().plugin(
                     tauri_plugin_log::Builder::default()
@@ -932,27 +998,62 @@ pub fn run() {
                     .shadow(true)
                     .focused(false)
                     .visible(false)
-                    .build()?;
-            let tray_window_on_blur = tray_window.clone();
-            tray_window.on_window_event(move |event| {
-                if matches!(event, WindowEvent::Focused(false)) {
-                    let _ = tray_window_on_blur.hide();
-                }
+                    .build()
+                    .ok();
+            if let Some(tray_window) = tray_window {
+                let tray_window_on_blur = tray_window.clone();
+                tray_window.on_window_event(move |event| {
+                    if matches!(event, WindowEvent::Focused(false)) {
+                        let _ = tray_window_on_blur.hide();
+                    }
+                });
+            }
+            app.manage(TrayState {
+                custom: AtomicBool::new(custom_tray),
             });
             let tray_icon = app
                 .default_window_icon()
                 .cloned()
                 .ok_or_else(|| std::io::Error::other("StreamDash application icon is missing"))?;
+            let tray_status =
+                MenuItemBuilder::with_id("tray-status", "Offline · Twitch: Disconnected")
+                    .enabled(false)
+                    .build(app)?;
+            let tray_menu = MenuBuilder::new(app)
+                .item(&tray_status)
+                .separator()
+                .text("open", "Open StreamDash")
+                .text("dashboard", "Dashboard")
+                .text("stream", "Stream")
+                .text("chat", "Chat")
+                .text("activity", "Activity")
+                .separator()
+                .text("reconnect", "Reconnect services")
+                .text("settings", "Settings")
+                .separator()
+                .text("quit", "Quit StreamDash")
+                .build()?;
             TrayIconBuilder::with_id("main")
                 .icon(tray_icon)
                 .tooltip("StreamDash")
+                .menu(&tray_menu)
+                .show_menu_on_left_click(false)
+                .on_menu_event(|app, event| {
+                    let _ = tray_action(app.clone(), event.id().as_ref().to_string());
+                })
                 .on_tray_icon_event(|tray, event| {
                     if let tauri::tray::TrayIconEvent::Click {
                         position,
+                        button: tauri::tray::MouseButton::Left,
                         button_state: tauri::tray::MouseButtonState::Up,
                         ..
                     } = event
                     {
+                        let state = tray.app_handle().state::<TrayState>();
+                        if !state.custom.load(Ordering::Relaxed) {
+                            show_main_window(tray.app_handle(), None);
+                            return;
+                        }
                         if let Some(window) = tray.app_handle().get_webview_window("tray") {
                             if window.is_visible().unwrap_or(false) {
                                 let _ = window.hide();
@@ -964,10 +1065,13 @@ pub fn run() {
                                     (position.y.round() as i32 - size.height as i32 - 12).max(0);
                                 let _ = window.set_position(PhysicalPosition::new(x, y));
                             }
-                            let _ = window.show();
-                            let _ = window.set_focus();
-                            let _ = tray.app_handle().emit("tray-opened", ());
+                            if window.show().is_ok() {
+                                let _ = window.set_focus();
+                                let _ = tray.app_handle().emit("tray-opened", ());
+                                return;
+                            }
                         }
+                        show_main_window(tray.app_handle(), None);
                     }
                 })
                 .build(app)?;
@@ -998,6 +1102,7 @@ pub fn run() {
             store_update_available,
             app_quit,
             tray_action,
+            tray_configure,
             tray_set_tooltip
         ])
         .build(tauri::generate_context!())

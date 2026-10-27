@@ -293,6 +293,10 @@
     "messageBufferDetail": "Older chat messages are discarded to keep memory usage stable.",
     "minimizeToTray": "Minimize to tray",
     "minimizeToTrayDetail": "Keep realtime connections active when the window is closed.",
+    "trayStyle": "System tray style",
+    "trayStyleDetail": "Use the compact StreamDash panel or the native Windows menu. Right-click always opens the native fallback menu.",
+    "trayStyleCustom": "StreamDash panel",
+    "trayStyleClassic": "Windows menu",
     "normal": "Normal",
     "notifications": "NOTIFICATIONS",
     "orange": "Orange",
@@ -375,10 +379,12 @@
     "currentViewers": "Current viewers",
     "live": "Live",
     "offline": "Offline",
+    "open": "Open StreamDash",
     "quickActions": "Quick actions",
     "quit": "Quit StreamDash",
     "reconnect": "Reconnect services",
     "reconnecting": "Reconnecting…",
+    "statusSummary": "{{streamStatus}} · Twitch: {{twitchStatus}}",
     "tooltip": "StreamDash — {{streamStatus}} · Twitch: {{twitchStatus}}"
   },
   "updater": {
