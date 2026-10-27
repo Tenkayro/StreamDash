@@ -170,11 +170,16 @@ export function TitleBar({ setup = false }: { setup?: boolean }) {
   const [closeMenuOpen, setCloseMenuOpen] = useState(false);
   const closeMenuRef = useRef<HTMLDivElement>(null);
   const { page, settings, setSettings } = useAppStore();
+  const betaNumber = /-beta\.(\d+)$/.exec(version)?.[1];
   const channel = import.meta.env.DEV
     ? "DEV"
-    : updater.channel === "store"
-      ? "STORE"
-      : "RELEASE";
+    : betaNumber || import.meta.env.VITE_STREAMDASH_CHANNEL === "beta"
+      ? betaNumber
+        ? `BETA ${betaNumber}`
+        : "BETA"
+      : updater.channel === "store"
+        ? "STORE"
+        : "RELEASE";
   useEffect(() => {
     if (isTauri()) void getVersion().then(setVersion);
   }, []);
@@ -219,7 +224,7 @@ export function TitleBar({ setup = false }: { setup?: boolean }) {
           ) : (
             <LoadingIndicator className="h-2 w-7" />
           )}
-          <span className="text-[8px] tracking-wider text-zinc-700">
+          <span className={`rounded px-1 py-0.5 text-[8px] font-semibold tracking-wider ${channel.startsWith("BETA") ? "bg-amber-400/10 text-amber-300" : "text-zinc-700"}`}>
             · {channel}
           </span>
         </span>

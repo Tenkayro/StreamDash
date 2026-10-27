@@ -11,7 +11,9 @@ import {
   Clock3,
   Database,
   DatabaseBackup,
+  Download,
   EyeOff,
+  FlaskConical,
   Gift,
   Globe2,
   Highlighter,
@@ -19,6 +21,7 @@ import {
   Languages,
   LayoutDashboard,
   ListFilter,
+  LoaderCircle,
   Maximize2,
   MessageSquare,
   MessagesSquare,
@@ -48,6 +51,11 @@ import { saveSetting } from "../services/native";
 import { errorMessage, isTauri } from "../lib/utils";
 import type { ActivityType, AppSettings } from "../types";
 import { useTranslation } from "react-i18next";
+import { openUrl } from "@tauri-apps/plugin-opener";
+
+const BETA_MANIFEST_URL =
+  "https://raw.githubusercontent.com/Tenkayro/StreamDash/main/beta.json";
+const IS_BETA_BUILD = import.meta.env.VITE_STREAMDASH_CHANNEL === "beta";
 
 const eventOptions: Array<{ id: ActivityType; label: string; icon: LucideIcon }> = [
   { id: "follow", label: "follows", icon: Heart },
@@ -282,6 +290,7 @@ function LanguageSelect({
 export function SettingsPage() {
   const { settings, setSettings } = useAppStore();
   const { t } = useTranslation();
+  const [betaDownloading, setBetaDownloading] = useState(false);
 
   const update = async <K extends keyof AppSettings>(
     key: K,
@@ -296,6 +305,26 @@ export function SettingsPage() {
       toast.error(t("settings.saveError"), {
         description: errorMessage(error),
       });
+    }
+  };
+  const downloadBeta = async () => {
+    setBetaDownloading(true);
+    try {
+      const response = await fetch(BETA_MANIFEST_URL, { cache: "no-store" });
+      if (!response.ok) throw new Error(t("settings.betaUnavailable"));
+      const manifest = (await response.json()) as {
+        platforms?: { "windows-x86_64"?: { url?: string } };
+      };
+      const url = manifest.platforms?.["windows-x86_64"]?.url;
+      if (!url || new URL(url).hostname !== "github.com")
+        throw new Error(t("settings.betaUnavailable"));
+      await openUrl(url);
+    } catch (error) {
+      toast.error(t("settings.betaDownloadError"), {
+        description: errorMessage(error),
+      });
+    } finally {
+      setBetaDownloading(false);
     }
   };
   return (
@@ -325,6 +354,25 @@ export function SettingsPage() {
                 {t("settings.openSetupWizard")}
               </Button>
             </Row>
+            {!IS_BETA_BUILD && (
+              <Row
+                icon={FlaskConical}
+                label={t("settings.betaProgram")}
+                detail={t("settings.betaProgramDetail")}
+              >
+                <Button
+                  disabled={betaDownloading || !isTauri()}
+                  onClick={() => void downloadBeta()}
+                >
+                  {betaDownloading ? (
+                    <LoaderCircle size={14} className="animate-spin" />
+                  ) : (
+                    <Download size={14} />
+                  )}
+                  {t("settings.downloadBeta")}
+                </Button>
+              </Row>
+            )}
             <Row
               icon={MonitorUp}
               label={t("settings.launchWithWindows")}

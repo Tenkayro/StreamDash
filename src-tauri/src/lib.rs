@@ -23,8 +23,29 @@ use tauri::menu::{MenuBuilder, MenuItemBuilder};
 use tauri::tray::TrayIconBuilder;
 use tauri::{Emitter, Manager, PhysicalPosition, WebviewUrl, WebviewWindowBuilder, WindowEvent};
 
-const CREDENTIAL_SERVICE: &str = "StreamDash";
-const PREFERENCES_REGISTRY_KEY: &str = r"HKCU\Software\Tenkayro\StreamDash";
+fn is_beta_build() -> bool {
+    option_env!("STREAMDASH_CHANNEL") == Some("beta")
+}
+
+fn app_display_name() -> &'static str {
+    if is_beta_build() {
+        "StreamDash Beta"
+    } else {
+        "StreamDash"
+    }
+}
+
+fn credential_service() -> &'static str {
+    app_display_name()
+}
+
+fn preferences_registry_key() -> &'static str {
+    if is_beta_build() {
+        r"HKCU\Software\Tenkayro\StreamDash Beta"
+    } else {
+        r"HKCU\Software\Tenkayro\StreamDash"
+    }
+}
 
 struct AppState {
     db: Mutex<Connection>,
@@ -93,7 +114,7 @@ fn now_epoch() -> i64 {
 }
 
 fn credential(name: &str) -> Result<keyring::Entry, String> {
-    keyring::Entry::new(CREDENTIAL_SERVICE, name).map_err(|e| e.to_string())
+    keyring::Entry::new(credential_service(), name).map_err(|e| e.to_string())
 }
 
 fn save_secret(name: &str, value: &str) -> Result<(), String> {
@@ -122,7 +143,7 @@ fn set_keep_user_data_preference(keep: bool) -> Result<(), String> {
     let status = Command::new("reg.exe")
         .args([
             "add",
-            PREFERENCES_REGISTRY_KEY,
+            preferences_registry_key(),
             "/v",
             "KeepUserData",
             "/t",
@@ -146,6 +167,9 @@ fn set_keep_user_data_preference(_keep: bool) -> Result<(), String> {
 }
 
 fn migrate_legacy_data(new_directory: &Path) -> Result<(), String> {
+    if is_beta_build() {
+        return Ok(());
+    }
     let Some(roaming) = std::env::var_os("APPDATA").map(PathBuf::from) else {
         return Ok(());
     };
@@ -184,16 +208,29 @@ pub fn uninstall_cleanup() -> Result<(), String> {
         delete_secret_value(secret)?;
     }
 
+    let (data_name, identifier, autostart_names): (&str, &str, &[&str]) = if is_beta_build() {
+        (
+            "StreamDash Beta",
+            "dev.streamdash.desktop.beta",
+            &["StreamDash Beta", "streamdash-beta"],
+        )
+    } else {
+        (
+            "StreamDash",
+            "dev.streamdash.desktop",
+            &["StreamDash", "streamdash"],
+        )
+    };
     if let Some(roaming) = std::env::var_os("APPDATA").map(PathBuf::from) {
-        remove_directory_if_present(roaming.join("StreamDash"))?;
-        remove_directory_if_present(roaming.join("dev.streamdash.desktop"))?;
+        remove_directory_if_present(roaming.join(data_name))?;
+        remove_directory_if_present(roaming.join(identifier))?;
     }
     if let Some(local) = std::env::var_os("LOCALAPPDATA").map(PathBuf::from) {
-        remove_directory_if_present(local.join("StreamDash"))?;
-        remove_directory_if_present(local.join("dev.streamdash.desktop"))?;
+        remove_directory_if_present(local.join(data_name))?;
+        remove_directory_if_present(local.join(identifier))?;
     }
 
-    for value in ["StreamDash", "streamdash"] {
+    for value in autostart_names {
         let _ = Command::new("reg.exe")
             .args([
                 "delete",
@@ -205,7 +242,7 @@ pub fn uninstall_cleanup() -> Result<(), String> {
             .status();
     }
     let _ = Command::new("reg.exe")
-        .args(["delete", PREFERENCES_REGISTRY_KEY, "/f"])
+        .args(["delete", preferences_registry_key(), "/f"])
         .status();
     Ok(())
 }
@@ -983,7 +1020,10 @@ fn tray_configure(
 }
 
 #[tauri::command]
-fn distribution_channel() -> &'static str {
+fn distribution_channel(app: tauri::AppHandle) -> &'static str {
+    if app.config().identifier.ends_with(".beta") {
+        return "beta";
+    }
     #[cfg(windows)]
     {
         use windows::Win32::{
@@ -1002,12 +1042,12 @@ fn distribution_channel() -> &'static str {
 }
 
 #[tauri::command]
-async fn store_update_available() -> Result<bool, String> {
+async fn store_update_available(app: tauri::AppHandle) -> Result<bool, String> {
     #[cfg(windows)]
     {
         use windows::Services::Store::StoreContext;
 
-        if distribution_channel() != "store" {
+        if distribution_channel(app) != "store" {
             return Err("Microsoft Store updates require an installed Store package".into());
         }
         let context = StoreContext::GetDefault().map_err(|error| error.to_string())?;
@@ -1096,7 +1136,7 @@ pub fn run() {
             let tray_menu = MenuBuilder::new(app)
                 .item(&tray_status)
                 .separator()
-                .text("open", "Open StreamDash")
+                .text("open", format!("Open {}", app_display_name()))
                 .text("dashboard", "Dashboard")
                 .text("stream", "Stream")
                 .text("chat", "Chat")
@@ -1105,11 +1145,11 @@ pub fn run() {
                 .text("reconnect", "Reconnect services")
                 .text("settings", "Settings")
                 .separator()
-                .text("quit", "Quit StreamDash")
+                .text("quit", format!("Quit {}", app_display_name()))
                 .build()?;
             let mut tray_builder = TrayIconBuilder::with_id("main")
                 .icon(tray_icon)
-                .tooltip("StreamDash")
+                .tooltip(app_display_name())
                 .show_menu_on_left_click(false)
                 .on_menu_event(|app, event| {
                     let _ = tray_action(app.clone(), event.id().as_ref().to_string());

@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Wix xmlns="http://schemas.microsoft.com/wix/2006/wi">
+  <Fragment>
+    <Property Id="KEEPUSERDATA" Value="1" Secure="yes">
+      <RegistrySearch
+        Id="KeepUserDataSearch"
+        Root="HKCU"
+        Key="Software\Tenkayro\StreamDash Beta"
+        Name="KeepUserData"
+        Type="raw" />
+    </Property>
+
+    <CustomAction
+      Id="CleanupStreamDashUserData"
+      FileKey="Path"
+      ExeCommand="--uninstall-cleanup"
+      Execute="deferred"
+      Impersonate="yes"
+      Return="check" />
+
+    <InstallExecuteSequence>
+      <Custom Action="CleanupStreamDashUserData" Before="RemoveFiles">
+        REMOVE="ALL" AND NOT UPGRADINGPRODUCTCODE AND KEEPUSERDATA="0"
+      </Custom>
+    </InstallExecuteSequence>
+
+    <DirectoryRef Id="TARGETDIR">
+      <Component Id="UserDataPreference" Guid="*" NeverOverwrite="yes" Permanent="yes">
+        <RegistryValue
+          Root="HKCU"
+          Key="Software\Tenkayro\StreamDash Beta"
+          Name="KeepUserData"
+          Type="string"
+          Value="1"
+          KeyPath="yes" />
+      </Component>
+    </DirectoryRef>
+  </Fragment>
+</Wix>

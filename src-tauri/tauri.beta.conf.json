@@ -1,0 +1,24 @@
+{
+  "productName": "StreamDash Beta",
+  "identifier": "dev.streamdash.desktop.beta",
+  "mainBinaryName": "streamdash-beta",
+  "app": {
+    "appDirectoriesOverride": "$DATA/StreamDash Beta"
+  },
+  "bundle": {
+    "windows": {
+      "wix": {
+        "upgradeCode": "b7a6f3b7-0763-4b78-9a5e-e93f2dc45948",
+        "fragmentPaths": ["wix/user-data-beta.wxs"],
+        "componentRefs": ["UserDataPreference"]
+      }
+    }
+  },
+  "plugins": {
+    "updater": {
+      "endpoints": [
+        "https://raw.githubusercontent.com/Tenkayro/StreamDash/main/beta.json"
+      ]
+    }
+  }
+}

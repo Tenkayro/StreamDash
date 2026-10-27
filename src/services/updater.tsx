@@ -38,7 +38,7 @@ export function UpdateProvider({ children }: { children: ReactNode }) {
 
   const resolveChannel = useCallback(async () => {
     if (channelRef.current) return channelRef.current;
-    const channel = await invoke<"store" | "standalone">(
+    const channel = await invoke<"beta" | "store" | "standalone">(
       "distribution_channel",
     );
     channelRef.current = channel;

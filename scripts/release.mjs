@@ -1,12 +1,15 @@
 import * as p from "@clack/prompts";
 import { spawn } from "node:child_process";
-import { readFile, writeFile } from "node:fs/promises";
+import { readFile, rm, writeFile } from "node:fs/promises";
 import { homedir } from "node:os";
 import { join, resolve } from "node:path";
 import process from "node:process";
 
 const root = resolve(import.meta.dirname, "..");
 const repo = "Tenkayro/StreamDash";
+const betaManifestFile = "beta.json";
+const betaConfigTemplate = "src-tauri/tauri.beta.conf.json";
+const betaGeneratedConfig = "src-tauri/tauri.beta.generated.conf.json";
 const versionFiles = [
   "package.json",
   "package-lock.json",
@@ -73,6 +76,31 @@ function bumpVersion(current, kind) {
   return `${major}.${minor}.${patch + 1}`;
 }
 
+async function nextBetaVersion(baseVersion) {
+  await run("git", ["fetch", "origin", "--tags"]);
+  const tags = await run("git", ["tag", "--list", `v${baseVersion}-beta.*`]);
+  const numbers = tags.stdout
+    .split(/\r?\n/)
+    .map((tag) => new RegExp(`^v${baseVersion.replaceAll(".", "\\.")}-beta\\.(\\d+)$`).exec(tag)?.[1])
+    .filter(Boolean)
+    .map(Number);
+  return `${baseVersion}-beta.${Math.max(0, ...numbers) + 1}`;
+}
+
+async function writeBetaBuildConfig(version) {
+  const parsed = /^(\d+)\.(\d+)\.(\d+)-beta\.(\d+)$/.exec(version);
+  if (!parsed) throw new Error(`Invalid beta version: ${version}`);
+  const [, major, minor, patch, beta] = parsed;
+  const config = JSON.parse(
+    await readFile(join(root, betaConfigTemplate), "utf8"),
+  );
+  config.version = version;
+  config.bundle.windows.wix.version = `${major}.${minor}.${patch}.${beta}`;
+  const path = join(root, betaGeneratedConfig);
+  await writeFile(path, `${JSON.stringify(config, null, 2)}\n`);
+  return path;
+}
+
 function cancelled(value) {
   if (!p.isCancel(value)) return;
   p.cancel("Release cancelled. No files were changed.");
@@ -135,49 +163,74 @@ async function main() {
     throw error;
   }
 
+  const releaseChannel = await p.select({
+    message: "Choose the release channel:",
+    options: [
+      {
+        value: "stable",
+        label: "Stable release",
+        hint: "GitHub latest + local Microsoft Store MSIX",
+      },
+      {
+        value: "beta",
+        label: "Beta prerelease",
+        hint: "Separate app, GitHub only, no Store build",
+      },
+    ],
+  });
+  cancelled(releaseChannel);
+  const isBeta = releaseChannel === "beta";
+
   const currentVersion = JSON.parse(await readFile(join(root, "package.json"), "utf8")).version;
   const headPackage = await run("git", ["show", "HEAD:package.json"]);
   const headVersion = JSON.parse(headPackage.stdout).version;
   const hasUnreleasedWorkingVersion = currentVersion !== headVersion;
-  const bump = await p.select({
-    message: `Current version is ${currentVersion}. Choose the next version:`,
-    options: [
-      ...(hasUnreleasedWorkingVersion
-        ? [
-            {
-              value: "current",
-              label: `Publish current working version ${currentVersion}`,
-              hint: `HEAD is still ${headVersion}`,
-            },
-          ]
-        : []),
-      { value: "patch", label: `Patch  -> ${bumpVersion(currentVersion, "patch")}` },
-      { value: "minor", label: `Minor  -> ${bumpVersion(currentVersion, "minor")}` },
-      { value: "major", label: `Major  -> ${bumpVersion(currentVersion, "major")}` },
-      { value: "custom", label: "Enter a custom version" },
-    ],
-  });
-  cancelled(bump);
-
-  let version =
-    bump === "current"
-      ? currentVersion
-      : bump === "custom"
-        ? await p.text({
-            message: "Version",
-            placeholder: currentVersion,
-            validate: (value) =>
-              parseVersion(value)
-                ? undefined
-                : "Use semantic versioning, for example 1.2.3.",
-          })
-        : bumpVersion(currentVersion, bump);
-  cancelled(version);
-  version = (version ?? "").trim();
+  let bump = "beta";
+  let version;
+  if (isBeta) {
+    if (!parseVersion(currentVersion))
+      throw new Error("Beta releases require a stable base version such as 1.9.0.");
+    version = await nextBetaVersion(currentVersion);
+  } else {
+    bump = await p.select({
+      message: `Current version is ${currentVersion}. Choose the next version:`,
+      options: [
+        ...(hasUnreleasedWorkingVersion
+          ? [
+              {
+                value: "current",
+                label: `Publish current working version ${currentVersion}`,
+                hint: `HEAD is still ${headVersion}`,
+              },
+            ]
+          : []),
+        { value: "patch", label: `Patch  -> ${bumpVersion(currentVersion, "patch")}` },
+        { value: "minor", label: `Minor  -> ${bumpVersion(currentVersion, "minor")}` },
+        { value: "major", label: `Major  -> ${bumpVersion(currentVersion, "major")}` },
+        { value: "custom", label: "Enter a custom version" },
+      ],
+    });
+    cancelled(bump);
+    version =
+      bump === "current"
+        ? currentVersion
+        : bump === "custom"
+          ? await p.text({
+              message: "Version",
+              placeholder: currentVersion,
+              validate: (value) =>
+                parseVersion(value)
+                  ? undefined
+                  : "Use semantic versioning, for example 1.2.3.",
+            })
+          : bumpVersion(currentVersion, bump);
+    cancelled(version);
+    version = (version ?? "").trim();
+  }
 
   const summary = await p.text({
     message: "Short release summary for latest.json",
-    defaultValue: `StreamDash ${version} improvements and fixes.`,
+    defaultValue: `StreamDash${isBeta ? " Beta" : ""} ${version} improvements and fixes.`,
     validate: (value) => (value ?? "").trim() ? undefined : "Enter a short release summary.",
   });
   cancelled(summary);
@@ -226,15 +279,18 @@ async function main() {
   p.note(
     [
       `${currentVersion}  ->  ${version}`,
+      `Channel: ${isBeta ? "Beta prerelease" : "Stable"}`,
       `Repository: ${repo}`,
-      "GitHub: MSI installer, updater signature, latest.json",
-      "Local only: Microsoft Store MSIX (never uploaded to GitHub)",
+      `GitHub: ${isBeta ? "separate Beta MSI, signature, beta.json" : "MSI installer, updater signature, latest.json"}`,
+      isBeta
+        ? "Microsoft Store: skipped for Beta"
+        : "Local only: Microsoft Store MSIX (never uploaded to GitHub)",
       "GitHub release notes: generated automatically",
     ].join("\n"),
     "Release summary",
   );
   const confirmed = await p.confirm({
-    message: `Build, commit${pendingChanges ? " pending changes" : ""}, tag, push, and publish ${tag}?`,
+    message: `Build, commit${pendingChanges ? " pending changes" : ""}, tag, push, and publish ${tag}${isBeta ? " as a prerelease" : ""}?`,
     initialValue: true,
   });
   cancelled(confirmed);
@@ -248,34 +304,60 @@ async function main() {
     save.stop("Pending changes committed");
   }
 
+  const releaseFiles = isBeta ? [betaManifestFile] : versionFiles;
   const snapshots = new Map(await Promise.all(
-    versionFiles.map(async (file) => [file, await readFile(join(root, file), "utf8")]),
+    releaseFiles.map(async (file) => [
+      file,
+      await readFile(join(root, file), "utf8").catch(() => null),
+    ]),
   ));
 
   let committed = false;
+  let betaConfigPath;
   try {
     const progress = p.spinner();
-    progress.start(`Updating project versions to ${version}`);
-    await updateVersions(version);
+    progress.start(
+      isBeta
+        ? `Preparing isolated Beta ${version}`
+        : `Updating project versions to ${version}`,
+    );
+    if (isBeta) betaConfigPath = await writeBetaBuildConfig(version);
+    else await updateVersions(version);
     progress.message("Running TypeScript and Rust checks");
     await run("npm", ["run", "check"]);
     await run("cargo", ["check", "--manifest-path", "src-tauri/Cargo.toml"]);
 
-    progress.message("Building the signed MSI updater package");
-    await run("npm", ["run", "setup"], {
-      env: { ...process.env, TAURI_SIGNING_PRIVATE_KEY: keyPath },
+    const installerAssetName = isBeta
+      ? "StreamDash-Beta-Setup.msi"
+      : "StreamDash-Setup.msi";
+    progress.message(`Building the signed ${isBeta ? "Beta " : ""}MSI updater package`);
+    const setupArguments = ["run", "setup"];
+    if (isBeta)
+      setupArguments.push(
+        "--",
+        "-ConfigPath", betaConfigPath,
+        "-OutputName", installerAssetName,
+      );
+    await run("npm", setupArguments, {
+      env: {
+        ...process.env,
+        TAURI_SIGNING_PRIVATE_KEY: keyPath,
+        STREAMDASH_CHANNEL: isBeta ? "beta" : "stable",
+        VITE_STREAMDASH_CHANNEL: isBeta ? "beta" : "stable",
+      },
     });
 
-    progress.message("Packaging the Microsoft Store MSIX without rebuilding");
-    await run("powershell", [
-      "-NoProfile",
-      "-ExecutionPolicy", "Bypass",
-      "-File", "scripts/build-msix.ps1",
-      "-SkipBuild",
-    ]);
+    if (!isBeta) {
+      progress.message("Packaging the Microsoft Store MSIX without rebuilding");
+      await run("powershell", [
+        "-NoProfile",
+        "-ExecutionPolicy", "Bypass",
+        "-File", "scripts/build-msix.ps1",
+        "-SkipBuild",
+      ]);
+    }
 
     const bundleDirectory = join(root, "src-tauri", "target", "release", "bundle", "msi");
-    const installerAssetName = "StreamDash-Setup.msi";
     const installerAsset = join(bundleDirectory, installerAssetName);
     const signatureAsset = `${installerAsset}.sig`;
     const signature = (await readFile(signatureAsset, "utf8")).trim();
@@ -290,25 +372,41 @@ async function main() {
         },
       },
     };
-    const manifestPath = join(bundleDirectory, "latest.json");
+    const manifestPath = isBeta
+      ? join(root, betaManifestFile)
+      : join(bundleDirectory, "latest.json");
     await writeFile(manifestPath, `${JSON.stringify(manifest, null, 2)}\n`);
-    progress.stop("GitHub artifacts and local Store MSIX are ready");
+    progress.stop(
+      isBeta
+        ? "Beta GitHub artifacts and update manifest are ready"
+        : "GitHub artifacts and local Store MSIX are ready",
+    );
 
     const publish = p.spinner();
-    publish.start("Committing the release version");
-    await run("git", ["add", ...versionFiles]);
+    publish.start(`Committing the ${isBeta ? "Beta manifest" : "release version"}`);
+    await run("git", ["add", ...releaseFiles]);
     const stagedVersionChanges = await run(
       "git",
-      ["diff", "--cached", "--quiet", "--", ...versionFiles],
+      ["diff", "--cached", "--quiet", "--", ...releaseFiles],
       { allowFailure: true },
     );
     if (stagedVersionChanges.code !== 0)
       await run("git", ["commit", "-m", `chore: release ${tag}`]);
     committed = true;
-    await run("git", ["tag", "-a", tag, "-m", `StreamDash ${version}`]);
+    await run("git", [
+      "tag",
+      "-a",
+      tag,
+      "-m",
+      `StreamDash${isBeta ? " Beta" : ""} ${version}`,
+    ]);
     publish.message("Pushing main and the release tag");
     await run("git", ["push", "--atomic", "origin", "main", tag]);
-    publish.message("Publishing the GitHub release (Store MSIX stays local)");
+    publish.message(
+      isBeta
+        ? "Publishing the GitHub prerelease"
+        : "Publishing the GitHub release (Store MSIX stays local)",
+    );
     await run("gh", [
       "release",
       "create",
@@ -319,27 +417,33 @@ async function main() {
       "--repo",
       repo,
       "--title",
-      `StreamDash ${version}`,
+      `StreamDash${isBeta ? " Beta" : ""} ${version}`,
       "--notes",
       (summary ?? "").trim(),
       "--generate-notes",
       "--verify-tag",
-      "--latest",
+      isBeta ? "--prerelease" : "--latest",
     ]);
-    publish.stop(`StreamDash ${version} is published`);
-    p.note(
-      join(root, "src-tauri", "target", "release", "bundle", "msix"),
-      "Microsoft Store MSIX (local only)",
-    );
+    publish.stop(`StreamDash${isBeta ? " Beta" : ""} ${version} is published`);
+    if (!isBeta)
+      p.note(
+        join(root, "src-tauri", "target", "release", "bundle", "msix"),
+        "Microsoft Store MSIX (local only)",
+      );
     p.outro(`https://github.com/${repo}/releases/tag/${tag}`);
   } catch (error) {
     if (!committed)
       await Promise.all(
-        [...snapshots].map(([file, content]) =>
-          writeFile(join(root, file), content),
-        ),
+        [...snapshots].map(([file, content]) => {
+          const path = join(root, file);
+          return content == null
+            ? rm(path, { force: true })
+            : writeFile(path, content);
+        }),
       );
     throw error;
+  } finally {
+    if (betaConfigPath) await rm(betaConfigPath, { force: true });
   }
 }
 

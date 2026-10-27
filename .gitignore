@@ -8,6 +8,7 @@ src-tauri/target/
 .idea/
 .vscode/settings.json
 src-tauri/gen/
+src-tauri/tauri.beta.generated.conf.json
 todo
 AGENTS.md
 
