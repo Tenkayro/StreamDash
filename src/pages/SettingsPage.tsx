@@ -5,12 +5,15 @@ import {
   AppWindow,
   BadgeCheck,
   Bell,
+  Check,
+  ChevronDown,
   CircleDollarSign,
   Clock3,
   Database,
   DatabaseBackup,
   EyeOff,
   Gift,
+  Globe2,
   Highlighter,
   Heart,
   Languages,
@@ -37,7 +40,7 @@ import {
   Users,
   type LucideIcon,
 } from "lucide-react";
-import { useState, type ReactNode } from "react";
+import { useEffect, useRef, useState, type ReactNode } from "react";
 import { toast } from "sonner";
 import { Button, Card, PageHeader } from "../components/ui";
 import { defaultDashboardWidgets, useAppStore } from "../stores/app-store";
@@ -146,6 +149,136 @@ function HighlightWords({
   );
 }
 
+type LanguageValue = AppSettings["language"];
+
+function LanguageFlag({ language }: { language: LanguageValue }) {
+  if (language === "auto")
+    return (
+      <span className="grid size-5 shrink-0 place-items-center rounded-full bg-sky-400/10 text-sky-300">
+        <Globe2 size={13} aria-hidden="true" />
+      </span>
+    );
+  return (
+    <svg
+      viewBox="0 0 8 6"
+      aria-hidden="true"
+      className="h-3.5 w-5 shrink-0 overflow-hidden rounded-xs shadow-sm ring-1 ring-white/10"
+    >
+      {language === "de" && (
+        <>
+          <path fill="#171717" d="M0 0h8v2H0z" />
+          <path fill="#dc2626" d="M0 2h8v2H0z" />
+          <path fill="#facc15" d="M0 4h8v2H0z" />
+        </>
+      )}
+      {language === "fr" && (
+        <>
+          <path fill="#1d4ed8" d="M0 0h2.67v6H0z" />
+          <path fill="#fff" d="M2.67 0h2.66v6H2.67z" />
+          <path fill="#ef4444" d="M5.33 0H8v6H5.33z" />
+        </>
+      )}
+      {language === "es" && (
+        <>
+          <path fill="#b91c1c" d="M0 0h8v1.5H0zM0 4.5h8V6H0z" />
+          <path fill="#facc15" d="M0 1.5h8v3H0z" />
+        </>
+      )}
+      {language === "pt-BR" && (
+        <>
+          <path fill="#169b62" d="M0 0h8v6H0z" />
+          <path fill="#ffdf00" d="m4 .75 3 2.25-3 2.25L1 3z" />
+          <circle cx="4" cy="3" r="1.15" fill="#002776" />
+        </>
+      )}
+      {language === "en" && (
+        <>
+          <path fill="#1e3a8a" d="M0 0h8v6H0z" />
+          <path stroke="#fff" strokeWidth="1.35" d="m-1 0 10 6M9 0-1 6" />
+          <path stroke="#dc2626" strokeWidth=".55" d="m-1 0 10 6M9 0-1 6" />
+          <path fill="#fff" d="M0 2.1h8v1.8H0zM3.1 0h1.8v6H3.1z" />
+          <path fill="#dc2626" d="M0 2.55h8v.9H0zM3.55 0h.9v6h-.9z" />
+        </>
+      )}
+    </svg>
+  );
+}
+
+function LanguageSelect({
+  value,
+  onChange,
+}: {
+  value: LanguageValue;
+  onChange: (value: LanguageValue) => void;
+}) {
+  const { t } = useTranslation();
+  const [open, setOpen] = useState(false);
+  const rootRef = useRef<HTMLDivElement>(null);
+  const options: Array<{ value: LanguageValue; label: string }> = [
+    { value: "auto", label: t("common.automatic") },
+    { value: "en", label: t("languages.en") },
+    { value: "de", label: t("languages.de") },
+    { value: "es", label: t("languages.es") },
+    { value: "pt-BR", label: t("languages.pt-BR") },
+    { value: "fr", label: t("languages.fr") },
+  ];
+  const selected = options.find((option) => option.value === value) ?? options[0];
+  useEffect(() => {
+    if (!open) return;
+    const close = (event: PointerEvent) => {
+      if (!rootRef.current?.contains(event.target as Node)) setOpen(false);
+    };
+    const closeOnEscape = (event: KeyboardEvent) => {
+      if (event.key === "Escape") setOpen(false);
+    };
+    document.addEventListener("pointerdown", close);
+    document.addEventListener("keydown", closeOnEscape);
+    return () => {
+      document.removeEventListener("pointerdown", close);
+      document.removeEventListener("keydown", closeOnEscape);
+    };
+  }, [open]);
+  return (
+    <div ref={rootRef} className="relative w-52">
+      <button
+        type="button"
+        aria-haspopup="listbox"
+        aria-expanded={open}
+        onClick={() => setOpen((current) => !current)}
+        className="input flex w-full items-center gap-2 text-left"
+      >
+        <LanguageFlag language={selected.value} />
+        <span className="min-w-0 flex-1 truncate">{selected.label}</span>
+        <ChevronDown size={13} className={`shrink-0 text-zinc-600 transition-transform ${open ? "rotate-180" : ""}`} />
+      </button>
+      {open && (
+        <div
+          role="listbox"
+          className="absolute right-0 top-full z-50 mt-1 w-full rounded-lg border border-line bg-raised p-1 shadow-xl shadow-black/40"
+        >
+          {options.map((option) => (
+            <button
+              type="button"
+              role="option"
+              aria-selected={option.value === value}
+              key={option.value}
+              onClick={() => {
+                onChange(option.value);
+                setOpen(false);
+              }}
+              className="flex w-full items-center gap-2 rounded-md px-2.5 py-2 text-left text-xs text-zinc-300 transition hover:bg-white/5 hover:text-white"
+            >
+              <LanguageFlag language={option.value} />
+              <span className="min-w-0 flex-1 truncate">{option.label}</span>
+              {option.value === value && <Check size={13} className="shrink-0 text-accent" />}
+            </button>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
 export function SettingsPage() {
   const { settings, setSettings } = useAppStore();
   const { t } = useTranslation();
@@ -179,23 +312,10 @@ export function SettingsPage() {
               icon={Languages}
               label={t("settings.language")}
             >
-              <select
-                className="input w-52"
+              <LanguageSelect
                 value={settings.language}
-                onChange={(event) =>
-                  update(
-                    "language",
-                    event.target.value as AppSettings["language"],
-                  )
-                }
-              >
-                <option value="auto">{t("common.automatic")}</option>
-                <option value="en">{t("languages.en")}</option>
-                <option value="de">{t("languages.de")}</option>
-                <option value="es">{t("languages.es")}</option>
-                <option value="pt-BR">{t("languages.pt-BR")}</option>
-                <option value="fr">{t("languages.fr")}</option>
-              </select>
+                onChange={(language) => void update("language", language)}
+              />
             </Row>
             <Row
               icon={Rocket}
@@ -230,7 +350,7 @@ export function SettingsPage() {
               detail={t("settings.trayStyleDetail")}
             >
               <select
-                className="input w-52"
+                className="input w-52!"
                 value={settings.trayStyle}
                 onChange={(event) =>
                   update(
@@ -263,7 +383,7 @@ export function SettingsPage() {
               label={t("settings.interfaceDensity")}
             >
               <select
-                className="input w-40"
+                className="input w-52!"
                 value={settings.uiDensity}
                 onChange={(event) =>
                   update(
@@ -281,7 +401,7 @@ export function SettingsPage() {
               label={t("settings.contentWidth")}
             >
               <select
-                className="input w-40"
+                className="input w-52!"
                 value={settings.contentWidth}
                 onChange={(event) =>
                   update(
@@ -300,7 +420,7 @@ export function SettingsPage() {
               label={t("settings.accentColor")}
             >
               <select
-                className="input w-40"
+                className="input w-52!"
                 value={settings.accentColor}
                 onChange={(event) =>
                   update(
@@ -447,7 +567,7 @@ export function SettingsPage() {
             </Row>
             <Row icon={Type} label={t("settings.textSize")}>
               <select
-                className="input w-32"
+                className="input w-52!"
                 value={settings.chatFontSize}
                 onChange={(event) =>
                   update("chatFontSize", Number(event.target.value))
@@ -464,7 +584,7 @@ export function SettingsPage() {
               label={t("settings.emoteSize")}
             >
               <select
-                className="input w-32"
+                className="input w-52!"
                 value={settings.chatEmoteSize}
                 onChange={(event) =>
                   update("chatEmoteSize", Number(event.target.value))
@@ -482,7 +602,7 @@ export function SettingsPage() {
               detail={t("settings.messageBufferDetail")}
             >
               <select
-                className="input w-32"
+                className="input w-52!"
                 value={settings.maximumChatMessages}
                 onChange={(event) =>
                   update("maximumChatMessages", Number(event.target.value))
@@ -569,7 +689,7 @@ export function SettingsPage() {
               detail={t("settings.maximumEventsDetail")}
             >
               <select
-                className="input w-32"
+                className="input w-52!"
                 value={settings.maximumEvents}
                 onChange={(event) =>
                   update("maximumEvents", Number(event.target.value))
