@@ -1,11 +1,11 @@
 {
-  "version": "1.10.0-beta.1",
-  "notes": "a",
-  "pub_date": "2026-10-27T19:47:41.660Z",
+  "version": "1.10.1-beta.1",
+  "notes": ".",
+  "pub_date": "2026-10-28T13:22:15.060Z",
   "platforms": {
     "windows-x86_64": {
-      "signature": "dW50cnVzdGVkIGNvbW1lbnQ6IHNpZ25hdHVyZSBmcm9tIHRhdXJpIHNlY3JldCBrZXkKUlVUMHNtY0hoNS95ajZiRHRJUW5CME9Xckp2bVJhMVpEYWlwZDR5N0p1OTRGbTV6UjYrU000eVA0SVRSUkdZMGtGQXdvUXVoc0p4ZkRhK1kyZmp1NzlHVG5EYjNZSjhpNGd3PQp0cnVzdGVkIGNvbW1lbnQ6IHRpbWVzdGFtcDoxNzkzMTMwNDYxCWZpbGU6U3RyZWFtRGFzaCBCZXRhXzEuMTAuMC1iZXRhLjFfeDY0X2VuLVVTLm1zaQl2ZXJzaW9uOjEuMTAuMC1iZXRhLjEKSVN2SjJpdXlYZjFOV2VEWU9mbjBmWmYwVzJkZDBXMGJlOEdsRk9CbXVPU0U1b1haS2tGNDhqSHVkT3FRK0pabGVCYkR6UDYvaEVmV3lTZzBWc3EvREE9PQo=",
-      "url": "https://github.com/Tenkayro/StreamDash/releases/download/v1.10.0-beta.1/StreamDash-Beta-Setup.msi"
+      "signature": "dW50cnVzdGVkIGNvbW1lbnQ6IHNpZ25hdHVyZSBmcm9tIHRhdXJpIHNlY3JldCBrZXkKUlVUMHNtY0hoNS95aitqMDBDMnlCd0M2aWNjai9EcjBvdldObVpFdmhPclBRdWkrNUZia21hZ0lQQjRwSEtJQnU0S3FlWW9sQkFYVjlXcDdOTHNXUXc1M2J1aXppYzFZNlFvPQp0cnVzdGVkIGNvbW1lbnQ6IHRpbWVzdGFtcDoxNzkzMTkzNzM0CWZpbGU6U3RyZWFtRGFzaCBCZXRhXzEuMTAuMS1iZXRhLjFfeDY0X2VuLVVTLm1zaQl2ZXJzaW9uOjEuMTAuMS1iZXRhLjEKSW8rSUJMQTRRNW1ZZHlJQXZGVTVPM0tGcTEwVzROdXRBckNwS1lMdGNOU1BsM1dxY0Q0eXNETUU2UVlZa3p6dmxVbmFDL0RZU0lPMGpOZ2NLaWlJQ0E9PQo=",
+      "url": "https://github.com/Tenkayro/StreamDash/releases/download/v1.10.1-beta.1/StreamDash-Beta-Setup.msi"
     }
   }
 }
