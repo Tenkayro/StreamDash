@@ -22,7 +22,7 @@ const POLL_INTERVAL = 2_000;
 const REQUEST_TIMEOUT = 10_000;
 const CONNECT_TIMEOUT = 12_000;
 const LIVENESS_TIMEOUT = 18_000;
-const MAX_RECONNECT_DELAY = 30_000;
+const RECONNECT_INTERVAL = 3_000;
 
 export const DEFAULT_OBS_ADDRESS = "127.0.0.1:4455";
 
@@ -208,8 +208,11 @@ export class ObsClient {
       try {
         socket.close();
       } catch {
-        this.handleClose();
+        /* handled below */
       }
+      // Some WebSocket implementations do not emit `close` when a connection
+      // attempt itself times out. Continue the OBS discovery loop explicitly.
+      if (this.socket === socket) this.handleClose();
     }, CONNECT_TIMEOUT);
   }
 
@@ -263,15 +266,10 @@ export class ObsClient {
 
   private scheduleReconnect() {
     if (this.stopped || this.reconnectTimer) return;
-    const delay = Math.min(
-      MAX_RECONNECT_DELAY,
-      1_000 * 2 ** Math.min(5, Math.max(0, this.attempts - 1)),
-    );
-    const jitteredDelay = delay + Math.random() * Math.min(1_000, delay / 4);
     this.reconnectTimer = setTimeout(() => {
       this.reconnectTimer = undefined;
       this.connect();
-    }, jitteredDelay);
+    }, RECONNECT_INTERVAL);
   }
 
   private async handleMessage(raw: unknown) {
