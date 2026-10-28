@@ -14,6 +14,8 @@ use std::{
 use tokio::sync::mpsc;
 use tokio_tungstenite::tungstenite::Message;
 
+mod spotify_overlay;
+
 static HTTP_CLIENT: std::sync::OnceLock<reqwest::Client> = std::sync::OnceLock::new();
 
 fn http() -> &'static reqwest::Client {
@@ -1093,6 +1095,10 @@ pub fn run() {
                 .map(|value| serde_json::from_str::<String>(&value).unwrap_or(value) != "classic")
                 .unwrap_or(true);
             app.manage(AppState { db: Mutex::new(db) });
+            let spotify_overlay =
+                spotify_overlay::start(if is_beta_build() { 17_843 } else { 17_842 })
+                    .map_err(std::io::Error::other)?;
+            app.manage(spotify_overlay);
             if cfg!(debug_assertions) {
                 app.handle().plugin(
                     tauri_plugin_log::Builder::default()
@@ -1236,7 +1242,9 @@ pub fn run() {
             reveal_window,
             tray_action,
             tray_configure,
-            tray_set_tooltip
+            tray_set_tooltip,
+            spotify_overlay::spotify_overlay_info,
+            spotify_overlay::spotify_overlay_status
         ])
         .build(tauri::generate_context!())
         .expect("error while building StreamDash")

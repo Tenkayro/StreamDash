@@ -233,6 +233,9 @@
       "details": "Détails OBS", "detailsDescription": "Profil, collection de scènes et connexion WebSocket actuels.", "version": "Version", "profile": "Profil", "sceneCollection": "Collection de scènes", "websocketAddress": "Adresse WebSocket",
       "volume": "Volume de {{name}}", "connectionSettings": "Paramètres de connexion", "notConnected": "OBS n’est pas connecté", "notConnectedDescription": "Connectez OBS pour utiliser les contrôles, les scènes et le mixeur audio."
     },
+    "spotifyOverlay": {
+      "title": "Overlay Spotify", "description": "Affiche le titre actuel de l’application Spotify pour ordinateur dans OBS sans connexion à l’API Spotify.", "browserSource": "Source navigateur OBS", "size": "Taille recommandée : {{width}} × {{height}}", "playing": "Lecture en cours", "paused": "En pause", "waiting": "En attente de Spotify", "urlLabel": "URL de l’overlay Spotify", "desktopOnly": "Disponible dans l’application pour ordinateur", "copy": "Copier l’URL", "copied": "URL de l’overlay Spotify copiée", "copyError": "Impossible de copier l’URL de l’overlay Spotify", "hint": "Ajoutez l’URL dans OBS comme source navigateur. Gardez StreamDash et Spotify ouverts ; l’overlay se masque lorsque Spotify est indisponible.", "previewTitle": "Titre Spotify actuel", "previewArtist": "L’artiste apparaîtra automatiquement"
+    },
     "errors": {
       "authRequired": "OBS demande un mot de passe. Ajoutez-le dans Connexions.",
       "crypto": "Le hachage sécurisé est indisponible, l'authentification OBS a échoué.",

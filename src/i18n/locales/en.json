@@ -301,6 +301,9 @@
       "details": "OBS details", "detailsDescription": "Current profile, scene collection and WebSocket connection.", "version": "Version", "profile": "Profile", "sceneCollection": "Scene collection", "websocketAddress": "WebSocket address",
       "volume": "Volume for {{name}}", "connectionSettings": "Connection settings", "notConnected": "OBS is not connected", "notConnectedDescription": "Connect OBS to use the control room, scenes and audio mixer."
     },
+    "spotifyOverlay": {
+      "title": "Spotify overlay", "description": "Show the current Spotify desktop track in OBS without a Spotify API connection.", "browserSource": "OBS browser source", "size": "Recommended size: {{width}} × {{height}}", "playing": "Playing", "paused": "Paused", "waiting": "Waiting for Spotify", "urlLabel": "Spotify overlay URL", "desktopOnly": "Available in the desktop app", "copy": "Copy URL", "copied": "Spotify overlay URL copied", "copyError": "The Spotify overlay URL could not be copied", "hint": "Add the URL to OBS as a Browser source. Keep StreamDash and the Spotify desktop app running; the overlay hides itself when Spotify is unavailable.", "previewTitle": "Current Spotify track", "previewArtist": "Artist appears automatically"
+    },
     "errors": {
       "authRequired": "OBS requires a password. Add it under Connections.",
       "crypto": "Secure hashing is unavailable, so OBS authentication failed.",

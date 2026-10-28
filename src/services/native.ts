@@ -32,6 +32,20 @@ export async function saveSetting<K extends keyof AppSettings>(
     );
   }
 }
+export interface SpotifyOverlayInfo { url: string; width: number; height: number }
+export interface SpotifyNowPlaying {
+  available: boolean;
+  playing: boolean;
+  title: string;
+  artist: string;
+  album: string;
+  hasCover: boolean;
+  revision: number;
+}
+export const spotifyOverlayNative = {
+  info: () => invoke<SpotifyOverlayInfo>("spotify_overlay_info"),
+  status: () => invoke<SpotifyNowPlaying>("spotify_overlay_status"),
+};
 type IntegrationSecret =
   | "streamelements-token"
   | "tipeeestream-api-key"

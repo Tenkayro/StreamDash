@@ -3,11 +3,13 @@ import {
   AudioLines,
   Circle,
   Clapperboard,
+  Copy,
   Cpu,
   Gauge,
   Link2,
   Mic,
   Monitor,
+  Music2,
   Pause,
   Play,
   Radio,
@@ -20,11 +22,13 @@ import {
   VolumeX,
   type LucideIcon,
 } from "lucide-react";
-import { useState, type ReactNode } from "react";
+import { useEffect, useState, type ReactNode } from "react";
 import { useTranslation } from "react-i18next";
+import { toast } from "sonner";
 import { Badge, Button, Card, EmptyState, PageHeader } from "../components/ui";
 import { cn } from "../lib/utils";
 import { formatObsTime } from "../services/obs/format";
+import { spotifyOverlayNative, type SpotifyNowPlaying, type SpotifyOverlayInfo } from "../services/native";
 import { useRuntime } from "../services/runtime-context";
 import { useAppStore } from "../stores/app-store";
 import type { ObsAudioInput, ObsSnapshot } from "../types";
@@ -119,6 +123,55 @@ function SectionTitle({ icon: Icon, title, description }: { icon: LucideIcon; ti
   );
 }
 
+function SpotifyOverlayCard() {
+  const { t } = useTranslation();
+  const [info, setInfo] = useState<SpotifyOverlayInfo>();
+  const [status, setStatus] = useState<SpotifyNowPlaying>();
+  useEffect(() => {
+    let active = true;
+    void spotifyOverlayNative.info().then((value) => { if (active) setInfo(value); }).catch(() => undefined);
+    const refresh = () => void spotifyOverlayNative.status().then((value) => { if (active) setStatus(value); }).catch(() => undefined);
+    refresh();
+    const timer = window.setInterval(refresh, 1_000);
+    return () => { active = false; window.clearInterval(timer); };
+  }, []);
+  const coverUrl = info && status?.hasCover ? `${new URL(info.url).origin}/cover?r=${status.revision}` : undefined;
+  const copyUrl = async () => {
+    if (!info) return;
+    try { await navigator.clipboard.writeText(info.url); toast.success(t("obs.spotifyOverlay.copied")); }
+    catch { toast.error(t("obs.spotifyOverlay.copyError")); }
+  };
+  return (
+    <Card className="mt-3 p-4">
+      <SectionTitle icon={Music2} title={t("obs.spotifyOverlay.title")} description={t("obs.spotifyOverlay.description")} />
+      <div className="grid items-center gap-4 xl:grid-cols-[minmax(360px,1.1fr)_minmax(300px,.9fr)]">
+        <div className="relative aspect-35/8 min-h-28 overflow-hidden rounded-2xl border border-white/10 bg-[#211e27] shadow-xl">
+          {coverUrl && <div className="absolute -inset-8 scale-110 bg-cover bg-center opacity-30 blur-2xl" style={{ backgroundImage: `url(${JSON.stringify(coverUrl)})` }} />}
+          <div className="absolute inset-0 bg-linear-to-r from-black/10 via-black/45 to-black/75" />
+          <div className="relative grid h-full grid-cols-[min(23%,10rem)_1fr]">
+            <div className="grid min-h-0 place-items-center overflow-hidden bg-white/5 text-[#1ed760]">
+              {coverUrl ? <img src={coverUrl} alt="" className="size-full object-cover" /> : <Music2 size={34} />}
+            </div>
+            <div className="flex min-w-0 flex-col justify-center px-5">
+              <div className="mb-1.5 flex items-center gap-1.5 text-[10px] font-bold text-[#1ed760]"><Music2 size={11} />Spotify</div>
+              <div className="truncate text-[clamp(1rem,2vw,1.75rem)] font-extrabold tracking-tight text-white">{status?.available ? status.title : t("obs.spotifyOverlay.previewTitle")}</div>
+              <div className="truncate text-[clamp(.75rem,1.4vw,1.1rem)] text-white/70">{status?.available ? status.artist || status.album : t("obs.spotifyOverlay.previewArtist")}</div>
+            </div>
+          </div>
+        </div>
+        <div className="min-w-0">
+          <div className="mb-2 flex items-center justify-between gap-3">
+            <div><div className="text-xs font-semibold text-zinc-200">{t("obs.spotifyOverlay.browserSource")}</div><div className="mt-0.5 text-[10px] text-muted">{t("obs.spotifyOverlay.size", { width: info?.width ?? 700, height: info?.height ?? 160 })}</div></div>
+            <Badge tone={status?.available ? status.playing ? "green" : "amber" : "neutral"}>{t(status?.available ? status.playing ? "obs.spotifyOverlay.playing" : "obs.spotifyOverlay.paused" : "obs.spotifyOverlay.waiting")}</Badge>
+          </div>
+          <div className="flex gap-2"><input readOnly aria-label={t("obs.spotifyOverlay.urlLabel")} value={info?.url ?? ""} placeholder={t("obs.spotifyOverlay.desktopOnly")} className="input min-w-0 flex-1 font-mono text-[11px]" /><Button onClick={() => void copyUrl()} disabled={!info}><Copy size={14} />{t("obs.spotifyOverlay.copy")}</Button></div>
+          <p className="mt-2 text-[10px] leading-4 text-muted">{t("obs.spotifyOverlay.hint")}</p>
+        </div>
+      </div>
+    </Card>
+  );
+}
+
 function AudioChannel({ input, busy, run }: {
   input: ObsAudioInput;
   busy: boolean;
@@ -161,7 +214,7 @@ function AudioChannel({ input, busy, run }: {
           aria-label={t("obs.page.volume", { name: input.name })}
           disabled={busy}
           onChange={(event) => void runtime.setObsVolume(input.name, Number(event.target.value) / 100)}
-          className="h-1.5 min-w-0 flex-1 cursor-pointer accent-[var(--accent)]"
+          className="h-1.5 min-w-0 flex-1 cursor-pointer accent-(--accent)"
         />
         <Volume2 size={12} className="shrink-0 text-zinc-600" />
         <span className="w-14 text-right text-[10px] tabular-nums text-zinc-600">{input.volumeDb.toFixed(1)} dB</span>
@@ -230,7 +283,7 @@ function ObsWorkspace({ snapshot }: { snapshot: ObsSnapshot }) {
             [t("obs.page.profile"), snapshot.profile ?? "—"],
             [t("obs.page.sceneCollection"), snapshot.sceneCollection ?? "—"],
             [t("obs.page.websocketAddress"), settings.obsAddress],
-          ].map(([label, value]) => <div key={label}><dt className="text-[10px] font-semibold uppercase tracking-[.1em] text-zinc-600">{label}</dt><dd className="mt-1 truncate text-xs text-zinc-300" title={value}>{value}</dd></div>)}
+          ].map(([label, value]) => <div key={label}><dt className="text-[10px] font-semibold uppercase tracking-widest text-zinc-600">{label}</dt><dd className="mt-1 truncate text-xs text-zinc-300" title={value}>{value}</dd></div>)}
         </dl>
       </Card>
     </>
@@ -263,6 +316,7 @@ export function ObsPage() {
           />
         </Card>
       )}
+      <SpotifyOverlayCard />
     </>
   );
 }

@@ -1,0 +1,30 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>StreamDash Spotify</title>
+  <style>
+    *{box-sizing:border-box}html,body{width:100%;height:100%;margin:0;overflow:hidden;background:transparent;font-family:Inter,"Segoe UI",sans-serif;color:#fff}
+    body{display:flex;align-items:center;justify-content:center}
+    #card{position:relative;display:grid;width:700px;height:160px;grid-template-columns:160px minmax(0,1fr);overflow:hidden;border:1px solid rgba(255,255,255,.12);border-radius:20px;background:#211e27;box-shadow:0 12px 40px rgba(0,0,0,.4);opacity:0;transform:translateY(8px) scale(.985);transition:opacity .35s ease,transform .35s ease}
+    #card.visible{opacity:1;transform:none}.backdrop{position:absolute;inset:-45px -45px -45px 115px;background-position:center;background-size:cover;filter:blur(32px) saturate(.9);opacity:.58;transform:scale(1.14);transition:opacity .32s ease,transform .45s ease}.shade{position:absolute;inset:0;background:linear-gradient(90deg,rgba(15,14,18,.08) 20%,rgba(20,18,24,.58) 37%,rgba(12,11,15,.78) 100%)}
+    .cover-wrap{position:relative;z-index:1;width:160px;height:160px;overflow:hidden;background:rgba(255,255,255,.06);transition:opacity .28s ease,transform .4s cubic-bezier(.22,1,.36,1)}#cover{width:100%;height:100%;display:block;object-fit:cover}.placeholder{display:none;width:100%;height:100%;background:#18171c}
+    .content{position:relative;z-index:1;display:flex;min-width:0;flex-direction:column;justify-content:center;padding:22px 30px;transition:opacity .25s ease,transform .4s cubic-bezier(.22,1,.36,1)}#card.switching .backdrop{opacity:0;transform:scale(1.2)}#card.switching .cover-wrap{opacity:0;transform:scale(.94)}#card.switching .content{opacity:0;transform:translateY(9px)}.line{min-width:0;overflow:hidden;white-space:nowrap}.line-track{display:block;width:max-content;min-width:100%;will-change:transform}.line-value{display:inline-block}.line-copy{display:none}.line.marquee{mask-image:linear-gradient(90deg,#000 0,#000 96%,transparent 100%)}.title{font-size:36px;font-weight:800;line-height:1.12;letter-spacing:-.035em;text-shadow:0 2px 16px rgba(0,0,0,.3)}.artist{margin-top:5px;color:rgba(255,255,255,.8);font-size:25px;line-height:1.2}
+  </style>
+</head>
+<body>
+  <main id="card" aria-live="polite">
+    <div id="backdrop" class="backdrop"></div><div class="shade"></div>
+    <div class="cover-wrap"><img id="cover" alt=""><div id="placeholder" class="placeholder"></div></div>
+    <div class="content"><div id="title" class="line title"><div class="line-track"><span class="line-value"></span><span class="line-copy" aria-hidden="true"></span></div></div><div id="artist" class="line artist"><div class="line-track"><span class="line-value"></span><span class="line-copy" aria-hidden="true"></span></div></div></div>
+  </main>
+  <script>
+    const card=document.querySelector('#card'),cover=document.querySelector('#cover'),placeholder=document.querySelector('#placeholder'),backdrop=document.querySelector('#backdrop'),title=document.querySelector('#title'),artist=document.querySelector('#artist');let revision=-1,songKey='';
+    function setLine(element,text){const value=element.querySelector('.line-value'),track=element.querySelector('.line-track');if(element.dataset.text===text)return;element.dataset.text=text;if(element._scrollAnimation){element._scrollAnimation.cancel();element._scrollAnimation=null}track.style.transform='translateX(0)';element.classList.remove('marquee');value.textContent=text;requestAnimationFrame(()=>requestAnimationFrame(()=>{const textWidth=value.getBoundingClientRect().width,viewportWidth=element.getBoundingClientRect().width,distance=Math.ceil(textWidth-viewportWidth);if(distance<=2)return;element.classList.add('marquee');const pause=5,travel=Math.max(5,distance/24),total=pause*2+travel*2;element._scrollAnimation=track.animate([{transform:'translate3d(0,0,0)',offset:0},{transform:'translate3d(0,0,0)',offset:pause/total},{transform:`translate3d(-${distance}px,0,0)`,offset:(pause+travel)/total},{transform:`translate3d(-${distance}px,0,0)`,offset:(pause*2+travel)/total},{transform:'translate3d(0,0,0)',offset:1}],{duration:total*1000,iterations:Infinity,easing:'linear',fill:'both'})}))}
+    function applyCover(data){if(data.revision===revision)return;revision=data.revision;if(data.hasCover){const url=`/cover?r=${revision}`;cover.src=url;cover.style.display='block';placeholder.style.display='none';backdrop.style.backgroundImage=`url("${url}")`}else{cover.removeAttribute('src');cover.style.display='none';placeholder.style.display='block';backdrop.style.backgroundImage='none'}}
+    async function applySong(data){const nextKey=`${data.title}\0${data.artist}\0${data.album}`;if(!songKey){songKey=nextKey;setLine(title,data.title||'');setLine(artist,data.artist||data.album||'');applyCover(data);return}if(nextKey===songKey){applyCover(data);return}card.classList.add('switching');await new Promise(resolve=>setTimeout(resolve,320));songKey=nextKey;setLine(title,data.title||'');setLine(artist,data.artist||data.album||'');applyCover(data);await new Promise(resolve=>requestAnimationFrame(()=>requestAnimationFrame(resolve)));card.classList.remove('switching')}
+    async function refresh(){try{const response=await fetch('/api/spotify',{cache:'no-store'});if(!response.ok)throw new Error();const data=await response.json();card.classList.toggle('visible',data.available);if(!data.available)return;await applySong(data)}catch{card.classList.remove('visible')}finally{setTimeout(refresh,750)}}refresh();
+  </script>
+</body>
+</html>
