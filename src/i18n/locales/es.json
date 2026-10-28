@@ -223,6 +223,16 @@
     "stopReplayBuffer": "Detener búfer de repetición",
     "stopStream": "Detener transmisión",
     "stopVirtualCam": "Detener cámara virtual",
+    "page": {
+      "active": "Activo", "inactive": "Inactivo", "paused": "En pausa", "running": "En ejecución",
+      "recordingRequired": "Inicia primero la grabación", "replayRequired": "Inicia primero el búfer de repetición", "saveReplayDescription": "Guardar la repetición actual en el disco",
+      "streamOutput": "Salida de transmisión", "recordingOutput": "Salida de grabación", "performance": "Rendimiento", "cpuValue": "{{value}} % de uso de CPU", "droppedFrames": "Fotogramas perdidos", "currentScene": "Actual: {{scene}}",
+      "outputControls": "Controles de salida", "outputControlsDescription": "Controla la transmisión, la grabación, el búfer de repetición y la cámara virtual.",
+      "scenes": "Escenas", "scenesDescription": "Cambia la escena de programa de OBS directamente desde StreamDash.", "program": "Programa", "noScenes": "OBS no ha informado de ninguna escena.",
+      "audioMixer": "Mezclador de audio", "audioMixerDescription": "Ajusta el volumen o silencia los canales de audio activos de OBS.", "noAudio": "OBS no ha informado de ningún canal de audio compatible.",
+      "details": "Detalles de OBS", "detailsDescription": "Perfil, colección de escenas y conexión WebSocket actuales.", "version": "Versión", "profile": "Perfil", "sceneCollection": "Colección de escenas", "websocketAddress": "Dirección WebSocket",
+      "volume": "Volumen de {{name}}", "connectionSettings": "Ajustes de conexión", "notConnected": "OBS no está conectado", "notConnectedDescription": "Conecta OBS para usar los controles, las escenas y el mezclador de audio."
+    },
     "errors": {
       "authRequired": "OBS requiere una contraseña. Añádela en Conexiones.",
       "crypto": "El hash seguro no está disponible, la autenticación con OBS falló.",
@@ -234,7 +244,7 @@
   },
   "pageDescriptions": {
     "donations": "Revisa mensajes, importes y fuentes de donaciones en una bandeja específica.",
-    "connections": "Conecta cuentas y revisa el estado de los servicios.", "dashboard": "Tu stream, audiencia y actividad de un vistazo.", "goals": "Define objetivos y sigue tu progreso.", "livePreview": "Supervisa tu stream público de Twitch sin salir de StreamDash.", "settings": "Ajusta la apariencia, el comportamiento, las notificaciones y los datos.", "statistics": "Comprende las tendencias a partir de los eventos guardados."
+    "connections": "Conecta cuentas y revisa el estado de los servicios.", "dashboard": "Tu stream, audiencia y actividad de un vistazo.", "goals": "Define objetivos y sigue tu progreso.", "livePreview": "Supervisa tu stream público de Twitch sin salir de StreamDash.", "obs": "Controla escenas, audio, transmisión, grabación y salidas de OBS en un solo lugar.", "settings": "Ajusta la apariencia, el comportamiento, las notificaciones y los datos.", "statistics": "Comprende las tendencias a partir de los eventos guardados."
   },
   "nav": {
     "activity": "Actividad",
@@ -247,6 +257,7 @@
     "expandNavigation": "Expandir navegación",
     "goals": "Objetivos",
     "livePreview": "Vista previa en directo",
+    "obs": "Control de OBS",
     "permissionAttention": "Es necesario actualizar los permisos de Twitch",
     "requiredAttention": "{{label}}: requiere atención",
     "settings": "Ajustes",

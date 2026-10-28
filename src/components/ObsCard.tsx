@@ -309,7 +309,7 @@ export function ObsWidgetHeader() {
       </div>
       <button
         className="text-[11px] text-accent hover:brightness-125"
-        onClick={() => setPage("connections")}
+        onClick={() => setPage("obs")}
       >
         {t("dashboard.manage")}
       </button>

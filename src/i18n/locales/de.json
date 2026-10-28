@@ -291,6 +291,16 @@
     "stopReplayBuffer": "Replay Buffer stoppen",
     "stopStream": "Stream stoppen",
     "stopVirtualCam": "Virtuelle Kamera stoppen",
+    "page": {
+      "active": "Aktiv", "inactive": "Inaktiv", "paused": "Pausiert", "running": "Läuft",
+      "recordingRequired": "Starte zuerst die Aufnahme", "replayRequired": "Starte zuerst den Replay Buffer", "saveReplayDescription": "Aktuellen Replay auf der Festplatte speichern",
+      "streamOutput": "Stream-Ausgabe", "recordingOutput": "Aufnahme-Ausgabe", "performance": "Leistung", "cpuValue": "{{value}} % CPU-Auslastung", "droppedFrames": "Verworfene Frames", "currentScene": "Aktuell: {{scene}}",
+      "outputControls": "Ausgabesteuerung", "outputControlsDescription": "Steuere Stream, Aufnahme, Replay Buffer und virtuelle Kamera.",
+      "scenes": "Szenen", "scenesDescription": "Wechsle die OBS-Programmszene direkt aus StreamDash.", "program": "Programm", "noScenes": "OBS hat keine Szenen gemeldet.",
+      "audioMixer": "Audiomixer", "audioMixerDescription": "Passe die Lautstärke an oder schalte aktive OBS-Audiokanäle stumm.", "noAudio": "OBS hat keine unterstützten Audiokanäle gemeldet.",
+      "details": "OBS-Details", "detailsDescription": "Aktuelles Profil, Szenensammlung und WebSocket-Verbindung.", "version": "Version", "profile": "Profil", "sceneCollection": "Szenensammlung", "websocketAddress": "WebSocket-Adresse",
+      "volume": "Lautstärke für {{name}}", "connectionSettings": "Verbindungseinstellungen", "notConnected": "OBS ist nicht verbunden", "notConnectedDescription": "Verbinde OBS, um Steuerung, Szenen und Audiomixer zu verwenden."
+    },
     "errors": {
       "authRequired": "OBS verlangt ein Passwort. Hinterlege es unter Verbindungen.",
       "crypto": "Sicheres Hashing ist nicht verfügbar, die OBS-Anmeldung ist fehlgeschlagen.",
@@ -306,6 +316,7 @@
     "dashboard": "Stream, Publikum und Aktivitäten auf einen Blick.",
     "goals": "Ziele festlegen und Fortschritte verfolgen.",
     "livePreview": "Den öffentlichen Twitch-Stream direkt in StreamDash überwachen.",
+    "obs": "Steuere Szenen, Audio, Stream, Aufnahme und OBS-Ausgaben an einem Ort.",
     "settings": "Darstellung, Verhalten, Benachrichtigungen und Daten anpassen.",
     "statistics": "Aktivitätstrends aus den gespeicherten Ereignissen verstehen."
   },
@@ -320,6 +331,7 @@
     "expandNavigation": "Navigation ausklappen",
     "goals": "Ziele",
     "livePreview": "Live-Vorschau",
+    "obs": "OBS-Steuerung",
     "permissionAttention": "Die Twitch-Berechtigungen müssen aktualisiert werden",
     "requiredAttention": "{{label}}: Aktion erforderlich",
     "settings": "Einstellungen",

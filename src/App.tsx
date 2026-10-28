@@ -49,6 +49,8 @@ const pageLoaders = {
     })),
   goals: () =>
     import("./pages/Goals").then((module) => ({ default: module.Goals })),
+  obs: () =>
+    import("./pages/ObsPage").then((module) => ({ default: module.ObsPage })),
   connections: () =>
     import("./pages/Connections").then((module) => ({
       default: module.Connections,
@@ -67,6 +69,7 @@ const Donations = lazy(pageLoaders.donations);
 const LivePreview = lazy(pageLoaders.livePreview);
 const Statistics = lazy(pageLoaders.statistics);
 const Goals = lazy(pageLoaders.goals);
+const ObsPage = lazy(pageLoaders.obs);
 const Connections = lazy(pageLoaders.connections);
 const SettingsPage = lazy(pageLoaders.settings);
 
@@ -79,6 +82,7 @@ const pages: Record<string, React.ComponentType> = {
   livePreview: LivePreview,
   statistics: Statistics,
   goals: Goals,
+  obs: ObsPage,
   connections: Connections,
   settings: SettingsPage,
 };

@@ -1,6 +1,7 @@
 import {
   Activity,
   BarChart3,
+  Clapperboard,
   CircleDollarSign,
   Goal,
   LayoutDashboard,
@@ -25,6 +26,7 @@ export type NavigationItem = {
 export const navigationItems: NavigationItem[] = [
   { id: "dashboard", label: "dashboard", icon: LayoutDashboard, group: "main" },
   { id: "stream", label: "stream", icon: RadioTower, group: "main" },
+  { id: "obs", label: "obs", icon: Clapperboard, group: "main" },
   { id: "chat", label: "chat", icon: MessageSquare, group: "main" },
   { id: "activity", label: "activity", icon: Activity, group: "main" },
   { id: "donations", label: "donations", icon: CircleDollarSign, group: "main" },

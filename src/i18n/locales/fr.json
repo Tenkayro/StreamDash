@@ -223,6 +223,16 @@
     "stopReplayBuffer": "Arrêter le tampon de replay",
     "stopStream": "Arrêter le stream",
     "stopVirtualCam": "Arrêter la caméra virtuelle",
+    "page": {
+      "active": "Actif", "inactive": "Inactif", "paused": "En pause", "running": "En cours",
+      "recordingRequired": "Démarrez d’abord l’enregistrement", "replayRequired": "Démarrez d’abord le tampon de replay", "saveReplayDescription": "Enregistrer le replay actuel sur le disque",
+      "streamOutput": "Sortie du stream", "recordingOutput": "Sortie d’enregistrement", "performance": "Performances", "cpuValue": "{{value}} % d’utilisation CPU", "droppedFrames": "Images perdues", "currentScene": "Actuelle : {{scene}}",
+      "outputControls": "Contrôles des sorties", "outputControlsDescription": "Contrôlez le stream, l’enregistrement, le tampon de replay et la caméra virtuelle.",
+      "scenes": "Scènes", "scenesDescription": "Changez la scène programme d’OBS directement depuis StreamDash.", "program": "Programme", "noScenes": "OBS n’a signalé aucune scène.",
+      "audioMixer": "Mixeur audio", "audioMixerDescription": "Réglez le volume ou coupez les canaux audio OBS actifs.", "noAudio": "OBS n’a signalé aucun canal audio pris en charge.",
+      "details": "Détails OBS", "detailsDescription": "Profil, collection de scènes et connexion WebSocket actuels.", "version": "Version", "profile": "Profil", "sceneCollection": "Collection de scènes", "websocketAddress": "Adresse WebSocket",
+      "volume": "Volume de {{name}}", "connectionSettings": "Paramètres de connexion", "notConnected": "OBS n’est pas connecté", "notConnectedDescription": "Connectez OBS pour utiliser les contrôles, les scènes et le mixeur audio."
+    },
     "errors": {
       "authRequired": "OBS demande un mot de passe. Ajoutez-le dans Connexions.",
       "crypto": "Le hachage sécurisé est indisponible, l'authentification OBS a échoué.",
@@ -234,7 +244,7 @@
   },
   "pageDescriptions": {
     "donations": "Consultez les messages, montants et sources des dons dans une boîte dédiée.",
-    "connections": "Connectez vos comptes et vérifiez l’état des services.", "dashboard": "Votre stream, votre audience et votre activité en un coup d’œil.", "goals": "Définissez des objectifs et suivez votre progression.", "livePreview": "Surveillez votre stream Twitch public sans quitter StreamDash.", "settings": "Réglez l’apparence, le comportement, les notifications et les données.", "statistics": "Analysez les tendances à partir de vos événements enregistrés."
+    "connections": "Connectez vos comptes et vérifiez l’état des services.", "dashboard": "Votre stream, votre audience et votre activité en un coup d’œil.", "goals": "Définissez des objectifs et suivez votre progression.", "livePreview": "Surveillez votre stream Twitch public sans quitter StreamDash.", "obs": "Contrôlez les scènes, l’audio, le stream, l’enregistrement et les sorties OBS au même endroit.", "settings": "Réglez l’apparence, le comportement, les notifications et les données.", "statistics": "Analysez les tendances à partir de vos événements enregistrés."
   },
   "nav": {
     "activity": "Activité",
@@ -247,6 +257,7 @@
     "expandNavigation": "Développer la navigation",
     "goals": "Objectifs",
     "livePreview": "Aperçu en direct",
+    "obs": "Contrôle OBS",
     "permissionAttention": "Les autorisations Twitch doivent être mises à jour",
     "requiredAttention": "{{label}} : intervention requise",
     "settings": "Paramètres",

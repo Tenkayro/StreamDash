@@ -291,6 +291,16 @@
     "stopReplayBuffer": "Stop replay buffer",
     "stopStream": "Stop stream",
     "stopVirtualCam": "Stop virtual camera",
+    "page": {
+      "active": "Active", "inactive": "Inactive", "paused": "Paused", "running": "Running",
+      "recordingRequired": "Start recording to use this control", "replayRequired": "Start the replay buffer first", "saveReplayDescription": "Write the current replay to disk",
+      "streamOutput": "Stream output", "recordingOutput": "Recording output", "performance": "Performance", "cpuValue": "{{value}}% CPU usage", "droppedFrames": "Dropped frames", "currentScene": "Current: {{scene}}",
+      "outputControls": "Output controls", "outputControlsDescription": "Control streaming, recording, replay buffer and virtual camera.",
+      "scenes": "Scenes", "scenesDescription": "Switch the OBS program scene directly from StreamDash.", "program": "Program", "noScenes": "OBS did not report any scenes.",
+      "audioMixer": "Audio mixer", "audioMixerDescription": "Adjust volume or mute the active OBS audio channels.", "noAudio": "OBS did not report any supported audio channels.",
+      "details": "OBS details", "detailsDescription": "Current profile, scene collection and WebSocket connection.", "version": "Version", "profile": "Profile", "sceneCollection": "Scene collection", "websocketAddress": "WebSocket address",
+      "volume": "Volume for {{name}}", "connectionSettings": "Connection settings", "notConnected": "OBS is not connected", "notConnectedDescription": "Connect OBS to use the control room, scenes and audio mixer."
+    },
     "errors": {
       "authRequired": "OBS requires a password. Add it under Connections.",
       "crypto": "Secure hashing is unavailable, so OBS authentication failed.",
@@ -306,6 +316,7 @@
     "dashboard": "Your stream, audience and activity at a glance.",
     "goals": "Set targets and track your progress.",
     "livePreview": "Monitor your public Twitch stream without leaving StreamDash.",
+    "obs": "Control scenes, audio, streaming, recording and OBS outputs in one place.",
     "settings": "Adjust appearance, behavior, notifications and data.",
     "statistics": "Understand activity trends from your stored events."
   },
@@ -320,6 +331,7 @@
     "expandNavigation": "Expand navigation",
     "goals": "Goals",
     "livePreview": "Live Preview",
+    "obs": "OBS Control",
     "permissionAttention": "Twitch permissions need to be updated",
     "requiredAttention": "{{label}}: attention required",
     "settings": "Settings",
