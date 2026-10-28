@@ -23,6 +23,7 @@ import {
   secretDelete,
   secretGet,
   secretSet,
+  spotifyOverlayNative,
   twitchNative,
 } from "./native";
 import {
@@ -86,7 +87,32 @@ export function RuntimeProvider({ children }: { children: ReactNode }) {
   const tipeeStreamRef = useRef<TipeeeStreamClient | undefined>(undefined);
   const obsRef = useRef<ObsClient | undefined>(undefined);
   const chatRef = useRef<TwitchChatClient | undefined>(undefined);
+  const songCommandCooldownsRef = useRef(new Map<string, number>());
   const [deviceAuth, setDeviceAuth] = useState<DeviceAuth>();
+
+  const sendChat = useCallback(async (text: string, replyParentId?: string) => {
+    const message = text.trim();
+    const userId = state().twitch.userId;
+    if (!message) return;
+    if (!userId) throw new Error(i18n.t("stream.notConnected"));
+    try {
+      await twitchNative.chatSend(state().twitch.account ?? "", message, replyParentId);
+      chatRef.current?.echo(message);
+      return;
+    } catch {
+      /* fall back to Helix when the chat socket is down */
+    }
+    const result = await twitchNative.helixPost<{
+      data?: Array<{ is_sent?: boolean; drop_reason?: { message?: string } }>;
+    }>(TWITCH_CLIENT_ID, "chat/messages", [], {
+      broadcaster_id: userId,
+      sender_id: userId,
+      message,
+      ...(replyParentId ? { reply_parent_message_id: replyParentId } : {}),
+    });
+    const dropped = result.data?.find((entry) => entry.is_sent === false);
+    if (dropped) throw new Error(dropped.drop_reason?.message ?? "Twitch rejected the message");
+  }, [state]);
 
   const ingest = useCallback(
     async (event: ActivityEvent) => {
@@ -192,7 +218,21 @@ export function RuntimeProvider({ children }: { children: ReactNode }) {
         TWITCH_CLIENT_ID,
         session.login,
         session.userId,
-        (message) => state().pushChatMessage(message),
+        (message) => {
+          state().pushChatMessage(message);
+          if (message.text.trim().toLowerCase() !== "!song") return;
+          const now = Date.now();
+          const previous = songCommandCooldownsRef.current.get(message.login) ?? 0;
+          if (now - previous < 10_000) return;
+          songCommandCooldownsRef.current.set(message.login, now);
+          void spotifyOverlayNative.status().then((song) => {
+            const user = message.displayName || message.login;
+            const response = song.available && song.title
+              ? i18n.t("runtime.songCommandCurrent", { user, artist: song.artist || song.album, title: song.title })
+              : i18n.t("runtime.songCommandUnavailable", { user });
+            return sendChat(response.slice(0, 480), message.id);
+          }).catch(() => sendChat(i18n.t("runtime.songCommandUnavailable", { user: message.displayName || message.login }), message.id)).catch(() => undefined);
+        },
         (phase, detail) => state().setChat({ phase, detail }),
         (id) => state().removeChatMessage(id),
         (login) => state().clearChat(login),
@@ -205,7 +245,7 @@ export function RuntimeProvider({ children }: { children: ReactNode }) {
       state().setChat({ phase: "error", detail: errorMessage(error) });
       state().setTwitch({ phase: "expired", detail: errorMessage(error) });
     }
-  }, [ingest, state]);
+  }, [ingest, sendChat, state]);
 
   const startStreamElements = useCallback(async () => {
     if (!isTauri()) return;
@@ -474,30 +514,7 @@ export function RuntimeProvider({ children }: { children: ReactNode }) {
     obsAction((client) => client.saveReplayBuffer());
   const setObsVirtualCam = (active: boolean) =>
     obsAction((client) => client.setVirtualCam(active));
-  const sendChatMessage = async (text: string) => {    const message = text.trim();
-    const userId = state().twitch.userId;
-    if (!message) return;
-    if (!userId) throw new Error(i18n.t("stream.notConnected"));
-    try {
-      await twitchNative.chatSend(state().twitch.account ?? "", message);
-      chatRef.current?.echo(message);
-      return;
-    } catch {
-      /* fall back to Helix when the chat socket is down */
-    }
-    const result = await twitchNative.helixPost<{
-      data?: Array<{ is_sent?: boolean; drop_reason?: { message?: string } }>;
-    }>(TWITCH_CLIENT_ID, "chat/messages", [], {
-      broadcaster_id: userId,
-      sender_id: userId,
-      message,
-    });
-    const dropped = result.data?.find((entry) => entry.is_sent === false);
-    if (dropped)
-      throw new Error(
-        dropped.drop_reason?.message ?? "Twitch rejected the message",
-      );
-  };
+  const sendChatMessage = (text: string) => sendChat(text);
 
   const moderationContext = (scope: string) => {
     const current = state();

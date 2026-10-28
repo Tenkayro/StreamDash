@@ -107,8 +107,8 @@ export const twitchNative = {
     channel: string,
     session: string,
   ) => invoke("twitch_chat_start", { clientId, login, channel, session }),
-  chatSend: (channel: string, message: string) =>
-    invoke("twitch_chat_send", { channel, message }),
+  chatSend: (channel: string, message: string, replyParentId?: string) =>
+    invoke("twitch_chat_send", { channel, message, replyParentId }),
   chatStop: () => invoke("twitch_chat_stop"),
   subscribe: (clientId: string, body: unknown) =>
     invoke("twitch_eventsub_create", { clientId, body }),

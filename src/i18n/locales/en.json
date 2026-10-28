@@ -372,7 +372,7 @@
     "twitchOptional": "This step is optional. You can connect Twitch later under Connections.",
     "twitchTitle": "Connect your Twitch account"
   },
-  "runtime": { "codeExpired": "The Twitch authorization code expired", "connectError": "Could not connect Twitch", "initializeError": "StreamDash could not initialize", "moderationPermission": "Reconnect Twitch once to grant the required moderation permission", "permissionsAttention": "Twitch permissions need attention", "permissionsDetail": "Reconnect Twitch once to enable all moderation and channel features.", "someone": "Someone", "statsUnavailable": "Some Twitch statistics are unavailable", "twitchConnected": "Twitch connected", "userNotFound": "Twitch user was not found", "waitingAuthorization": "Waiting for authorization" },
+  "runtime": { "codeExpired": "The Twitch authorization code expired", "connectError": "Could not connect Twitch", "initializeError": "StreamDash could not initialize", "moderationPermission": "Reconnect Twitch once to grant the required moderation permission", "permissionsAttention": "Twitch permissions need attention", "permissionsDetail": "Reconnect Twitch once to enable all moderation and channel features.", "someone": "Someone", "songCommandCurrent": "@{{user}} Current song: {{artist}} – {{title}}", "songCommandUnavailable": "@{{user}} No current Spotify song was detected.", "statsUnavailable": "Some Twitch statistics are unavailable", "twitchConnected": "Twitch connected", "userNotFound": "Twitch user was not found", "waitingAuthorization": "Waiting for authorization" },
   "settings": {
     "accentColor": "Accent color",
     "accentColorDetail": "Used for actions, progress and selection.",

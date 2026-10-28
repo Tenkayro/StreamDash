@@ -860,17 +860,26 @@ fn twitch_chat_send(
     state: tauri::State<'_, ChatIrc>,
     channel: String,
     message: String,
+    reply_parent_id: Option<String>,
 ) -> Result<(), String> {
     if message.contains(['\r', '\n']) || channel.contains(['\r', '\n', ' ', '#']) {
         return Err("Invalid chat message".into());
+    }
+    if reply_parent_id.as_ref().is_some_and(|id| {
+        id.is_empty() || !id.chars().all(|character| character.is_ascii_alphanumeric() || character == '-')
+    }) {
+        return Err("Invalid reply message ID".into());
     }
     let sender = state
         .sender
         .lock()
         .map_err(|_| "Chat state is unavailable")?;
     let sender = sender.as_ref().ok_or("Chat is not connected")?;
+    let line = reply_parent_id
+        .map(|id| format!("@reply-parent-msg-id={id} PRIVMSG #{channel} :{message}"))
+        .unwrap_or_else(|| format!("PRIVMSG #{channel} :{message}"));
     sender
-        .send(format!("PRIVMSG #{channel} :{message}"))
+        .send(line)
         .map_err(|_| "Chat is not connected".to_string())
 }
 
