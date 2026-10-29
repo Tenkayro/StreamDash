@@ -25,16 +25,8 @@ use tauri::menu::{MenuBuilder, MenuItemBuilder};
 use tauri::tray::TrayIconBuilder;
 use tauri::{Emitter, Manager, PhysicalPosition, WebviewUrl, WebviewWindowBuilder, WindowEvent};
 
-fn is_beta_build() -> bool {
-    option_env!("STREAMDASH_CHANNEL") == Some("beta")
-}
-
 fn app_display_name() -> &'static str {
-    if is_beta_build() {
-        "StreamDash Beta"
-    } else {
-        "StreamDash"
-    }
+    "StreamDash"
 }
 
 fn credential_service() -> &'static str {
@@ -42,11 +34,7 @@ fn credential_service() -> &'static str {
 }
 
 fn preferences_registry_key() -> &'static str {
-    if is_beta_build() {
-        r"HKCU\Software\Tenkayro\StreamDash Beta"
-    } else {
-        r"HKCU\Software\Tenkayro\StreamDash"
-    }
+    r"HKCU\Software\Tenkayro\StreamDash"
 }
 
 struct AppState {
@@ -169,9 +157,6 @@ fn set_keep_user_data_preference(_keep: bool) -> Result<(), String> {
 }
 
 fn migrate_legacy_data(new_directory: &Path) -> Result<(), String> {
-    if is_beta_build() {
-        return Ok(());
-    }
     let Some(roaming) = std::env::var_os("APPDATA").map(PathBuf::from) else {
         return Ok(());
     };
@@ -210,19 +195,9 @@ pub fn uninstall_cleanup() -> Result<(), String> {
         delete_secret_value(secret)?;
     }
 
-    let (data_name, identifier, autostart_names): (&str, &str, &[&str]) = if is_beta_build() {
-        (
-            "StreamDash Beta",
-            "dev.streamdash.desktop.beta",
-            &["StreamDash Beta", "streamdash-beta"],
-        )
-    } else {
-        (
-            "StreamDash",
-            "dev.streamdash.desktop",
-            &["StreamDash", "streamdash"],
-        )
-    };
+    let data_name = "StreamDash";
+    let identifier = "dev.streamdash.desktop";
+    let autostart_names = &["StreamDash", "streamdash"];
     if let Some(roaming) = std::env::var_os("APPDATA").map(PathBuf::from) {
         remove_directory_if_present(roaming.join(data_name))?;
         remove_directory_if_present(roaming.join(identifier))?;
@@ -1031,10 +1006,7 @@ fn tray_configure(
 }
 
 #[tauri::command]
-fn distribution_channel(app: tauri::AppHandle) -> &'static str {
-    if app.config().identifier.ends_with(".beta") {
-        return "beta";
-    }
+fn distribution_channel() -> &'static str {
     #[cfg(windows)]
     {
         use windows::Win32::{
@@ -1053,12 +1025,12 @@ fn distribution_channel(app: tauri::AppHandle) -> &'static str {
 }
 
 #[tauri::command]
-async fn store_update_available(app: tauri::AppHandle) -> Result<bool, String> {
+async fn store_update_available() -> Result<bool, String> {
     #[cfg(windows)]
     {
         use windows::Services::Store::StoreContext;
 
-        if distribution_channel(app) != "store" {
+        if distribution_channel() != "store" {
             return Err("Microsoft Store updates require an installed Store package".into());
         }
         let context = StoreContext::GetDefault().map_err(|error| error.to_string())?;
@@ -1105,8 +1077,7 @@ pub fn run() {
                 .unwrap_or(true);
             app.manage(AppState { db: Mutex::new(db) });
             let spotify_overlay =
-                spotify_overlay::start(if is_beta_build() { 17_843 } else { 17_842 })
-                    .map_err(std::io::Error::other)?;
+                spotify_overlay::start(17_842).map_err(std::io::Error::other)?;
             app.manage(spotify_overlay);
             if cfg!(debug_assertions) {
                 app.handle().plugin(

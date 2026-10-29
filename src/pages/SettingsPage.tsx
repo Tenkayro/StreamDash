@@ -1,5 +1,4 @@
 import { enable, disable } from "@tauri-apps/plugin-autostart";
-import { getVersion } from "@tauri-apps/api/app";
 import {
   Archive,
   AtSign,
@@ -12,9 +11,7 @@ import {
   Clock3,
   Database,
   DatabaseBackup,
-  Download,
   EyeOff,
-  FlaskConical,
   Gift,
   Globe2,
   Highlighter,
@@ -22,7 +19,6 @@ import {
   Languages,
   LayoutDashboard,
   ListFilter,
-  LoaderCircle,
   Maximize2,
   MessageSquare,
   MessagesSquare,
@@ -46,93 +42,12 @@ import {
 } from "lucide-react";
 import { useEffect, useRef, useState, type ReactNode } from "react";
 import { toast } from "sonner";
-import { Badge, Button, Card, PageHeader } from "../components/ui";
+import { Button, Card, PageHeader } from "../components/ui";
 import { defaultDashboardWidgets, useAppStore } from "../stores/app-store";
 import { saveSetting } from "../services/native";
 import { errorMessage, isTauri } from "../lib/utils";
 import type { ActivityType, AppSettings } from "../types";
 import { useTranslation } from "react-i18next";
-import { openUrl } from "@tauri-apps/plugin-opener";
-
-const BETA_MANIFEST_URL =
-  "https://raw.githubusercontent.com/Tenkayro/StreamDash/main/beta.json";
-const IS_BETA_BUILD = import.meta.env.VITE_STREAMDASH_CHANNEL === "beta";
-
-type BetaManifest = {
-  version: string;
-  url: string;
-};
-
-type ParsedVersion = {
-  major: number;
-  minor: number;
-  patch: number;
-  prerelease?: string[];
-};
-
-function parseVersion(value: string): ParsedVersion | undefined {
-  const match = value.trim().match(/^v?(\d+)\.(\d+)\.(\d+)(?:-([0-9A-Za-z.-]+))?/);
-  if (!match) return undefined;
-  return {
-    major: Number(match[1]),
-    minor: Number(match[2]),
-    patch: Number(match[3]),
-    prerelease: match[4]?.split("."),
-  };
-}
-
-function comparePrerelease(left?: string[], right?: string[]) {
-  if (!left && !right) return 0;
-  if (!left) return 1;
-  if (!right) return -1;
-  for (let index = 0; index < Math.max(left.length, right.length); index += 1) {
-    const a = left[index];
-    const b = right[index];
-    if (a == null) return -1;
-    if (b == null) return 1;
-    if (a === b) continue;
-    const aNumber = /^\d+$/.test(a) ? Number(a) : undefined;
-    const bNumber = /^\d+$/.test(b) ? Number(b) : undefined;
-    if (aNumber != null && bNumber != null) return Math.sign(aNumber - bNumber);
-    if (aNumber != null) return -1;
-    if (bNumber != null) return 1;
-    return a.localeCompare(b);
-  }
-  return 0;
-}
-
-function compareVersions(left: ParsedVersion, right: ParsedVersion) {
-  for (const key of ["major", "minor", "patch"] as const) {
-    if (left[key] !== right[key]) return Math.sign(left[key] - right[key]);
-  }
-  return comparePrerelease(left.prerelease, right.prerelease);
-}
-
-function betaDistance(currentValue: string, betaValue: string) {
-  const current = parseVersion(currentValue);
-  const beta = parseVersion(betaValue);
-  if (!current || !beta) return { kind: "unknown" as const };
-  const comparison = compareVersions(beta, current);
-  if (comparison <= 0) return { kind: comparison === 0 ? "same" as const : "older" as const };
-  if (beta.major > current.major) return { kind: "major" as const, count: beta.major - current.major };
-  if (beta.minor > current.minor) return { kind: "minor" as const, count: beta.minor - current.minor };
-  if (beta.patch > current.patch) return { kind: "patch" as const, count: beta.patch - current.patch };
-  return { kind: "newer" as const };
-}
-
-async function loadBetaManifest(): Promise<BetaManifest> {
-  const response = await fetch(BETA_MANIFEST_URL, { cache: "no-store" });
-  if (!response.ok) throw new Error(`Beta manifest request failed: ${response.status}`);
-  const manifest = (await response.json()) as {
-    version?: string;
-    platforms?: { "windows-x86_64"?: { url?: string } };
-  };
-  const version = manifest.version?.trim();
-  const url = manifest.platforms?.["windows-x86_64"]?.url;
-  if (!version || !url || new URL(url).hostname !== "github.com")
-    throw new Error("Invalid beta manifest");
-  return { version, url };
-}
 
 const eventOptions: Array<{ id: ActivityType; label: string; icon: LucideIcon }> = [
   { id: "follow", label: "follows", icon: Heart },
@@ -367,22 +282,6 @@ function LanguageSelect({
 export function SettingsPage() {
   const { settings, setSettings } = useAppStore();
   const { t } = useTranslation();
-  const [betaDownloading, setBetaDownloading] = useState(false);
-  const [betaChecking, setBetaChecking] = useState(!IS_BETA_BUILD && isTauri());
-  const [betaCheckFailed, setBetaCheckFailed] = useState(false);
-  const [betaRelease, setBetaRelease] = useState<BetaManifest>();
-  const [currentVersion, setCurrentVersion] = useState<string>();
-
-  useEffect(() => {
-    if (IS_BETA_BUILD || !isTauri()) return;
-    let active = true;
-    void getVersion().then((version) => { if (active) setCurrentVersion(version); }).catch(() => undefined);
-    void loadBetaManifest()
-      .then((release) => { if (active) setBetaRelease(release); })
-      .catch(() => { if (active) setBetaCheckFailed(true); })
-      .finally(() => { if (active) setBetaChecking(false); });
-    return () => { active = false; };
-  }, []);
 
   const update = async <K extends keyof AppSettings>(
     key: K,
@@ -399,45 +298,6 @@ export function SettingsPage() {
       });
     }
   };
-  const downloadBeta = async () => {
-    setBetaDownloading(true);
-    try {
-      const release = betaRelease ?? await loadBetaManifest();
-      setBetaRelease(release);
-      await openUrl(release.url);
-    } catch {
-      toast.error(t("settings.betaDownloadError"), {
-        description: t("settings.betaUnavailable"),
-      });
-    } finally {
-      setBetaDownloading(false);
-    }
-  };
-  const comparison = currentVersion && betaRelease
-    ? betaDistance(currentVersion, betaRelease.version)
-    : undefined;
-  const betaStatus: { label: string; tone: "neutral" | "green" | "amber" | "red" | "purple" } = betaChecking
-    ? { label: t("settings.betaChecking"), tone: "neutral" }
-    : betaCheckFailed
-      ? { label: t("settings.betaCheckUnavailable"), tone: "red" }
-      : comparison?.kind === "major"
-        ? { label: t("settings.betaAheadMajor", { count: comparison.count }), tone: "purple" }
-        : comparison?.kind === "minor"
-          ? { label: t("settings.betaAheadMinor", { count: comparison.count }), tone: "purple" }
-          : comparison?.kind === "patch"
-            ? { label: t("settings.betaAheadPatch", { count: comparison.count }), tone: "purple" }
-            : comparison?.kind === "newer"
-              ? { label: t("settings.betaAhead"), tone: "purple" }
-              : comparison?.kind === "same"
-                ? { label: t("settings.betaSameVersion"), tone: "green" }
-                : comparison?.kind === "older"
-                  ? { label: t("settings.betaInstalledNewer"), tone: "amber" }
-                  : { label: t("settings.betaComparisonUnknown"), tone: "neutral" };
-  const betaDetail = currentVersion && betaRelease
-    ? t("settings.betaVersions", { current: currentVersion, beta: betaRelease.version })
-    : currentVersion
-      ? t("settings.betaCurrentVersion", { version: currentVersion })
-      : t("settings.betaProgramDetail");
   return (
     <>
       <PageHeader
@@ -465,28 +325,6 @@ export function SettingsPage() {
                 {t("settings.openSetupWizard")}
               </Button>
             </Row>
-            {!IS_BETA_BUILD && (
-              <Row
-                icon={FlaskConical}
-                label={t("settings.betaProgram")}
-                detail={betaDetail}
-              >
-                <div className="flex max-w-full flex-wrap items-center gap-2 lg:justify-end">
-                  <Badge tone={betaStatus.tone}>{betaStatus.label}</Badge>
-                  <Button
-                    disabled={betaDownloading || betaChecking || !isTauri()}
-                    onClick={() => void downloadBeta()}
-                  >
-                    {betaDownloading ? (
-                      <LoaderCircle size={14} className="animate-spin" />
-                    ) : (
-                      <Download size={14} />
-                    )}
-                    {t("settings.downloadBeta")}
-                  </Button>
-                </div>
-              </Row>
-            )}
             <Row
               icon={MonitorUp}
               label={t("settings.launchWithWindows")}
