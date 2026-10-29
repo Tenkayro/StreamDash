@@ -139,7 +139,7 @@ export function Sidebar() {
   return (
     <aside
       className={cn(
-        "flex min-h-0 shrink-0 flex-col overflow-x-hidden overflow-y-auto border-r border-line bg-[#0f1014] p-2 transition-[width]",
+        "flex min-h-0 shrink-0 flex-col overflow-hidden border-r border-line bg-[#0f1014] p-2 transition-[width]",
         compact ? "w-14.5" : "w-52",
       )}
     >
@@ -149,7 +149,7 @@ export function Sidebar() {
         aria-label={t("navigation.quickSwitch")}
         onClick={() => window.dispatchEvent(new Event(OPEN_COMMAND_PALETTE))}
         className={cn(
-          "mb-2 flex h-9 w-full items-center rounded-lg border border-line bg-black/15 text-zinc-500 transition hover:border-accent/30 hover:text-zinc-200",
+          "mb-2 flex h-9 w-full shrink-0 items-center rounded-lg border border-line bg-black/15 text-zinc-500 transition hover:border-accent/30 hover:text-zinc-200",
           compact ? "justify-center" : "gap-2 px-3",
         )}
       >
@@ -161,68 +161,76 @@ export function Sidebar() {
           </>
         )}
       </button>
-      <nav ref={navRef} className="relative">
-        <span
-          aria-hidden="true"
-          ref={indicatorRef}
-          className="nav-indicator pointer-events-none absolute inset-x-0 top-0 h-9 rounded-lg bg-accent-soft"
-        >
-          <span className="absolute left-0 top-1/2 h-4 w-0.5 -translate-y-1/2 rounded-full bg-accent" />
-        </span>
-        {navigationGroups.map((group, groupIndex) => (
-          <div key={group} className={cn(groupIndex > 0 && "mt-3")}>
-            {compact ? (
-              groupIndex > 0 && <div className="mx-2 mb-2 h-px bg-line" />
-            ) : (
-              <div className="mb-1 px-3 text-[9px] font-semibold uppercase tracking-[.14em] text-zinc-700">
-                {t(`navigation.${group}`)}
+      <div className="relative min-h-0 flex-1">
+        <div className="h-full overflow-x-hidden overflow-y-auto">
+          <nav ref={navRef} className="relative">
+          <span
+            aria-hidden="true"
+            ref={indicatorRef}
+            className="nav-indicator pointer-events-none absolute inset-x-0 top-0 h-9 rounded-lg bg-accent-soft"
+          >
+            <span className="absolute left-0 top-1/2 h-4 w-0.5 -translate-y-1/2 rounded-full bg-accent" />
+          </span>
+          {navigationGroups.map((group, groupIndex) => (
+            <div key={group} className={cn(groupIndex > 0 && "mt-3")}>
+              {compact ? (
+                groupIndex > 0 && <div className="mx-2 mb-2 h-px bg-line" />
+              ) : (
+                <div className="mb-1 px-3 text-[9px] font-semibold uppercase tracking-[.14em] text-zinc-700">
+                  {t(`navigation.${group}`)}
+                </div>
+              )}
+              <div className="space-y-0.5">
+                {navigationItems.filter((item) => item.group === group).map(({ id, label, icon: Icon }) => {
+            const attention = id === "connections" && permissionAttention;
+            const translatedLabel = t(`nav.${label}`);
+            return (
+              <button
+                data-active={page === id ? "true" : undefined}
+                title={
+                  attention
+                    ? t("nav.permissionAttention")
+                    : compact
+                      ? translatedLabel
+                      : undefined
+                }
+                aria-label={attention ? t("nav.requiredAttention", { label: translatedLabel }) : translatedLabel}
+                key={id}
+                onClick={() => setPage(id)}
+                className={cn(
+                  "relative flex h-9 w-full items-center rounded-lg text-sm text-zinc-500 transition-colors hover:bg-white/4 hover:text-zinc-200",
+                  compact ? "justify-center" : "gap-3 px-3",
+                  page === id && "text-accent",
+                )}
+              >
+                <Icon size={16} />
+                {!compact && <span className="flex-1 text-left">{translatedLabel}</span>}
+                {attention && (
+                  <AlertTriangle
+                    size={14}
+                    className={cn(
+                      "shrink-0 text-amber-400",
+                      settings.animations && "animate-pulse",
+                      compact &&
+                        "absolute -right-0.5 -top-0.5 fill-amber-400/20",
+                    )}
+                  />
+                )}
+              </button>
+            );
+                })}
               </div>
-            )}
-            <div className="space-y-0.5">
-              {navigationItems.filter((item) => item.group === group).map(({ id, label, icon: Icon }) => {
-          const attention = id === "connections" && permissionAttention;
-          const translatedLabel = t(`nav.${label}`);
-          return (
-            <button
-              data-active={page === id ? "true" : undefined}
-              title={
-                attention
-                  ? t("nav.permissionAttention")
-                  : compact
-                    ? translatedLabel
-                    : undefined
-              }
-              aria-label={attention ? t("nav.requiredAttention", { label: translatedLabel }) : translatedLabel}
-              key={id}
-              onClick={() => setPage(id)}
-              className={cn(
-                "relative flex h-9 w-full items-center rounded-lg text-sm text-zinc-500 transition-colors hover:bg-white/4 hover:text-zinc-200",
-                compact ? "justify-center" : "gap-3 px-3",
-                page === id && "text-accent",
-              )}
-            >
-              <Icon size={16} />
-              {!compact && <span className="flex-1 text-left">{translatedLabel}</span>}
-              {attention && (
-                <AlertTriangle
-                  size={14}
-                  className={cn(
-                    "shrink-0 text-amber-400",
-                    settings.animations && "animate-pulse",
-                    compact &&
-                      "absolute -right-0.5 -top-0.5 fill-amber-400/20",
-                  )}
-                />
-              )}
-            </button>
-          );
-              })}
             </div>
-          </div>
-        ))}
-      </nav>
-      <div className="mt-auto">
-        <div className="mx-2 mb-6 mt-2 h-px bg-line" />
+          ))}
+          </nav>
+        </div>
+        <div
+          aria-hidden="true"
+          className="pointer-events-none absolute inset-x-0 bottom-0 h-10 bg-gradient-to-t from-[#0f1014] via-[#0f1014]/75 to-transparent"
+        />
+      </div>
+      <div className="shrink-0">
+        <div className="mx-2 my-4 h-px bg-line" />
         {compact ? (
           <div className="mb-2 space-y-0.5">
             {services.map(({ name, icon, state }) => (
