@@ -172,6 +172,7 @@
     "increaseLabel": "Aumento automático de {{label}} em porcentagem",
     "moreGoals_one": "Mostrar mais {{count}} meta",
     "moreGoals_other": "Mostrar mais {{count}} metas",
+    "nextTarget": "Próxima meta: {{value}}",
     "noTarget": "Sem meta",
     "raids": "Raids",
     "saveError": "Não foi possível salvar a meta",

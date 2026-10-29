@@ -16,6 +16,7 @@ function GoalCard({
   loading,
   automation,
   onAutomation,
+  money,
 }: {
   icon: LucideIcon;
   label: string;
@@ -26,6 +27,7 @@ function GoalCard({
   loading?: boolean;
   automation?: GoalAutomation;
   onAutomation: (value: GoalAutomation) => void;
+  money?: boolean;
 }) {
   const { t, i18n } = useTranslation();
   const percent =
@@ -37,6 +39,26 @@ function GoalCard({
   const formattedTarget = target
     ? (display?.(target) ?? target.toLocaleString(i18n.language))
     : undefined;
+  // Mirrors the automation in the runtime so the next target is visible before
+  // the current one is reached.
+  const increasePercent = Math.min(
+    100,
+    Math.max(5, automation?.increasePercent ?? 20),
+  );
+  const nextTarget =
+    target == null
+      ? undefined
+      : (() => {
+          const base = Math.max(target, value ?? 0);
+          const raised = base * (1 + increasePercent / 100);
+          return money
+            ? Math.max(target + 0.01, Math.ceil(raised * 100) / 100)
+            : Math.max(target + 1, Math.ceil(raised));
+        })();
+  const formattedNext =
+    nextTarget == null
+      ? undefined
+      : (display?.(nextTarget) ?? nextTarget.toLocaleString(i18n.language));
   const saveDraft = (draft: string) => {
     const parsed = Number(draft);
     onTarget(draft && Number.isFinite(parsed) && parsed > 0 ? parsed : undefined);
@@ -145,6 +167,11 @@ function GoalCard({
             </span>
           </label>
         )}
+        {automation?.enabled && formattedNext && (
+          <p className="mt-2 text-right text-[10px] tabular-nums text-zinc-500">
+            {t("goals.nextTarget", { value: formattedNext })}
+          </p>
+        )}
       </div>
     </Card>
   );
@@ -232,6 +259,7 @@ export function Goals() {
           target={settings.goals.donations}
           onTarget={(v) => update("donations", v)}
           display={(v) => money(v, stats.donationCurrency)}
+          money
           automation={settings.goalAutomation.donations}
           onAutomation={(value) => updateAutomation("donations", value)}
         />

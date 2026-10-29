@@ -172,6 +172,7 @@
     "increaseLabel": "Aumento automático de {{label}} en porcentaje",
     "moreGoals_one": "Mostrar {{count}} objetivo más",
     "moreGoals_other": "Mostrar {{count}} objetivos más",
+    "nextTarget": "Próximo objetivo: {{value}}",
     "noTarget": "Sin objetivo",
     "raids": "Raids",
     "saveError": "No se pudo guardar el objetivo",

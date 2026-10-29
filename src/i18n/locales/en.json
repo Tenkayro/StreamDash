@@ -230,6 +230,7 @@
     "increaseLabel": "Automatic increase for {{label}} in percent",
     "moreGoals_one": "Show {{count}} more goal",
     "moreGoals_other": "Show {{count}} more goals",
+    "nextTarget": "Next target: {{value}}",
     "noTarget": "No target",
     "raids": "Raids",
     "saveError": "The goal could not be saved",

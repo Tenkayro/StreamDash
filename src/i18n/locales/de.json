@@ -230,6 +230,7 @@
     "increaseLabel": "Automatische Erhöhung für {{label}} in Prozent",
     "moreGoals_one": "{{count}} weiteres Ziel anzeigen",
     "moreGoals_other": "{{count}} weitere Ziele anzeigen",
+    "nextTarget": "Nächstes Ziel: {{value}}",
     "noTarget": "Kein Ziel",
     "raids": "Raids",
     "saveError": "Das Ziel konnte nicht gespeichert werden",
