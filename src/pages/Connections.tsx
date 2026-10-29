@@ -114,7 +114,7 @@ function ServiceRow({
           <img src={icon} alt="" className="size-5 object-contain" />
         </span>
         <div className="min-w-0 flex-1">
-          <div className="flex items-center gap-2">
+          <div className="flex flex-wrap items-center gap-2">
             <span className="truncate text-sm font-medium">{name}</span>
             <Badge tone={phaseTone(phase)}>
               {t(`connectionPhases.${phase}`)}
@@ -123,14 +123,20 @@ function ServiceRow({
               <span className="truncate text-[11px] text-zinc-600">{meta}</span>
             )}
           </div>
-          <div className="mt-0.5 truncate text-[11px] text-muted">{purpose}</div>
+          <div className="mt-0.5 text-[11px] leading-4 text-muted">
+            {purpose}
+          </div>
           {error && (
             <div className="mt-0.5 text-[11px] leading-4 text-red-300">
               {error}
             </div>
           )}
         </div>
-        {action && <div className="ml-auto flex max-w-full flex-wrap items-center justify-end gap-2">{action}</div>}
+        {action && (
+          <div className="ml-auto flex max-w-full flex-wrap items-center justify-end gap-2">
+            {action}
+          </div>
+        )}
       </div>
       {children}
     </div>
@@ -160,11 +166,11 @@ function TokenForm({
 }) {
   const { t } = useTranslation();
   return (
-    <div className="max-w-xl px-4 pb-3 sm:pl-16">
+    <div className="max-w-2xl px-4 pb-3 sm:pl-16">
       <div className="flex flex-col gap-2 sm:flex-row">
         <input
           id={id}
-          className="input"
+          className="input min-w-0 flex-1"
           type="password"
           autoComplete="off"
           aria-label={label}
@@ -178,6 +184,7 @@ function TokenForm({
           }}
         />
         <Button
+          className="shrink-0"
           variant="primary"
           disabled={!value.trim() || disabled || busy}
           onClick={() => void onConnect()}
@@ -221,11 +228,11 @@ function ObsForm({
 }) {
   const { t } = useTranslation();
   return (
-    <div className="max-w-xl px-4 pb-3 sm:pl-16">
+    <div className="max-w-2xl px-4 pb-3 sm:pl-16">
       <div className="flex flex-col gap-2 lg:flex-row">
         <div className="w-full shrink-0 lg:w-44">
           <input
-            className="input"
+            className="input w-full"
             autoComplete="off"
             spellCheck={false}
             aria-label={t("connections.obsAddress")}
@@ -308,7 +315,7 @@ export function Connections() {
         title={t("connections.title")}
         description={t("pageDescriptions.connections")}
       />
-      <Card className="max-w-4xl divide-y divide-line overflow-hidden">
+      <Card className="divide-y divide-line overflow-hidden">
         <ServiceRow
           name="Twitch"
           icon={twitchIcon}
@@ -356,7 +363,7 @@ export function Connections() {
           }
         >
           {missingModeration && (
-            <p className="px-4 pb-3 text-xs text-amber-300 sm:pl-16">
+            <p className="px-4 pb-3 text-xs leading-5 text-amber-300 sm:pl-16">
               {t("connections.reconnectModeration")}
             </p>
           )}
