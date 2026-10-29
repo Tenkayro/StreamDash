@@ -43,7 +43,7 @@ export function TwitchPlayer({ className }: { className?: string }) {
       title={t("stream.playerTitle", { channel: account })}
       allow="autoplay; fullscreen"
       allowFullScreen
-      className={cn("block min-h-52 min-w-0 border-0 sm:min-h-[300px]", className)}
+        className={cn("block min-h-52 min-w-0 border-0 sm:min-h-75", className)}
     />
   );
 }
