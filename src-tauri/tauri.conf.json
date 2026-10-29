@@ -74,7 +74,7 @@
       ],
       "requireSignedVersion": true,
       "windows": {
-        "installMode": "basicUi"
+        "installMode": "passive"
       }
     }
   }

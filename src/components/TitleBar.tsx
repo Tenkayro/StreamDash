@@ -55,8 +55,7 @@ function UpdateControl() {
   const updater = useUpdater();
   const downloading =
     updater.phase === "downloading" || updater.phase === "installing";
-  const progress =
-    updater.phase === "installing" ? 100 : (updater.progress ?? 0);
+  const progress = updater.phase === "installing" ? 100 : updater.progress;
 
   if (updater.channel === "store" && updater.phase === "checking")
     return (
@@ -90,46 +89,30 @@ function UpdateControl() {
         title={
           updater.phase === "installing"
             ? t("titleBar.installing")
-            : t("titleBar.downloading", { progress })
+            : t("titleBar.downloading", { progress: progress ?? "…" })
         }
         aria-label={
           updater.phase === "installing"
             ? t("titleBar.installing")
-            : t("titleBar.downloading", { progress })
+            : t("titleBar.downloading", { progress: progress ?? "…" })
         }
-        className="relative grid size-7 place-items-center"
+        className="relative mx-1 flex h-7 min-w-30 max-w-48 items-center gap-2 overflow-hidden rounded-md border border-accent/30 bg-accent-soft px-2 text-accent"
       >
-        <svg
-          viewBox="0 0 28 28"
-          className="absolute inset-0 size-7 -rotate-90"
-          aria-hidden="true"
-        >
-          <circle
-            cx="14"
-            cy="14"
-            r="12"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth="2"
-            className="text-zinc-700"
-          />
-          <circle
-            cx="14"
-            cy="14"
-            r="12"
-            pathLength="100"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth="2"
-            strokeLinecap="round"
-            strokeDasharray="100"
-            strokeDashoffset={100 - progress}
-            className="text-accent transition-[stroke-dashoffset] duration-300 ease-out"
-          />
-        </svg>
-        <span className="text-[8px] font-semibold tabular-nums text-zinc-200">
-          {progress}%
+        {updater.phase === "installing" || progress == null ? (
+          <LoaderCircle size={13} className="shrink-0 animate-spin" />
+        ) : (
+          <Download size={13} className="shrink-0" />
+        )}
+        <span className="truncate text-[10px] font-medium text-zinc-200">
+          {updater.phase === "installing"
+            ? t("titleBar.installing")
+            : t("titleBar.downloading", { progress })}
         </span>
+        <span
+          aria-hidden="true"
+          className={`absolute bottom-0 left-0 h-0.5 bg-accent transition-[width] duration-300 ${progress == null ? "w-1/3 animate-pulse" : ""}`}
+          style={progress == null ? undefined : { width: `${progress}%` }}
+        />
       </div>
     );
 
