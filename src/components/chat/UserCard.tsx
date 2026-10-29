@@ -17,7 +17,7 @@ import { saveSetting } from "../../services/native";
 import { useRuntime } from "../../services/runtime-context";
 import { useAppStore } from "../../stores/app-store";
 import type { ChatMessage, ChatUserProfile } from "../../types";
-import { LoadingIndicator } from "../ui";
+import { LoadingIndicator, ScrollFade } from "../ui";
 import { useTranslation } from "react-i18next";
 
 const timeouts = [
@@ -494,47 +494,49 @@ export function UserCard({
               {t("userCard.recentMessages")}
             </div>
           </div>
-          <div className="flex-1 overflow-y-auto p-2">
-            {userMessages.length ? (
-              userMessages.map((message) => (
-                <div
-                  key={message.id}
-                  className={`group flex items-start gap-2 rounded-md px-2 py-1.5 text-xs hover:bg-white/[.035] ${message.deleted ? "opacity-45" : ""}`}
-                >
-                  <span className="shrink-0 text-[10px] tabular-nums text-zinc-600">
-                    {new Date(message.timestamp).toLocaleTimeString([], {
-                      hour: "2-digit",
-                      minute: "2-digit",
-                    })}
-                  </span>
-                  <span
-                    className={`min-w-0 flex-1 wrap-break-word ${message.deleted ? "line-through" : ""}`}
+          <ScrollFade className="flex min-h-0 flex-1 flex-col" color="#101115" size={32}>
+            <div className="min-h-0 flex-1 overflow-y-auto p-2">
+              {userMessages.length ? (
+                userMessages.map((message) => (
+                  <div
+                    key={message.id}
+                    className={`group flex items-start gap-2 rounded-md px-2 py-1.5 text-xs hover:bg-white/[.035] ${message.deleted ? "opacity-45" : ""}`}
                   >
-                    {message.text}
-                  </span>
-                  {message.deleted ? (
-                    <span className="text-[9px] uppercase text-zinc-600">
-                      {t("userCard.deleted")}
+                    <span className="shrink-0 text-[10px] tabular-nums text-zinc-600">
+                      {new Date(message.timestamp).toLocaleTimeString([], {
+                        hour: "2-digit",
+                        minute: "2-digit",
+                      })}
                     </span>
-                  ) : (
-                    canRemove(message) && (
-                      <button
-                        title={t("userCard.deleteMessage")}
-                        onClick={() => void removeMessage(message)}
-                        className="invisible text-zinc-600 hover:text-red-300 group-hover:visible"
-                      >
-                        <Trash2 size={13} />
-                      </button>
-                    )
-                  )}
+                    <span
+                      className={`min-w-0 flex-1 wrap-break-word ${message.deleted ? "line-through" : ""}`}
+                    >
+                      {message.text}
+                    </span>
+                    {message.deleted ? (
+                      <span className="text-[9px] uppercase text-zinc-600">
+                        {t("userCard.deleted")}
+                      </span>
+                    ) : (
+                      canRemove(message) && (
+                        <button
+                          title={t("userCard.deleteMessage")}
+                          onClick={() => void removeMessage(message)}
+                          className="invisible text-zinc-600 hover:text-red-300 group-hover:visible"
+                        >
+                          <Trash2 size={13} />
+                        </button>
+                      )
+                    )}
+                  </div>
+                ))
+              ) : (
+                <div className="grid h-full place-items-center text-xs text-zinc-600">
+                  {t("userCard.noMessages")}
                 </div>
-              ))
-            ) : (
-              <div className="grid h-full place-items-center text-xs text-zinc-600">
-                {t("userCard.noMessages")}
-              </div>
-            )}
-          </div>
+              )}
+            </div>
+          </ScrollFade>
         </div>
       </section>
     </div>

@@ -14,7 +14,7 @@ import { useMemo, useState } from "react";
 import { formatDistanceToNow } from "date-fns";
 import { de, enUS, es, fr, ptBR } from "date-fns/locale";
 import { useTranslation } from "react-i18next";
-import { Button, Card, EmptyState, PageHeader } from "../components/ui";
+import { Button, Card, EmptyState, PageHeader, ScrollFade } from "../components/ui";
 import { money } from "../lib/utils";
 import { useAppStore } from "../stores/app-store";
 import type { ActivitySource } from "../types";
@@ -209,64 +209,66 @@ export function Donations() {
             ) : undefined}
           />
         ) : (
-          <div className="max-h-[calc(100vh-306px)] min-h-52 overflow-y-auto p-2">
-            {filtered.map((donation) => {
-              const isSelected = donation.id === selected?.id;
-              const isTop = donation.id === topDonationId;
-              const who = donation.displayName || donation.username || t("donations.anonymous");
-              return (
-                <button
-                  type="button"
-                  key={donation.id}
-                  aria-expanded={isSelected}
-                  aria-label={t(isSelected ? "donations.collapseDonation" : "donations.expandDonation", { name: who })}
-                  onClick={() => setSelectedId(isSelected ? null : donation.id)}
-                  className={`event-enter mb-1.5 w-full rounded-lg border px-3.5 text-left transition-colors last:mb-0 ${
-                    isTop
-                      ? "border-amber-400/25 bg-linear-to-r from-amber-400/10 to-transparent"
-                      : isSelected
-                        ? "border-accent/30 bg-accent-soft"
-                        : "border-transparent bg-white/[.018] hover:border-line hover:bg-white/3"
-                  }`}
-                >
-                  <div className="flex min-h-14 items-center gap-3 py-2.5">
-                    <span className={`grid size-8 shrink-0 place-items-center rounded-lg ${sourceStyles[donation.source]}`}>
-                      {isTop ? <Star size={15} /> : <CircleDollarSign size={15} />}
-                    </span>
-                    <div className="min-w-0 flex-1">
-                      <div className="flex min-w-0 items-center gap-2">
-                        <span className={`truncate text-sm font-semibold ${isTop ? "text-amber-200" : "text-zinc-200"}`}>{who}</span>
-                        <span className={`shrink-0 rounded-full px-2 py-0.5 text-xs font-bold ${isTop ? "bg-amber-300 text-amber-950" : "bg-emerald-300 text-emerald-950"}`}>
-                          {donation.amount != null ? money(donation.amount, donation.currency) : t("events.donation")}
-                        </span>
-                        {isTop && <Sparkles size={13} className="shrink-0 text-amber-300" />}
+          <ScrollFade color="#121318" size={32}>
+            <div className="max-h-[calc(100vh-306px)] min-h-52 overflow-y-auto p-2">
+              {filtered.map((donation) => {
+                const isSelected = donation.id === selected?.id;
+                const isTop = donation.id === topDonationId;
+                const who = donation.displayName || donation.username || t("donations.anonymous");
+                return (
+                  <button
+                    type="button"
+                    key={donation.id}
+                    aria-expanded={isSelected}
+                    aria-label={t(isSelected ? "donations.collapseDonation" : "donations.expandDonation", { name: who })}
+                    onClick={() => setSelectedId(isSelected ? null : donation.id)}
+                    className={`event-enter mb-1.5 w-full rounded-lg border px-3.5 text-left transition-colors last:mb-0 ${
+                      isTop
+                        ? "border-amber-400/25 bg-linear-to-r from-amber-400/10 to-transparent"
+                        : isSelected
+                          ? "border-accent/30 bg-accent-soft"
+                          : "border-transparent bg-white/[.018] hover:border-line hover:bg-white/3"
+                    }`}
+                  >
+                    <div className="flex min-h-14 items-center gap-3 py-2.5">
+                      <span className={`grid size-8 shrink-0 place-items-center rounded-lg ${sourceStyles[donation.source]}`}>
+                        {isTop ? <Star size={15} /> : <CircleDollarSign size={15} />}
+                      </span>
+                      <div className="min-w-0 flex-1">
+                        <div className="flex min-w-0 items-center gap-2">
+                          <span className={`truncate text-sm font-semibold ${isTop ? "text-amber-200" : "text-zinc-200"}`}>{who}</span>
+                          <span className={`shrink-0 rounded-full px-2 py-0.5 text-xs font-bold ${isTop ? "bg-amber-300 text-amber-950" : "bg-emerald-300 text-emerald-950"}`}>
+                            {donation.amount != null ? money(donation.amount, donation.currency) : t("events.donation")}
+                          </span>
+                          {isTop && <Sparkles size={13} className="shrink-0 text-amber-300" />}
+                        </div>
+                        {!isSelected && donation.message && (
+                          <p className="mt-0.5 truncate text-xs text-muted">{donation.message}</p>
+                        )}
                       </div>
-                      {!isSelected && donation.message && (
-                        <p className="mt-0.5 truncate text-xs text-muted">{donation.message}</p>
-                      )}
+                      <span className="shrink-0 text-[11px] text-zinc-600">
+                        {formatDistanceToNow(new Date(donation.timestamp), { addSuffix: true, locale: dateLocale })}
+                      </span>
+                      {isSelected ? <ChevronDown size={14} className="shrink-0 text-zinc-500" /> : <ChevronRight size={14} className="shrink-0 text-zinc-600" />}
                     </div>
-                    <span className="shrink-0 text-[11px] text-zinc-600">
-                      {formatDistanceToNow(new Date(donation.timestamp), { addSuffix: true, locale: dateLocale })}
-                    </span>
-                    {isSelected ? <ChevronDown size={14} className="shrink-0 text-zinc-500" /> : <ChevronRight size={14} className="shrink-0 text-zinc-600" />}
-                  </div>
-                  {isSelected && (
-                    <div className="border-t border-white/6 pb-3 pt-3">
-                      {donation.message ? (
-                        <p className="max-w-3xl whitespace-pre-wrap text-sm leading-6 text-zinc-300">{donation.message}</p>
-                      ) : (
-                        <p className="text-sm italic text-zinc-600">{t("donations.noMessage")}</p>
-                      )}
-                      <div className="mt-3 flex items-center gap-2 text-[11px] text-muted">
-                        <span className={`rounded-md px-2 py-1 font-medium ${sourceStyles[donation.source]}`}>{sourceNames[donation.source]}</span>
-                        <span>{new Intl.DateTimeFormat(i18n.language, { dateStyle: "medium", timeStyle: "short" }).format(new Date(donation.timestamp))}</span>
+                    {isSelected && (
+                      <div className="border-t border-white/6 pb-3 pt-3">
+                        {donation.message ? (
+                          <p className="max-w-3xl whitespace-pre-wrap text-sm leading-6 text-zinc-300">{donation.message}</p>
+                        ) : (
+                          <p className="text-sm italic text-zinc-600">{t("donations.noMessage")}</p>
+                        )}
+                        <div className="mt-3 flex items-center gap-2 text-[11px] text-muted">
+                          <span className={`rounded-md px-2 py-1 font-medium ${sourceStyles[donation.source]}`}>{sourceNames[donation.source]}</span>
+                          <span>{new Intl.DateTimeFormat(i18n.language, { dateStyle: "medium", timeStyle: "short" }).format(new Date(donation.timestamp))}</span>
+                        </div>
                       </div>
-                    </div>
-                  )}
-                </button>
-              );
-            })}
-          </div>
+                    )}
+                  </button>
+                );
+              })}
+            </div>
+          </ScrollFade>
         )}
       </Card>
     </>

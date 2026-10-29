@@ -87,6 +87,64 @@ export function Toggle({
     </button>
   );
 }
+/**
+ * Wraps a scroll container and fades its content out at the bottom edge while
+ * there is still something to scroll to. The scroll container must be the first
+ * child element and has to be the element with the `overflow-y` style.
+ */
+export function ScrollFade({
+  children,
+  className,
+  color = "#121318",
+  size = 36,
+  scrollbar = true,
+}: {
+  children: ReactNode;
+  className?: string;
+  color?: string;
+  size?: number;
+  scrollbar?: boolean;
+}) {
+  const wrapper = useRef<HTMLDivElement>(null);
+  const [more, setMore] = useState(false);
+
+  useEffect(() => {
+    const scroller = wrapper.current?.firstElementChild as HTMLElement | null;
+    if (!scroller) return;
+    const update = () => {
+      const remaining =
+        scroller.scrollHeight - scroller.clientHeight - scroller.scrollTop;
+      const next = remaining > 2;
+      setMore((previous) => (previous === next ? previous : next));
+    };
+    update();
+    scroller.addEventListener("scroll", update, { passive: true });
+    const observer = new ResizeObserver(update);
+    observer.observe(scroller);
+    const mutations = new MutationObserver(update);
+    mutations.observe(scroller, { childList: true });
+    return () => {
+      scroller.removeEventListener("scroll", update);
+      observer.disconnect();
+      mutations.disconnect();
+    };
+  }, []);
+
+  return (
+    <div ref={wrapper} className={cn("relative", className)}>
+      {children}
+      <span
+        aria-hidden="true"
+        className={cn(
+          "pointer-events-none absolute bottom-0 left-0 transition-opacity duration-200",
+          scrollbar ? "right-2.5" : "right-0",
+          more ? "opacity-100" : "opacity-0",
+        )}
+        style={{ height: size, backgroundImage: `linear-gradient(to top, ${color}, transparent)` }}
+      />
+    </div>
+  );
+}
 export function Badge({
   children,
   tone = "neutral",

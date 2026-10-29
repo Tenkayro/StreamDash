@@ -226,7 +226,7 @@ export function Sidebar() {
         </div>
         <div
           aria-hidden="true"
-          className="pointer-events-none absolute inset-x-0 bottom-0 h-10 bg-gradient-to-t from-[#0f1014] via-[#0f1014]/75 to-transparent"
+          className="pointer-events-none absolute bottom-0 left-0 right-2.5 h-4 bg-linear-to-t from-[#0f1014] to-transparent"
         />
       </div>
       <div className="shrink-0">

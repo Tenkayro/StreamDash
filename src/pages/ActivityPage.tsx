@@ -10,7 +10,7 @@ import {
 import { useMemo, useState } from "react";
 import { ActivityFeed } from "../components/ActivityFeed";
 import { UserCard } from "../components/chat/UserCard";
-import { Button, Card, PageHeader } from "../components/ui";
+import { Button, Card, PageHeader, ScrollFade } from "../components/ui";
 import { useAppStore } from "../stores/app-store";
 import { clearEvents as clearNativeEvents } from "../services/native";
 import type { ActivitySource, ActivityType } from "../types";
@@ -139,21 +139,23 @@ export function ActivityPage() {
             />
           </div>
         </div>
-        <div className="max-h-[calc(100vh-210px)] overflow-y-auto">
-          <ActivityFeed
-            events={filtered}
-            compact={settings.compactFeed}
-            onUser={
-              twitch.phase === "connected" ? setSelectedUser : undefined
-            }
-            emptyTitle={events.length ? t("activity.noMatches") : t("activity.empty")}
-            emptyBody={
-              events.length
-                ? t("activity.tryFilters")
-                : undefined
-            }
-          />
-        </div>
+        <ScrollFade color="#121318" size={32}>
+          <div className="max-h-[calc(100vh-210px)] overflow-y-auto">
+            <ActivityFeed
+              events={filtered}
+              compact={settings.compactFeed}
+              onUser={
+                twitch.phase === "connected" ? setSelectedUser : undefined
+              }
+              emptyTitle={events.length ? t("activity.noMatches") : t("activity.empty")}
+              emptyBody={
+                events.length
+                  ? t("activity.tryFilters")
+                  : undefined
+              }
+            />
+          </div>
+        </ScrollFade>
       </Card>
       {selectedUser && (
         <UserCard

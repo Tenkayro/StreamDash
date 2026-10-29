@@ -3,6 +3,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { navigationItems, OPEN_COMMAND_PALETTE } from "../lib/navigation";
 import { useAppStore } from "../stores/app-store";
+import { ScrollFade } from "./ui";
 
 export function CommandPalette() {
   const { t } = useTranslation();
@@ -103,32 +104,34 @@ export function CommandPalette() {
             <X size={14} />
           </button>
         </div>
-        <div className="max-h-[min(20rem,calc(100vh-9rem))] overflow-y-auto p-1.5">
-          {results.length ? (
-            results.map((item, index) => {
-              const Icon = item.icon;
-              return (
-                <button
-                  key={item.id}
-                  type="button"
-                  onMouseEnter={() => setActive(index)}
-                  onClick={() => navigate(item.id)}
-                  className={`flex h-10 w-full items-center gap-3 rounded-lg px-3 text-sm transition ${index === active ? "bg-accent-soft text-accent" : "text-zinc-400 hover:bg-white/4 hover:text-zinc-200"}`}
-                >
-                  <Icon size={16} />
-                  <span>{t(`nav.${item.label}`)}</span>
-                  <span className="ml-auto text-[10px] uppercase tracking-wider text-zinc-600">
-                    {t(`navigation.${item.group}`)}
-                  </span>
-                </button>
-              );
-            })
-          ) : (
-            <div className="grid h-24 place-items-center text-sm text-muted">
-              {t("navigation.noResults")}
-            </div>
-          )}
-        </div>
+        <ScrollFade color="#17181e" size={28}>
+          <div className="max-h-[min(20rem,calc(100vh-9rem))] overflow-y-auto p-1.5">
+            {results.length ? (
+              results.map((item, index) => {
+                const Icon = item.icon;
+                return (
+                  <button
+                    key={item.id}
+                    type="button"
+                    onMouseEnter={() => setActive(index)}
+                    onClick={() => navigate(item.id)}
+                    className={`flex h-10 w-full items-center gap-3 rounded-lg px-3 text-sm transition ${index === active ? "bg-accent-soft text-accent" : "text-zinc-400 hover:bg-white/4 hover:text-zinc-200"}`}
+                  >
+                    <Icon size={16} />
+                    <span>{t(`nav.${item.label}`)}</span>
+                    <span className="ml-auto text-[10px] uppercase tracking-wider text-zinc-600">
+                      {t(`navigation.${item.group}`)}
+                    </span>
+                  </button>
+                );
+              })
+            ) : (
+              <div className="grid h-24 place-items-center text-sm text-muted">
+                {t("navigation.noResults")}
+              </div>
+            )}
+          </div>
+        </ScrollFade>
         <div className="flex items-center gap-4 border-t border-line px-4 py-2 text-[10px] text-zinc-600">
           <span>{t("navigation.moveHint")}</span>
           <span>{t("navigation.openHint")}</span>

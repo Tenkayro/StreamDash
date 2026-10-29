@@ -11,7 +11,7 @@ import {
 } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
-import { Badge, Button, Card, EmptyState, PageHeader } from "../components/ui";
+import { Badge, Button, Card, EmptyState, PageHeader, ScrollFade } from "../components/ui";
 import { UserCard } from "../components/chat/UserCard";
 import { errorMessage, isTauri } from "../lib/utils";
 import { twitchNative } from "../services/native";
@@ -601,31 +601,33 @@ export function ChatPage() {
             </span>
           )}
         </div>
-        <div
-          ref={listRef}
-          onScroll={onScroll}
-          className="relative flex-1 overflow-y-auto py-1"
-        >
-          {visibleMessages.length === 0 ? (
-            <div className="grid h-full place-items-center px-6 text-center text-sm text-muted">
-              {search
-                ? t("chat.noMatches")
-                : chat.phase === "connecting" || chat.phase === "reconnecting"
-                  ? t("chat.connecting")
-                  : t("chat.waitingFirstMessage")}
-            </div>
-          ) : (
-            visibleMessages.map((message) => (
-              <ChatRow
-                key={message.id}
-                message={message}
-                account={twitch.account}
-                settings={settings}
-                onUser={setSelectedUser}
-              />
-            ))
-          )}
-        </div>
+        <ScrollFade className="flex min-h-0 flex-1 flex-col" color="#121318" size={36}>
+          <div
+            ref={listRef}
+            onScroll={onScroll}
+            className="min-h-0 flex-1 overflow-y-auto py-1"
+          >
+            {visibleMessages.length === 0 ? (
+              <div className="grid h-full place-items-center px-6 text-center text-sm text-muted">
+                {search
+                  ? t("chat.noMatches")
+                  : chat.phase === "connecting" || chat.phase === "reconnecting"
+                    ? t("chat.connecting")
+                    : t("chat.waitingFirstMessage")}
+              </div>
+            ) : (
+              visibleMessages.map((message) => (
+                <ChatRow
+                  key={message.id}
+                  message={message}
+                  account={twitch.account}
+                  settings={settings}
+                  onUser={setSelectedUser}
+                />
+              ))
+            )}
+          </div>
+        </ScrollFade>
         {!stick && (
           <button
             className="mx-auto -mb-3 flex -translate-y-4 items-center gap-1.5 rounded-full border border-line bg-raised px-3 py-1.5 text-[11px] shadow-xl hover:border-zinc-600"
@@ -639,36 +641,42 @@ export function ChatPage() {
         )}
         <div className="relative border-t border-line p-2.5">
           {completion && (
-            <div className="absolute bottom-[calc(100%-1px)] left-2.5 right-2.5 z-20 max-h-64 overflow-y-auto rounded-lg border border-line bg-raised p-1 shadow-2xl">
-              {completion.items.map((item, index) => (
-                <button
-                  key={`${item.source}-${item.name}`}
-                  onMouseDown={(event) => {
-                    event.preventDefault();
-                    chooseCompletion(item);
-                  }}
-                  className={`flex h-9 w-full items-center gap-2 rounded-md px-2 text-left text-xs ${index === selected ? "bg-accent-soft text-white" : "text-zinc-400 hover:bg-white/5"}`}
-                >
-                  {item.url ? (
-                    <img
-                      src={item.url}
-                      alt=""
-                      className="size-7 object-contain"
-                    />
-                  ) : (
-                    <span className="grid size-7 place-items-center">
-                      <AtSign size={15} />
+            <ScrollFade
+              className="absolute bottom-[calc(100%-1px)] left-2.5 right-2.5 z-20 overflow-hidden rounded-lg border border-line bg-raised shadow-2xl"
+              color="#17181e"
+              size={28}
+            >
+              <div className="max-h-64 overflow-y-auto p-1">
+                {completion.items.map((item, index) => (
+                  <button
+                    key={`${item.source}-${item.name}`}
+                    onMouseDown={(event) => {
+                      event.preventDefault();
+                      chooseCompletion(item);
+                    }}
+                    className={`flex h-9 w-full items-center gap-2 rounded-md px-2 text-left text-xs ${index === selected ? "bg-accent-soft text-white" : "text-zinc-400 hover:bg-white/5"}`}
+                  >
+                    {item.url ? (
+                      <img
+                        src={item.url}
+                        alt=""
+                        className="size-7 object-contain"
+                      />
+                    ) : (
+                      <span className="grid size-7 place-items-center">
+                        <AtSign size={15} />
+                      </span>
+                    )}
+                    <span className="min-w-0 flex-1 truncate font-medium">
+                      {item.name}
                     </span>
-                  )}
-                  <span className="min-w-0 flex-1 truncate font-medium">
-                    {item.name}
-                  </span>
-                  <span className="text-[9px] uppercase text-zinc-600">
-                    {item.source}
-                  </span>
-                </button>
-              ))}
-            </div>
+                    <span className="text-[9px] uppercase text-zinc-600">
+                      {item.source}
+                    </span>
+                  </button>
+                ))}
+              </div>
+            </ScrollFade>
           )}
           <form className="flex gap-2" onSubmit={submit}>
             <input

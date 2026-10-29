@@ -19,6 +19,7 @@ import {
   EmptyState,
   LoadingIndicator,
   PageHeader,
+  ScrollFade,
 } from "../components/ui";
 import { ObsCard } from "../components/ObsCard";
 import { errorMessage, isTauri } from "../lib/utils";import { twitchNative } from "../services/native";
@@ -436,40 +437,42 @@ export function StreamPage() {
                 onChange={(event) => setQuery(event.target.value)}
               />
               {showResults && (
-                <div className="absolute z-10 mt-1 max-h-80 w-full overflow-y-auto rounded-xl border border-line bg-[#14151b] p-1 shadow-2xl shadow-black/40">
-                  {searching && (
-                    <div className="space-y-2 px-2 py-2">
-                      {[0, 1, 2].map((item) => (
-                        <div key={item} className="flex items-center gap-3">
-                          <LoadingIndicator className="h-9 w-7 shrink-0" />
-                          <LoadingIndicator
-                            className={`h-3 ${item === 1 ? "w-28" : "w-40"}`}
-                          />
-                        </div>
+                <ScrollFade className="absolute z-10 mt-1 w-full overflow-hidden rounded-xl border border-line bg-[#14151b] shadow-2xl shadow-black/40" color="#14151b" size={28}>
+                  <div className="max-h-80 overflow-y-auto p-1">
+                    {searching && (
+                      <div className="space-y-2 px-2 py-2">
+                        {[0, 1, 2].map((item) => (
+                          <div key={item} className="flex items-center gap-3">
+                            <LoadingIndicator className="h-9 w-7 shrink-0" />
+                            <LoadingIndicator
+                              className={`h-3 ${item === 1 ? "w-28" : "w-40"}`}
+                            />
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                    {!searching && lookup.items.length === 0 && (
+                      <div className="px-3 py-2 text-xs text-muted">
+                        {t("stream.noCategories")}
+                      </div>
+                    )}
+                    {!searching &&
+                      lookup.items.map((item) => (
+                        <button
+                          key={item.id}
+                          className="flex w-full items-center gap-3 rounded-lg px-2 py-1.5 text-left hover:bg-white/6"
+                          onClick={() => {
+                            setCategory(item);
+                            setQuery("");
+                            setLookup({ term: "", items: [] });
+                          }}
+                        >
+                          <BoxArt category={item} className="h-9 w-7" />
+                          <span className="truncate text-sm">{item.name}</span>
+                        </button>
                       ))}
-                    </div>
-                  )}
-                  {!searching && lookup.items.length === 0 && (
-                    <div className="px-3 py-2 text-xs text-muted">
-                      {t("stream.noCategories")}
-                    </div>
-                  )}
-                  {!searching &&
-                    lookup.items.map((item) => (
-                      <button
-                        key={item.id}
-                        className="flex w-full items-center gap-3 rounded-lg px-2 py-1.5 text-left hover:bg-white/6"
-                        onClick={() => {
-                          setCategory(item);
-                          setQuery("");
-                          setLookup({ term: "", items: [] });
-                        }}
-                      >
-                        <BoxArt category={item} className="h-9 w-7" />
-                        <span className="truncate text-sm">{item.name}</span>
-                      </button>
-                    ))}
-                </div>
+                  </div>
+                </ScrollFade>
               )}
                 </>
               )}

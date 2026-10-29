@@ -25,7 +25,7 @@ import {
 import { useEffect, useState, type ReactNode } from "react";
 import { useTranslation } from "react-i18next";
 import { toast } from "sonner";
-import { Badge, Button, Card, EmptyState, PageHeader } from "../components/ui";
+import { Badge, Button, Card, EmptyState, PageHeader, ScrollFade } from "../components/ui";
 import { cn } from "../lib/utils";
 import { formatObsTime } from "../services/obs/format";
 import { spotifyOverlayNative, type SpotifyNowPlaying, type SpotifyOverlayInfo } from "../services/native";
@@ -260,12 +260,14 @@ function ObsWorkspace({ snapshot }: { snapshot: ObsSnapshot }) {
         <Card className="p-4">
           <SectionTitle icon={Clapperboard} title={t("obs.page.scenes")} description={t("obs.page.scenesDescription")} />
           {snapshot.scenes.length ? (
-            <div className="grid max-h-96 gap-1.5 overflow-y-auto pr-1 sm:grid-cols-2 xl:grid-cols-1 2xl:grid-cols-2">
-              {snapshot.scenes.map((scene) => {
-                const active = scene === snapshot.scene;
-                return <button key={scene} type="button" aria-pressed={active} onClick={() => void run(`scene:${scene}`, () => runtime.setObsScene(scene))} className={cn("flex min-w-0 items-center gap-2 rounded-lg border px-3 py-2 text-left text-xs transition", active ? "border-accent/40 bg-accent-soft text-accent" : "border-line bg-black/15 text-zinc-400 hover:border-accent/30 hover:text-zinc-100")}><span className={cn("size-1.5 shrink-0 rounded-full", active ? "bg-accent" : "bg-zinc-700")} /><span className="truncate">{scene}</span>{active && <Badge tone="purple">{t("obs.page.program")}</Badge>}</button>;
-              })}
-            </div>
+            <ScrollFade color="#121318" size={28}>
+              <div className="grid max-h-96 gap-1.5 overflow-y-auto pr-1 sm:grid-cols-2 xl:grid-cols-1 2xl:grid-cols-2">
+                {snapshot.scenes.map((scene) => {
+                  const active = scene === snapshot.scene;
+                  return <button key={scene} type="button" aria-pressed={active} onClick={() => void run(`scene:${scene}`, () => runtime.setObsScene(scene))} className={cn("flex min-w-0 items-center gap-2 rounded-lg border px-3 py-2 text-left text-xs transition", active ? "border-accent/40 bg-accent-soft text-accent" : "border-line bg-black/15 text-zinc-400 hover:border-accent/30 hover:text-zinc-100")}><span className={cn("size-1.5 shrink-0 rounded-full", active ? "bg-accent" : "bg-zinc-700")} /><span className="truncate">{scene}</span>{active && <Badge tone="purple">{t("obs.page.program")}</Badge>}</button>;
+                })}
+              </div>
+            </ScrollFade>
           ) : <p className="text-xs text-muted">{t("obs.page.noScenes")}</p>}
         </Card>
 

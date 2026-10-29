@@ -253,15 +253,21 @@ export default function App() {
         </Suspense>
         <div className="flex min-h-0 flex-1">
           <Sidebar />
-          <main ref={mainRef} className="min-w-0 flex-1 overflow-y-auto">
+          <div className="relative flex min-w-0 flex-1">
+            <main ref={mainRef} className="min-w-0 flex-1 overflow-y-auto">
+              <div
+                className={`mx-auto ${widths[settings.contentWidth]} ${settings.uiDensity === "compact" ? "p-3 lg:p-4" : "p-3 sm:p-4 xl:p-6"}`}
+              >
+                <Suspense fallback={loading}>
+                  <Page />
+                </Suspense>
+              </div>
+            </main>
             <div
-              className={`mx-auto ${widths[settings.contentWidth]} ${settings.uiDensity === "compact" ? "p-3 lg:p-4" : "p-3 sm:p-4 xl:p-6"}`}
-            >
-              <Suspense fallback={loading}>
-                <Page />
-              </Suspense>
-            </div>
-          </main>
+              aria-hidden="true"
+              className="pointer-events-none absolute bottom-0 left-0 right-2.5 h-10 bg-linear-to-t from-[#0b0c0f] to-transparent"
+            />
+          </div>
         </div>
       </div>
     </div>

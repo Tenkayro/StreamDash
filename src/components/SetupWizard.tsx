@@ -28,7 +28,7 @@ import { saveSetting } from "../services/native";
 import { useRuntime } from "../services/runtime-context";
 import { useAppStore } from "../stores/app-store";
 import type { AppLanguage, AppSettings, ConnectionPhase } from "../types";
-import { Button, LoadingIndicator, Toggle } from "./ui";
+import { Button, LoadingIndicator, ScrollFade, Toggle } from "./ui";
 import streamElementsIcon from "../assets/services/streamelements.webp";
 import tipeeStreamIcon from "../assets/services/tipeeestream.webp";
 import obsIcon from "../assets/services/obs.svg";
@@ -444,56 +444,58 @@ export function SetupWizard() {
   ];
 
   return (
-    <main className="min-h-0 flex-1 overflow-y-auto bg-[#0b0c0f] p-4 sm:p-8">
-      <div className="mx-auto grid min-h-full max-w-5xl place-items-center">
-        <div className="grid w-full overflow-hidden rounded-2xl border border-line bg-panel shadow-2xl shadow-black/35 md:grid-cols-[220px_minmax(0,1fr)]">
-          <aside className="border-b border-line bg-black/10 p-5 md:border-b-0 md:border-r">
-            <img src="/streamdash-logo-boot.webp" alt="StreamDash" className="h-auto w-40 max-w-full object-contain" />
-            <div className="mt-7 flex gap-2 overflow-x-auto md:block md:space-y-1">
-              {steps.map(({ icon: Icon, label }, index) => (
-                <button
-                  type="button"
-                  key={label}
-                  onClick={() => index <= step && setStep(index)}
-                  disabled={index > step}
-                  className={`flex min-w-max items-center gap-2.5 rounded-lg px-3 py-2 text-left text-xs transition md:w-full ${index === step ? "bg-accent-soft text-accent" : index < step ? "text-zinc-300 hover:bg-white/4" : "text-zinc-700"}`}
-                >
-                  <span className={`grid size-6 place-items-center rounded-full border ${index < step ? "border-emerald-500/40 bg-emerald-400/10 text-emerald-400" : index === step ? "border-accent/50" : "border-line"}`}>
-                    {index < step ? <Check size={12} /> : <Icon size={12} />}
-                  </span>
-                  {label}
-                </button>
-              ))}
-            </div>
-          </aside>
-          <section className="flex min-h-0 flex-col p-5 sm:p-8 md:min-h-142.5">
-            <div className="flex-1">{content[step]}</div>
-            <div className="mt-8 flex flex-wrap items-center justify-between gap-3 border-t border-line pt-4">
-              <div>
-                {step > 0 && step < steps.length - 1 && (
-                  <Button onClick={() => setStep((current) => current - 1)}>
-                    <ChevronLeft size={14} />
-                    {t("onboarding.back")}
-                  </Button>
-                )}
-              </div>
-              <div className="ml-auto flex flex-wrap items-center justify-end gap-2">
-                {step < steps.length - 1 && (
-                  <button type="button" className="px-2 text-xs text-zinc-600 hover:text-zinc-300" onClick={() => void finish()}>
-                    {t("onboarding.skipSetup")}
+    <ScrollFade className="flex min-h-0 flex-1 flex-col" color="#0b0c0f" size={48}>
+      <main className="min-h-0 flex-1 overflow-y-auto bg-[#0b0c0f] p-4 sm:p-8">
+        <div className="mx-auto grid min-h-full max-w-5xl place-items-center">
+          <div className="grid w-full overflow-hidden rounded-2xl border border-line bg-panel shadow-2xl shadow-black/35 md:grid-cols-[220px_minmax(0,1fr)]">
+            <aside className="border-b border-line bg-black/10 p-5 md:border-b-0 md:border-r">
+              <img src="/streamdash-logo-boot.webp" alt="StreamDash" className="h-auto w-40 max-w-full object-contain" />
+              <div className="mt-7 flex gap-2 overflow-x-auto md:block md:space-y-1">
+                {steps.map(({ icon: Icon, label }, index) => (
+                  <button
+                    type="button"
+                    key={label}
+                    onClick={() => index <= step && setStep(index)}
+                    disabled={index > step}
+                    className={`flex min-w-max items-center gap-2.5 rounded-lg px-3 py-2 text-left text-xs transition md:w-full ${index === step ? "bg-accent-soft text-accent" : index < step ? "text-zinc-300 hover:bg-white/4" : "text-zinc-700"}`}
+                  >
+                    <span className={`grid size-6 place-items-center rounded-full border ${index < step ? "border-emerald-500/40 bg-emerald-400/10 text-emerald-400" : index === step ? "border-accent/50" : "border-line"}`}>
+                      {index < step ? <Check size={12} /> : <Icon size={12} />}
+                    </span>
+                    {label}
                   </button>
-                )}
-                {step < steps.length - 1 && (
-                  <Button variant="primary" onClick={() => setStep((current) => current + 1)}>
-                    {step === 0 ? t("onboarding.continue") : t("onboarding.next")}
-                    <ChevronRight size={14} />
-                  </Button>
-                )}
+                ))}
               </div>
-            </div>
-          </section>
+            </aside>
+            <section className="flex min-h-0 flex-col p-5 sm:p-8 md:min-h-142.5">
+              <div className="flex-1">{content[step]}</div>
+              <div className="mt-8 flex flex-wrap items-center justify-between gap-3 border-t border-line pt-4">
+                <div>
+                  {step > 0 && step < steps.length - 1 && (
+                    <Button onClick={() => setStep((current) => current - 1)}>
+                      <ChevronLeft size={14} />
+                      {t("onboarding.back")}
+                    </Button>
+                  )}
+                </div>
+                <div className="ml-auto flex flex-wrap items-center justify-end gap-2">
+                  {step < steps.length - 1 && (
+                    <button type="button" className="px-2 text-xs text-zinc-600 hover:text-zinc-300" onClick={() => void finish()}>
+                      {t("onboarding.skipSetup")}
+                    </button>
+                  )}
+                  {step < steps.length - 1 && (
+                    <Button variant="primary" onClick={() => setStep((current) => current + 1)}>
+                      {step === 0 ? t("onboarding.continue") : t("onboarding.next")}
+                      <ChevronRight size={14} />
+                    </Button>
+                  )}
+                </div>
+              </div>
+            </section>
+          </div>
         </div>
-      </div>
-    </main>
+      </main>
+    </ScrollFade>
   );
 }
