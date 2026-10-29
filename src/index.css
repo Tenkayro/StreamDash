@@ -67,6 +67,12 @@ button:focus-visible,
 ::-webkit-scrollbar-track {
   background: transparent;
 }
+.no-scrollbar {
+  scrollbar-width: none;
+}
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
 @theme inline {
   --color-panel: #121318;
   --color-raised: #17181e;

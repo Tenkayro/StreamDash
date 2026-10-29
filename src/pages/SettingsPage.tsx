@@ -40,7 +40,7 @@ import {
   Users,
   type LucideIcon,
 } from "lucide-react";
-import { useEffect, useRef, useState, type ReactNode } from "react";
+import { useEffect, useLayoutEffect, useRef, useState, type ReactNode } from "react";
 import { toast } from "sonner";
 import { Button, Card, PageHeader, Toggle } from "../components/ui";
 import { defaultDashboardWidgets, useAppStore } from "../stores/app-store";
@@ -62,6 +62,224 @@ const eventOptions: Array<{ id: ActivityType; label: string; icon: LucideIcon }>
   { id: "stream_online", label: "streamOnline", icon: RadioTower },
   { id: "stream_offline", label: "streamOffline", icon: RadioTower },
 ];
+
+const settingsSections: Array<{ id: string; label: string; icon: LucideIcon }> = [
+  { id: "general", label: "general", icon: Settings2 },
+  { id: "appearance", label: "appearance", icon: Palette },
+  { id: "notifications", label: "notifications", icon: Bell },
+  { id: "chat", label: "chat", icon: MessageSquare },
+  { id: "events", label: "events", icon: ListFilter },
+  { id: "data", label: "data", icon: Database },
+];
+
+function currentTranslateX(element: HTMLElement) {
+  const transform = getComputedStyle(element).transform;
+  if (!transform || transform === "none") return 0;
+  return new DOMMatrixReadOnly(transform).m41;
+}
+
+function SettingsNav({ smooth }: { smooth: boolean }) {
+  const { t } = useTranslation();
+  const navRef = useRef<HTMLElement>(null);
+  const indicatorRef = useRef<HTMLSpanElement>(null);
+  const indicatorAnimation = useRef<Animation | null>(null);
+  const indicatorLeft = useRef(0);
+  const indicatorWidth = useRef(0);
+  const indicatorReady = useRef(false);
+  const pendingTarget = useRef<string | null>(null);
+  const pendingTimer = useRef<number | null>(null);
+  const [active, setActive] = useState(settingsSections[0].id);
+
+  useEffect(() => {
+    const nav = navRef.current;
+    if (!nav) return;
+    const scroller = nav.closest("main");
+    const update = () => {
+      // While a chip click scrolls to its section, the spy would walk through
+      // every section in between. Keep the clicked chip active until the
+      // scroll settles instead.
+      if (pendingTarget.current !== null) return;
+      if (
+        scroller &&
+        scroller.scrollHeight - scroller.clientHeight - scroller.scrollTop <= 4
+      ) {
+        setActive(settingsSections[settingsSections.length - 1].id);
+        return;
+      }
+      const threshold = nav.getBoundingClientRect().bottom + 24;
+      let current = settingsSections[0].id;
+      for (const section of settingsSections) {
+        const element = document.getElementById(section.id);
+        if (element && element.getBoundingClientRect().top <= threshold)
+          current = section.id;
+      }
+      setActive(current);
+    };
+    update();
+    scroller?.addEventListener("scroll", update, { passive: true });
+    window.addEventListener("resize", update);
+    return () => {
+      scroller?.removeEventListener("scroll", update);
+      window.removeEventListener("resize", update);
+    };
+  }, []);
+
+  useEffect(() => {
+    const nav = navRef.current;
+    const scroller = nav?.closest("main");
+    if (!scroller) return;
+    const settle = () => {
+      pendingTarget.current = null;
+      if (pendingTimer.current !== null) {
+        window.clearTimeout(pendingTimer.current);
+        pendingTimer.current = null;
+      }
+    };
+    scroller.addEventListener("scrollend", settle);
+    return () => {
+      scroller.removeEventListener("scrollend", settle);
+      settle();
+    };
+  }, []);
+
+  useLayoutEffect(() => {
+    const nav = navRef.current;
+    const indicator = indicatorRef.current;
+    const current = nav?.querySelector<HTMLElement>('[data-active="true"]');
+    if (!nav || !indicator || !current) return;
+    const target = current.offsetLeft;
+    const targetWidth = current.offsetWidth;
+    const animated =
+      smooth && !window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+
+    // Continue from the indicator's current on-screen position so rapid
+    // section changes glide instead of snapping back to the previous chip.
+    const fromLeft =
+      indicatorAnimation.current !== null
+        ? currentTranslateX(indicator)
+        : indicatorLeft.current;
+    const fromWidth =
+      indicatorAnimation.current !== null
+        ? indicator.getBoundingClientRect().width
+        : indicatorWidth.current;
+
+    indicatorAnimation.current?.cancel();
+    indicatorAnimation.current = null;
+    indicator.style.transform = `translateX(${target}px)`;
+    indicator.style.width = `${targetWidth}px`;
+    indicatorLeft.current = target;
+    indicatorWidth.current = targetWidth;
+
+    const navBox = nav.getBoundingClientRect();
+    const chipBox = current.getBoundingClientRect();
+    if (chipBox.left < navBox.left || chipBox.right > navBox.right)
+      nav.scrollTo({
+        left: Math.max(0, target - 8),
+        behavior: animated ? "smooth" : "auto",
+      });
+
+    if (!indicatorReady.current) {
+      indicatorReady.current = true;
+      return;
+    }
+    if (
+      !animated ||
+      (Math.abs(target - fromLeft) < 1 && Math.abs(targetWidth - fromWidth) < 1)
+    )
+      return;
+    const distance = target - fromLeft;
+    const overshoot = Math.min(10, Math.abs(distance) * 0.08);
+    const animation = indicator.animate(
+      [
+        { transform: `translateX(${fromLeft}px)`, width: `${fromWidth}px` },
+        {
+          transform: `translateX(${target + overshoot}px)`,
+          width: `${targetWidth}px`,
+          offset: 0.6,
+        },
+        {
+          transform: `translateX(${target - overshoot * 0.4}px)`,
+          offset: 0.78,
+        },
+        {
+          transform: `translateX(${target + overshoot * 0.15}px)`,
+          offset: 0.91,
+        },
+        { transform: `translateX(${target}px)` },
+      ],
+      {
+        duration: Math.min(440, 240 + Math.abs(distance) * 1.1),
+        easing: "ease-in-out",
+      },
+    );
+    indicatorAnimation.current = animation;
+    animation.onfinish = () => {
+      if (indicatorAnimation.current === animation)
+        indicatorAnimation.current = null;
+    };
+  }, [active, smooth]);
+
+  useEffect(() => {
+    const nav = navRef.current;
+    const indicator = indicatorRef.current;
+    if (!nav || !indicator) return;
+    const observer = new ResizeObserver(() => {
+      const current = nav.querySelector<HTMLElement>('[data-active="true"]');
+      if (!current) return;
+      indicatorAnimation.current?.cancel();
+      indicatorAnimation.current = null;
+      indicator.style.transform = `translateX(${current.offsetLeft}px)`;
+      indicator.style.width = `${current.offsetWidth}px`;
+      indicatorLeft.current = current.offsetLeft;
+      indicatorWidth.current = current.offsetWidth;
+    });
+    observer.observe(nav);
+    return () => observer.disconnect();
+  }, []);
+
+  return (
+    <nav
+      ref={navRef}
+      aria-label={t("settings.categories")}
+      className="no-scrollbar relative sticky top-0 z-20 -mx-1 mb-4 flex gap-1 overflow-x-auto rounded-xl border border-line/70 bg-[#0b0c0f]/90 px-1.5 py-1.5 backdrop-blur-md"
+    >
+      <span
+        aria-hidden="true"
+        ref={indicatorRef}
+        className="nav-indicator pointer-events-none absolute bottom-1.5 left-0 top-1.5 rounded-lg bg-accent-soft"
+      />
+      {settingsSections.map(({ id, label, icon: Icon }) => {
+        const current = active === id;
+        return (
+          <button
+            key={id}
+            type="button"
+            data-active={current ? "true" : undefined}
+            aria-current={current ? "location" : undefined}
+            onClick={() => {
+              pendingTarget.current = id;
+              if (pendingTimer.current !== null)
+                window.clearTimeout(pendingTimer.current);
+              pendingTimer.current = window.setTimeout(() => {
+                pendingTarget.current = null;
+                pendingTimer.current = null;
+              }, 1200);
+              document.getElementById(id)?.scrollIntoView({
+                behavior: smooth ? "smooth" : "auto",
+                block: "start",
+              });
+              setActive(id);
+            }}
+            className={`relative flex shrink-0 items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-[11px] font-medium transition-colors ${current ? "text-accent" : "text-zinc-500 hover:bg-white/5 hover:text-zinc-200"}`}
+          >
+            <Icon size={13} aria-hidden="true" />
+            {t(`settings.${label}`)}
+          </button>
+        );
+      })}
+    </nav>
+  );
+}
 
 function Row({
   icon: Icon,
@@ -91,7 +309,7 @@ function Row({
 }
 function SectionTitle({ icon: Icon, children }: { icon: LucideIcon; children: ReactNode }) {
   return (
-    <h2 className="mb-2 flex items-center gap-1.5 px-1 text-[10px] font-bold tracking-[.14em] text-zinc-600">
+    <h2 className="mb-2 flex items-center gap-1.5 px-1 text-[10px] font-bold uppercase tracking-[.14em] text-zinc-600">
       <Icon size={12} aria-hidden="true" />
       {children}
     </h2>
@@ -282,8 +500,9 @@ export function SettingsPage() {
         icon={Settings}
         title={t("settings.title")}
       />
+      <SettingsNav smooth={settings.animations} />
       <div className="space-y-4">
-        <section>
+        <section id="general" className="scroll-mt-18">
           <SectionTitle icon={Settings2}>{t("settings.general")}</SectionTitle>
           <Card className="px-5">
             <Row
@@ -341,19 +560,9 @@ export function SettingsPage() {
                 <option value="classic">{t("settings.trayStyleClassic")}</option>
               </select>
             </Row>
-            <Row
-              icon={DatabaseBackup}
-              label={t("settings.keepData")}
-              detail={t("settings.keepDataDetail")}
-            >
-              <Toggle
-                value={settings.keepUserData}
-                onChange={(value) => update("keepUserData", value)}
-              />
-            </Row>
           </Card>
         </section>
-        <section>
+        <section id="appearance" className="scroll-mt-18">
           <SectionTitle icon={Palette}>{t("settings.appearance")}</SectionTitle>
           <Card className="px-5">
             <Row
@@ -468,7 +677,7 @@ export function SettingsPage() {
             </Row>
           </Card>
         </section>
-        <section>
+        <section id="notifications" className="scroll-mt-18">
           <SectionTitle icon={Bell}>{t("settings.notifications")}</SectionTitle>
           <Card className="px-5">
             <Row
@@ -503,7 +712,7 @@ export function SettingsPage() {
             </Row>
           </Card>
         </section>
-        <section>
+        <section id="chat" className="scroll-mt-18">
           <SectionTitle icon={MessageSquare}>{t("settings.chat")}</SectionTitle>
           <Card className="px-5">
             <Row
@@ -618,7 +827,7 @@ export function SettingsPage() {
             </Row>
           </Card>
         </section>
-        <section>
+        <section id="events" className="scroll-mt-18">
           <SectionTitle icon={ListFilter}>{t("settings.events")}</SectionTitle>
           <Card className="p-4">
             <p className="mb-3 text-xs text-muted">
@@ -658,9 +867,19 @@ export function SettingsPage() {
             </div>
           </Card>
         </section>
-        <section>
+        <section id="data" className="scroll-mt-18">
           <SectionTitle icon={Database}>{t("settings.data")}</SectionTitle>
           <Card className="px-5">
+            <Row
+              icon={DatabaseBackup}
+              label={t("settings.keepData")}
+              detail={t("settings.keepDataDetail")}
+            >
+              <Toggle
+                value={settings.keepUserData}
+                onChange={(value) => update("keepUserData", value)}
+              />
+            </Row>
             <Row
               icon={Archive}
               label={t("settings.maximumEvents")}
