@@ -39,10 +39,10 @@ function Status({
   return (
     <div
       title={`${name}${state.account ? ` · ${state.account}` : ""}: ${t(`connectionPhases.${state.phase}`)}`}
-      className="flex h-8 items-center gap-2"
+      className="flex h-6 items-center gap-1.5"
     >
-      <img src={icon} alt="" className="size-4 shrink-0 object-contain" />
-      <span className="min-w-0 flex-1 truncate text-[11px] text-zinc-300">
+      <img src={icon} alt="" className="size-3.5 shrink-0 object-contain" />
+      <span className="min-w-0 flex-1 truncate text-[10.5px] text-zinc-300">
         {["connecting", "reconnecting"].includes(state.phase) &&
         !state.account ? (
           <LoadingIndicator className="h-2.5 w-16" />
@@ -222,15 +222,16 @@ export function Sidebar() {
         ))}
       </nav>
       <div className="mt-auto">
+        <div className="mx-2 mb-6 mt-2 h-px bg-line" />
         {compact ? (
-          <div className="mb-2 space-y-1">
+          <div className="mb-2 space-y-0.5">
             {services.map(({ name, icon, state }) => (
               <div
                 key={name}
                 title={`${name}: ${t(`connectionPhases.${state.phase}`)}`}
-                className="flex h-6 items-center justify-center gap-1.5"
+                className="flex h-5 items-center justify-center gap-1.5"
               >
-                <img src={icon} alt={name} className="size-4 object-contain" />
+                <img src={icon} alt={name} className="size-3.5 object-contain" />
                 <span className={cn("size-1.5 rounded-full", phaseColor(state.phase))} />
               </div>
             ))}
@@ -240,7 +241,7 @@ export function Sidebar() {
             type="button"
             onClick={() => setPage("connections")}
             title={t("navigation.manageConnections")}
-            className="mb-2 block w-full rounded-lg border border-line bg-panel px-2 py-1.5 text-left transition hover:border-accent/30 hover:bg-white/2.5"
+            className="mb-2 block w-full rounded-lg border border-line bg-panel px-2 py-1 text-left transition hover:border-accent/30 hover:bg-white/2.5"
           >
             {services.map(({ name, icon, state }) => (
               <Status key={name} icon={icon} name={name} state={state} />

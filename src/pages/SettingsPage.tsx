@@ -31,7 +31,6 @@ import {
   RotateCcw,
   Rocket,
   Rows3,
-  Settings,
   Settings2,
   Smile,
   Sparkles,
@@ -42,7 +41,7 @@ import {
 } from "lucide-react";
 import { useEffect, useLayoutEffect, useRef, useState, type ReactNode } from "react";
 import { toast } from "sonner";
-import { Button, Card, PageHeader, Toggle } from "../components/ui";
+import { Button, Card, Toggle } from "../components/ui";
 import { defaultDashboardWidgets, useAppStore } from "../stores/app-store";
 import { saveSetting } from "../services/native";
 import { errorMessage, isTauri } from "../lib/utils";
@@ -89,6 +88,28 @@ function SettingsNav({ smooth }: { smooth: boolean }) {
   const pendingTarget = useRef<string | null>(null);
   const pendingTimer = useRef<number | null>(null);
   const [active, setActive] = useState(settingsSections[0].id);
+  const [bleed, setBleed] = useState({ x: 4, y: 4 });
+
+  useEffect(() => {
+    const nav = navRef.current;
+    const parent = nav?.parentElement;
+    if (!nav || !parent) return;
+    const measure = () => {
+      const styles = getComputedStyle(parent);
+      setBleed({
+        x: Number.parseFloat(styles.paddingLeft) || 0,
+        y: Number.parseFloat(styles.paddingTop) || 0,
+      });
+    };
+    measure();
+    const observer = new ResizeObserver(measure);
+    observer.observe(parent);
+    window.addEventListener("resize", measure);
+    return () => {
+      observer.disconnect();
+      window.removeEventListener("resize", measure);
+    };
+  }, []);
 
   useEffect(() => {
     const nav = navRef.current;
@@ -167,6 +188,8 @@ function SettingsNav({ smooth }: { smooth: boolean }) {
     indicatorAnimation.current = null;
     indicator.style.transform = `translateX(${target}px)`;
     indicator.style.width = `${targetWidth}px`;
+    indicator.style.top = `${current.offsetTop}px`;
+    indicator.style.height = `${current.offsetHeight}px`;
     indicatorLeft.current = target;
     indicatorWidth.current = targetWidth;
 
@@ -217,7 +240,7 @@ function SettingsNav({ smooth }: { smooth: boolean }) {
       if (indicatorAnimation.current === animation)
         indicatorAnimation.current = null;
     };
-  }, [active, smooth]);
+  }, [active, smooth, bleed]);
 
   useEffect(() => {
     const nav = navRef.current;
@@ -230,6 +253,8 @@ function SettingsNav({ smooth }: { smooth: boolean }) {
       indicatorAnimation.current = null;
       indicator.style.transform = `translateX(${current.offsetLeft}px)`;
       indicator.style.width = `${current.offsetWidth}px`;
+      indicator.style.top = `${current.offsetTop}px`;
+      indicator.style.height = `${current.offsetHeight}px`;
       indicatorLeft.current = current.offsetLeft;
       indicatorWidth.current = current.offsetWidth;
     });
@@ -241,12 +266,21 @@ function SettingsNav({ smooth }: { smooth: boolean }) {
     <nav
       ref={navRef}
       aria-label={t("settings.categories")}
-      className="no-scrollbar relative sticky top-0 z-20 -mx-1 mb-4 flex gap-1 overflow-x-auto rounded-xl border border-line/70 bg-[#0b0c0f]/90 px-1.5 py-1.5 backdrop-blur-md"
+      style={{
+        marginLeft: -bleed.x,
+        marginRight: -bleed.x,
+        marginTop: -bleed.y,
+        paddingLeft: bleed.x + 3,
+        paddingRight: bleed.x + 3,
+        paddingTop: 8,
+        paddingBottom: 8,
+      }}
+      className="no-scrollbar sticky top-0 z-20 mb-4 flex gap-1 overflow-x-auto rounded-none border-b border-line bg-[#0b0c0f]/95 backdrop-blur-md"
     >
       <span
         aria-hidden="true"
         ref={indicatorRef}
-        className="nav-indicator pointer-events-none absolute bottom-1.5 left-0 top-1.5 rounded-lg bg-accent-soft"
+        className="nav-indicator pointer-events-none absolute left-0 rounded-lg bg-accent-soft"
       />
       {settingsSections.map(({ id, label, icon: Icon }) => {
         const current = active === id;
@@ -496,13 +530,9 @@ export function SettingsPage() {
   };
   return (
     <>
-      <PageHeader
-        icon={Settings}
-        title={t("settings.title")}
-      />
       <SettingsNav smooth={settings.animations} />
       <div className="space-y-4">
-        <section id="general" className="scroll-mt-18">
+        <section id="general" className="scroll-mt-16">
           <SectionTitle icon={Settings2}>{t("settings.general")}</SectionTitle>
           <Card className="px-5">
             <Row
@@ -562,7 +592,7 @@ export function SettingsPage() {
             </Row>
           </Card>
         </section>
-        <section id="appearance" className="scroll-mt-18">
+        <section id="appearance" className="scroll-mt-16">
           <SectionTitle icon={Palette}>{t("settings.appearance")}</SectionTitle>
           <Card className="px-5">
             <Row
@@ -677,7 +707,7 @@ export function SettingsPage() {
             </Row>
           </Card>
         </section>
-        <section id="notifications" className="scroll-mt-18">
+        <section id="notifications" className="scroll-mt-16">
           <SectionTitle icon={Bell}>{t("settings.notifications")}</SectionTitle>
           <Card className="px-5">
             <Row
@@ -712,7 +742,7 @@ export function SettingsPage() {
             </Row>
           </Card>
         </section>
-        <section id="chat" className="scroll-mt-18">
+        <section id="chat" className="scroll-mt-16">
           <SectionTitle icon={MessageSquare}>{t("settings.chat")}</SectionTitle>
           <Card className="px-5">
             <Row
@@ -827,7 +857,7 @@ export function SettingsPage() {
             </Row>
           </Card>
         </section>
-        <section id="events" className="scroll-mt-18">
+        <section id="events" className="scroll-mt-16">
           <SectionTitle icon={ListFilter}>{t("settings.events")}</SectionTitle>
           <Card className="p-4">
             <p className="mb-3 text-xs text-muted">
@@ -867,7 +897,7 @@ export function SettingsPage() {
             </div>
           </Card>
         </section>
-        <section id="data" className="scroll-mt-18">
+        <section id="data" className="scroll-mt-16">
           <SectionTitle icon={Database}>{t("settings.data")}</SectionTitle>
           <Card className="px-5">
             <Row
