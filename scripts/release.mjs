@@ -52,8 +52,14 @@ async function run(name, args, options = {}) {
     });
     let stdout = "";
     let stderr = "";
-    child.stdout.on("data", (chunk) => { stdout += chunk; });
-    child.stderr.on("data", (chunk) => { stderr += chunk; });
+    child.stdout.on("data", (chunk) => {
+      stdout += chunk;
+      if (options.stream) process.stdout.write(chunk);
+    });
+    child.stderr.on("data", (chunk) => {
+      stderr += chunk;
+      if (options.stream) process.stderr.write(chunk);
+    });
     child.on("error", (error) => reject(new Error(`${name} could not be started: ${error.message}`)));
     child.on("close", (code) => {
       if (code === 0 || options.allowFailure)
@@ -62,6 +68,10 @@ async function run(name, args, options = {}) {
       reject(new Error(`${name} ${args.join(" ")} failed${output ? `:\n${output.slice(-5000)}` : ""}`));
     });
   });
+}
+
+function releaseStatus(percent, message) {
+  p.log.step(`${String(percent).padStart(3)}% · ${message}`);
 }
 
 function parseVersion(value) {
@@ -320,6 +330,7 @@ async function main() {
   let betaConfigPath;
   try {
     const progress = p.spinner();
+    releaseStatus(5, "Preparing release files");
     progress.start(
       isBeta
         ? `Preparing isolated Beta ${version}`
@@ -342,12 +353,20 @@ async function main() {
       TAURI_SIGNING_PRIVATE_KEY: keyPath,
       STREAMDASH_CHANNEL: isBeta ? "beta" : "stable",
       VITE_STREAMDASH_CHANNEL: isBeta ? "beta" : "stable",
+      CARGO_TERM_PROGRESS_WHEN:
+        process.env.CARGO_TERM_PROGRESS_WHEN || "always",
+      CARGO_TERM_PROGRESS_WIDTH:
+        process.env.CARGO_TERM_PROGRESS_WIDTH || "80",
     };
 
     const installerAssetName = isBeta
       ? "StreamDash-Beta-Setup.msi"
       : "StreamDash-Setup.msi";
-    progress.message(`Building the signed ${isBeta ? "Beta " : ""}MSI updater package`);
+    progress.stop("Validation complete");
+    releaseStatus(
+      20,
+      `Building the signed ${isBeta ? "Beta " : ""}MSI updater package`,
+    );
     const setupArguments = ["run", "setup"];
     if (isBeta)
       setupArguments.push(
@@ -357,18 +376,30 @@ async function main() {
       );
     await run("npm", setupArguments, {
       env: buildEnvironment,
+      stream: true,
     });
+    releaseStatus(70, "MSI build and updater signature complete");
 
     if (!isBeta) {
-      progress.message("Packaging the Microsoft Store MSIX without rebuilding");
-      await run("powershell", [
-        "-NoProfile",
-        "-ExecutionPolicy", "Bypass",
-        "-File", "scripts/build-msix.ps1",
-        "-SkipBuild",
-      ]);
+      releaseStatus(
+        75,
+        "Packaging the Microsoft Store MSIX without rebuilding",
+      );
+      await run(
+        "powershell",
+        [
+          "-NoProfile",
+          "-ExecutionPolicy",
+          "Bypass",
+          "-File",
+          "scripts/build-msix.ps1",
+          "-SkipBuild",
+        ],
+        { stream: true },
+      );
     }
 
+    releaseStatus(82, "Creating the update manifest");
     const bundleDirectory = join(root, "src-tauri", "target", "release", "bundle", "msi");
     const installerAsset = join(bundleDirectory, installerAssetName);
     const signatureAsset = `${installerAsset}.sig`;
@@ -388,14 +419,17 @@ async function main() {
       ? join(root, betaManifestFile)
       : join(bundleDirectory, "latest.json");
     await writeFile(manifestPath, `${JSON.stringify(manifest, null, 2)}\n`);
-    progress.stop(
+    releaseStatus(
+      86,
       isBeta
-        ? "Beta GitHub artifacts and update manifest are ready"
+        ? "Beta artifacts and update manifest are ready"
         : "GitHub artifacts and local Store MSIX are ready",
     );
 
-    const publish = p.spinner();
-    publish.start(`Committing the ${isBeta ? "Beta manifest" : "release version"}`);
+    releaseStatus(
+      88,
+      `Committing the ${isBeta ? "Beta manifest" : "release version"}`,
+    );
     await run("git", ["add", ...releaseFiles]);
     const stagedVersionChanges = await run(
       "git",
@@ -412,9 +446,12 @@ async function main() {
       "-m",
       `StreamDash${isBeta ? " Beta" : ""} ${version}`,
     ]);
-    publish.message("Pushing main and the release tag");
-    await run("git", ["push", "--atomic", "origin", "main", tag]);
-    publish.message(
+    releaseStatus(92, "Pushing main and the release tag");
+    await run("git", ["push", "--atomic", "origin", "main", tag], {
+      stream: true,
+    });
+    releaseStatus(
+      96,
       isBeta
         ? "Publishing the GitHub prerelease"
         : "Publishing the GitHub release (Store MSIX stays local)",
@@ -435,8 +472,11 @@ async function main() {
       "--generate-notes",
       "--verify-tag",
       isBeta ? "--prerelease" : "--latest",
-    ]);
-    publish.stop(`StreamDash${isBeta ? " Beta" : ""} ${version} is published`);
+    ], { stream: true });
+    releaseStatus(
+      100,
+      `StreamDash${isBeta ? " Beta" : ""} ${version} is published`,
+    );
     if (!isBeta)
       p.note(
         join(root, "src-tauri", "target", "release", "bundle", "msix"),
