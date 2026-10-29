@@ -136,13 +136,15 @@ async function main() {
   let keyPath;
   let pendingChanges = "";
   try {
-    const status = await run("git", ["status", "--porcelain"]);
+    const [status, , remote, branch] = await Promise.all([
+      run("git", ["status", "--porcelain"]),
+      run("gh", ["auth", "status"]),
+      run("git", ["remote", "get-url", "origin"]),
+      run("git", ["branch", "--show-current"]),
+    ]);
     pendingChanges = status.stdout;
-    await run("gh", ["auth", "status"]);
-    const remote = await run("git", ["remote", "get-url", "origin"]);
     if (!remote.stdout.toLowerCase().includes("tenkayro/streamdash"))
       throw new Error(`origin does not point to ${repo}.`);
-    const branch = await run("git", ["branch", "--show-current"]);
     if (branch.stdout !== "main")
       throw new Error("Releases must be created from the main branch.");
 
@@ -262,17 +264,19 @@ async function main() {
   }
 
   const tag = `v${version}`;
-  const existingTag = await run(
-    "git",
-    ["rev-parse", "-q", "--verify", `refs/tags/${tag}`],
-    { allowFailure: true },
-  );
+  const [existingTag, existingRelease] = await Promise.all([
+    run(
+      "git",
+      ["rev-parse", "-q", "--verify", `refs/tags/${tag}`],
+      { allowFailure: true },
+    ),
+    run(
+      "gh",
+      ["release", "view", tag, "--repo", repo],
+      { allowFailure: true },
+    ),
+  ]);
   if (existingTag.code === 0) throw new Error(`Tag ${tag} already exists.`);
-  const existingRelease = await run(
-    "gh",
-    ["release", "view", tag, "--repo", repo],
-    { allowFailure: true },
-  );
   if (existingRelease.code === 0)
     throw new Error(`GitHub release ${tag} already exists.`);
 
@@ -323,9 +327,22 @@ async function main() {
     );
     if (isBeta) betaConfigPath = await writeBetaBuildConfig(version);
     else await updateVersions(version);
-    progress.message("Running TypeScript and Rust checks");
-    await run("npm", ["run", "check"]);
-    await run("cargo", ["check", "--manifest-path", "src-tauri/Cargo.toml"]);
+    progress.message("Validating the application");
+    const [, sccache] = await Promise.all([
+      run("npm", ["run", "lint"]),
+      run("sccache", ["--version"], { allowFailure: true }).catch(() => ({
+        code: 1,
+      })),
+    ]);
+    const buildEnvironment = {
+      ...process.env,
+      ...(sccache.code === 0 && !process.env.RUSTC_WRAPPER
+        ? { RUSTC_WRAPPER: "sccache" }
+        : {}),
+      TAURI_SIGNING_PRIVATE_KEY: keyPath,
+      STREAMDASH_CHANNEL: isBeta ? "beta" : "stable",
+      VITE_STREAMDASH_CHANNEL: isBeta ? "beta" : "stable",
+    };
 
     const installerAssetName = isBeta
       ? "StreamDash-Beta-Setup.msi"
@@ -339,12 +356,7 @@ async function main() {
         "-OutputName", installerAssetName,
       );
     await run("npm", setupArguments, {
-      env: {
-        ...process.env,
-        TAURI_SIGNING_PRIVATE_KEY: keyPath,
-        STREAMDASH_CHANNEL: isBeta ? "beta" : "stable",
-        VITE_STREAMDASH_CHANNEL: isBeta ? "beta" : "stable",
-      },
+      env: buildEnvironment,
     });
 
     if (!isBeta) {
