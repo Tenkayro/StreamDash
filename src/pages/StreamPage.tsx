@@ -286,7 +286,7 @@ export function StreamPage() {
     return (
       <>
         {header}
-        <div className="grid grid-cols-[1fr_300px] gap-4">
+        <div className="grid gap-4 xl:grid-cols-[minmax(0,1fr)_300px]">
           <div>
             <Card>
               {runtime.deviceAuth ? (
@@ -340,7 +340,7 @@ export function StreamPage() {
     <>
       {header}
       {missingScope && (
-        <Card className="mb-4 flex items-start gap-3 border-amber-500/30 bg-amber-400/6 p-4">
+        <Card className="mb-4 flex flex-wrap items-start gap-3 border-amber-500/30 bg-amber-400/6 p-4">
           <TriangleAlert size={16} className="mt-0.5 shrink-0 text-amber-300" />
           <div className="flex-1">
             <div className="text-sm font-medium text-amber-200">
@@ -350,13 +350,13 @@ export function StreamPage() {
               <Trans i18nKey="stream.permissionDetail" components={{ scope: <span className="font-mono" /> }} />
             </p>
           </div>
-          <Button onClick={runtime.connectTwitch}>
+          <Button className="sm:ml-auto" onClick={runtime.connectTwitch}>
             <RadioTower size={14} />
             {t("stream.reconnectTwitch")}
           </Button>
         </Card>
       )}
-      <div className="grid grid-cols-[1fr_300px] gap-4">
+      <div className="grid gap-4 xl:grid-cols-[minmax(0,1fr)_300px]">
         <Card className="p-5">
           <label className="label" htmlFor="stream-title">
             {t("stream.streamTitle")}
@@ -509,7 +509,7 @@ export function StreamPage() {
             )}
           </div>
 
-          <div className="mt-6 flex items-center justify-between gap-4 border-t border-line pt-5">
+          <div className="mt-6 flex flex-wrap items-center justify-between gap-4 border-t border-line pt-5">
             <p className="text-[11px] leading-5 text-zinc-600">
               {t("stream.changesImmediate")}
             </p>

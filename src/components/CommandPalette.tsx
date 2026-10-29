@@ -61,13 +61,13 @@ export function CommandPalette() {
       onMouseDown={(event) => {
         if (event.target === event.currentTarget) close();
       }}
-      className="fixed inset-0 z-100 flex justify-center bg-black/65 px-4 pt-[12vh] backdrop-blur-sm"
+      className="fixed inset-0 z-100 flex justify-center overflow-y-auto bg-black/65 px-3 py-[min(12vh,4rem)] backdrop-blur-sm sm:px-4"
     >
       <div
         role="dialog"
         aria-modal="true"
         aria-label={t("navigation.quickSwitch")}
-        className="h-fit w-full max-w-lg overflow-hidden rounded-xl border border-line bg-raised shadow-2xl shadow-black/70"
+        className="h-fit max-h-full w-full max-w-lg overflow-hidden rounded-xl border border-line bg-raised shadow-2xl shadow-black/70"
       >
         <div className="relative border-b border-line">
           <Search size={16} className="absolute left-4 top-1/2 -translate-y-1/2 text-zinc-500" />
@@ -103,7 +103,7 @@ export function CommandPalette() {
             <X size={14} />
           </button>
         </div>
-        <div className="max-h-80 overflow-y-auto p-1.5">
+        <div className="max-h-[min(20rem,calc(100vh-9rem))] overflow-y-auto p-1.5">
           {results.length ? (
             results.map((item, index) => {
               const Icon = item.icon;

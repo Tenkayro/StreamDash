@@ -123,7 +123,7 @@ function IntegrationRow({
       </div>
       {connected ? null : (
         <>
-          <div className="mt-2 flex items-center gap-1.5">{children}</div>
+          <div className="mt-2 flex flex-col items-stretch gap-1.5 sm:flex-row sm:items-center">{children}</div>
           {failed && error && (
             <p className="mt-1.5 text-[10px] leading-4 text-red-300">{error}</p>
           )}
@@ -378,7 +378,7 @@ export function SetupWizard() {
           phase={obs.phase}
           error={obs.detail}
         >
-          <div className="w-36 shrink-0">
+          <div className="w-full shrink-0 sm:w-36">
             <input
               id="setup-obs-address"
               className="input text-xs"
@@ -481,9 +481,9 @@ export function SetupWizard() {
               ))}
             </div>
           </aside>
-          <section className="flex min-h-142.5 flex-col p-5 sm:p-8">
+          <section className="flex min-h-0 flex-col p-5 sm:p-8 md:min-h-142.5">
             <div className="flex-1">{content[step]}</div>
-            <div className="mt-8 flex items-center justify-between border-t border-line pt-4">
+            <div className="mt-8 flex flex-wrap items-center justify-between gap-3 border-t border-line pt-4">
               <div>
                 {step > 0 && step < steps.length - 1 && (
                   <Button onClick={() => setStep((current) => current - 1)}>
@@ -492,7 +492,7 @@ export function SetupWizard() {
                   </Button>
                 )}
               </div>
-              <div className="flex items-center gap-2">
+              <div className="ml-auto flex flex-wrap items-center justify-end gap-2">
                 {step < steps.length - 1 && (
                   <button type="button" className="px-2 text-xs text-zinc-600 hover:text-zinc-300" onClick={() => void finish()}>
                     {t("onboarding.skipSetup")}

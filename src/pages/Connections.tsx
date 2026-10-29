@@ -104,7 +104,7 @@ function ServiceRow({
   const { t } = useTranslation();
   return (
     <div>
-      <div className="flex items-center gap-3 px-4 py-3">
+      <div className="flex flex-wrap items-center gap-3 px-4 py-3">
         <span
           className={cn(
             "grid size-9 shrink-0 place-items-center rounded-lg",
@@ -130,7 +130,7 @@ function ServiceRow({
             </div>
           )}
         </div>
-        {action}
+        {action && <div className="ml-auto flex max-w-full flex-wrap items-center justify-end gap-2">{action}</div>}
       </div>
       {children}
     </div>
@@ -160,8 +160,8 @@ function TokenForm({
 }) {
   const { t } = useTranslation();
   return (
-    <div className="max-w-xl pb-3 pl-16 pr-4">
-      <div className="flex gap-2">
+    <div className="max-w-xl px-4 pb-3 sm:pl-16">
+      <div className="flex flex-col gap-2 sm:flex-row">
         <input
           id={id}
           className="input"
@@ -221,9 +221,9 @@ function ObsForm({
 }) {
   const { t } = useTranslation();
   return (
-    <div className="max-w-xl pb-3 pl-16 pr-4">
-      <div className="flex gap-2">
-        <div className="w-44 shrink-0">
+    <div className="max-w-xl px-4 pb-3 sm:pl-16">
+      <div className="flex flex-col gap-2 lg:flex-row">
+        <div className="w-full shrink-0 lg:w-44">
           <input
             className="input"
             autoComplete="off"
@@ -356,12 +356,12 @@ export function Connections() {
           }
         >
           {missingModeration && (
-            <p className="pb-3 pl-16 pr-4 text-xs text-amber-300">
+            <p className="px-4 pb-3 text-xs text-amber-300 sm:pl-16">
               {t("connections.reconnectModeration")}
             </p>
           )}
           {runtime.deviceAuth && (
-            <div className="mb-3 ml-16 mr-4 flex flex-wrap items-center gap-3 rounded-lg border border-violet-500/30 bg-violet-500/6 px-3 py-2">
+            <div className="mx-4 mb-3 flex flex-wrap items-center gap-3 rounded-lg border border-violet-500/30 bg-violet-500/6 px-3 py-2 sm:ml-16">
               <span className="font-mono text-lg font-semibold tracking-[.16em]">
                 {runtime.deviceAuth.code}
               </span>

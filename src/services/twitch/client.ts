@@ -18,6 +18,14 @@ export async function loadTwitchSnapshot(clientId: string, session: TwitchSessio
     startedAt: live?.started_at, title: live?.title ?? channel.data[0]?.title, category: live?.game_name ?? channel.data[0]?.game_name }
 }
 
+export async function loadTwitchStreamStatus(clientId: string, userId: string): Promise<Partial<DashboardStats>> {
+  const stream = await twitchNative.helix<{ data: Array<{ viewer_count: number; started_at: string; title: string; game_name: string }> }>(clientId, 'streams', [['user_id', userId]])
+  const live = stream.data[0]
+  return live
+    ? { live: true, viewers: live.viewer_count, startedAt: live.started_at, title: live.title, category: live.game_name }
+    : { live: false, viewers: 0, startedAt: undefined }
+}
+
 const subscriptions = (userId: string) => [
   ['channel.follow', '2', { broadcaster_user_id: userId, moderator_user_id: userId }],
   ['channel.subscribe', '1', { broadcaster_user_id: userId }],

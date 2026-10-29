@@ -1,5 +1,5 @@
 import { AlertTriangle, PanelLeftClose, PanelLeftOpen, Search } from "lucide-react";
-import { useLayoutEffect, useRef } from "react";
+import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import { useAppStore } from "../stores/app-store";
 import { saveSetting } from "../services/native";
 import { needsTwitchPermissionUpdate } from "../services/twitch/client";
@@ -59,11 +59,20 @@ export function Sidebar() {
   const { page, setPage, twitch, streamElements, tipeeStream, obs, settings, setSettings } =
     useAppStore();
   const collapsed = settings.sidebarCollapsed;
+  const [narrow, setNarrow] = useState(() => window.matchMedia("(max-width: 900px)").matches);
+  const compact = collapsed || narrow;
   const navRef = useRef<HTMLElement>(null);
   const indicatorRef = useRef<HTMLSpanElement>(null);
   const indicatorAnimation = useRef<Animation | null>(null);
   const indicatorTop = useRef(0);
   const indicatorReady = useRef(false);
+  useEffect(() => {
+    const query = window.matchMedia("(max-width: 900px)");
+    const update = () => setNarrow(query.matches);
+    query.addEventListener("change", update);
+    update();
+    return () => query.removeEventListener("change", update);
+  }, []);
   useLayoutEffect(() => {
     const nav = navRef.current;
     const indicator = indicatorRef.current;
@@ -111,7 +120,7 @@ export function Sidebar() {
       if (indicatorAnimation.current === animation)
         indicatorAnimation.current = null;
     };
-  }, [page, collapsed, settings.animations]);
+  }, [page, compact, settings.animations]);
   const services = [
     { name: "Twitch", icon: twitchIcon, state: twitch },
     { name: "StreamElements", icon: streamElementsIcon, state: streamElements },
@@ -130,8 +139,8 @@ export function Sidebar() {
   return (
     <aside
       className={cn(
-        "flex shrink-0 flex-col border-r border-line bg-[#0f1014] p-2 transition-[width]",
-        collapsed ? "w-14.5" : "w-52",
+        "flex min-h-0 shrink-0 flex-col overflow-x-hidden overflow-y-auto border-r border-line bg-[#0f1014] p-2 transition-[width]",
+        compact ? "w-14.5" : "w-52",
       )}
     >
       <button
@@ -141,11 +150,11 @@ export function Sidebar() {
         onClick={() => window.dispatchEvent(new Event(OPEN_COMMAND_PALETTE))}
         className={cn(
           "mb-2 flex h-9 w-full items-center rounded-lg border border-line bg-black/15 text-zinc-500 transition hover:border-accent/30 hover:text-zinc-200",
-          collapsed ? "justify-center" : "gap-2 px-3",
+          compact ? "justify-center" : "gap-2 px-3",
         )}
       >
         <Search size={15} />
-        {!collapsed && (
+        {!compact && (
           <>
             <span className="min-w-0 flex-1 truncate text-left text-xs">{t("navigation.quickSwitch")}</span>
             <kbd className="rounded border border-line px-1.5 py-0.5 text-[9px] text-zinc-600">Ctrl K</kbd>
@@ -162,7 +171,7 @@ export function Sidebar() {
         </span>
         {navigationGroups.map((group, groupIndex) => (
           <div key={group} className={cn(groupIndex > 0 && "mt-3")}>
-            {collapsed ? (
+            {compact ? (
               groupIndex > 0 && <div className="mx-2 mb-2 h-px bg-line" />
             ) : (
               <div className="mb-1 px-3 text-[9px] font-semibold uppercase tracking-[.14em] text-zinc-700">
@@ -179,7 +188,7 @@ export function Sidebar() {
               title={
                 attention
                   ? t("nav.permissionAttention")
-                  : collapsed
+                  : compact
                     ? translatedLabel
                     : undefined
               }
@@ -188,19 +197,19 @@ export function Sidebar() {
               onClick={() => setPage(id)}
               className={cn(
                 "relative flex h-9 w-full items-center rounded-lg text-sm text-zinc-500 transition-colors hover:bg-white/4 hover:text-zinc-200",
-                collapsed ? "justify-center" : "gap-3 px-3",
+                compact ? "justify-center" : "gap-3 px-3",
                 page === id && "text-accent",
               )}
             >
               <Icon size={16} />
-              {!collapsed && <span className="flex-1 text-left">{translatedLabel}</span>}
+              {!compact && <span className="flex-1 text-left">{translatedLabel}</span>}
               {attention && (
                 <AlertTriangle
                   size={14}
                   className={cn(
                     "shrink-0 text-amber-400",
                     settings.animations && "animate-pulse",
-                    collapsed &&
+                    compact &&
                       "absolute -right-0.5 -top-0.5 fill-amber-400/20",
                   )}
                 />
@@ -213,7 +222,7 @@ export function Sidebar() {
         ))}
       </nav>
       <div className="mt-auto">
-        {collapsed ? (
+        {compact ? (
           <div className="mb-2 space-y-1">
             {services.map(({ name, icon, state }) => (
               <div
@@ -238,24 +247,34 @@ export function Sidebar() {
             ))}
           </button>
         )}
-        <button
-          onClick={toggle}
-          title={collapsed ? t("nav.expandNavigation") : t("nav.collapseNavigation")}
-          aria-label={collapsed ? t("nav.expandNavigation") : t("nav.collapseNavigation")}
-          className={cn(
-            "flex h-8 w-full items-center rounded-lg text-xs text-zinc-600 hover:bg-white/4 hover:text-zinc-300",
-            collapsed ? "justify-center" : "gap-2 px-3",
-          )}
-        >
-          {collapsed ? (
-            <PanelLeftOpen size={15} />
-          ) : (
-            <>
-              <PanelLeftClose size={15} />
-              {t("nav.collapse")}
-            </>
-          )}
-        </button>
+        {!narrow && (
+          <button
+            onClick={toggle}
+            title={
+              collapsed
+                ? t("nav.expandNavigation")
+                : t("nav.collapseNavigation")
+            }
+            aria-label={
+              collapsed
+                ? t("nav.expandNavigation")
+                : t("nav.collapseNavigation")
+            }
+            className={cn(
+              "flex h-8 w-full items-center rounded-lg text-xs text-zinc-600 hover:bg-white/4 hover:text-zinc-300",
+              collapsed ? "justify-center" : "gap-2 px-3",
+            )}
+          >
+            {collapsed ? (
+              <PanelLeftOpen size={15} />
+            ) : (
+              <>
+                <PanelLeftClose size={15} />
+                {t("nav.collapse")}
+              </>
+            )}
+          </button>
+        )}
       </div>
     </aside>
   );

@@ -2,6 +2,7 @@
   "common": {
     "automatic": "Automatisch (Systemsprache)",
     "loadingPage": "Seite wird geladen",
+    "installedVersion": "Version {{version}}",
     "reset": "Zurücksetzen",
     "showAll": "Alle anzeigen",
     "starting": "StreamDash wird gestartet"
@@ -218,11 +219,16 @@
     "subscription": "Abonnement"
   },
   "goals": {
+    "autoTarget": "Auto-Ziel",
+    "autoTargetDescription": "Erhöht das Ziel automatisch, sobald es erreicht wurde.",
+    "autoTargetLabel": "Ziel für {{label}} automatisch anpassen",
     "bits": "Bits",
     "configureHint": "Lege Ziele fest, um ihren Fortschritt hier zu sehen.",
     "donations": "Spenden",
     "followers": "Follower",
     "giftSubscriptions": "Geschenkabos",
+    "increaseBy": "Erhöhung",
+    "increaseLabel": "Automatische Erhöhung für {{label}} in Prozent",
     "moreGoals_one": "{{count}} weiteres Ziel anzeigen",
     "moreGoals_other": "{{count}} weitere Ziele anzeigen",
     "noTarget": "Kein Ziel",
@@ -310,6 +316,7 @@
       "password": "OBS hat das Passwort abgelehnt. Prüfe das Passwort unter Verbindungen.",
       "unreachable": "OBS ist nicht erreichbar. Prüfe, ob OBS läuft und der WebSocket-Server aktiviert ist.",
       "exited": "OBS wurde beendet. Verbinde automatisch neu…",
+      "waitingForRestart": "OBS ist geschlossen. StreamDash verbindet sich erneut, sobald OBS wieder gestartet wird.",
       "action": "OBS-Aktion fehlgeschlagen"
     }
   },
@@ -382,6 +389,20 @@
     "betaDownloadError": "Der Beta-Download konnte nicht geöffnet werden",
     "betaProgram": "StreamDash Beta",
     "betaProgramDetail": "Vorschauversionen als separate App mit eigenen Einstellungen und Daten installieren.",
+    "betaChecking": "Beta wird geprüft",
+    "betaCheckUnavailable": "Vergleich nicht verfügbar",
+    "betaComparisonUnknown": "Versionen nicht vergleichbar",
+    "betaAhead": "Beta ist neuer",
+    "betaAheadMajor_one": "Beta ist 1 Hauptversion voraus",
+    "betaAheadMajor_other": "Beta ist {{count}} Hauptversionen voraus",
+    "betaAheadMinor_one": "Beta ist 1 Nebenversion voraus",
+    "betaAheadMinor_other": "Beta ist {{count}} Nebenversionen voraus",
+    "betaAheadPatch_one": "Beta ist 1 Patch voraus",
+    "betaAheadPatch_other": "Beta ist {{count}} Patches voraus",
+    "betaSameVersion": "Gleicher Versionsstand",
+    "betaInstalledNewer": "Installierte Version ist neuer",
+    "betaVersions": "Installiert: {{current}} · Beta: {{beta}}",
+    "betaCurrentVersion": "Installierte Version: {{version}}",
     "betaUnavailable": "Aktuell ist keine Beta-Version verfügbar.",
     "badges": "Abzeichen",
     "badgesDetail": "Twitch-Abzeichen für Broadcaster, Moderatoren und Abonnenten anzeigen.",

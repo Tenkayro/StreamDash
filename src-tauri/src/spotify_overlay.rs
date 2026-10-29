@@ -179,6 +179,7 @@ pub fn spotify_overlay_status(runtime: State<'_, SpotifyOverlayRuntime>) -> Spot
 async fn read_spotify() -> Option<SpotifyMedia> {
     use windows::{
         Media::Control::{
+            GlobalSystemMediaTransportControlsSession,
             GlobalSystemMediaTransportControlsSessionManager,
             GlobalSystemMediaTransportControlsSessionPlaybackStatus,
         },
@@ -188,13 +189,44 @@ async fn read_spotify() -> Option<SpotifyMedia> {
         .ok()?
         .await
         .ok()?;
-    let sessions = manager.GetSessions().ok()?;
-    let session = sessions.into_iter().find(|session| {
+    let is_spotify = |session: &GlobalSystemMediaTransportControlsSession| {
         session
             .SourceAppUserModelId()
             .map(|id| id.to_string().to_lowercase().contains("spotify"))
             .unwrap_or(false)
-    })?;
+    };
+    let playback_priority = |session: &GlobalSystemMediaTransportControlsSession| {
+        match session
+            .GetPlaybackInfo()
+            .and_then(|info| info.PlaybackStatus())
+        {
+            Ok(GlobalSystemMediaTransportControlsSessionPlaybackStatus::Playing) => 3,
+            Ok(GlobalSystemMediaTransportControlsSessionPlaybackStatus::Paused) => 2,
+            Ok(_) => 1,
+            Err(_) => 0,
+        }
+    };
+    let mut spotify_sessions: Vec<_> = manager
+        .GetSessions()
+        .ok()?
+        .into_iter()
+        .filter(&is_spotify)
+        .collect();
+    if let Ok(current) = manager.GetCurrentSession() {
+        if is_spotify(&current) {
+            spotify_sessions.push(current);
+        }
+    }
+    let last_updated = |session: &GlobalSystemMediaTransportControlsSession| {
+        session
+            .GetTimelineProperties()
+            .and_then(|timeline| timeline.LastUpdatedTime())
+            .map(|time| time.UniversalTime)
+            .unwrap_or_default()
+    };
+    let session = spotify_sessions
+        .into_iter()
+        .max_by_key(|session| (playback_priority(session), last_updated(session)))?;
     let properties = session.TryGetMediaPropertiesAsync().ok()?.await.ok()?;
     let playback = session.GetPlaybackInfo().ok();
     let playing = playback

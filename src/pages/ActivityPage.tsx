@@ -57,7 +57,7 @@ export function ActivityPage() {
         }
       />
       <Card className="overflow-hidden">
-        <div className="grid grid-cols-1 gap-2 border-b border-line bg-white/[.012] p-3 sm:grid-cols-[minmax(220px,1fr)_190px_170px]">
+        <div className="grid grid-cols-1 gap-2 border-b border-line bg-white/[.012] p-3 lg:grid-cols-[minmax(220px,1fr)_190px_170px]">
           <div className="relative min-w-0">
             <Search
               size={14}

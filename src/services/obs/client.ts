@@ -23,6 +23,7 @@ const REQUEST_TIMEOUT = 10_000;
 const CONNECT_TIMEOUT = 12_000;
 const LIVENESS_TIMEOUT = 18_000;
 const RECONNECT_INTERVAL = 3_000;
+const RECONNECT_WHEN_CLOSED_INTERVAL = 5_000;
 
 export const DEFAULT_OBS_ADDRESS = "127.0.0.1:4455";
 
@@ -92,6 +93,7 @@ export class ObsClient {
   private stopped = false;
   private identified = false;
   private everIdentified = false;
+  private waitingForRestart = false;
   private attempts = 0;
   private polling = false;
   private connectTimer?: ReturnType<typeof setTimeout>;
@@ -110,6 +112,7 @@ export class ObsClient {
   start() {
     this.stopped = false;
     this.attempts = 0;
+    this.waitingForRestart = false;
     this.connect();
   }
 
@@ -257,9 +260,19 @@ export class ObsClient {
       return;
     }
     this.attempts += 1;
+    if (this.everIdentified && this.attempts >= 2)
+      this.waitingForRestart = true;
     this.options.onState(
-      wasIdentified || this.everIdentified ? "reconnecting" : "error",
-      this.options.translate("obs.errors.unreachable"),
+      this.waitingForRestart
+        ? "disconnected"
+        : wasIdentified || this.everIdentified
+          ? "reconnecting"
+          : "error",
+      this.options.translate(
+        this.waitingForRestart
+          ? "obs.errors.waitingForRestart"
+          : "obs.errors.unreachable",
+      ),
     );
     this.scheduleReconnect();
   }
@@ -269,7 +282,7 @@ export class ObsClient {
     this.reconnectTimer = setTimeout(() => {
       this.reconnectTimer = undefined;
       this.connect();
-    }, RECONNECT_INTERVAL);
+    }, this.waitingForRestart ? RECONNECT_WHEN_CLOSED_INTERVAL : RECONNECT_INTERVAL);
   }
 
   private async handleMessage(raw: unknown) {
@@ -340,6 +353,7 @@ export class ObsClient {
     this.connectTimer = undefined;
     this.identified = true;
     this.everIdentified = true;
+    this.waitingForRestart = false;
     this.attempts = 0;
     this.lastResponseAt = Date.now();
     this.options.onState("connected");
@@ -561,11 +575,14 @@ export class ObsClient {
         // OBS is shutting down. Keep retrying so StreamDash reconnects on its
         // own as soon as OBS is started again.
         this.identified = false;
+        this.waitingForRestart = true;
         this.attempts = Math.max(1, this.attempts);
+        this.snapshot = emptySnapshot();
+        this.emit();
         this.cleanup();
         this.options.onState(
-          "reconnecting",
-          this.options.translate("obs.errors.exited"),
+          "disconnected",
+          this.options.translate("obs.errors.waitingForRestart"),
         );
         this.scheduleReconnect();
         break;

@@ -222,7 +222,7 @@ export function UserCard({
 
   return (
     <div
-      className="fixed inset-0 z-50 grid place-items-center bg-black/65 p-5 backdrop-blur-[2px]"
+      className="fixed inset-0 z-50 grid place-items-center bg-black/65 p-2 backdrop-blur-[2px] sm:p-5"
       onMouseDown={(event) => {
         if (event.target === event.currentTarget) onClose();
       }}
@@ -231,24 +231,24 @@ export function UserCard({
         role="dialog"
         aria-modal="true"
         aria-label={t("userCard.dialogLabel", { login })}
-        className="flex max-h-[86vh] w-full max-w-3xl flex-col overflow-hidden rounded-xl border border-zinc-700 bg-[#101115] shadow-2xl"
+        className="flex max-h-[calc(100vh-1rem)] w-full max-w-3xl flex-col overflow-hidden rounded-xl border border-zinc-700 bg-[#101115] shadow-2xl sm:max-h-[86vh]"
       >
-        <header className="flex items-start gap-4 border-b border-line p-4">
+        <header className="flex items-start gap-3 border-b border-line p-3 sm:gap-4 sm:p-4">
           {loading ? (
             <LoadingIndicator className="size-20 shrink-0" />
           ) : profile?.avatarUrl ? (
             <img
               src={profile.avatarUrl}
               alt=""
-              className="size-20 rounded-lg object-cover"
+              className="size-14 rounded-lg object-cover sm:size-20"
             />
           ) : (
-            <div className="grid size-20 shrink-0 place-items-center rounded-lg bg-white/5 text-zinc-600">
+            <div className="grid size-14 shrink-0 place-items-center rounded-lg bg-white/5 text-zinc-600 sm:size-20">
               <UserRound size={28} />
             </div>
           )}
           <div className="min-w-0 flex-1">
-            <div className="flex items-center gap-2">
+            <div className="flex flex-wrap items-center gap-2">
               <h2 className="truncate text-lg font-semibold">
                 {loading ? (
                   <LoadingIndicator className="h-5 w-32" />

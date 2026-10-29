@@ -2,6 +2,7 @@
   "common": {
     "automatic": "Automático (idioma do sistema)",
     "loadingPage": "Carregando página",
+    "installedVersion": "Versão {{version}}",
     "reset": "Redefinir",
     "showAll": "Mostrar todos",
     "starting": "O StreamDash está iniciando"
@@ -160,11 +161,16 @@
     "subscription": "Inscrição"
   },
   "goals": {
+    "autoTarget": "Meta automática",
+    "autoTargetDescription": "Aumenta a meta automaticamente quando ela é atingida.",
+    "autoTargetLabel": "Ajustar automaticamente a meta de {{label}}",
     "bits": "Bits",
     "configureHint": "Defina metas para acompanhar o progresso aqui.",
     "donations": "Doações",
     "followers": "Seguidores",
     "giftSubscriptions": "Inscrições de presente",
+    "increaseBy": "Aumentar em",
+    "increaseLabel": "Aumento automático de {{label}} em porcentagem",
     "moreGoals_one": "Mostrar mais {{count}} meta",
     "moreGoals_other": "Mostrar mais {{count}} metas",
     "noTarget": "Sem meta",
@@ -242,6 +248,7 @@
       "password": "O OBS recusou a senha. Verifique-a em Conexões.",
       "unreachable": "O OBS não está acessível. Verifique se o OBS está aberto e o servidor WebSocket ativado.",
       "exited": "O OBS foi fechado. Reconectando automaticamente…",
+      "waitingForRestart": "O OBS está fechado. O StreamDash se reconectará quando o OBS for iniciado novamente.",
       "action": "A ação do OBS falhou"
     }
   },
@@ -282,6 +289,20 @@
     "betaDownloadError": "Não foi possível abrir o download da versão beta",
     "betaProgram": "StreamDash Beta",
     "betaProgramDetail": "Instale versões de prévia como um aplicativo separado, com configurações e dados próprios.",
+    "betaChecking": "Verificando a beta",
+    "betaCheckUnavailable": "Comparação indisponível",
+    "betaComparisonUnknown": "Não foi possível comparar as versões",
+    "betaAhead": "A beta é mais recente",
+    "betaAheadMajor_one": "A beta está 1 versão principal à frente",
+    "betaAheadMajor_other": "A beta está {{count}} versões principais à frente",
+    "betaAheadMinor_one": "A beta está 1 versão secundária à frente",
+    "betaAheadMinor_other": "A beta está {{count}} versões secundárias à frente",
+    "betaAheadPatch_one": "A beta está 1 correção à frente",
+    "betaAheadPatch_other": "A beta está {{count}} correções à frente",
+    "betaSameVersion": "Mesma versão",
+    "betaInstalledNewer": "A versão instalada é mais recente",
+    "betaVersions": "Instalada: {{current}} · Beta: {{beta}}",
+    "betaCurrentVersion": "Versão instalada: {{version}}",
     "betaUnavailable": "Nenhuma versão beta está disponível no momento.",
     "badges": "Emblemas",
     "badgesDetail": "Mostrar emblemas de streamer, moderador e inscrito da Twitch.",

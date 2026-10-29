@@ -1,4 +1,3 @@
-import { useState } from "react";
 import { Button, Card, LoadingIndicator, PageHeader } from "../components/ui";
 import { useAppStore } from "../stores/app-store";
 import { saveSetting } from "../services/native";
@@ -6,7 +5,7 @@ import { money } from "../lib/utils";
 import { useTranslation } from "react-i18next";
 import { Gem, Gift, Link2, RadioTower, Star, Target, Users, Wallet, type LucideIcon } from "lucide-react";
 import { toast } from "sonner";
-import type { GoalMetric } from "../types";
+import type { GoalAutomation, GoalMetric } from "../types";
 function GoalCard({
   icon: Icon,
   label,
@@ -15,6 +14,8 @@ function GoalCard({
   onTarget,
   display,
   loading,
+  automation,
+  onAutomation,
 }: {
   icon: LucideIcon;
   label: string;
@@ -23,11 +24,12 @@ function GoalCard({
   onTarget: (v?: number) => void;
   display?: (n: number) => string;
   loading?: boolean;
+  automation?: GoalAutomation;
+  onAutomation: (value: GoalAutomation) => void;
 }) {
   const { t, i18n } = useTranslation();
   const percent =
     value != null && target ? Math.min(100, (value / target) * 100) : 0;
-  const [draft, setDraft] = useState(target?.toString() ?? "");
   const formattedValue =
     value == null
       ? undefined
@@ -35,9 +37,17 @@ function GoalCard({
   const formattedTarget = target
     ? (display?.(target) ?? target.toLocaleString(i18n.language))
     : undefined;
-  const saveDraft = () => {
+  const saveDraft = (draft: string) => {
     const parsed = Number(draft);
     onTarget(draft && Number.isFinite(parsed) && parsed > 0 ? parsed : undefined);
+  };
+  const savePercent = (input: HTMLInputElement) => {
+    const parsed = Number(input.value);
+    const increasePercent = Number.isFinite(parsed)
+      ? Math.min(100, Math.max(5, Math.round(parsed / 5) * 5))
+      : 20;
+    input.value = String(increasePercent);
+    onAutomation({ enabled: automation?.enabled ?? false, increasePercent });
   };
   return (
     <Card className="flex min-h-52 flex-col p-4">
@@ -77,7 +87,7 @@ function GoalCard({
         />
       </div>
 
-      <label className="mt-auto block pt-4">
+      <label className="block pt-4">
         <span className="mb-1.5 block text-[10px] font-medium uppercase tracking-widest text-zinc-600">
           {t("goals.target")}
         </span>
@@ -87,14 +97,65 @@ function GoalCard({
           min="1"
           className="input"
           placeholder="—"
-          value={draft}
-          onChange={(event) => setDraft(event.target.value)}
-          onBlur={saveDraft}
+          key={target ?? "empty"}
+          defaultValue={target?.toString() ?? ""}
+          onBlur={(event) => saveDraft(event.currentTarget.value)}
           onKeyDown={(event) => {
             if (event.key === "Enter") event.currentTarget.blur();
           }}
         />
       </label>
+      <div className="mt-3 border-t border-line pt-3">
+        <div className="flex items-center justify-between gap-3">
+          <div className="min-w-0">
+            <div className="text-xs font-medium text-zinc-300">{t("goals.autoTarget")}</div>
+            <div className="mt-0.5 text-[10px] leading-4 text-muted">
+              {t("goals.autoTargetDescription")}
+            </div>
+          </div>
+          <button
+            type="button"
+            role="switch"
+            aria-checked={automation?.enabled ?? false}
+            aria-label={t("goals.autoTargetLabel", { label })}
+            onClick={() =>
+              onAutomation({
+                enabled: !(automation?.enabled ?? false),
+                increasePercent: automation?.increasePercent ?? 20,
+              })
+            }
+            className={`relative h-5 w-9 shrink-0 rounded-full border transition ${automation?.enabled ? "border-accent/60 bg-accent" : "border-zinc-700 bg-zinc-800"}`}
+          >
+            <span
+              className={`absolute top-0.5 size-3.5 rounded-full bg-white shadow transition-transform ${automation?.enabled ? "translate-x-4" : "translate-x-0.5"}`}
+            />
+          </button>
+        </div>
+        {automation?.enabled && (
+          <label className="mt-3 flex items-center justify-between gap-3">
+            <span className="text-[10px] font-medium uppercase tracking-widest text-zinc-600">
+              {t("goals.increaseBy")}
+            </span>
+            <span className="relative w-24">
+              <input
+                type="number"
+                min="5"
+                max="100"
+                step="5"
+                key={automation?.increasePercent ?? 20}
+                defaultValue={automation?.increasePercent ?? 20}
+                aria-label={t("goals.increaseLabel", { label })}
+                onBlur={(event) => savePercent(event.currentTarget)}
+                onKeyDown={(event) => {
+                  if (event.key === "Enter") event.currentTarget.blur();
+                }}
+                className="input pr-7 text-right tabular-nums"
+              />
+              <span className="pointer-events-none absolute right-2.5 top-1/2 -translate-y-1/2 text-xs text-zinc-600">%</span>
+            </span>
+          </label>
+        )}
+      </div>
     </Card>
   );
 }
@@ -125,6 +186,19 @@ export function Goals() {
       toast.error(t("goals.saveError"));
     }
   };
+  const updateAutomation = async (
+    key: GoalMetric,
+    value: GoalAutomation,
+  ) => {
+    const goalAutomation = { ...settings.goalAutomation, [key]: value };
+    setSettings({ goalAutomation });
+    try {
+      await saveSetting("goalAutomation", goalAutomation);
+    } catch {
+      setSettings({ goalAutomation: settings.goalAutomation });
+      toast.error(t("goals.saveError"));
+    }
+  };
   return (
     <>
       <PageHeader
@@ -148,6 +222,8 @@ export function Goals() {
           loading={statsLoading}
           target={settings.goals.followers}
           onTarget={(v) => update("followers", v)}
+          automation={settings.goalAutomation.followers}
+          onAutomation={(value) => updateAutomation("followers", value)}
         />
         <GoalCard
           icon={Star}
@@ -156,6 +232,8 @@ export function Goals() {
           loading={statsLoading}
           target={settings.goals.subscribers}
           onTarget={(v) => update("subscribers", v)}
+          automation={settings.goalAutomation.subscribers}
+          onAutomation={(value) => updateAutomation("subscribers", value)}
         />
         <GoalCard
           icon={Wallet}
@@ -164,6 +242,8 @@ export function Goals() {
           target={settings.goals.donations}
           onTarget={(v) => update("donations", v)}
           display={(v) => money(v, stats.donationCurrency)}
+          automation={settings.goalAutomation.donations}
+          onAutomation={(value) => updateAutomation("donations", value)}
         />
         <GoalCard
           icon={Gem}
@@ -171,6 +251,8 @@ export function Goals() {
           value={stats.bits}
           target={settings.goals.bits}
           onTarget={(v) => update("bits", v)}
+          automation={settings.goalAutomation.bits}
+          onAutomation={(value) => updateAutomation("bits", value)}
         />
         <GoalCard
           icon={RadioTower}
@@ -178,6 +260,8 @@ export function Goals() {
           value={raids}
           target={settings.goals.raids}
           onTarget={(v) => update("raids", v)}
+          automation={settings.goalAutomation.raids}
+          onAutomation={(value) => updateAutomation("raids", value)}
         />
         <GoalCard
           icon={Gift}
@@ -185,6 +269,8 @@ export function Goals() {
           value={giftSubscriptions}
           target={settings.goals.giftSubscriptions}
           onTarget={(v) => update("giftSubscriptions", v)}
+          automation={settings.goalAutomation.giftSubscriptions}
+          onAutomation={(value) => updateAutomation("giftSubscriptions", value)}
         />
       </div>
     </>

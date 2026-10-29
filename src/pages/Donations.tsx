@@ -146,7 +146,7 @@ export function Donations() {
       </div>
 
       <Card className="overflow-hidden">
-        <div className="grid grid-cols-1 gap-2 border-b border-line bg-white/[.012] p-3 sm:grid-cols-[minmax(220px,1fr)_180px_160px]">
+        <div className="grid grid-cols-1 gap-2 border-b border-line bg-white/[.012] p-3 lg:grid-cols-[minmax(220px,1fr)_180px_160px]">
           <div className="relative min-w-0">
             <Search size={14} className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-zinc-600" />
             <input

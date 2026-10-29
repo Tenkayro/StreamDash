@@ -75,6 +75,7 @@ export type AccentColor = 'violet' | 'blue' | 'emerald' | 'orange'
 export type AppLanguage = 'auto' | 'en' | 'de' | 'es' | 'pt-BR' | 'fr'
 export type TrayStyle = 'custom' | 'classic'
 export type GoalMetric = 'followers' | 'subscribers' | 'donations' | 'bits' | 'raids' | 'giftSubscriptions'
+export interface GoalAutomation { enabled: boolean; increasePercent: number }
 
 export interface AppSettings {
   onboardingCompleted: boolean
@@ -113,6 +114,7 @@ export interface AppSettings {
   maximumEvents: number
   disabledEventTypes: ActivityType[]
   goals: Partial<Record<GoalMetric, number>>
+  goalAutomation: Partial<Record<GoalMetric, GoalAutomation>>
 }
 
 export interface TwitchSession { userId: string; login: string; scopes: string[]; expiresIn: number }

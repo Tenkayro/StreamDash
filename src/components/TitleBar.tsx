@@ -251,25 +251,27 @@ export function TitleBar({ setup = false }: { setup?: boolean }) {
             </button>
           )}
           <UpdateControl />
-          <TitleAction
-            icon={GitFork}
-            label={t("titleBar.openGitHub")}
-            onClick={() =>
-              void openUrl("https://github.com/Tenkayro/StreamDash")
-            }
-          />
-          <TitleAction
-            icon={Bug}
-            label={t("titleBar.issues")}
-            onClick={() =>
-              void openUrl("https://github.com/Tenkayro/StreamDash/issues")
-            }
-          />
-          <TitleAction
-            icon={UserRound}
-            label={t("titleBar.author")}
-            onClick={() => void openUrl("https://github.com/Tenkayro")}
-          />
+          <div className="hidden items-center gap-0.5 lg:flex">
+            <TitleAction
+              icon={GitFork}
+              label={t("titleBar.openGitHub")}
+              onClick={() =>
+                void openUrl("https://github.com/Tenkayro/StreamDash")
+              }
+            />
+            <TitleAction
+              icon={Bug}
+              label={t("titleBar.issues")}
+              onClick={() =>
+                void openUrl("https://github.com/Tenkayro/StreamDash/issues")
+              }
+            />
+            <TitleAction
+              icon={UserRound}
+              label={t("titleBar.author")}
+              onClick={() => void openUrl("https://github.com/Tenkayro")}
+            />
+          </div>
         </div>}
         <span className="h-4 w-px bg-line" />
         <button

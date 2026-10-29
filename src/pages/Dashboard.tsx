@@ -399,7 +399,7 @@ function BrowserSourceForm({
           <Globe2 size={14} className="text-accent" />
           {t("dashboard.addBrowserSource")}
         </div>
-        <div className="grid gap-3 sm:grid-cols-[minmax(140px,0.35fr)_minmax(260px,1fr)_auto]">
+        <div className="grid gap-3 lg:grid-cols-[minmax(140px,0.35fr)_minmax(260px,1fr)_auto]">
           <input
             className="input"
             value={name}

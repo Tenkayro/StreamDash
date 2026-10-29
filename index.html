@@ -29,6 +29,11 @@
         background: #0b0c0f;
         transition: opacity 180ms ease-out;
       }
+      .boot-splash-content {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+      }
       .boot-splash[data-hidden="true"] {
         opacity: 0;
         pointer-events: none;
@@ -37,6 +42,15 @@
         width: min(70vw, 360px);
         height: auto;
         object-fit: contain;
+      }
+      .boot-meta {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        margin-top: 1rem;
+        color: #71717a;
+        font: 500 12px/1.4 "Segoe UI Variable", "Segoe UI", system-ui, sans-serif;
+        letter-spacing: 0.035em;
       }
       html.tray-window .boot-splash {
         display: none;
@@ -47,7 +61,10 @@
   <body>
     <div id="root"></div>
     <div id="boot-splash" class="boot-splash" aria-hidden="true">
-      <img src="/streamdash-logo-boot.webp" alt="" />
+      <div class="boot-splash-content">
+        <img src="/streamdash-logo-boot.webp" alt="" />
+        <div class="boot-meta"><span>Tenkayro</span><span>·</span><span id="boot-version">v…</span></div>
+      </div>
     </div>
     <script type="module" src="/src/main.tsx"></script>
   </body>

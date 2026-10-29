@@ -1,4 +1,5 @@
 import { enable, disable } from "@tauri-apps/plugin-autostart";
+import { getVersion } from "@tauri-apps/api/app";
 import {
   Archive,
   AtSign,
@@ -45,7 +46,7 @@ import {
 } from "lucide-react";
 import { useEffect, useRef, useState, type ReactNode } from "react";
 import { toast } from "sonner";
-import { Button, Card, PageHeader } from "../components/ui";
+import { Badge, Button, Card, PageHeader } from "../components/ui";
 import { defaultDashboardWidgets, useAppStore } from "../stores/app-store";
 import { saveSetting } from "../services/native";
 import { errorMessage, isTauri } from "../lib/utils";
@@ -56,6 +57,82 @@ import { openUrl } from "@tauri-apps/plugin-opener";
 const BETA_MANIFEST_URL =
   "https://raw.githubusercontent.com/Tenkayro/StreamDash/main/beta.json";
 const IS_BETA_BUILD = import.meta.env.VITE_STREAMDASH_CHANNEL === "beta";
+
+type BetaManifest = {
+  version: string;
+  url: string;
+};
+
+type ParsedVersion = {
+  major: number;
+  minor: number;
+  patch: number;
+  prerelease?: string[];
+};
+
+function parseVersion(value: string): ParsedVersion | undefined {
+  const match = value.trim().match(/^v?(\d+)\.(\d+)\.(\d+)(?:-([0-9A-Za-z.-]+))?/);
+  if (!match) return undefined;
+  return {
+    major: Number(match[1]),
+    minor: Number(match[2]),
+    patch: Number(match[3]),
+    prerelease: match[4]?.split("."),
+  };
+}
+
+function comparePrerelease(left?: string[], right?: string[]) {
+  if (!left && !right) return 0;
+  if (!left) return 1;
+  if (!right) return -1;
+  for (let index = 0; index < Math.max(left.length, right.length); index += 1) {
+    const a = left[index];
+    const b = right[index];
+    if (a == null) return -1;
+    if (b == null) return 1;
+    if (a === b) continue;
+    const aNumber = /^\d+$/.test(a) ? Number(a) : undefined;
+    const bNumber = /^\d+$/.test(b) ? Number(b) : undefined;
+    if (aNumber != null && bNumber != null) return Math.sign(aNumber - bNumber);
+    if (aNumber != null) return -1;
+    if (bNumber != null) return 1;
+    return a.localeCompare(b);
+  }
+  return 0;
+}
+
+function compareVersions(left: ParsedVersion, right: ParsedVersion) {
+  for (const key of ["major", "minor", "patch"] as const) {
+    if (left[key] !== right[key]) return Math.sign(left[key] - right[key]);
+  }
+  return comparePrerelease(left.prerelease, right.prerelease);
+}
+
+function betaDistance(currentValue: string, betaValue: string) {
+  const current = parseVersion(currentValue);
+  const beta = parseVersion(betaValue);
+  if (!current || !beta) return { kind: "unknown" as const };
+  const comparison = compareVersions(beta, current);
+  if (comparison <= 0) return { kind: comparison === 0 ? "same" as const : "older" as const };
+  if (beta.major > current.major) return { kind: "major" as const, count: beta.major - current.major };
+  if (beta.minor > current.minor) return { kind: "minor" as const, count: beta.minor - current.minor };
+  if (beta.patch > current.patch) return { kind: "patch" as const, count: beta.patch - current.patch };
+  return { kind: "newer" as const };
+}
+
+async function loadBetaManifest(): Promise<BetaManifest> {
+  const response = await fetch(BETA_MANIFEST_URL, { cache: "no-store" });
+  if (!response.ok) throw new Error(`Beta manifest request failed: ${response.status}`);
+  const manifest = (await response.json()) as {
+    version?: string;
+    platforms?: { "windows-x86_64"?: { url?: string } };
+  };
+  const version = manifest.version?.trim();
+  const url = manifest.platforms?.["windows-x86_64"]?.url;
+  if (!version || !url || new URL(url).hostname !== "github.com")
+    throw new Error("Invalid beta manifest");
+  return { version, url };
+}
 
 const eventOptions: Array<{ id: ActivityType; label: string; icon: LucideIcon }> = [
   { id: "follow", label: "follows", icon: Heart },
@@ -105,7 +182,7 @@ function Row({
   children: ReactNode;
 }) {
   return (
-    <div className={`flex items-center justify-between gap-6 border-b border-line last:border-0 ${detail ? "py-4" : "py-3"}`}>
+    <div className={`flex flex-col items-stretch gap-3 border-b border-line last:border-0 lg:flex-row lg:items-center lg:justify-between lg:gap-6 ${detail ? "py-4" : "py-3"}`}>
       <div className={`flex min-w-0 gap-3 ${detail ? "items-start" : "items-center"}`}>
         <span className={`grid size-8 shrink-0 place-items-center rounded-lg bg-white/[.035] text-zinc-500 ${detail ? "mt-0.5" : ""}`}>
           <Icon size={15} aria-hidden="true" />
@@ -115,7 +192,7 @@ function Row({
           {detail && <div className="mt-1 text-xs text-muted">{detail}</div>}
         </div>
       </div>
-      {children}
+      <div className="min-w-0 max-w-full shrink-0 self-start lg:self-auto">{children}</div>
     </div>
   );
 }
@@ -291,6 +368,21 @@ export function SettingsPage() {
   const { settings, setSettings } = useAppStore();
   const { t } = useTranslation();
   const [betaDownloading, setBetaDownloading] = useState(false);
+  const [betaChecking, setBetaChecking] = useState(!IS_BETA_BUILD && isTauri());
+  const [betaCheckFailed, setBetaCheckFailed] = useState(false);
+  const [betaRelease, setBetaRelease] = useState<BetaManifest>();
+  const [currentVersion, setCurrentVersion] = useState<string>();
+
+  useEffect(() => {
+    if (IS_BETA_BUILD || !isTauri()) return;
+    let active = true;
+    void getVersion().then((version) => { if (active) setCurrentVersion(version); }).catch(() => undefined);
+    void loadBetaManifest()
+      .then((release) => { if (active) setBetaRelease(release); })
+      .catch(() => { if (active) setBetaCheckFailed(true); })
+      .finally(() => { if (active) setBetaChecking(false); });
+    return () => { active = false; };
+  }, []);
 
   const update = async <K extends keyof AppSettings>(
     key: K,
@@ -310,23 +402,42 @@ export function SettingsPage() {
   const downloadBeta = async () => {
     setBetaDownloading(true);
     try {
-      const response = await fetch(BETA_MANIFEST_URL, { cache: "no-store" });
-      if (!response.ok) throw new Error(t("settings.betaUnavailable"));
-      const manifest = (await response.json()) as {
-        platforms?: { "windows-x86_64"?: { url?: string } };
-      };
-      const url = manifest.platforms?.["windows-x86_64"]?.url;
-      if (!url || new URL(url).hostname !== "github.com")
-        throw new Error(t("settings.betaUnavailable"));
-      await openUrl(url);
-    } catch (error) {
+      const release = betaRelease ?? await loadBetaManifest();
+      setBetaRelease(release);
+      await openUrl(release.url);
+    } catch {
       toast.error(t("settings.betaDownloadError"), {
-        description: errorMessage(error),
+        description: t("settings.betaUnavailable"),
       });
     } finally {
       setBetaDownloading(false);
     }
   };
+  const comparison = currentVersion && betaRelease
+    ? betaDistance(currentVersion, betaRelease.version)
+    : undefined;
+  const betaStatus: { label: string; tone: "neutral" | "green" | "amber" | "red" | "purple" } = betaChecking
+    ? { label: t("settings.betaChecking"), tone: "neutral" }
+    : betaCheckFailed
+      ? { label: t("settings.betaCheckUnavailable"), tone: "red" }
+      : comparison?.kind === "major"
+        ? { label: t("settings.betaAheadMajor", { count: comparison.count }), tone: "purple" }
+        : comparison?.kind === "minor"
+          ? { label: t("settings.betaAheadMinor", { count: comparison.count }), tone: "purple" }
+          : comparison?.kind === "patch"
+            ? { label: t("settings.betaAheadPatch", { count: comparison.count }), tone: "purple" }
+            : comparison?.kind === "newer"
+              ? { label: t("settings.betaAhead"), tone: "purple" }
+              : comparison?.kind === "same"
+                ? { label: t("settings.betaSameVersion"), tone: "green" }
+                : comparison?.kind === "older"
+                  ? { label: t("settings.betaInstalledNewer"), tone: "amber" }
+                  : { label: t("settings.betaComparisonUnknown"), tone: "neutral" };
+  const betaDetail = currentVersion && betaRelease
+    ? t("settings.betaVersions", { current: currentVersion, beta: betaRelease.version })
+    : currentVersion
+      ? t("settings.betaCurrentVersion", { version: currentVersion })
+      : t("settings.betaProgramDetail");
   return (
     <>
       <PageHeader
@@ -358,19 +469,22 @@ export function SettingsPage() {
               <Row
                 icon={FlaskConical}
                 label={t("settings.betaProgram")}
-                detail={t("settings.betaProgramDetail")}
+                detail={betaDetail}
               >
-                <Button
-                  disabled={betaDownloading || !isTauri()}
-                  onClick={() => void downloadBeta()}
-                >
-                  {betaDownloading ? (
-                    <LoaderCircle size={14} className="animate-spin" />
-                  ) : (
-                    <Download size={14} />
-                  )}
-                  {t("settings.downloadBeta")}
-                </Button>
+                <div className="flex max-w-full flex-wrap items-center gap-2 lg:justify-end">
+                  <Badge tone={betaStatus.tone}>{betaStatus.label}</Badge>
+                  <Button
+                    disabled={betaDownloading || betaChecking || !isTauri()}
+                    onClick={() => void downloadBeta()}
+                  >
+                    {betaDownloading ? (
+                      <LoaderCircle size={14} className="animate-spin" />
+                    ) : (
+                      <Download size={14} />
+                    )}
+                    {t("settings.downloadBeta")}
+                  </Button>
+                </div>
               </Row>
             )}
             <Row
@@ -398,7 +512,7 @@ export function SettingsPage() {
               detail={t("settings.trayStyleDetail")}
             >
               <select
-                className="input w-52!"
+                className="input w-52! max-w-full"
                 value={settings.trayStyle}
                 onChange={(event) =>
                   update(
@@ -431,7 +545,7 @@ export function SettingsPage() {
               label={t("settings.interfaceDensity")}
             >
               <select
-                className="input w-52!"
+                className="input w-52! max-w-full"
                 value={settings.uiDensity}
                 onChange={(event) =>
                   update(
@@ -449,7 +563,7 @@ export function SettingsPage() {
               label={t("settings.contentWidth")}
             >
               <select
-                className="input w-52!"
+                className="input w-52! max-w-full"
                 value={settings.contentWidth}
                 onChange={(event) =>
                   update(
@@ -468,7 +582,7 @@ export function SettingsPage() {
               label={t("settings.accentColor")}
             >
               <select
-                className="input w-52!"
+                className="input w-52! max-w-full"
                 value={settings.accentColor}
                 onChange={(event) =>
                   update(
@@ -615,7 +729,7 @@ export function SettingsPage() {
             </Row>
             <Row icon={Type} label={t("settings.textSize")}>
               <select
-                className="input w-52!"
+                className="input w-52! max-w-full"
                 value={settings.chatFontSize}
                 onChange={(event) =>
                   update("chatFontSize", Number(event.target.value))
@@ -632,7 +746,7 @@ export function SettingsPage() {
               label={t("settings.emoteSize")}
             >
               <select
-                className="input w-52!"
+                className="input w-52! max-w-full"
                 value={settings.chatEmoteSize}
                 onChange={(event) =>
                   update("chatEmoteSize", Number(event.target.value))
@@ -650,7 +764,7 @@ export function SettingsPage() {
               detail={t("settings.messageBufferDetail")}
             >
               <select
-                className="input w-52!"
+                className="input w-52! max-w-full"
                 value={settings.maximumChatMessages}
                 onChange={(event) =>
                   update("maximumChatMessages", Number(event.target.value))
@@ -737,7 +851,7 @@ export function SettingsPage() {
               detail={t("settings.maximumEventsDetail")}
             >
               <select
-                className="input w-52!"
+                className="input w-52! max-w-full"
                 value={settings.maximumEvents}
                 onChange={(event) =>
                   update("maximumEvents", Number(event.target.value))

@@ -164,7 +164,7 @@ function SpotifyOverlayCard() {
             <div><div className="text-xs font-semibold text-zinc-200">{t("obs.spotifyOverlay.browserSource")}</div><div className="mt-0.5 text-[10px] text-muted">{t("obs.spotifyOverlay.size", { width: info?.width ?? 700, height: info?.height ?? 160 })}</div></div>
             <Badge tone={status?.available ? status.playing ? "green" : "amber" : "neutral"}>{t(status?.available ? status.playing ? "obs.spotifyOverlay.playing" : "obs.spotifyOverlay.paused" : "obs.spotifyOverlay.waiting")}</Badge>
           </div>
-          <div className="flex gap-2"><input readOnly aria-label={t("obs.spotifyOverlay.urlLabel")} value={info?.url ?? ""} placeholder={t("obs.spotifyOverlay.desktopOnly")} className="input min-w-0 flex-1 font-mono text-[11px]" /><Button onClick={() => void copyUrl()} disabled={!info}><Copy size={14} />{t("obs.spotifyOverlay.copy")}</Button></div>
+          <div className="flex flex-col gap-2 sm:flex-row"><input readOnly aria-label={t("obs.spotifyOverlay.urlLabel")} value={info?.url ?? ""} placeholder={t("obs.spotifyOverlay.desktopOnly")} className="input min-w-0 flex-1 font-mono text-[11px]" /><Button className="shrink-0" onClick={() => void copyUrl()} disabled={!info}><Copy size={14} />{t("obs.spotifyOverlay.copy")}</Button></div>
           <p className="mt-2 text-[10px] leading-4 text-muted">{t("obs.spotifyOverlay.hint")}</p>
         </div>
       </div>

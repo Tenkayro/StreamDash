@@ -553,8 +553,8 @@ export function ChatPage() {
     <>
       {header}
       {missingScope && (
-        <div className="mb-3 flex items-center justify-between gap-3 rounded-lg border border-amber-500/30 bg-amber-400/6 px-3 py-2 text-xs leading-5 text-amber-200">
-          <span>
+        <div className="mb-3 flex flex-wrap items-center justify-between gap-3 rounded-lg border border-amber-500/30 bg-amber-400/6 px-3 py-2 text-xs leading-5 text-amber-200">
+          <span className="min-w-0 flex-1 basis-72">
             <Trans i18nKey="chat.permissions" components={{ read: <span className="font-mono" />, edit: <span className="font-mono" /> }} />
           </span>
           <Button onClick={() => setPage("connections")}>{t("chat.reconnect")}</Button>

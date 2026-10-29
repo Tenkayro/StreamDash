@@ -61,6 +61,7 @@ export const defaultSettings: AppSettings = {
   maximumEvents: 5000,
   disabledEventTypes: [],
   goals: {},
+  goalAutomation: {},
 };
 const emptyStats: DashboardStats = { bits: 0, donations: 0, live: false };
 interface AppStore {

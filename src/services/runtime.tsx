@@ -28,6 +28,7 @@ import {
 } from "./native";
 import {
   loadTwitchSnapshot,
+  loadTwitchStreamStatus,
   needsTwitchPermissionUpdate,
   TwitchEventSub,
   TWITCH_SCOPES,
@@ -37,7 +38,7 @@ import { TwitchChatClient } from "./twitch/chat";
 import { StreamElementsClient } from "./streamelements/client";
 import { TipeeeStreamClient } from "./tipeeestream/client";
 import { DEFAULT_OBS_ADDRESS, ObsClient } from "./obs/client";
-import type { ActivityEvent, AppSettings, ChatUserProfile } from "../types";
+import type { ActivityEvent, AppSettings, ChatUserProfile, GoalMetric } from "../types";
 import { RuntimeContext, type DeviceAuth } from "./runtime-context";
 import i18n from "../i18n";
 
@@ -81,6 +82,8 @@ export function RuntimeProvider({ children }: { children: ReactNode }) {
   const setSettings = useAppStore((s) => s.setSettings);
   const setEvents = useAppStore((s) => s.setEvents);
   const setReady = useAppStore((s) => s.setReady);
+  const twitchPhase = useAppStore((s) => s.twitch.phase);
+  const twitchUserId = useAppStore((s) => s.twitch.userId);
   const state = useAppStore.getState;
   const twitchRef = useRef<TwitchEventSub | undefined>(undefined);
   const seRef = useRef<StreamElementsClient | undefined>(undefined);
@@ -89,6 +92,78 @@ export function RuntimeProvider({ children }: { children: ReactNode }) {
   const chatRef = useRef<TwitchChatClient | undefined>(undefined);
   const songCommandCooldownsRef = useRef(new Map<string, number>());
   const [deviceAuth, setDeviceAuth] = useState<DeviceAuth>();
+  const ready = useAppStore((s) => s.ready);
+  const stats = useAppStore((s) => s.stats);
+  const events = useAppStore((s) => s.events);
+  const goals = useAppStore((s) => s.settings.goals);
+  const goalAutomation = useAppStore((s) => s.settings.goalAutomation);
+
+  useEffect(() => {
+    if (!ready) return;
+    const values: Record<GoalMetric, number | undefined> = {
+      followers: stats.followers,
+      subscribers: stats.subscribers,
+      donations: stats.donations,
+      bits: stats.bits,
+      raids: events.filter((event) => event.eventType === "raid").length,
+      giftSubscriptions: events.reduce(
+        (total, event) =>
+          total +
+          (event.eventType === "community_gift"
+            ? (event.giftCount ?? 1)
+            : event.eventType === "gift_subscription"
+              ? 1
+              : 0),
+        0,
+      ),
+    };
+    const nextGoals = { ...goals };
+    let changed = false;
+    (Object.keys(values) as GoalMetric[]).forEach((metric) => {
+      const target = goals[metric];
+      const value = values[metric];
+      const automation = goalAutomation[metric];
+      if (!automation?.enabled || !target || value == null || value < target)
+        return;
+      const percent = Math.min(100, Math.max(5, automation.increasePercent || 20));
+      const rawTarget = Math.max(target, value) * (1 + percent / 100);
+      nextGoals[metric] =
+        metric === "donations"
+          ? Math.max(target + 0.01, Math.ceil(rawTarget * 100) / 100)
+          : Math.max(target + 1, Math.ceil(rawTarget));
+      changed = true;
+    });
+    if (!changed) return;
+    setSettings({ goals: nextGoals });
+    void saveSetting("goals", nextGoals).catch(() => {
+      if (state().settings.goals === nextGoals) setSettings({ goals });
+      toast.error(i18n.t("goals.saveError"));
+    });
+  }, [events, goalAutomation, goals, ready, setSettings, state, stats.bits, stats.donations, stats.followers, stats.subscribers]);
+
+  useEffect(() => {
+    if (twitchPhase !== "connected" || !twitchUserId) return;
+    let disposed = false;
+    let refreshing = false;
+    const refresh = async () => {
+      if (refreshing) return;
+      refreshing = true;
+      try {
+        const snapshot = await loadTwitchStreamStatus(TWITCH_CLIENT_ID, twitchUserId);
+        if (!disposed) state().setStats(snapshot);
+      } catch {
+        /* EventSub remains the primary source; the poll is a consistency check. */
+      } finally {
+        refreshing = false;
+      }
+    };
+    void refresh();
+    const timer = window.setInterval(() => void refresh(), 15_000);
+    return () => {
+      disposed = true;
+      window.clearInterval(timer);
+    };
+  }, [state, twitchPhase, twitchUserId]);
 
   const sendChat = useCallback(async (text: string, replyParentId?: string) => {
     const message = text.trim();
