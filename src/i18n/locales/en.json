@@ -220,7 +220,6 @@
   },
   "goals": {
     "autoTarget": "Auto target",
-    "autoTargetDescription": "Raises the target automatically when it is reached.",
     "autoTargetLabel": "Automatically adjust the {{label}} target",
     "bits": "Bits",
     "configureHint": "Set goals to track their progress here.",

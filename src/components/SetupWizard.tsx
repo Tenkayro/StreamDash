@@ -28,7 +28,7 @@ import { saveSetting } from "../services/native";
 import { useRuntime } from "../services/runtime-context";
 import { useAppStore } from "../stores/app-store";
 import type { AppLanguage, AppSettings, ConnectionPhase } from "../types";
-import { Button, LoadingIndicator } from "./ui";
+import { Button, LoadingIndicator, Toggle } from "./ui";
 import streamElementsIcon from "../assets/services/streamelements.webp";
 import tipeeStreamIcon from "../assets/services/tipeeestream.webp";
 import obsIcon from "../assets/services/obs.svg";
@@ -45,21 +45,6 @@ const languages: Array<{ value: AppLanguage; label: string }> = [  { value: "aut
   { value: "pt-BR", label: "languages.pt-BR" },
   { value: "fr", label: "languages.fr" },
 ];
-
-function SetupToggle({ value, onChange }: { value: boolean; onChange: (value: boolean) => void }) {
-  return (
-    <button
-      type="button"
-      role="switch"
-      aria-checked={value}
-      data-state={value ? "on" : "off"}
-      onClick={() => onChange(!value)}
-      className="toggle-switch relative h-5 w-9 shrink-0 rounded-full transition-colors"
-    >
-      <span className={`absolute top-0.5 size-4 rounded-full bg-white shadow-sm transition-[left] ${value ? "left-4.5" : "left-0.5"}`} />
-    </button>
-  );
-}
 
 function ChoiceRow({ icon: Icon, title, detail, children }: { icon: LucideIcon; title: string; detail: string; children: ReactNode }) {
   return (
@@ -425,13 +410,13 @@ export function SetupWizard() {
       </div>
       <div className="space-y-2">
         <ChoiceRow icon={MonitorUp} title={t("settings.launchWithWindows")} detail={t("settings.launchWithWindowsDetail")}>
-          <SetupToggle value={settings.launchAtStartup} onChange={(value) => void update("launchAtStartup", value)} />
+          <Toggle value={settings.launchAtStartup} onChange={(value) => void update("launchAtStartup", value)} />
         </ChoiceRow>
         <ChoiceRow icon={PanelBottom} title={t("settings.minimizeToTray")} detail={t("settings.minimizeToTrayDetail")}>
-          <SetupToggle value={settings.minimizeToTray} onChange={(value) => void update("minimizeToTray", value)} />
+          <Toggle value={settings.minimizeToTray} onChange={(value) => void update("minimizeToTray", value)} />
         </ChoiceRow>
         <ChoiceRow icon={Bell} title={t("settings.windowsNotifications")} detail={t("settings.windowsNotificationsDetail")}>
-          <SetupToggle value={settings.notifications} onChange={(value) => void update("notifications", value)} />
+          <Toggle value={settings.notifications} onChange={(value) => void update("notifications", value)} />
         </ChoiceRow>
       </div>
     </div>,

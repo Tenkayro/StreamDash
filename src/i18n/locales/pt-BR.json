@@ -162,7 +162,6 @@
   },
   "goals": {
     "autoTarget": "Meta automática",
-    "autoTargetDescription": "Aumenta a meta automaticamente quando ela é atingida.",
     "autoTargetLabel": "Ajustar automaticamente a meta de {{label}}",
     "bits": "Bits",
     "configureHint": "Defina metas para acompanhar o progresso aqui.",

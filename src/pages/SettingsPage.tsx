@@ -42,7 +42,7 @@ import {
 } from "lucide-react";
 import { useEffect, useRef, useState, type ReactNode } from "react";
 import { toast } from "sonner";
-import { Button, Card, PageHeader } from "../components/ui";
+import { Button, Card, PageHeader, Toggle } from "../components/ui";
 import { defaultDashboardWidgets, useAppStore } from "../stores/app-store";
 import { saveSetting } from "../services/native";
 import { errorMessage, isTauri } from "../lib/utils";
@@ -63,28 +63,6 @@ const eventOptions: Array<{ id: ActivityType; label: string; icon: LucideIcon }>
   { id: "stream_offline", label: "streamOffline", icon: RadioTower },
 ];
 
-function Toggle({
-  value,
-  onChange,
-}: {
-  value: boolean;
-  onChange: (value: boolean) => void;
-}) {
-  return (
-    <button
-      type="button"
-      role="switch"
-      aria-checked={value}
-      data-state={value ? "on" : "off"}
-      onClick={() => onChange(!value)}
-      className="toggle-switch relative h-5 w-9 rounded-full transition-colors"
-    >
-      <span
-        className={`absolute top-0.5 size-4 rounded-full bg-white shadow-sm transition-[left] ${value ? "left-4.5" : "left-0.5"}`}
-      />
-    </button>
-  );
-}
 function Row({
   icon: Icon,
   label,

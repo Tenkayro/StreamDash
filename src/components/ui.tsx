@@ -1,3 +1,4 @@
+import { useEffect, useRef, useState } from "react";
 import type { ButtonHTMLAttributes, HTMLAttributes, ReactNode } from "react";
 import { cn } from "../lib/utils";
 import type { LucideIcon } from "lucide-react";
@@ -40,6 +41,50 @@ export function Button({
       )}
       {...props}
     />
+  );
+}
+export function Toggle({
+  value,
+  onChange,
+  label,
+  className,
+}: {
+  value: boolean;
+  onChange: (value: boolean) => void;
+  label?: string;
+  className?: string;
+}) {
+  const [squishing, setSquishing] = useState(false);
+  const timeout = useRef<number | null>(null);
+
+  useEffect(
+    () => () => {
+      if (timeout.current !== null) window.clearTimeout(timeout.current);
+    },
+    [],
+  );
+
+  return (
+    <button
+      type="button"
+      role="switch"
+      aria-checked={value}
+      aria-label={label}
+      data-state={value ? "on" : "off"}
+      data-squish={squishing ? "" : undefined}
+      onClick={() => {
+        onChange(!value);
+        setSquishing(true);
+        if (timeout.current !== null) window.clearTimeout(timeout.current);
+        timeout.current = window.setTimeout(() => {
+          setSquishing(false);
+          timeout.current = null;
+        }, 190);
+      }}
+      className={cn("toggle-switch relative h-5 w-9 shrink-0 rounded-full", className)}
+    >
+      <span aria-hidden="true" className="toggle-knob" />
+    </button>
   );
 }
 export function Badge({

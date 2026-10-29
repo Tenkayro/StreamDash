@@ -1,4 +1,4 @@
-import { Button, Card, LoadingIndicator, PageHeader } from "../components/ui";
+import { Button, Card, LoadingIndicator, PageHeader, Toggle } from "../components/ui";
 import { useAppStore } from "../stores/app-store";
 import { saveSetting } from "../services/native";
 import { money } from "../lib/utils";
@@ -109,27 +109,17 @@ function GoalCard({
         <div className="flex items-center justify-between gap-3">
           <div className="min-w-0">
             <div className="text-xs font-medium text-zinc-300">{t("goals.autoTarget")}</div>
-            <div className="mt-0.5 text-[10px] leading-4 text-muted">
-              {t("goals.autoTargetDescription")}
-            </div>
           </div>
-          <button
-            type="button"
-            role="switch"
-            aria-checked={automation?.enabled ?? false}
-            aria-label={t("goals.autoTargetLabel", { label })}
-            onClick={() =>
+          <Toggle
+            value={automation?.enabled ?? false}
+            onChange={(enabled) =>
               onAutomation({
-                enabled: !(automation?.enabled ?? false),
+                enabled,
                 increasePercent: automation?.increasePercent ?? 20,
               })
             }
-            className={`relative h-5 w-9 shrink-0 rounded-full border transition ${automation?.enabled ? "border-accent/60 bg-accent" : "border-zinc-700 bg-zinc-800"}`}
-          >
-            <span
-              className={`absolute top-0.5 size-3.5 rounded-full bg-white shadow transition-transform ${automation?.enabled ? "translate-x-4" : "translate-x-0.5"}`}
-            />
-          </button>
+            label={t("goals.autoTargetLabel", { label })}
+          />
         </div>
         {automation?.enabled && (
           <label className="mt-3 flex items-center justify-between gap-3">

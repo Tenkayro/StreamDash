@@ -231,12 +231,51 @@ button:focus-visible,
 .input-trailing-wide {
   padding-right: 4rem;
 }
+.toggle-switch {
+  --toggle-knob-size: 16px;
+  --toggle-knob-travel: 16px;
+  -webkit-tap-highlight-color: transparent;
+  transition:
+    background-color 240ms ease,
+    box-shadow 240ms ease;
+}
 .toggle-switch[data-state="off"] {
   background: #3f3f46;
 }
 .toggle-switch[data-state="on"] {
   background: var(--app-accent);
   box-shadow: 0 0 0 1px color-mix(in srgb, var(--app-accent), white 16%);
+}
+.toggle-knob {
+  position: absolute;
+  top: 2px;
+  left: 2px;
+  width: var(--toggle-knob-size);
+  height: var(--toggle-knob-size);
+  border-radius: 9999px;
+  background: #fff;
+  box-shadow: 0 1px 2px rgb(0 0 0 / 0.3);
+  translate: 0 0;
+  scale: 1 1;
+  will-change: translate, scale;
+  transition:
+    translate 320ms cubic-bezier(0.22, 1.18, 0.36, 1),
+    scale 220ms cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+.toggle-switch[data-state="on"] .toggle-knob {
+  translate: var(--toggle-knob-travel) 0;
+}
+.toggle-switch[data-squish] .toggle-knob {
+  scale: 1.15 0.82;
+}
+.toggle-switch:active .toggle-knob {
+  scale: 1.08 0.9;
+}
+@media (prefers-reduced-motion: reduce) {
+  .toggle-switch,
+  .toggle-knob {
+    transition: none;
+  }
 }
 .label {
   font-size: 12px;

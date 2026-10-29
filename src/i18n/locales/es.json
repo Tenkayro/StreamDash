@@ -162,7 +162,6 @@
   },
   "goals": {
     "autoTarget": "Objetivo automático",
-    "autoTargetDescription": "Aumenta el objetivo automáticamente cuando se alcanza.",
     "autoTargetLabel": "Ajustar automáticamente el objetivo de {{label}}",
     "bits": "Bits",
     "configureHint": "Define objetivos para seguir aquí su progreso.",
