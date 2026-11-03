@@ -90,16 +90,18 @@ const pages: Record<string, React.ComponentType> = {
 
 function LifecycleScreen({ version, starting = false }: { version?: string; starting?: boolean }) {
   const { t } = useTranslation();
+  const settings = useAppStore((state) => state.settings);
   return (
-    <div data-tauri-drag-region className="grid h-screen place-items-center bg-[#0b0c0f]">
-      <div className="flex flex-col items-center">
+    <div data-tauri-drag-region data-accent={settings.accentColor} data-animations={settings.animations ? "on" : "off"} className="boot-splash lifecycle-screen">
+      <div className="boot-splash-content">
         <img
           src="/streamdash-logo-boot.webp"
           alt={starting ? t("common.starting") : ""}
           aria-hidden={starting ? undefined : true}
-          className="h-auto w-[min(70vw,360px)] object-contain"
+          className="h-auto object-contain"
         />
-        <div className="mt-4 flex items-center gap-2 text-xs font-medium tracking-wide text-zinc-600">
+        <div className="boot-loader" aria-hidden="true" />
+        <div className="boot-meta">
           <span>{t("titleBar.author")}</span>
           <span aria-hidden="true">·</span>
           <span>{t("common.installedVersion", { version: version ?? "…" })}</span>
@@ -265,7 +267,7 @@ export default function App() {
             </main>
             <div
               aria-hidden="true"
-              className="app-bottom-fade pointer-events-none absolute bottom-0 left-0 right-2.5 h-10"
+              className="app-bottom-fade pointer-events-none absolute inset-x-0 bottom-0 h-10"
             />
           </div>
         </div>

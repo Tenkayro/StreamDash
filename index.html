@@ -18,7 +18,7 @@
         width: 100%;
         height: 100%;
         margin: 0;
-        background: #0b0c0f;
+        background: #232425;
       }
       .boot-splash {
         position: fixed;
@@ -26,20 +26,32 @@
         z-index: 9999;
         display: grid;
         place-items: center;
-        background: #0b0c0f;
+        background:
+          radial-gradient(ellipse at 70% 20%, #ffffff08, transparent 55%),
+          radial-gradient(ellipse at 45% 85%, #f5a15d08, transparent 55%),
+          linear-gradient(120deg, #262728, #202122 55%, #292a2b);
         transition: opacity 180ms ease-out;
       }
       .boot-splash-content {
+        box-sizing: border-box;
         display: flex;
         flex-direction: column;
         align-items: center;
+        width: min(88vw, 480px);
+        padding: 48px 32px 36px;
+        border: 1px solid #ffffff12;
+        border-radius: 24px;
+        background: linear-gradient(135deg, #303132c9, #202122e8);
+        box-shadow: 12px 12px 40px #00000029, inset 0 1px 0 #ffffff09;
+        backdrop-filter: blur(18px);
       }
       .boot-splash[data-hidden="true"] {
         opacity: 0;
         pointer-events: none;
       }
       .boot-splash img {
-        width: min(70vw, 360px);
+        width: min(65vw, 320px);
+        max-width: 100%;
         height: auto;
         object-fit: contain;
       }
@@ -48,9 +60,36 @@
         align-items: center;
         gap: 0.5rem;
         margin-top: 1rem;
-        color: #71717a;
+        color: #a4a5a6;
         font: 500 12px/1.4 "Segoe UI Variable", "Segoe UI", system-ui, sans-serif;
         letter-spacing: 0.035em;
+      }
+      .boot-loader {
+        width: 56px;
+        height: 3px;
+        margin-top: 28px;
+        overflow: hidden;
+        border-radius: 99px;
+        background: #ffffff0a;
+        box-shadow: inset 1px 1px 3px #00000030;
+      }
+      .boot-loader::after {
+        content: "";
+        display: block;
+        width: 45%;
+        height: 100%;
+        border-radius: inherit;
+        background: var(--app-accent, #f5a15d);
+        animation: boot-loading 1.6s ease-in-out infinite alternate;
+      }
+      @keyframes boot-loading { to { transform: translateX(125%); } }
+      @media (prefers-reduced-motion: reduce) {
+        .boot-loader::after { animation: none; width: 100%; opacity: .65; }
+        .boot-splash { transition: none; }
+      }
+      [data-animations="off"] .boot-loader::after { animation: none; width: 100%; opacity: .65; }
+      @media (prefers-reduced-transparency: reduce) {
+        .boot-splash-content { background: #252627; backdrop-filter: none; }
       }
       html.tray-window .boot-splash {
         display: none;
@@ -63,6 +102,7 @@
     <div id="boot-splash" class="boot-splash" aria-hidden="true">
       <div class="boot-splash-content">
         <img src="/streamdash-logo-boot.webp" alt="" />
+        <div class="boot-loader" aria-hidden="true"></div>
         <div class="boot-meta"><span>Tenkayro</span><span>·</span><span id="boot-version">v…</span></div>
       </div>
     </div>

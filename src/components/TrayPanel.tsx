@@ -21,10 +21,12 @@ import twitchIcon from "../assets/services/twitch.webp";
 import titlebarLogo from "../assets/branding/streamdash-logo-titlebar.webp";
 import { resolveLanguage } from "../i18n";
 import { isTauri } from "../lib/utils";
-import { useAppStore } from "../stores/app-store";
-import type { ConnectionPhase } from "../types";
+import { defaultSettings, useAppStore } from "../stores/app-store";
+import type { AppSettings, ConnectionPhase } from "../types";
 
 type TrayStatus = {
+  accentColor: AppSettings["accentColor"];
+  animations: boolean;
   language: string;
   live: boolean;
   viewers?: number;
@@ -36,6 +38,8 @@ type TrayStatus = {
 };
 
 const initialStatus: TrayStatus = {
+  accentColor: defaultSettings.accentColor,
+  animations: defaultSettings.animations,
   language: resolveLanguage("auto"),
   live: false,
   twitchPhase: "disconnected",
@@ -77,7 +81,7 @@ function QuickAction({ icon: Icon, label, action }: { icon: LucideIcon; label: s
       title={label}
       aria-label={label}
       onClick={() => void invoke("tray_action", { action })}
-      className="flex h-11 min-w-0 items-center justify-center gap-2 rounded-lg px-2 text-zinc-500 transition hover:bg-accent-soft hover:text-accent focus-visible:outline-2 focus-visible:outline-accent"
+      className="tray-action flex h-11 min-w-0 items-center justify-center gap-2 rounded-lg px-2 text-zinc-500 transition hover:bg-accent-soft hover:text-accent focus-visible:outline-2 focus-visible:outline-accent"
     >
       <Icon size={16} className="shrink-0" aria-hidden="true" />
       <span className="truncate text-[10px] font-medium">{label}</span>
@@ -97,6 +101,8 @@ export function TrayBridge() {
   const publish = useCallback(async () => {
     if (!isTauri()) return;
     const status: TrayStatus = {
+      accentColor: settings.accentColor,
+      animations: settings.animations,
       language: resolveLanguage(settings.language),
       live: stats.live,
       viewers: stats.viewers,
@@ -126,7 +132,7 @@ export function TrayBridge() {
     await invoke("tray_set_tooltip", {
       tooltip: t("tray.tooltip", { streamStatus, twitchStatus }),
     }).catch(() => undefined);
-  }, [obs.phase, settings.language, settings.trayStyle, stats.live, stats.viewers, streamElements.phase, t, tipeeStream.phase, twitch.account, twitch.phase]);
+  }, [obs.phase, settings.accentColor, settings.animations, settings.language, settings.trayStyle, stats.live, stats.viewers, streamElements.phase, t, tipeeStream.phase, twitch.account, twitch.phase]);
 
   useEffect(() => {
     if (!isTauri()) return;
@@ -155,6 +161,7 @@ export function TrayPanel() {
 
   useEffect(() => {
     let disposed = false;
+    if (!isTauri()) return;
     const stops: Array<() => void> = [];
     void Promise.all([
       listen<TrayStatus>("tray-status", ({ payload }) => {
@@ -182,8 +189,8 @@ export function TrayPanel() {
   const viewerCount = status.live ? (status.viewers?.toLocaleString(i18n.language) ?? "—") : "—";
 
   return (
-    <main className="h-screen overflow-hidden rounded-xl bg-panel shadow-2xl shadow-black/60">
-        <header className="flex h-12 items-center gap-3 border-b border-line px-3">
+    <main data-accent={status.accentColor} data-animations={status.animations ? "on" : "off"} className="tray-panel h-screen overflow-hidden rounded-xl">
+        <header className="tray-header flex h-12 items-center gap-3 border-b border-line px-3">
           <img src={titlebarLogo} alt="StreamDash" className="h-4 w-auto object-contain" />
           <span
             className={`ml-auto inline-flex items-center gap-1.5 rounded-full px-2 py-1 text-[10px] font-semibold ${status.live ? "bg-red-400/10 text-red-300" : "bg-white/5 text-zinc-500"}`}
@@ -202,8 +209,8 @@ export function TrayPanel() {
           </button>
         </header>
 
-        <div className="p-2.5">
-          <div className="flex h-12 items-center rounded-lg bg-black/10 px-2">
+        <div className="p-2">
+          <div className="tray-status flex h-12 items-center rounded-lg px-2">
             <div
               title={t("tray.currentViewers")}
               aria-label={`${t("tray.currentViewers")}: ${viewerCount}`}
@@ -222,7 +229,7 @@ export function TrayPanel() {
           </div>
 
           <div
-            className="mt-2 grid grid-cols-3 gap-1 rounded-lg bg-black/10 p-1"
+            className="tray-actions mt-2 grid grid-cols-3 gap-1 rounded-lg p-1"
             aria-label={t("tray.quickActions")}
           >
             <QuickAction icon={LayoutDashboard} label={t("nav.dashboard")} action="dashboard" />
@@ -235,7 +242,7 @@ export function TrayPanel() {
               title={reconnecting ? t("tray.reconnecting") : t("tray.reconnect")}
               aria-label={reconnecting ? t("tray.reconnecting") : t("tray.reconnect")}
               onClick={() => void invoke("tray_action", { action: "reconnect" })}
-              className="flex h-11 min-w-0 items-center justify-center gap-2 rounded-lg px-2 text-zinc-500 transition hover:bg-accent-soft hover:text-accent disabled:opacity-50"
+              className="tray-action flex h-11 min-w-0 items-center justify-center gap-2 rounded-lg px-2 text-zinc-500 transition hover:bg-accent-soft hover:text-accent disabled:opacity-50"
             >
               <RefreshCw size={16} className={`shrink-0 ${reconnecting ? "animate-spin" : ""}`} aria-hidden="true" />
               <span className="truncate text-[10px] font-medium">{t("tray.retry")}</span>
