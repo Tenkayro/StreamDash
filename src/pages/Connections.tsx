@@ -103,7 +103,7 @@ function ServiceRow({
 }) {
   const { t } = useTranslation();
   return (
-    <div>
+    <div data-search-label={name}>
       <div className="flex flex-wrap items-center gap-3 px-4 py-3">
         <span
           className={cn(

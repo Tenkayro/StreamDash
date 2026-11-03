@@ -326,7 +326,7 @@ function Row({
   children: ReactNode;
 }) {
   return (
-    <div className={`flex flex-col items-stretch gap-3 border-b border-line last:border-0 lg:flex-row lg:items-center lg:justify-between lg:gap-6 ${detail ? "py-4" : "py-3"}`}>
+    <div data-search-label={label} className={`flex flex-col items-stretch gap-3 border-b border-line last:border-0 lg:flex-row lg:items-center lg:justify-between lg:gap-6 ${detail ? "py-4" : "py-3"}`}>
       <div className={`flex min-w-0 gap-3 ${detail ? "items-start" : "items-center"}`}>
         <span className={`grid size-8 shrink-0 place-items-center rounded-lg bg-white/[.035] text-zinc-500 ${detail ? "mt-0.5" : ""}`}>
           <Icon size={15} aria-hidden="true" />

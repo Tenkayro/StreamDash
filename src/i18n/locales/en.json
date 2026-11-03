@@ -61,7 +61,7 @@
     "noMatches": "No matching activity",
     "openUser": "Open {{name}}'s user card",
     "searchLabel": "Search activity",
-    "searchPlaceholder": "Search people, messages or events",
+    "searchPlaceholder": "Search pages, settings, people, messages…",
     "title": "Activity",
     "tryFilters": "Try a different search or reset one of the filters.",
     "viewers_one": "{{count}} viewer",
@@ -85,7 +85,7 @@
     "noMessage": "No message was included.",
     "received": "Activity",
     "searchLabel": "Search donations",
-    "searchPlaceholder": "Search donors or messages",
+    "searchPlaceholder": "Search pages, settings, people, messages…",
     "sortLabel": "Sort donations",
     "topDonation": "Top donation",
     "totalReceived": "Total received",
@@ -260,8 +260,8 @@
     "moveHint": "↑↓ Select",
     "noResults": "No matching page",
     "openHint": "Enter Open",
-    "quickSwitch": "Go to page",
-    "searchPlaceholder": "Search pages…",
+    "quickSwitch": "Search everything",
+    "searchPlaceholder": "Search pages, settings, people, messages…",
     "system": "System"
   },
   "obs": {
@@ -552,5 +552,46 @@
   },
   "userCard": {
     "actions": { "ban": "ban", "timeout": "time out", "unban": "unban" }, "ban": "Ban", "banConfirm": "Permanently ban {{name}} from your chat?", "banned": "Banned", "bannedSuccess": "{{name}} was banned", "banUser": "Ban user", "close": "Close user card", "created": "Created", "deleted": "deleted", "deleteMessage": "Delete message", "dialogLabel": "User information for {{login}}", "followsYou": "Follows you", "hideInChat": "Hide in chat", "ignoreHighlights": "Ignore highlights", "makeMod": "Make mod", "makeVip": "Make VIP", "mention": "Mention", "messageDeleted": "Message deleted", "messageDeleteError": "Message could not be deleted", "messages": "Messages", "moderation": "Moderation", "moderationError": "Could not {{action}} user", "moderator": "Moderator", "moderatorRole": "a moderator", "no": "No", "noMessages": "No messages from this user.", "noteSaveError": "Note could not be saved", "notesPlaceholder": "Private notes about this user…", "openProfile": "Open Twitch profile", "preferenceSaveError": "Chat preference could not be saved", "profileLoadError": "User profile could not be loaded", "reason": "Reason", "reasonPlaceholder": "Optional moderation reason", "recentMessages": "Recent messages", "reconnectPermissions": "Reconnect Twitch to grant moderation permissions", "removeMod": "Remove mod", "removeVip": "Remove VIP", "roleAdded": "{{name}} is now {{role}}", "roleError": "Role could not be changed", "roleRemoved": "{{name}} is no longer {{role}}", "since": "Since {{date}}", "timedOutUntil": "Timed out until {{time}}", "timeouts": "Timeouts", "timeoutSuccess": "{{name}} was timed out for {{duration}}", "unban": "Unban", "unbannedSuccess": "{{name}} was unbanned", "unbanUser": "Unban user", "unknown": "Unknown", "vipRole": "a VIP"
+  },
+  "search": {
+    "title": "Search StreamDash",
+    "placeholder": "Search pages, settings, people, messages…",
+    "categories": "Search categories",
+    "results": "Search results",
+    "groups": {
+      "all": "All",
+      "pages": "Pages",
+      "settings": "Settings",
+      "features": "Features",
+      "activity": "Activity",
+      "chat": "Chat"
+    },
+    "location": "{{page}} · {{section}}",
+    "serviceStatus": "{{account}} · {{status}}",
+    "activityTitle": "{{name}} · {{event}}",
+    "resultCount_one": "{{count}} result",
+    "resultCount_other": "{{count}} results",
+    "startHint": "Choose a category or start typing",
+    "localOnly": "Available local data",
+    "noResultsHint": "Try a shorter term, another category or an English feature name.",
+    "showMore": "Show more results",
+    "aliases": {
+      "dashboard": "overview widgets layout browser sources",
+      "stream": "broadcast live title category language markers",
+      "obs": "studio scenes microphone audio volume recording replay camera spotify",
+      "chat": "messages people users emotes moderation",
+      "activity": "events history followers subscriptions raids bits",
+      "donations": "tips money donors payments",
+      "livePreview": "player video watch broadcast",
+      "statistics": "analytics audience numbers charts",
+      "goals": "targets progress automation",
+      "connections": "accounts integrations connect login authorization tokens",
+      "settings": "preferences options configuration",
+      "general": "startup tray language windows",
+      "appearance": "theme color colour design layout density navigation animations",
+      "notifications": "alerts notifications donations raids gifts",
+      "events": "events filters history",
+      "data": "storage database backup export import"
+    }
   }
 }

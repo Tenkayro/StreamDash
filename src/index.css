@@ -528,3 +528,7 @@ input[type="range"]::-moz-range-track { height: 6px; border: 1px solid #ffffff12
 input[type="range"]::-moz-range-thumb { width: 14px; height: 14px; border: 1px solid #ffffff80; border-radius: 50%; background: linear-gradient(145deg, #ffffff, color-mix(in srgb, var(--app-accent) 30%, #e3e6eb)); box-shadow: 0 2px 5px #00000050; }
 input[type="checkbox"]:focus-visible, input[type="range"]:focus-visible { outline: 2px solid var(--app-accent); outline-offset: 4px; }
 input[type="range"]:disabled { opacity: .5; cursor: not-allowed; }
+
+.command-search { background: linear-gradient(135deg, #353637f5, #242526fa); backdrop-filter: blur(24px); box-shadow: 0 24px 80px #00000070, inset 0 1px 0 #ffffff0a; }
+.command-result { transition: background-color 130ms ease, border-color 130ms ease; }
+.search-destination { outline: 2px solid var(--app-accent); outline-offset: 4px; border-radius: 10px; scroll-margin-block: 100px; }

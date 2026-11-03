@@ -61,7 +61,7 @@
     "noMatches": "No hay actividad coincidente",
     "openUser": "Abrir la ficha de {{name}}",
     "searchLabel": "Buscar actividad",
-    "searchPlaceholder": "Buscar personas, mensajes o eventos",
+    "searchPlaceholder": "Buscar páginas, ajustes, personas, mensajes…",
     "title": "Actividad",
     "tryFilters": "Prueba otra búsqueda o restablece uno de los filtros.",
     "viewers_one": "{{count}} espectador",
@@ -85,7 +85,7 @@
     "noMessage": "No se incluyó ningún mensaje.",
     "received": "Actividad",
     "searchLabel": "Buscar donaciones",
-    "searchPlaceholder": "Buscar donantes o mensajes",
+    "searchPlaceholder": "Buscar páginas, ajustes, personas, mensajes…",
     "sortLabel": "Ordenar donaciones",
     "topDonation": "Mayor donación",
     "totalReceived": "Total recibido",
@@ -194,7 +194,7 @@
     "notConnected": "Conecta Twitch para ver la vista previa", "notConnectedDetail": "StreamDash mostrará aquí tu propio canal cuando conectes tu cuenta de broadcaster."
   },
   "navigation": {
-    "close": "Cerrar navegación rápida", "insights": "Análisis", "main": "Espacio de trabajo", "manageConnections": "Gestionar conexiones", "moveHint": "↑↓ Seleccionar", "noResults": "No hay ninguna página coincidente", "openHint": "Enter Abrir", "quickSwitch": "Ir a una página", "searchPlaceholder": "Buscar páginas…", "system": "Sistema"
+    "close": "Cerrar navegación rápida", "insights": "Análisis", "main": "Espacio de trabajo", "manageConnections": "Gestionar conexiones", "moveHint": "↑↓ Seleccionar", "noResults": "No hay ninguna página coincidente", "openHint": "Enter Abrir", "quickSwitch": "Buscar en todo", "searchPlaceholder": "Buscar páginas, ajustes, personas, mensajes…", "system": "Sistema"
   },
   "obs": {
     "title": "OBS Studio",
@@ -442,5 +442,46 @@
   },
   "userCard": {
     "actions": { "ban": "vetar", "timeout": "suspender", "unban": "quitar el veto a" }, "ban": "Vetar", "banConfirm": "¿Vetar permanentemente a {{name}} de tu chat?", "banned": "Vetado", "bannedSuccess": "Se vetó a {{name}}", "banUser": "Vetar usuario", "close": "Cerrar ficha de usuario", "created": "Creado", "deleted": "eliminado", "deleteMessage": "Eliminar mensaje", "dialogLabel": "Información de usuario de {{login}}", "followsYou": "Te sigue", "hideInChat": "Ocultar en el chat", "ignoreHighlights": "Ignorar destacados", "makeMod": "Hacer mod", "makeVip": "Hacer VIP", "mention": "Mencionar", "messageDeleted": "Mensaje eliminado", "messageDeleteError": "No se pudo eliminar el mensaje", "messages": "Mensajes", "moderation": "Moderación", "moderationError": "No se pudo {{action}} al usuario", "moderator": "Moderador", "moderatorRole": "moderador", "no": "No", "noMessages": "No hay mensajes de este usuario.", "noteSaveError": "No se pudo guardar la nota", "notesPlaceholder": "Notas privadas sobre este usuario…", "openProfile": "Abrir perfil de Twitch", "preferenceSaveError": "No se pudo guardar la preferencia del chat", "profileLoadError": "No se pudo cargar el perfil del usuario", "reason": "Motivo", "reasonPlaceholder": "Motivo de moderación opcional", "recentMessages": "Mensajes recientes", "reconnectPermissions": "Vuelve a conectar Twitch para conceder permisos de moderación", "removeMod": "Quitar mod", "removeVip": "Quitar VIP", "roleAdded": "{{name}} ahora es {{role}}", "roleError": "No se pudo cambiar el rol", "roleRemoved": "{{name}} ya no es {{role}}", "since": "Desde {{date}}", "timedOutUntil": "Suspendido hasta las {{time}}", "timeouts": "Suspensiones", "timeoutSuccess": "Se suspendió a {{name}} durante {{duration}}", "unban": "Quitar veto", "unbannedSuccess": "Se quitó el veto a {{name}}", "unbanUser": "Quitar veto al usuario", "unknown": "Desconocido", "vipRole": "VIP"
+  },
+  "search": {
+    "title": "Buscar en StreamDash",
+    "placeholder": "Buscar páginas, ajustes, personas, mensajes…",
+    "categories": "Categorías de búsqueda",
+    "results": "Resultados de búsqueda",
+    "groups": {
+      "all": "Todo",
+      "pages": "Páginas",
+      "settings": "Ajustes",
+      "features": "Funciones",
+      "activity": "Actividad",
+      "chat": "Chat"
+    },
+    "location": "{{page}} · {{section}}",
+    "serviceStatus": "{{account}} · {{status}}",
+    "activityTitle": "{{name}} · {{event}}",
+    "resultCount_one": "{{count}} resultado",
+    "resultCount_other": "{{count}} resultados",
+    "startHint": "Elige una categoría o empieza a escribir",
+    "localOnly": "Datos locales disponibles",
+    "noResultsHint": "Prueba un término más corto, otra categoría o el nombre de la función en inglés.",
+    "showMore": "Mostrar más resultados",
+    "aliases": {
+      "dashboard": "resumen widgets diseño fuentes navegador",
+      "stream": "transmisión directo título categoría idioma marcadores",
+      "obs": "studio escenas micrófono audio volumen grabación repetición cámara spotify",
+      "chat": "mensajes personas usuarios emotes moderación",
+      "activity": "eventos historial seguidores suscripciones raids bits",
+      "donations": "propinas dinero donantes pagos",
+      "livePreview": "reproductor vídeo ver transmisión",
+      "statistics": "análisis audiencia cifras gráficos",
+      "goals": "objetivos progreso automatización",
+      "connections": "cuentas integraciones conectar acceso permisos tokens",
+      "settings": "preferencias opciones configuración",
+      "general": "inicio bandeja idioma windows",
+      "appearance": "tema color diseño disposición densidad navegación animaciones",
+      "notifications": "alertas notificaciones donaciones raids regalos",
+      "events": "eventos filtros historial",
+      "data": "almacenamiento base de datos copia exportar importar"
+    }
   }
 }

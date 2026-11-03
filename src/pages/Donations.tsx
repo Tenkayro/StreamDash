@@ -1,3 +1,4 @@
+import { useSearchFilter } from "../lib/search-navigation";
 import { Select } from "../components/Select";
 import {
   ChevronDown,
@@ -38,9 +39,11 @@ export function Donations() {
   const { t, i18n } = useTranslation();
   const { events, setPage, streamElements, tipeeStream } = useAppStore();
   const [search, setSearch] = useState("");
+  const [searchHit, setSearchHit] = useState<string>();
   const [source, setSource] = useState<ActivitySource | "all">("all");
   const [sort, setSort] = useState<DonationSort>("newest");
   const [selectedId, setSelectedId] = useState<string | null>();
+  useSearchFilter("donations", (value, itemId) => { setSearch(value); setSearchHit(itemId); setSource("all"); });
   const dateLocale =
     { de, en: enUS, es, fr, "pt-BR": ptBR }[i18n.language] ?? enUS;
 
@@ -54,7 +57,7 @@ export function Donations() {
       .filter(
         (event) =>
           (source === "all" || event.source === source) &&
-          (!needle ||
+          (searchHit ? event.id === searchHit : !needle ||
             `${event.displayName ?? ""} ${event.username ?? ""} ${event.message ?? ""}`
               .toLocaleLowerCase(i18n.language)
               .includes(needle)),
@@ -64,7 +67,7 @@ export function Donations() {
           ? (b.amount ?? 0) - (a.amount ?? 0)
           : new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime(),
       );
-  }, [donations, i18n.language, search, sort, source]);
+  }, [donations, i18n.language, search, searchHit, sort, source]);
   const totals = useMemo(() => {
     const grouped = new Map<string, number>();
     for (const event of donations) {
@@ -155,14 +158,14 @@ export function Donations() {
               aria-label={t("donations.searchLabel")}
               placeholder={t("donations.searchPlaceholder")}
               value={search}
-              onChange={(event) => setSearch(event.target.value)}
+              onChange={(event) => { setSearch(event.target.value); setSearchHit(undefined); }}
             />
             {search && (
               <button
                 type="button"
                 title={t("donations.clearSearch")}
                 aria-label={t("donations.clearSearch")}
-                onClick={() => setSearch("")}
+                onClick={() => { setSearch(""); setSearchHit(undefined); }}
                 className="absolute right-2 top-1/2 grid size-6 -translate-y-1/2 place-items-center rounded-md text-zinc-600 hover:bg-white/5 hover:text-zinc-300"
               >
                 <X size={13} />

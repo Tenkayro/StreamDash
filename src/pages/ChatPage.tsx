@@ -1,3 +1,4 @@
+import { useSearchFilter } from "../lib/search-navigation";
 import {
   AtSign,
   ChevronDown,
@@ -251,6 +252,7 @@ export function ChatPage() {
   const [cursor, setCursor] = useState(0);
   const [sending, setSending] = useState(false);
   const [search, setSearch] = useState("");
+  const [searchHit, setSearchHit] = useState<string>();
   const [searchOpen, setSearchOpen] = useState(false);
   const [selected, setSelected] = useState(0);
   const [dismissedDraft, setDismissedDraft] = useState<string>();
@@ -262,6 +264,7 @@ export function ChatPage() {
     active: boolean;
   }>();
   const [shieldBusy, setShieldBusy] = useState(false);
+  useSearchFilter("chat", (value, itemId) => { setSearch(value); setSearchHit(itemId); setSearchOpen(true); });
   const missingScope = Boolean(
     twitch.phase === "connected" &&
     !["chat:read", "chat:edit"].every((scope) =>
@@ -294,13 +297,13 @@ export function ChatPage() {
       chatMessages.filter(
         (message) =>
           !settings.chatHiddenUsers.includes(message.login) &&
-          (!search ||
+          (searchHit ? message.id === searchHit : !search ||
             includesIgnoreCase(
               `${message.displayName} ${message.login} ${message.text}`,
               search,
             )),
       ),
-    [chatMessages, search, settings.chatHiddenUsers],
+    [chatMessages, search, searchHit, settings.chatHiddenUsers],
   );
 
   useEffect(() => {
@@ -530,7 +533,7 @@ export function ChatPage() {
       }
     />
   );
-  if (twitch.phase !== "connected")
+  if (twitch.phase !== "connected" && !chatMessages.length)
     return (
       <>
         {header}
@@ -576,12 +579,12 @@ export function ChatPage() {
                 className="h-8 w-full bg-transparent pl-8 pr-8 text-xs outline-none"
                 placeholder={t("chat.filterPlaceholder")}
                 value={search}
-                onChange={(event) => setSearch(event.target.value)}
+                onChange={(event) => { setSearch(event.target.value); setSearchHit(undefined); }}
               />
               {search && (
                 <button
                   className="absolute right-2 top-2 text-zinc-600 hover:text-zinc-300"
-                  onClick={() => setSearch("")}
+                  onClick={() => { setSearch(""); setSearchHit(undefined); }}
                 >
                   <X size={14} />
                 </button>
@@ -686,7 +689,7 @@ export function ChatPage() {
               value={draft}
               maxLength={500}
               autoComplete="off"
-              disabled={!isTauri()}
+              disabled={!isTauri() || twitch.phase !== "connected" || chat.phase !== "connected"}
               onChange={(event) => {
                 setDraft(event.target.value);
                 setCursor(
@@ -704,7 +707,7 @@ export function ChatPage() {
             <Button
               variant="primary"
               type="submit"
-              disabled={!draft.trim() || sending || !isTauri()}
+              disabled={!draft.trim() || sending || !isTauri() || twitch.phase !== "connected" || chat.phase !== "connected"}
             >
               {sending ? (
                 <LoaderCircle size={15} className="animate-spin" />

@@ -1,3 +1,4 @@
+import type { SearchTarget } from "../lib/search";
 import { create } from "zustand";
 import { withPageTransition } from "../lib/page-transition";
 import type {
@@ -65,6 +66,8 @@ export const defaultSettings: AppSettings = {
 };
 const emptyStats: DashboardStats = { bits: 0, donations: 0, live: false };
 interface AppStore {
+  searchTarget?: SearchTarget;
+  setSearchTarget: (target?: SearchTarget) => void;
   page: string;
   pageHistory: string[];
   pageHistoryIndex: number;
@@ -103,6 +106,8 @@ interface AppStore {
   setSettings: (settings: Partial<AppSettings>) => void;
 }
 export const useAppStore = create<AppStore>((set) => ({
+  searchTarget: undefined,
+  setSearchTarget: (searchTarget) => set({ searchTarget }),
   page: "dashboard",
   pageHistory: ["dashboard"],
   pageHistoryIndex: 0,

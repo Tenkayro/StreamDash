@@ -1,3 +1,4 @@
+import { useSearchLanding } from "./lib/search-navigation";
 import { lazy, Suspense, useEffect, useLayoutEffect, useRef, useState } from "react";
 import { getCurrentWindow } from "@tauri-apps/api/window";
 import { getVersion } from "@tauri-apps/api/app";
@@ -112,6 +113,7 @@ function LifecycleScreen({ version, starting = false }: { version?: string; star
 }
 
 export default function App() {
+  useSearchLanding();
   const { page, ready, settings } = useAppStore();
   const { i18n, t } = useTranslation();
   const mainRef = useRef<HTMLElement>(null);

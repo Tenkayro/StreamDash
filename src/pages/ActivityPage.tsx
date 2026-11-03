@@ -1,3 +1,4 @@
+import { useSearchFilter } from "../lib/search-navigation";
 import { Select } from "../components/Select";
 import {
   Activity,
@@ -20,20 +21,22 @@ export function ActivityPage() {
   const { t, i18n } = useTranslation();
   const { events, chatMessages, settings, twitch, clearEvents } = useAppStore();
   const [search, setSearch] = useState("");
+  const [searchHit, setSearchHit] = useState<string>();
   const [type, setType] = useState<ActivityType | "all">("all");
   const [source, setSource] = useState<ActivitySource | "all">("all");
   const [selectedUser, setSelectedUser] = useState<string>();
+  useSearchFilter("activity", (value, itemId) => { setSearch(value); setSearchHit(itemId); setType("all"); setSource("all"); });
   const filtered = useMemo(
     () =>
       events.filter(
         (e) =>
           (type === "all" || e.eventType === type) &&
           (source === "all" || e.source === source) &&
-          `${e.displayName} ${e.username} ${e.message}`
+          (searchHit ? e.id === searchHit : `${e.displayName} ${e.username} ${e.message}`
             .toLowerCase()
-            .includes(search.toLowerCase()),
+            .includes(search.toLowerCase())),
       ),
-    [events, search, type, source],
+    [events, search, searchHit, type, source],
   );
   const remove = async () => {
     if (!confirm(t("activity.clearConfirm"))) return;
@@ -69,14 +72,14 @@ export function ActivityPage() {
               aria-label={t("activity.searchLabel")}
               placeholder={t("activity.searchPlaceholder")}
               value={search}
-              onChange={(e) => setSearch(e.target.value)}
+              onChange={(e) => { setSearch(e.target.value); setSearchHit(undefined); }}
             />
             {search && (
               <button
                 type="button"
                 title={t("activity.clearSearch")}
                 aria-label={t("activity.clearSearch")}
-                onClick={() => setSearch("")}
+                onClick={() => { setSearch(""); setSearchHit(undefined); }}
                 className="absolute right-2 top-1/2 grid size-6 -translate-y-1/2 place-items-center rounded-md text-zinc-600 hover:bg-white/5 hover:text-zinc-300"
               >
                 <X size={13} />

@@ -72,7 +72,7 @@ function GoalCard({
     onAutomation({ enabled: automation?.enabled ?? false, increasePercent });
   };
   return (
-    <Card className="flex min-h-52 flex-col p-4">
+    <Card data-search-label={label} className="flex min-h-52 flex-col p-4">
       <div className="flex items-start justify-between gap-3">
         <div className="flex min-w-0 items-center gap-2.5">
           <span className="grid size-9 shrink-0 place-items-center rounded-lg bg-accent-soft text-accent">

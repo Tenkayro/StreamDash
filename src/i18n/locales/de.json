@@ -61,7 +61,7 @@
     "noMatches": "Keine passende Aktivität",
     "openUser": "Nutzerkarte von {{name}} öffnen",
     "searchLabel": "Aktivität durchsuchen",
-    "searchPlaceholder": "Personen, Nachrichten oder Ereignisse suchen",
+    "searchPlaceholder": "Seiten, Einstellungen, Personen, Nachrichten suchen…",
     "title": "Aktivität",
     "tryFilters": "Versuche eine andere Suche oder setze einen Filter zurück.",
     "viewers_one": "{{count}} Zuschauer",
@@ -85,7 +85,7 @@
     "noMessage": "Es wurde keine Nachricht mitgesendet.",
     "received": "Aktivität",
     "searchLabel": "Spenden durchsuchen",
-    "searchPlaceholder": "Spender oder Nachrichten suchen",
+    "searchPlaceholder": "Seiten, Einstellungen, Personen, Nachrichten suchen…",
     "sortLabel": "Spenden sortieren",
     "topDonation": "Höchste Spende",
     "totalReceived": "Insgesamt erhalten",
@@ -260,8 +260,8 @@
     "moveHint": "↑↓ Auswählen",
     "noResults": "Keine passende Seite",
     "openHint": "Enter Öffnen",
-    "quickSwitch": "Seite öffnen",
-    "searchPlaceholder": "Seiten durchsuchen…",
+    "quickSwitch": "Alles durchsuchen",
+    "searchPlaceholder": "Seiten, Einstellungen, Personen, Nachrichten suchen…",
     "system": "System"
   },
   "obs": {
@@ -552,5 +552,46 @@
   },
   "userCard": {
     "actions": { "ban": "sperren", "timeout": "vorübergehend sperren", "unban": "entsperren" }, "ban": "Sperren", "banConfirm": "{{name}} dauerhaft aus deinem Chat sperren?", "banned": "Gesperrt", "bannedSuccess": "{{name}} wurde gesperrt", "banUser": "Nutzer sperren", "close": "Nutzerkarte schließen", "created": "Erstellt", "deleted": "gelöscht", "deleteMessage": "Nachricht löschen", "dialogLabel": "Nutzerinformationen für {{login}}", "followsYou": "Folgt dir", "hideInChat": "Im Chat ausblenden", "ignoreHighlights": "Hervorhebungen ignorieren", "makeMod": "Zum Mod machen", "makeVip": "Zum VIP machen", "mention": "Erwähnen", "messageDeleted": "Nachricht gelöscht", "messageDeleteError": "Nachricht konnte nicht gelöscht werden", "messages": "Nachrichten", "moderation": "Moderation", "moderationError": "Nutzer konnte nicht {{action}} werden", "moderator": "Moderator", "moderatorRole": "Moderator", "no": "Nein", "noMessages": "Keine Nachrichten von diesem Nutzer.", "noteSaveError": "Notiz konnte nicht gespeichert werden", "notesPlaceholder": "Private Notizen zu diesem Nutzer…", "openProfile": "Twitch-Profil öffnen", "preferenceSaveError": "Chat-Einstellung konnte nicht gespeichert werden", "profileLoadError": "Nutzerprofil konnte nicht geladen werden", "reason": "Grund", "reasonPlaceholder": "Optionaler Moderationsgrund", "recentMessages": "Letzte Nachrichten", "reconnectPermissions": "Twitch erneut verbinden, um Moderationsrechte zu gewähren", "removeMod": "Mod entfernen", "removeVip": "VIP entfernen", "roleAdded": "{{name}} ist jetzt {{role}}", "roleError": "Rolle konnte nicht geändert werden", "roleRemoved": "{{name}} ist nicht mehr {{role}}", "since": "Seit {{date}}", "timedOutUntil": "Timeout bis {{time}}", "timeouts": "Timeouts", "timeoutSuccess": "{{name}} erhielt einen Timeout für {{duration}}", "unban": "Entsperren", "unbannedSuccess": "{{name}} wurde entsperrt", "unbanUser": "Nutzer entsperren", "unknown": "Unbekannt", "vipRole": "VIP"
+  },
+  "search": {
+    "title": "StreamDash durchsuchen",
+    "placeholder": "Seiten, Einstellungen, Personen, Nachrichten suchen…",
+    "categories": "Suchkategorien",
+    "results": "Suchergebnisse",
+    "groups": {
+      "all": "Alles",
+      "pages": "Seiten",
+      "settings": "Einstellungen",
+      "features": "Funktionen",
+      "activity": "Aktivität",
+      "chat": "Chat"
+    },
+    "location": "{{page}} · {{section}}",
+    "serviceStatus": "{{account}} · {{status}}",
+    "activityTitle": "{{name}} · {{event}}",
+    "resultCount_one": "{{count}} Treffer",
+    "resultCount_other": "{{count}} Treffer",
+    "startHint": "Kategorie wählen oder lossuchen",
+    "localOnly": "Verfügbare lokale Daten",
+    "noResultsHint": "Versuche einen kürzeren Begriff, eine andere Kategorie oder einen englischen Funktionsnamen.",
+    "showMore": "Weitere Treffer anzeigen",
+    "aliases": {
+      "dashboard": "übersicht widgets layout browser quellen",
+      "stream": "übertragung live titel kategorie sprache marker",
+      "obs": "studio szenen mikrofon audio lautstärke aufnahme replay kamera spotify",
+      "chat": "nachrichten personen nutzer emotes moderation",
+      "activity": "ereignisse verlauf follower abonnements raids bits",
+      "donations": "trinkgeld geld spender zahlungen",
+      "livePreview": "player video ansehen übertragung",
+      "statistics": "analyse publikum zahlen diagramme",
+      "goals": "ziele fortschritt automatik",
+      "connections": "konten integrationen verbinden anmeldung berechtigungen token",
+      "settings": "optionen einstellungen konfiguration",
+      "general": "autostart tray sprache windows",
+      "appearance": "theme farbe design layout dichte navigation animationen",
+      "notifications": "meldungen benachrichtigungen spenden raids geschenke",
+      "events": "ereignisse filter verlauf",
+      "data": "speicher datenbank sicherung export import"
+    }
   }
 }
