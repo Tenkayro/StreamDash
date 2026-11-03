@@ -1,3 +1,4 @@
+import { Select } from "../components/Select";
 import {
   Activity,
   ChevronDown,
@@ -87,7 +88,7 @@ export function ActivityPage() {
               size={14}
               className={`pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 ${type === "all" ? "text-zinc-600" : "text-accent"}`}
             />
-            <select
+            <Select
               className="input input-leading-icon input-trailing-action appearance-none capitalize"
               aria-label={t("activity.filterType")}
               value={type}
@@ -109,7 +110,7 @@ export function ActivityPage() {
                   {t(`events.${v}`)}
                 </option>
               ))}
-            </select>
+            </Select>
             <ChevronDown
               size={13}
               className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-zinc-600"
@@ -120,7 +121,7 @@ export function ActivityPage() {
               size={14}
               className={`pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 ${source === "all" ? "text-zinc-600" : "text-accent"}`}
             />
-            <select
+            <Select
               className="input input-leading-icon input-trailing-action appearance-none"
               aria-label={t("activity.filterSource")}
               value={source}
@@ -132,7 +133,7 @@ export function ActivityPage() {
               <option value="twitch">Twitch</option>
               <option value="streamelements">StreamElements</option>
               <option value="tipeeestream">TipeeeStream</option>
-            </select>
+            </Select>
             <ChevronDown
               size={13}
               className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-zinc-600"

@@ -1,3 +1,4 @@
+import { Select } from "../components/Select";
 import {
   ExternalLink,
   Flag,
@@ -493,7 +494,7 @@ export function StreamPage() {
             {busyLoading ? (
               <LoadingIndicator className="mt-3 h-8.5 w-full max-w-xs" />
             ) : (
-            <select
+            <Select
               id="stream-language"
               className="input mt-3 max-w-xs"
               value={language}
@@ -508,7 +509,7 @@ export function StreamPage() {
                   {item.label}
                 </option>
               ))}
-            </select>
+            </Select>
             )}
           </div>
 

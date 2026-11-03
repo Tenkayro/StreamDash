@@ -1,3 +1,4 @@
+import { Select } from "../components/Select";
 import {
   ChevronDown,
   ChevronRight,
@@ -170,7 +171,7 @@ export function Donations() {
           </div>
           <div className="relative min-w-0">
             <RadioTower size={14} className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-zinc-600" />
-            <select
+            <Select
               className="input input-leading-icon input-trailing-action appearance-none"
               aria-label={t("donations.filterSource")}
               value={source}
@@ -179,12 +180,12 @@ export function Donations() {
               <option value="all">{t("donations.allSources")}</option>
               <option value="streamelements">StreamElements</option>
               <option value="tipeeestream">TipeeeStream</option>
-            </select>
+            </Select>
             <ChevronDown size={13} className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-zinc-600" />
           </div>
           <div className="relative min-w-0">
             <SlidersHorizontal size={14} className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-zinc-600" />
-            <select
+            <Select
               className="input input-leading-icon input-trailing-action appearance-none"
               aria-label={t("donations.sortLabel")}
               value={sort}
@@ -192,7 +193,7 @@ export function Donations() {
             >
               <option value="newest">{t("donations.newest")}</option>
               <option value="largest">{t("donations.largest")}</option>
-            </select>
+            </Select>
             <ChevronDown size={13} className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-zinc-600" />
           </div>
         </div>

@@ -1,3 +1,4 @@
+import { Select } from "./Select";
 import { Circle, Link2, Mic, Monitor, Pause, Play, Radio, RotateCcw, Save, Video, type LucideIcon } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { Badge, Button, Card } from "./ui";
@@ -57,7 +58,7 @@ export function ObsSceneSelect({ snapshot }: { snapshot: ObsSnapshot }) {
   if (!snapshot.scenes.length)
     return <span className="truncate text-xs">{snapshot.scene ?? "—"}</span>;
   return (
-    <select
+    <Select
       aria-label={t("obs.scene")}
       className="input h-7 max-w-38 px-1.5 py-0 text-xs"
       value={snapshot.scene ?? ""}
@@ -68,7 +69,7 @@ export function ObsSceneSelect({ snapshot }: { snapshot: ObsSnapshot }) {
           {scene}
         </option>
       ))}
-    </select>
+    </Select>
   );
 }
 

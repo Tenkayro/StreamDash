@@ -1,3 +1,4 @@
+export { Select } from "./Select";
 import { useEffect, useRef, useState } from "react";
 import type { ButtonHTMLAttributes, HTMLAttributes, ReactNode } from "react";
 import { cn } from "../lib/utils";

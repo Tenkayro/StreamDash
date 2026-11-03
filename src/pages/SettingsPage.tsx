@@ -1,3 +1,4 @@
+import { Select } from "../components/Select";
 import { enable, disable } from "@tauri-apps/plugin-autostart";
 import {
   Archive,
@@ -5,8 +6,6 @@ import {
   AppWindow,
   BadgeCheck,
   Bell,
-  Check,
-  ChevronDown,
   CircleDollarSign,
   Clock3,
   Database,
@@ -442,71 +441,11 @@ function LanguageSelect({
   onChange: (value: LanguageValue) => void;
 }) {
   const { t } = useTranslation();
-  const [open, setOpen] = useState(false);
-  const rootRef = useRef<HTMLDivElement>(null);
-  const options: Array<{ value: LanguageValue; label: string }> = [
-    { value: "auto", label: t("common.automatic") },
-    { value: "en", label: t("languages.en") },
-    { value: "de", label: t("languages.de") },
-    { value: "es", label: t("languages.es") },
-    { value: "pt-BR", label: t("languages.pt-BR") },
-    { value: "fr", label: t("languages.fr") },
-  ];
-  const selected = options.find((option) => option.value === value) ?? options[0];
-  useEffect(() => {
-    if (!open) return;
-    const close = (event: PointerEvent) => {
-      if (!rootRef.current?.contains(event.target as Node)) setOpen(false);
-    };
-    const closeOnEscape = (event: KeyboardEvent) => {
-      if (event.key === "Escape") setOpen(false);
-    };
-    document.addEventListener("pointerdown", close);
-    document.addEventListener("keydown", closeOnEscape);
-    return () => {
-      document.removeEventListener("pointerdown", close);
-      document.removeEventListener("keydown", closeOnEscape);
-    };
-  }, [open]);
-  return (
-    <div ref={rootRef} className="relative w-52">
-      <button
-        type="button"
-        aria-haspopup="listbox"
-        aria-expanded={open}
-        onClick={() => setOpen((current) => !current)}
-        className="input flex w-full items-center gap-2 text-left"
-      >
-        <LanguageFlag language={selected.value} />
-        <span className="min-w-0 flex-1 truncate">{selected.label}</span>
-        <ChevronDown size={13} className={`shrink-0 text-zinc-600 transition-transform ${open ? "rotate-180" : ""}`} />
-      </button>
-      {open && (
-        <div
-          role="listbox"
-          className="absolute right-0 top-full z-50 mt-1 w-full rounded-lg border border-line bg-raised p-1 shadow-xl shadow-black/40"
-        >
-          {options.map((option) => (
-            <button
-              type="button"
-              role="option"
-              aria-selected={option.value === value}
-              key={option.value}
-              onClick={() => {
-                onChange(option.value);
-                setOpen(false);
-              }}
-              className="flex w-full items-center gap-2 rounded-md px-2.5 py-2 text-left text-xs text-zinc-300 transition hover:bg-white/5 hover:text-white"
-            >
-              <LanguageFlag language={option.value} />
-              <span className="min-w-0 flex-1 truncate">{option.label}</span>
-              {option.value === value && <Check size={13} className="shrink-0 text-accent" />}
-            </button>
-          ))}
-        </div>
-      )}
-    </div>
-  );
+  const options: LanguageValue[] = ["auto", "en", "de", "es", "pt-BR", "fr"];
+  return <Select value={value} onChange={(event) => onChange(event.target.value as LanguageValue)}
+    aria-label={t("settings.language")} className="w-52! max-w-full" decoration={(language) => <LanguageFlag language={language as LanguageValue} />}>
+    {options.map((language) => <option key={language} value={language}>{language === "auto" ? t("common.automatic") : t(`languages.${language}`)}</option>)}
+  </Select>;
 }
 
 export function SettingsPage() {
@@ -556,7 +495,7 @@ export function SettingsPage() {
               icon={MonitorUp}
               label={t("settings.launchWithWindows")}
             >
-              <Toggle
+              <Toggle label={t("settings.launchWithWindows")}
                 value={settings.launchAtStartup}
                 onChange={(value) => update("launchAtStartup", value)}
               />
@@ -566,7 +505,7 @@ export function SettingsPage() {
               label={t("settings.minimizeToTray")}
               detail={t("settings.minimizeToTrayDetail")}
             >
-              <Toggle
+              <Toggle label={t("settings.minimizeToTray")}
                 value={settings.minimizeToTray}
                 onChange={(value) => update("minimizeToTray", value)}
               />
@@ -576,7 +515,7 @@ export function SettingsPage() {
               label={t("settings.trayStyle")}
               detail={t("settings.trayStyleDetail")}
             >
-              <select
+              <Select aria-label={t("settings.trayStyle")}
                 className="input w-52! max-w-full"
                 value={settings.trayStyle}
                 onChange={(event) =>
@@ -588,7 +527,7 @@ export function SettingsPage() {
               >
                 <option value="custom">{t("settings.trayStyleCustom")}</option>
                 <option value="classic">{t("settings.trayStyleClassic")}</option>
-              </select>
+              </Select>
             </Row>
           </Card>
         </section>
@@ -599,7 +538,7 @@ export function SettingsPage() {
               icon={Rows3}
               label={t("settings.interfaceDensity")}
             >
-              <select
+              <Select aria-label={t("settings.interfaceDensity")}
                 className="input w-52! max-w-full"
                 value={settings.uiDensity}
                 onChange={(event) =>
@@ -611,13 +550,13 @@ export function SettingsPage() {
               >
                 <option value="compact">{t("settings.compact")}</option>
                 <option value="comfortable">{t("settings.comfortable")}</option>
-              </select>
+              </Select>
             </Row>
             <Row
               icon={Maximize2}
               label={t("settings.contentWidth")}
             >
-              <select
+              <Select aria-label={t("settings.contentWidth")}
                 className="input w-52! max-w-full"
                 value={settings.contentWidth}
                 onChange={(event) =>
@@ -630,15 +569,16 @@ export function SettingsPage() {
                 <option value="compact">{t("settings.focused")}</option>
                 <option value="wide">{t("settings.wide")}</option>
                 <option value="full">{t("settings.fullWidth")}</option>
-              </select>
+              </Select>
             </Row>
             <Row
               icon={Palette}
               label={t("settings.accentColor")}
             >
-              <select
+              <Select aria-label={t("settings.accentColor")}
                 className="input w-52! max-w-full"
                 value={settings.accentColor}
+                decoration={(color) => <span aria-hidden="true" className="accent-swatch" style={{ backgroundColor: ({ violet: "#a994f5", blue: "#4f8ee8", emerald: "#36a77a", orange: "#f5a15d" } as Record<string, string>)[color] }} />}
                 onChange={(event) =>
                   update(
                     "accentColor",
@@ -650,13 +590,13 @@ export function SettingsPage() {
                 <option value="blue">{t("settings.blue")}</option>
                 <option value="emerald">{t("settings.emerald")}</option>
                 <option value="orange">{t("settings.orange")}</option>
-              </select>
+              </Select>
             </Row>
             <Row
               icon={PanelLeft}
               label={t("settings.compactNavigation")}
             >
-              <Toggle
+              <Toggle label={t("settings.compactNavigation")}
                 value={settings.sidebarCollapsed}
                 onChange={(value) => update("sidebarCollapsed", value)}
               />
@@ -665,13 +605,13 @@ export function SettingsPage() {
               icon={Rows3}
               label={t("settings.compactActivity")}
             >
-              <Toggle
+              <Toggle label={t("settings.compactActivity")}
                 value={settings.compactFeed}
                 onChange={(value) => update("compactFeed", value)}
               />
             </Row>
             <Row icon={Sparkles} label={t("settings.animations")}>
-              <Toggle
+              <Toggle label={t("settings.animations")}
                 value={settings.animations}
                 onChange={(value) => update("animations", value)}
               />
@@ -714,19 +654,19 @@ export function SettingsPage() {
               icon={Bell}
               label={t("settings.windowsNotifications")}
             >
-              <Toggle
+              <Toggle label={t("settings.windowsNotifications")}
                 value={settings.notifications}
                 onChange={(value) => update("notifications", value)}
               />
             </Row>
             <Row icon={CircleDollarSign} label={t("settings.donations")}>
-              <Toggle
+              <Toggle label={t("settings.donations")}
                 value={settings.notifyDonations}
                 onChange={(value) => update("notifyDonations", value)}
               />
             </Row>
             <Row icon={RadioTower} label={t("settings.raids")}>
-              <Toggle
+              <Toggle label={t("settings.raids")}
                 value={settings.notifyRaids}
                 onChange={(value) => update("notifyRaids", value)}
               />
@@ -735,7 +675,7 @@ export function SettingsPage() {
               icon={Gift}
               label={t("settings.giftSubscriptions")}
             >
-              <Toggle
+              <Toggle label={t("settings.giftSubscriptions")}
                 value={settings.notifyGiftSubs}
                 onChange={(value) => update("notifyGiftSubs", value)}
               />
@@ -749,7 +689,7 @@ export function SettingsPage() {
               icon={Clock3}
               label={t("settings.timestamps")}
             >
-              <Toggle
+              <Toggle label={t("settings.timestamps")}
                 value={settings.chatTimestamps}
                 onChange={(value) => update("chatTimestamps", value)}
               />
@@ -758,7 +698,7 @@ export function SettingsPage() {
               icon={BadgeCheck}
               label={t("settings.badges")}
             >
-              <Toggle
+              <Toggle label={t("settings.badges")}
                 value={settings.chatBadges}
                 onChange={(value) => update("chatBadges", value)}
               />
@@ -767,7 +707,7 @@ export function SettingsPage() {
               icon={AtSign}
               label={t("settings.highlightMentions")}
             >
-              <Toggle
+              <Toggle label={t("settings.highlightMentions")}
                 value={settings.chatHighlightMentions}
                 onChange={(value) => update("chatHighlightMentions", value)}
               />
@@ -783,7 +723,7 @@ export function SettingsPage() {
               />
             </Row>
             <Row icon={Type} label={t("settings.textSize")}>
-              <select
+              <Select aria-label={t("settings.textSize")}
                 className="input w-52! max-w-full"
                 value={settings.chatFontSize}
                 onChange={(event) =>
@@ -794,13 +734,13 @@ export function SettingsPage() {
                 <option value={13}>{t("settings.normal")}</option>
                 <option value={14}>{t("settings.large")}</option>
                 <option value={16}>{t("settings.extraLarge")}</option>
-              </select>
+              </Select>
             </Row>
             <Row
               icon={Smile}
               label={t("settings.emoteSize")}
             >
-              <select
+              <Select aria-label={t("settings.emoteSize")}
                 className="input w-52! max-w-full"
                 value={settings.chatEmoteSize}
                 onChange={(event) =>
@@ -811,14 +751,14 @@ export function SettingsPage() {
                 <option value={28}>{t("settings.normal")}</option>
                 <option value={34}>{t("settings.large")}</option>
                 <option value={40}>{t("settings.extraLarge")}</option>
-              </select>
+              </Select>
             </Row>
             <Row
               icon={MessagesSquare}
               label={t("settings.messageBuffer")}
               detail={t("settings.messageBufferDetail")}
             >
-              <select
+              <Select aria-label={t("settings.messageBuffer")}
                 className="input w-52! max-w-full"
                 value={settings.maximumChatMessages}
                 onChange={(event) =>
@@ -829,7 +769,7 @@ export function SettingsPage() {
                 <option value={1000}>1,000</option>
                 <option value={2000}>2,000</option>
                 <option value={5000}>5,000</option>
-              </select>
+              </Select>
             </Row>
             <Row
               icon={EyeOff}
@@ -905,7 +845,7 @@ export function SettingsPage() {
               label={t("settings.keepData")}
               detail={t("settings.keepDataDetail")}
             >
-              <Toggle
+              <Toggle label={t("settings.keepData")}
                 value={settings.keepUserData}
                 onChange={(value) => update("keepUserData", value)}
               />
@@ -915,7 +855,7 @@ export function SettingsPage() {
               label={t("settings.maximumEvents")}
               detail={t("settings.maximumEventsDetail")}
             >
-              <select
+              <Select aria-label={t("settings.maximumEvents")}
                 className="input w-52! max-w-full"
                 value={settings.maximumEvents}
                 onChange={(event) =>
@@ -926,7 +866,7 @@ export function SettingsPage() {
                 <option value={5000}>5,000</option>
                 <option value={10000}>10,000</option>
                 <option value={50000}>50,000</option>
-              </select>
+              </Select>
             </Row>
           </Card>
         </section>
