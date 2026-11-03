@@ -532,3 +532,40 @@ input[type="range"]:disabled { opacity: .5; cursor: not-allowed; }
 .command-search { background: linear-gradient(135deg, #353637f5, #242526fa); backdrop-filter: blur(24px); box-shadow: 0 24px 80px #00000070, inset 0 1px 0 #ffffff0a; }
 .command-result { transition: background-color 130ms ease, border-color 130ms ease; }
 .search-destination { outline: 2px solid var(--app-accent); outline-offset: 4px; border-radius: 10px; scroll-margin-block: 100px; }
+
+/* Automatically replaces native title bubbles in every application window. */
+.glass-tooltip {
+  position: fixed;
+  z-index: 20000;
+  width: max-content;
+  max-width: min(320px, calc(100vw - 16px));
+  max-height: min(300px, calc(100dvh - 16px));
+  overflow-y: auto;
+  padding: 9px 12px;
+  border: 1px solid #ffffff24;
+  border-radius: 11px;
+  background: linear-gradient(135deg, #3b3c3df2, #252627f5);
+  color: #f0efed;
+  font-size: 11px;
+  font-weight: 450;
+  line-height: 1.6;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  user-select: text;
+  backdrop-filter: blur(20px) saturate(130%);
+  -webkit-backdrop-filter: blur(20px) saturate(130%);
+  box-shadow: 0 8px 28px #00000050, inset 0 1px 0 #ffffff12;
+  animation: tooltip-enter 160ms cubic-bezier(.16, 1, .3, 1);
+  -webkit-app-region: no-drag;
+}
+@keyframes tooltip-enter {
+  from { opacity: 0; transform: translateY(3px) scale(.98); }
+  to { opacity: 1; transform: none; }
+}
+.glass-tooltip[data-animations="off"] { animation: none; }
+@media (prefers-reduced-motion: reduce) {
+  .glass-tooltip { animation: none; }
+}
+@media (prefers-reduced-transparency: reduce) {
+  .glass-tooltip { background: #2c2d2e; backdrop-filter: none; -webkit-backdrop-filter: none; }
+}
