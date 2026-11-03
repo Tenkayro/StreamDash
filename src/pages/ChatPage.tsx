@@ -601,7 +601,7 @@ export function ChatPage() {
             </span>
           )}
         </div>
-        <ScrollFade className="flex min-h-0 flex-1 flex-col" color="#121318" size={36}>
+        <ScrollFade className="flex min-h-0 flex-1 flex-col" color="#242526" size={36}>
           <div
             ref={listRef}
             onScroll={onScroll}
@@ -643,7 +643,7 @@ export function ChatPage() {
           {completion && (
             <ScrollFade
               className="absolute bottom-[calc(100%-1px)] left-2.5 right-2.5 z-20 overflow-hidden rounded-lg border border-line bg-raised shadow-2xl"
-              color="#17181e"
+              color="#2c2d2e"
               size={28}
             >
               <div className="max-h-64 overflow-y-auto p-1">

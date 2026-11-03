@@ -97,7 +97,7 @@ export function Statistics() {
               <Tooltip
                 cursor={{ fill: "#ffffff08" }}
                 contentStyle={{
-                  background: "#17181e",
+                  background: "#2c2d2e",
                   border: "1px solid #2b2d34",
                   borderRadius: 8,
                   fontSize: 12,

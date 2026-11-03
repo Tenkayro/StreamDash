@@ -275,7 +275,7 @@ function SettingsNav({ smooth }: { smooth: boolean }) {
         paddingTop: 8,
         paddingBottom: 8,
       }}
-      className="no-scrollbar sticky top-0 z-20 mb-4 flex gap-1 overflow-x-auto rounded-none border-b border-line bg-[#0b0c0f]/95 backdrop-blur-md"
+      className="no-scrollbar sticky top-0 z-20 mb-4 flex gap-1 overflow-x-auto rounded-xl border border-line bg-panel/90 p-1.5 shadow-lg shadow-black/10 backdrop-blur-md"
     >
       <span
         aria-hidden="true"

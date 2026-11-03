@@ -181,7 +181,7 @@ export function TitleBar({ setup = false }: { setup?: boolean }) {
   return (
     <div
       data-tauri-drag-region
-      className="drag-region relative flex h-9 shrink-0 items-center border-b border-line bg-[#0f1014] pl-3 text-[11px] text-muted"
+      className="app-titlebar drag-region relative flex shrink-0 items-center border-b border-line pl-3 text-[11px] text-muted"
     >
       <div
         data-tauri-drag-region

@@ -227,7 +227,7 @@ export default function App() {
         data-accent={settings.accentColor}
         data-density={settings.uiDensity}
         data-animations={settings.animations ? "on" : "off"}
-        className="flex h-screen flex-col bg-[#0b0c0f]"
+        className="app-shell flex h-screen flex-col"
       >
         <TitleBar setup />
         <AppContextMenu />
@@ -245,18 +245,18 @@ export default function App() {
           : "**:transition-none! [&_.event-enter]:animate-none!"
       }
     >
-      <div className="flex h-screen flex-col bg-[#0b0c0f]">
+      <div className="app-shell flex h-screen flex-col">
         <TitleBar />
         <AppContextMenu />
         <Suspense fallback={null}>
           <CommandPalette />
         </Suspense>
-        <div className="flex min-h-0 flex-1">
+        <div className="app-workspace flex min-h-0 flex-1">
           <Sidebar />
           <div className="relative flex min-w-0 flex-1">
-            <main ref={mainRef} className="min-w-0 flex-1 overflow-y-auto">
+            <main ref={mainRef} className="app-main min-w-0 flex-1 overflow-y-auto">
               <div
-                className={`mx-auto ${widths[settings.contentWidth]} ${settings.uiDensity === "compact" ? "p-3 lg:p-4" : "p-3 sm:p-4 xl:p-6"}`}
+                className={`app-content mx-auto ${widths[settings.contentWidth]} ${settings.uiDensity === "compact" ? "p-3 lg:p-4" : "p-3 sm:p-4 xl:p-6"}`}
               >
                 <Suspense fallback={loading}>
                   <Page />
@@ -265,7 +265,7 @@ export default function App() {
             </main>
             <div
               aria-hidden="true"
-              className="pointer-events-none absolute bottom-0 left-0 right-2.5 h-10 bg-linear-to-t from-[#0b0c0f] to-transparent"
+              className="app-bottom-fade pointer-events-none absolute bottom-0 left-0 right-2.5 h-10"
             />
           </div>
         </div>

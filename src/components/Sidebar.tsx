@@ -139,7 +139,7 @@ export function Sidebar() {
   return (
     <aside
       className={cn(
-        "flex min-h-0 shrink-0 flex-col overflow-hidden border-r border-line bg-[#0f1014] p-2 transition-[width]",
+        "app-sidebar flex min-h-0 shrink-0 flex-col overflow-hidden transition-[width]",
         compact ? "w-14.5" : "w-52",
       )}
     >
@@ -149,7 +149,7 @@ export function Sidebar() {
         aria-label={t("navigation.quickSwitch")}
         onClick={() => window.dispatchEvent(new Event(OPEN_COMMAND_PALETTE))}
         className={cn(
-          "mb-2 flex h-9 w-full shrink-0 items-center rounded-lg border border-line bg-black/15 text-zinc-500 transition hover:border-accent/30 hover:text-zinc-200",
+          "sidebar-search mb-4 flex h-9 w-full shrink-0 items-center rounded-lg border border-line bg-black/15 text-zinc-500 transition hover:border-accent/30 hover:text-zinc-200",
           compact ? "justify-center" : "gap-2 px-3",
         )}
       >
@@ -176,7 +176,7 @@ export function Sidebar() {
               {compact ? (
                 groupIndex > 0 && <div className="mx-2 mb-2 h-px bg-line" />
               ) : (
-                <div className="mb-1 px-3 text-[9px] font-semibold uppercase tracking-[.14em] text-zinc-700">
+                <div className="sidebar-group-label mb-2 px-3 text-[9px] font-semibold uppercase tracking-[.14em] text-zinc-700">
                   {t(`navigation.${group}`)}
                 </div>
               )}
@@ -226,7 +226,7 @@ export function Sidebar() {
         </div>
         <div
           aria-hidden="true"
-          className="pointer-events-none absolute bottom-0 left-0 right-2.5 h-4 bg-linear-to-t from-[#0f1014] to-transparent"
+          className="sidebar-bottom-fade pointer-events-none absolute bottom-0 left-0 right-2.5 h-4"
         />
       </div>
       <div className="shrink-0">

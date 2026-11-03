@@ -95,7 +95,7 @@ export function Toggle({
 export function ScrollFade({
   children,
   className,
-  color = "#121318",
+  color = "#242526",
   size = 36,
   scrollbar = true,
 }: {
@@ -184,11 +184,11 @@ export function PageHeader({
   actions?: ReactNode;
 }) {
   return (
-    <div className="mb-4 flex flex-wrap items-start gap-3 sm:gap-4">
+    <div className="page-header flex flex-wrap items-start gap-3 sm:gap-4">
       <div className="min-w-0 flex-1 basis-64">
         <div className="flex min-w-0 flex-wrap items-center gap-2">
           {Icon && (
-            <span className="grid size-8 shrink-0 place-items-center rounded-lg bg-accent-soft text-accent">
+            <span className="page-header-icon grid size-8 shrink-0 place-items-center rounded-lg text-accent">
               <Icon size={16} aria-hidden="true" />
             </span>
           )}

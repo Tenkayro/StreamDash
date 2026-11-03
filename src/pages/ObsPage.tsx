@@ -260,7 +260,7 @@ function ObsWorkspace({ snapshot }: { snapshot: ObsSnapshot }) {
         <Card className="p-4">
           <SectionTitle icon={Clapperboard} title={t("obs.page.scenes")} description={t("obs.page.scenesDescription")} />
           {snapshot.scenes.length ? (
-            <ScrollFade color="#121318" size={28}>
+            <ScrollFade color="#242526" size={28}>
               <div className="grid max-h-96 gap-1.5 overflow-y-auto pr-1 sm:grid-cols-2 xl:grid-cols-1 2xl:grid-cols-2">
                 {snapshot.scenes.map((scene) => {
                   const active = scene === snapshot.scene;

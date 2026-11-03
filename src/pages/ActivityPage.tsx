@@ -139,7 +139,7 @@ export function ActivityPage() {
             />
           </div>
         </div>
-        <ScrollFade color="#121318" size={32}>
+        <ScrollFade color="#242526" size={32}>
           <div className="max-h-[calc(100vh-210px)] overflow-y-auto">
             <ActivityFeed
               events={filtered}

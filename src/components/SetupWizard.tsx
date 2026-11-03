@@ -444,8 +444,8 @@ export function SetupWizard() {
   ];
 
   return (
-    <ScrollFade className="flex min-h-0 flex-1 flex-col" color="#0b0c0f" size={48}>
-      <main className="min-h-0 flex-1 overflow-y-auto bg-[#0b0c0f] p-4 sm:p-8">
+    <ScrollFade className="flex min-h-0 flex-1 flex-col" color="#232425" size={48}>
+      <main className="min-h-0 flex-1 overflow-y-auto bg-transparent p-4 sm:p-8">
         <div className="mx-auto grid min-h-full max-w-5xl place-items-center">
           <div className="grid w-full overflow-hidden rounded-2xl border border-line bg-panel shadow-2xl shadow-black/35 md:grid-cols-[220px_minmax(0,1fr)]">
             <aside className="border-b border-line bg-black/10 p-5 md:border-b-0 md:border-r">

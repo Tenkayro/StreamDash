@@ -104,7 +104,7 @@ export function CommandPalette() {
             <X size={14} />
           </button>
         </div>
-        <ScrollFade color="#17181e" size={28}>
+        <ScrollFade color="#2c2d2e" size={28}>
           <div className="max-h-[min(20rem,calc(100vh-9rem))] overflow-y-auto p-1.5">
             {results.length ? (
               results.map((item, index) => {

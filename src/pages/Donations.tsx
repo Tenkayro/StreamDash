@@ -209,7 +209,7 @@ export function Donations() {
             ) : undefined}
           />
         ) : (
-          <ScrollFade color="#121318" size={32}>
+          <ScrollFade color="#242526" size={32}>
             <div className="max-h-[calc(100vh-306px)] min-h-52 overflow-y-auto p-2">
               {filtered.map((donation) => {
                 const isSelected = donation.id === selected?.id;

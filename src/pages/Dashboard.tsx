@@ -140,12 +140,12 @@ function Metric({
   loadingWidth?: string;
 }) {
   return (
-    <Card className="flex min-h-0 flex-col p-3">
+    <Card className="metric-card flex min-h-0 flex-col">
       <div className="flex items-center justify-between">
         <span className="text-[11px] font-medium text-muted">{label}</span>
-        <Icon size={14} className="text-zinc-600" />
+        <span className="metric-icon"><Icon size={14} /></span>
       </div>
-      <div className="mt-auto pt-2 text-xl font-semibold tracking-[-.03em]">
+      <div className="metric-value mt-auto pt-2 font-semibold tracking-[-.03em]">
         {loading ? (
           <LoadingIndicator className={`h-6 ${loadingWidth}`} />
         ) : (
@@ -1278,10 +1278,10 @@ export function Dashboard() {
       )}
       {visibleMetricWidgets.length > 0 && (
         <div
-          className="grid gap-2"
+          className="dashboard-metrics grid gap-2"
           style={{
             gridTemplateColumns:
-              "repeat(auto-fit, minmax(min(100%, 180px), 1fr))",
+              "repeat(auto-fit, minmax(min(100%, 240px), 1fr))",
           }}
         >
           {visibleMetricWidgets.map((id) => {
@@ -1318,7 +1318,7 @@ export function Dashboard() {
       {visibleContentWidgets.length > 0 && (
         <div
           className={cn(
-            "grid grid-flow-row-dense gap-2",
+            "dashboard-content grid grid-flow-row-dense gap-2",
             visibleMetricWidgets.length > 0 && "mt-2",
           )}
           style={{

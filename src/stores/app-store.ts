@@ -35,7 +35,7 @@ export const defaultSettings: AppSettings = {
   animations: true,
   uiDensity: "compact",
   contentWidth: "wide",
-  accentColor: "violet",
+  accentColor: "orange",
   sidebarCollapsed: false,
   dashboardWidgets: defaultDashboardWidgets,
   dashboardWidgetDimensions: {},
