@@ -61,6 +61,7 @@ export const defaultSettings: AppSettings = {
   notifyGiftSubs: true,
   maximumEvents: 5000,
   disabledEventTypes: [],
+  donationToolDoneIds: [],
   goals: {},
   goalAutomation: {},
 };

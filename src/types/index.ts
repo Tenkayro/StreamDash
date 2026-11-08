@@ -113,6 +113,7 @@ export interface AppSettings {
   notifyGiftSubs: boolean
   maximumEvents: number
   disabledEventTypes: ActivityType[]
+  donationToolDoneIds: string[]
   goals: Partial<Record<GoalMetric, number>>
   goalAutomation: Partial<Record<GoalMetric, GoalAutomation>>
 }
