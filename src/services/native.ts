@@ -1,5 +1,5 @@
 import { invoke } from "@tauri-apps/api/core";
-import type { ActivityEvent, AppSettings, TwitchSession } from "../types";
+import type { ActivityEvent, AppSettings, ChatMessage, TwitchSession } from "../types";
 import { isTauri } from "../lib/utils";
 
 export async function loadEvents(limit = 5000): Promise<ActivityEvent[]> {
@@ -13,6 +13,21 @@ export async function saveEvent(
 }
 export async function clearEvents() {
   if (isTauri()) await invoke("events_clear");
+}
+export async function loadChatMessages(limit = 1000): Promise<ChatMessage[]> {
+  return isTauri() ? invoke("chat_messages_list", { limit }) : [];
+}
+export async function saveChatMessage(
+  message: ChatMessage,
+  maxMessages: number,
+): Promise<boolean> {
+  return isTauri() ? invoke("chat_message_insert", { message, maxMessages }) : true;
+}
+export async function updateChatMessage(opts: { id?: string; login?: string; deleted: boolean }) {
+  if (isTauri()) await invoke("chat_message_update", opts);
+}
+export async function clearChatMessages() {
+  if (isTauri()) await invoke("chat_messages_clear");
 }
 export async function loadSettings(): Promise<Partial<AppSettings>> {
   return isTauri()

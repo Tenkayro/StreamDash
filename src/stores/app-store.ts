@@ -11,6 +11,7 @@ import type {
   DashboardItemId,
   ObsSnapshot,
 } from "../types";
+import { clearChatMessages, updateChatMessage } from "../services/native";
 
 export const defaultDashboardWidgets: DashboardItemId[] = [
   "followers",
@@ -99,6 +100,7 @@ interface AppStore {
   chatEmotes: ChatEmote[];
   setChatEmotes: (emotes: ChatEmote[]) => void;
   chatMessages: ChatMessage[];
+  setChatMessages: (messages: ChatMessage[]) => void;
   pushChatMessage: (message: ChatMessage) => void;
   removeChatMessage: (id: string) => void;
   clearChat: (login?: string) => void;
@@ -200,6 +202,7 @@ export const useAppStore = create<AppStore>((set) => ({
   chatEmotes: [],
   setChatEmotes: (chatEmotes) => set({ chatEmotes }),
   chatMessages: [],
+  setChatMessages: (chatMessages) => set({ chatMessages }),
   pushChatMessage: (message) =>
     set((s) => {
       if (s.chatMessages.some((item) => item.id === message.id)) return s;
@@ -223,20 +226,25 @@ export const useAppStore = create<AppStore>((set) => ({
           : s.unreadCounts,
       };
     }),
-  removeChatMessage: (id) =>
+  removeChatMessage: (id) => {
+    void updateChatMessage({ id, deleted: true }).catch(() => undefined);
     set((s) => ({
       chatMessages: s.chatMessages.map((message) =>
         message.id === id ? { ...message, deleted: true } : message,
       ),
-    })),
-  clearChat: (login) =>
+    }));
+  },
+  clearChat: (login) => {
+    if (login) void updateChatMessage({ login, deleted: true }).catch(() => undefined);
+    else void clearChatMessages().catch(() => undefined);
     set((s) => ({
       chatMessages: login
         ? s.chatMessages.map((message) =>
             message.login === login ? { ...message, deleted: true } : message,
           )
         : [],
-    })),
+    }));
+  },
   stats: emptyStats,
   statsLoading: false,
   setStatsLoading: (statsLoading) => set({ statsLoading }),

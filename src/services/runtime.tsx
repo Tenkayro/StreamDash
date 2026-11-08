@@ -16,8 +16,10 @@ import { toast } from "sonner";
 import { useAppStore } from "../stores/app-store";
 import { errorMessage, isTauri, money } from "../lib/utils";
 import {
+  loadChatMessages,
   loadEvents,
   loadSettings,
+  saveChatMessage,
   saveEvent,
   saveSetting,
   secretDelete,
@@ -45,6 +47,7 @@ import i18n from "../i18n";
 type Bootstrap = {
   settings: Partial<AppSettings>;
   events: ActivityEvent[];
+  chatMessages: import("../types").ChatMessage[];
 };
 
 let bootstrapPromise: Promise<Bootstrap> | undefined;
@@ -69,8 +72,11 @@ function loadBootstrap() {
       settings.dashboardLayoutVersion = 3;
       await saveSetting("dashboardLayoutVersion", 3);
     }
-    const events = await loadEvents(settings.maximumEvents ?? 5000);
-    return { settings, events };
+    const [events, chatMessages] = await Promise.all([
+      loadEvents(settings.maximumEvents ?? 5000),
+      loadChatMessages(settings.maximumChatMessages ?? 1000),
+    ]);
+    return { settings, events, chatMessages };
   })().catch((error) => {
     bootstrapPromise = undefined;
     throw error;
@@ -81,6 +87,7 @@ function loadBootstrap() {
 export function RuntimeProvider({ children }: { children: ReactNode }) {
   const setSettings = useAppStore((s) => s.setSettings);
   const setEvents = useAppStore((s) => s.setEvents);
+  const setChatMessages = useAppStore((s) => s.setChatMessages);
   const setReady = useAppStore((s) => s.setReady);
   const twitchPhase = useAppStore((s) => s.twitch.phase);
   const twitchUserId = useAppStore((s) => s.twitch.userId);
@@ -294,6 +301,7 @@ export function RuntimeProvider({ children }: { children: ReactNode }) {
         session.login,
         session.userId,
         (message) => {
+          void saveChatMessage(message, state().settings.maximumChatMessages).catch(() => undefined);
           state().pushChatMessage(message);
           if (message.text.trim().toLowerCase() !== "!song") return;
           const now = Date.now();
@@ -421,10 +429,11 @@ export function RuntimeProvider({ children }: { children: ReactNode }) {
     const unlisten: Array<() => void> = [];
     (async () => {
       try {
-        const { settings, events } = await loadBootstrap();
+        const { settings, events, chatMessages } = await loadBootstrap();
         if (disposed) return;
         setSettings(settings);
         setEvents(events);
+        setChatMessages(chatMessages);
         const bits = events.reduce((n, e) => n + (e.bits ?? 0), 0);
         const donations = events.reduce((n, e) => n + (e.amount ?? 0), 0);
         state().setStats({
@@ -458,7 +467,7 @@ export function RuntimeProvider({ children }: { children: ReactNode }) {
       obsRef.current?.stop();
       chatRef.current?.stop();
     };
-  }, [reconnect, setEvents, setReady, setSettings, state]);
+  }, [reconnect, setChatMessages, setEvents, setReady, setSettings, state]);
 
   const connectTwitch = async () => {
     try {

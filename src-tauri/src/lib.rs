@@ -39,6 +39,7 @@ fn preferences_registry_key() -> &'static str {
 
 struct AppState {
     db: Mutex<Connection>,
+    history: Mutex<Connection>,
 }
 
 struct TrayState {
@@ -77,6 +78,26 @@ struct ActivityRecord {
     bits: Option<i64>,
     viewer_count: Option<i64>,
     metadata: Value,
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+struct ChatRecord {
+    id: String,
+    login: String,
+    display_name: String,
+    color: String,
+    badges: Value,
+    timestamp: i64,
+    text: String,
+    parts: Value,
+    #[serde(default)]
+    first_message: bool,
+    #[serde(default)]
+    action: bool,
+    reply: Option<Value>,
+    #[serde(default)]
+    deleted: bool,
 }
 
 #[derive(Debug, Serialize, Deserialize)]
@@ -243,6 +264,31 @@ fn init_database(path: PathBuf) -> Result<Connection, String> {
     let conn = Connection::open(path).map_err(|e| e.to_string())?;
     conn.execute_batch(
         "PRAGMA journal_mode=WAL;
+         PRAGMA synchronous=NORMAL;
+         CREATE TABLE IF NOT EXISTS settings (key TEXT PRIMARY KEY, value TEXT NOT NULL);
+         CREATE TABLE IF NOT EXISTS activity_events (
+           id TEXT PRIMARY KEY, source TEXT NOT NULL, event_type TEXT NOT NULL,
+           username TEXT, display_name TEXT, timestamp TEXT NOT NULL,
+           amount REAL, currency TEXT, message TEXT, tier TEXT,
+           gift_count INTEGER, bits INTEGER, viewer_count INTEGER,
+           metadata TEXT NOT NULL DEFAULT '{}', created_at INTEGER NOT NULL
+         );
+         CREATE INDEX IF NOT EXISTS idx_activity_timestamp ON activity_events(timestamp DESC);
+         CREATE INDEX IF NOT EXISTS idx_activity_type ON activity_events(event_type);",
+    )
+    .map_err(|e| e.to_string())?;
+    Ok(conn)
+}
+
+fn init_history_database(path: PathBuf) -> Result<Connection, String> {
+    if let Some(parent) = path.parent() {
+        std::fs::create_dir_all(parent).map_err(|e| e.to_string())?;
+    }
+    let conn = Connection::open(path).map_err(|e| e.to_string())?;
+    conn.execute_batch(
+        "PRAGMA journal_mode=WAL;
+         PRAGMA synchronous=NORMAL;
+         PRAGMA temp_store=MEMORY;
          CREATE TABLE IF NOT EXISTS activity_events (
            id TEXT PRIMARY KEY, source TEXT NOT NULL, event_type TEXT NOT NULL,
            username TEXT, display_name TEXT, timestamp TEXT NOT NULL,
@@ -252,10 +298,63 @@ fn init_database(path: PathBuf) -> Result<Connection, String> {
          );
          CREATE INDEX IF NOT EXISTS idx_activity_timestamp ON activity_events(timestamp DESC);
          CREATE INDEX IF NOT EXISTS idx_activity_type ON activity_events(event_type);
-         CREATE TABLE IF NOT EXISTS settings (key TEXT PRIMARY KEY, value TEXT NOT NULL);",
+         CREATE INDEX IF NOT EXISTS idx_activity_source ON activity_events(source);
+         CREATE INDEX IF NOT EXISTS idx_activity_user ON activity_events(username);
+         CREATE TABLE IF NOT EXISTS chat_messages (
+           id TEXT PRIMARY KEY, login TEXT NOT NULL, display_name TEXT NOT NULL,
+           color TEXT NOT NULL DEFAULT '', badges TEXT NOT NULL DEFAULT '[]',
+           timestamp INTEGER NOT NULL, text TEXT NOT NULL, parts TEXT NOT NULL DEFAULT '[]',
+           first_message INTEGER NOT NULL DEFAULT 0, action INTEGER NOT NULL DEFAULT 0,
+           reply TEXT, deleted INTEGER NOT NULL DEFAULT 0
+         );
+         CREATE INDEX IF NOT EXISTS idx_chat_timestamp ON chat_messages(timestamp DESC);
+         CREATE INDEX IF NOT EXISTS idx_chat_login ON chat_messages(login);",
     )
     .map_err(|e| e.to_string())?;
     Ok(conn)
+}
+
+fn migrate_legacy_activity(db: &Connection, history: &Connection) -> Result<(), String> {
+    let count: i64 = history
+        .query_row("SELECT COUNT(*) FROM activity_events", [], |row| row.get(0))
+        .unwrap_or(0);
+    if count > 0 {
+        return Ok(());
+    }
+    let mut stmt = match db.prepare("SELECT id,source,event_type,username,display_name,timestamp,amount,currency,message,tier,gift_count,bits,viewer_count,metadata FROM activity_events") {
+        Ok(s) => s,
+        Err(_) => return Ok(()),
+    };
+    let rows = match stmt.query_map([], |row| {
+        Ok((
+            row.get::<_, String>(0)?,
+            row.get::<_, String>(1)?,
+            row.get::<_, String>(2)?,
+            row.get::<_, Option<String>>(3)?,
+            row.get::<_, Option<String>>(4)?,
+            row.get::<_, String>(5)?,
+            row.get::<_, Option<f64>>(6)?,
+            row.get::<_, Option<String>>(7)?,
+            row.get::<_, Option<String>>(8)?,
+            row.get::<_, Option<String>>(9)?,
+            row.get::<_, Option<i64>>(10)?,
+            row.get::<_, Option<i64>>(11)?,
+            row.get::<_, Option<i64>>(12)?,
+            row.get::<_, String>(13)?,
+        ))
+    }) {
+        Ok(r) => r,
+        Err(_) => return Ok(()),
+    };
+    let tx = history.unchecked_transaction().map_err(|e| e.to_string())?;
+    {
+        let mut insert = tx.prepare("INSERT OR IGNORE INTO activity_events (id,source,event_type,username,display_name,timestamp,amount,currency,message,tier,gift_count,bits,viewer_count,metadata,created_at) VALUES (?1,?2,?3,?4,?5,?6,?7,?8,?9,?10,?11,?12,?13,?14,?15)").map_err(|e| e.to_string())?;
+        for row in rows.flatten() {
+            let _ = insert.execute(params![row.0,row.1,row.2,row.3,row.4,row.5,row.6,row.7,row.8,row.9,row.10,row.11,row.12,row.13,now_epoch()]);
+        }
+    }
+    tx.commit().map_err(|e| e.to_string())?;
+    Ok(())
 }
 
 #[tauri::command]
@@ -263,7 +362,7 @@ fn events_list(
     state: tauri::State<'_, AppState>,
     limit: Option<u32>,
 ) -> Result<Vec<ActivityRecord>, String> {
-    let conn = state.db.lock().map_err(|_| "Database lock failed")?;
+    let conn = state.history.lock().map_err(|_| "Database lock failed")?;
     let mut stmt = conn.prepare(
         "SELECT id,source,event_type,username,display_name,timestamp,amount,currency,message,tier,gift_count,bits,viewer_count,metadata
          FROM activity_events ORDER BY timestamp DESC LIMIT ?1"
@@ -299,7 +398,7 @@ fn event_insert(
     event: ActivityRecord,
     max_events: u32,
 ) -> Result<bool, String> {
-    let conn = state.db.lock().map_err(|_| "Database lock failed")?;
+    let conn = state.history.lock().map_err(|_| "Database lock failed")?;
     let changed = conn.execute(
         "INSERT OR IGNORE INTO activity_events
          (id,source,event_type,username,display_name,timestamp,amount,currency,message,tier,gift_count,bits,viewer_count,metadata,created_at)
@@ -316,10 +415,97 @@ fn event_insert(
 #[tauri::command]
 fn events_clear(state: tauri::State<'_, AppState>) -> Result<(), String> {
     state
-        .db
+        .history
         .lock()
         .map_err(|_| "Database lock failed")?
         .execute("DELETE FROM activity_events", [])
+        .map_err(|e| e.to_string())?;
+    Ok(())
+}
+
+#[tauri::command]
+fn chat_messages_list(
+    state: tauri::State<'_, AppState>,
+    limit: Option<u32>,
+) -> Result<Vec<ChatRecord>, String> {
+    let conn = state.history.lock().map_err(|_| "Database lock failed")?;
+    let mut stmt = conn.prepare(
+        "SELECT id,login,display_name,color,badges,timestamp,text,parts,first_message,action,reply,deleted
+         FROM chat_messages ORDER BY timestamp DESC LIMIT ?1",
+    ).map_err(|e| e.to_string())?;
+    let rows = stmt
+        .query_map([limit.unwrap_or(1000).min(50_000)], |row| {
+            let badges: String = row.get(4)?;
+            let parts: String = row.get(7)?;
+            let reply: Option<String> = row.get(10)?;
+            Ok(ChatRecord {
+                id: row.get(0)?,
+                login: row.get(1)?,
+                display_name: row.get(2)?,
+                color: row.get(3)?,
+                badges: serde_json::from_str(&badges).unwrap_or(json!([])),
+                timestamp: row.get(5)?,
+                text: row.get(6)?,
+                parts: serde_json::from_str(&parts).unwrap_or(json!([])),
+                first_message: row.get::<_, i64>(8)? != 0,
+                action: row.get::<_, i64>(9)? != 0,
+                reply: reply.and_then(|r| serde_json::from_str(&r).ok()),
+                deleted: row.get::<_, i64>(11)? != 0,
+            })
+        })
+        .map_err(|e| e.to_string())?;
+    let mut items: Vec<_> = rows.collect::<Result<Vec<_>, _>>().map_err(|e| e.to_string())?;
+    items.reverse();
+    Ok(items)
+}
+
+#[tauri::command]
+fn chat_message_insert(
+    state: tauri::State<'_, AppState>,
+    message: ChatRecord,
+    max_messages: u32,
+) -> Result<bool, String> {
+    let conn = state.history.lock().map_err(|_| "Database lock failed")?;
+    let changed = conn.execute(
+        "INSERT OR IGNORE INTO chat_messages (id,login,display_name,color,badges,timestamp,text,parts,first_message,action,reply,deleted)
+         VALUES (?1,?2,?3,?4,?5,?6,?7,?8,?9,?10,?11,?12)",
+        params![
+            message.id, message.login, message.display_name, message.color,
+            message.badges.to_string(), message.timestamp, message.text, message.parts.to_string(),
+            if message.first_message { 1 } else { 0 }, if message.action { 1 } else { 0 },
+            message.reply.map(|r| r.to_string()), if message.deleted { 1 } else { 0 },
+        ],
+    ).map_err(|e| e.to_string())?;
+    let keep = max_messages.clamp(100, 50_000);
+    conn.execute("DELETE FROM chat_messages WHERE id IN (SELECT id FROM chat_messages ORDER BY timestamp DESC LIMIT -1 OFFSET ?1)", [keep])
+        .map_err(|e| e.to_string())?;
+    Ok(changed > 0)
+}
+
+#[tauri::command]
+fn chat_message_update(
+    state: tauri::State<'_, AppState>,
+    id: Option<String>,
+    login: Option<String>,
+    deleted: bool,
+) -> Result<(), String> {
+    let conn = state.history.lock().map_err(|_| "Database lock failed")?;
+    if let Some(id) = id {
+        conn.execute("UPDATE chat_messages SET deleted=?2 WHERE id=?1", params![id, if deleted { 1 } else { 0 }])
+            .map_err(|e| e.to_string())?;
+    } else if let Some(login) = login {
+        conn.execute("UPDATE chat_messages SET deleted=?2 WHERE login=?1", params![login, if deleted { 1 } else { 0 }])
+            .map_err(|e| e.to_string())?;
+    } else {
+        conn.execute("UPDATE chat_messages SET deleted=?1", params![if deleted { 1 } else { 0 }])
+            .map_err(|e| e.to_string())?;
+    }
+    Ok(())
+}
+
+#[tauri::command]
+fn chat_messages_clear(state: tauri::State<'_, AppState>) -> Result<(), String> {
+    state.history.lock().map_err(|_| "Database lock failed")?.execute("DELETE FROM chat_messages", [])
         .map_err(|e| e.to_string())?;
     Ok(())
 }
@@ -1062,11 +1248,13 @@ pub fn run() {
             None,
         ))
         .setup(|app| {
-            let db_path = app.path().app_data_dir()?.join("streamdash.db");
-            if let Some(data_directory) = db_path.parent() {
-                migrate_legacy_data(data_directory).map_err(std::io::Error::other)?;
-            }
+            let data_directory = app.path().app_data_dir()?;
+            let db_path = data_directory.join("streamdash.db");
+            let history_path = data_directory.join("history.db");
+            migrate_legacy_data(&data_directory).map_err(std::io::Error::other)?;
             let db = init_database(db_path).map_err(std::io::Error::other)?;
+            let history = init_history_database(history_path).map_err(std::io::Error::other)?;
+            let _ = migrate_legacy_activity(&db, &history);
             let custom_tray = db
                 .query_row(
                     "SELECT value FROM settings WHERE key = 'trayStyle'",
@@ -1076,7 +1264,7 @@ pub fn run() {
                 .ok()
                 .map(|value| serde_json::from_str::<String>(&value).unwrap_or(value) != "classic")
                 .unwrap_or(true);
-            app.manage(AppState { db: Mutex::new(db) });
+            app.manage(AppState { db: Mutex::new(db), history: Mutex::new(history) });
             let spotify_overlay =
                 spotify_overlay::start(17_842).map_err(std::io::Error::other)?;
             app.manage(spotify_overlay);
@@ -1198,6 +1386,10 @@ pub fn run() {
             events_list,
             event_insert,
             events_clear,
+            chat_messages_list,
+            chat_message_insert,
+            chat_message_update,
+            chat_messages_clear,
             settings_load,
             setting_save,
             secret_set,
