@@ -309,28 +309,28 @@ export function TitleBar({ setup = false }: { setup?: boolean }) {
           <button
             type="button"
             role="menuitem"
-            className="flex w-full items-center gap-2.5 rounded-md px-2.5 py-2 text-left text-xs transition hover:bg-white/5"
+            className="flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-left text-[10px] transition hover:bg-white/5"
             onClick={() => {
               setCloseMenuOpen(false);
               void window?.hide();
             }}
           >
-            <span className="grid size-5 shrink-0 place-items-center text-accent">
-              <PanelBottomClose size={13} />
+            <span className="grid size-4 shrink-0 place-items-center text-accent">
+              <PanelBottomClose size={12} />
             </span>
             <span className="truncate font-medium">{t("titleBar.closeToTray")}</span>
           </button>
           <button
             type="button"
             role="menuitem"
-            className="flex w-full items-center gap-2.5 rounded-md px-2.5 py-2 text-left text-xs transition hover:bg-red-400/10"
+            className="flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-left text-[10px] transition hover:bg-red-400/10"
             onClick={() => {
               setCloseMenuOpen(false);
               if (isTauri()) void invoke("app_quit");
             }}
           >
-            <span className="grid size-5 shrink-0 place-items-center text-red-300">
-              <Power size={13} />
+            <span className="grid size-4 shrink-0 place-items-center text-red-300">
+              <Power size={12} />
             </span>
             <span className="truncate font-medium text-red-200">{t("titleBar.quitApp")}</span>
           </button>
