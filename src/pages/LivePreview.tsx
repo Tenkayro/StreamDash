@@ -43,9 +43,11 @@ export function LivePreview() {
         title={t("nav.livePreview")}
         description={t("pageDescriptions.livePreview")}
       />
-      <div className="overflow-hidden rounded-xl border border-line bg-black shadow-2xl shadow-black/20">
-        <TwitchPlayer className="aspect-video h-auto w-full" />
-        <div className="grid border-t border-line bg-panel lg:grid-cols-[minmax(260px,.7fr)_minmax(480px,1.3fr)]">
+      <div className="flex flex-col gap-3">
+        <div className="relative w-full overflow-hidden rounded-xl border border-line bg-black shadow-2xl shadow-black/20 flex-shrink-0 flex items-center justify-center max-h-[calc(100vh-280px)]">
+          <TwitchPlayer className="aspect-[16/9] max-w-full max-h-full" />
+        </div>
+        <div className="grid border-t border-line bg-panel lg:grid-cols-[minmax(260px,.7fr)_minmax(480px,1.3fr)] p-3 gap-3">
           <section className="border-b border-line p-3 lg:border-b-0 lg:border-r">
             <div className="mb-2 flex items-center justify-between"><div className="flex items-center gap-2 text-[10px] font-bold uppercase tracking-wider text-zinc-500"><Radio size={12} className="text-[#9147ff]" />Twitch</div><Badge tone={stats.live ? "green" : twitch.phase === "connected" ? "neutral" : "amber"}>{stats.live ? t("stream.live") : twitch.phase === "connected" ? t("stream.offline") : t(`connectionPhases.${twitch.phase}`)}</Badge></div>
             <div className="grid grid-cols-2 gap-2">
