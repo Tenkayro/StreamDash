@@ -19,7 +19,8 @@ import {
   X,
   type LucideIcon,
 } from "lucide-react";
-import { useEffect, useRef, useState, type MouseEventHandler } from "react";
+import { useEffect, useLayoutEffect, useRef, useState, type MouseEventHandler } from "react";
+import { createPortal } from "react-dom";
 import { isTauri } from "../lib/utils";
 import { useUpdater } from "../services/updater-context";
 import titlebarLogo from "../assets/branding/streamdash-logo-titlebar.webp";
@@ -151,7 +152,9 @@ export function TitleBar({ setup = false }: { setup?: boolean }) {
   const updater = useUpdater();
   const [version, setVersion] = useState("");
   const [closeMenuOpen, setCloseMenuOpen] = useState(false);
+  const [menuPos, setMenuPos] = useState({ right: 0, top: 0 });
   const closeMenuRef = useRef<HTMLDivElement>(null);
+  const closeButtonRef = useRef<HTMLButtonElement>(null);
   const { page, settings, setSettings } = useAppStore();
   const channel = import.meta.env.DEV
     ? "DEV"
@@ -176,6 +179,15 @@ export function TitleBar({ setup = false }: { setup?: boolean }) {
       document.removeEventListener("pointerdown", closeMenu);
       document.removeEventListener("keydown", closeOnEscape);
     };
+  }, [closeMenuOpen]);
+
+  useLayoutEffect(() => {
+    if (!closeMenuOpen || !closeButtonRef.current) return;
+    const rect = closeButtonRef.current.getBoundingClientRect();
+    setMenuPos({
+      right: document.documentElement.clientWidth - rect.right,
+      top: rect.bottom + 4,
+    });
   }, [closeMenuOpen]);
 
   return (
@@ -208,7 +220,7 @@ export function TitleBar({ setup = false }: { setup?: boolean }) {
         </span>
       </div>
       <div data-tauri-drag-region className="h-full min-w-8 flex-1" />
-      <div className="no-drag flex h-full shrink-0 items-center">
+      <div data-tauri-drag-region="false" className="no-drag flex h-full shrink-0 items-center">
         {!setup && <div className="flex items-center gap-0.5 px-1.5">
           {page === "dashboard" && (
             <button
@@ -267,6 +279,7 @@ export function TitleBar({ setup = false }: { setup?: boolean }) {
           <Square size={11} />
         </button>
         <button
+          ref={closeButtonRef}
           aria-label={t("titleBar.close")}
           className="grid h-full w-11 place-items-center hover:bg-red-600 hover:text-white"
           onClick={() => {
@@ -278,16 +291,20 @@ export function TitleBar({ setup = false }: { setup?: boolean }) {
             event.stopPropagation();
             setCloseMenuOpen(true);
           }}
+          onMouseDown={(event) => event.stopPropagation()}
+          onMouseUp={(event) => event.stopPropagation()}
         >
           <X size={14} />
         </button>
       </div>
-      {closeMenuOpen && (
+      {closeMenuOpen && createPortal(
         <div
           ref={closeMenuRef}
+          data-tauri-drag-region="false"
           role="menu"
           aria-label={t("titleBar.closeOptions")}
-          className="no-drag absolute right-1 top-[calc(100%+4px)] z-50 w-52 rounded-lg border border-line bg-raised p-1 text-zinc-200 shadow-xl shadow-black/40"
+          className="fixed z-50 w-52 rounded-lg border border-line bg-raised p-1 text-zinc-200 shadow-xl shadow-black/40"
+          style={{ right: menuPos.right, top: menuPos.top }}
         >
           <button
             type="button"
@@ -317,7 +334,8 @@ export function TitleBar({ setup = false }: { setup?: boolean }) {
             </span>
             <span className="truncate font-medium text-red-200">{t("titleBar.quitApp")}</span>
           </button>
-        </div>
+        </div>,
+        document.body,
       )}
     </div>
   );
