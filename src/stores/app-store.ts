@@ -77,6 +77,9 @@ interface AppStore {
   goForward: () => void;
   ready: boolean;
   setReady: (ready: boolean) => void;
+  unreadCounts: Record<string, number>;
+  incrementUnread: (id: string) => void;
+  markPageRead: (id: string) => void;
   events: ActivityEvent[];
   setEvents: (events: ActivityEvent[]) => void;
   pushEvent: (event: ActivityEvent) => void;
@@ -127,6 +130,7 @@ export const useAppStore = create<AppStore>((set) => ({
             page,
             pageHistory: history,
             pageHistoryIndex: history.length - 1,
+            unreadCounts: { ...s.unreadCounts, [page]: 0 },
           };
         }),
       current.settings.animations,
@@ -160,14 +164,29 @@ export const useAppStore = create<AppStore>((set) => ({
   },
   ready: false,
   setReady: (ready) => set({ ready }),
+  unreadCounts: {},
+  incrementUnread: (id) =>
+    set((s) => ({
+      unreadCounts: { ...s.unreadCounts, [id]: (s.unreadCounts[id] ?? 0) + 1 },
+    })),
+  markPageRead: (id) =>
+    set((s) => ({ unreadCounts: { ...s.unreadCounts, [id]: 0 } })),
   events: [],
   setEvents: (events) => set({ events }),
   pushEvent: (event) =>
-    set((s) =>
-      s.events.some((e) => e.id === event.id)
-        ? s
-        : { events: [event, ...s.events].slice(0, s.settings.maximumEvents) },
-    ),
+    set((s) => {
+      const counts = { ...s.unreadCounts };
+      if (s.page !== "donations" && event.eventType === "donation") {
+        counts.donations = (counts.donations ?? 0) + 1;
+      }
+      if (s.page !== "activity") {
+        counts.activity = (counts.activity ?? 0) + 1;
+      }
+      return {
+        events: [event, ...s.events].slice(0, s.settings.maximumEvents),
+        unreadCounts: counts,
+      };
+    }),
   clearEvents: () => set({ events: [] }),
   twitch: { phase: "disconnected" },
   setTwitch: (twitch) => set({ twitch }),
@@ -202,6 +221,9 @@ export const useAppStore = create<AppStore>((set) => ({
         chatMessages: [...withoutEcho, message].slice(
           -s.settings.maximumChatMessages,
         ),
+        unreadCounts: s.page !== "chat"
+          ? { ...s.unreadCounts, chat: (s.unreadCounts.chat ?? 0) + 1 }
+          : s.unreadCounts,
       };
     }),
   removeChatMessage: (id) =>

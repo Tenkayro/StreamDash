@@ -9,7 +9,7 @@ import twitchIcon from "../assets/services/twitch.webp";
 import streamElementsIcon from "../assets/services/streamelements.webp";
 import tipeeStreamIcon from "../assets/services/tipeeestream.webp";
 import obsIcon from "../assets/services/obs.svg";
-import { LoadingIndicator } from "./ui";
+import { LoadingIndicator, Badge } from "./ui";
 import { useTranslation } from "react-i18next";
 import { navigationGroups, navigationItems, OPEN_COMMAND_PALETTE } from "../lib/navigation";
 function currentTranslateY(element: HTMLElement) {
@@ -56,7 +56,7 @@ function Status({
 }
 export function Sidebar() {
   const { t } = useTranslation();
-  const { page, setPage, twitch, streamElements, tipeeStream, obs, settings, setSettings } =
+  const { page, setPage, twitch, streamElements, tipeeStream, obs, settings, setSettings, unreadCounts } =
     useAppStore();
   const collapsed = settings.sidebarCollapsed;
   const [narrow, setNarrow] = useState(() => window.matchMedia("(max-width: 900px)").matches);
@@ -184,6 +184,8 @@ export function Sidebar() {
                 {navigationItems.filter((item) => item.group === group).map(({ id, label, icon: Icon }) => {
             const attention = id === "connections" && permissionAttention;
             const translatedLabel = t(`nav.${label}`);
+            const unread = unreadCounts[id] ?? 0;
+            const badge = unread > 0 ? <Badge tone="purple">{unread > 9 ? "9+" : unread}</Badge> : null;
             return (
               <button
                 data-active={page === id ? "true" : undefined}
@@ -196,7 +198,9 @@ export function Sidebar() {
                 }
                 aria-label={attention ? t("nav.requiredAttention", { label: translatedLabel }) : translatedLabel}
                 key={id}
-                onClick={() => setPage(id)}
+                onClick={() => {
+                  setPage(id);
+                }}
                 className={cn(
                   "relative flex h-9 w-full items-center rounded-lg text-sm text-zinc-500 transition-colors hover:bg-white/4 hover:text-zinc-200",
                   compact ? "justify-center" : "gap-3 px-3",
@@ -205,6 +209,8 @@ export function Sidebar() {
               >
                 <Icon size={16} />
                 {!compact && <span className="flex-1 text-left">{translatedLabel}</span>}
+                {!compact && badge}
+                {compact && badge && <div className="absolute -right-2 top-1/2 -translate-y-1/2">{badge}</div>}
                 {attention && (
                   <AlertTriangle
                     size={14}
