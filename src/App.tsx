@@ -1,5 +1,5 @@
 import { useSearchLanding } from "./lib/search-navigation";
-import { lazy, Suspense, useEffect, useLayoutEffect, useRef, useState } from "react";
+import { lazy, Suspense, useEffect, useRef, useState } from "react";
 import { getCurrentWindow } from "@tauri-apps/api/window";
 import { getVersion } from "@tauri-apps/api/app";
 import { invoke } from "@tauri-apps/api/core";
@@ -134,7 +134,7 @@ export default function App() {
   useEffect(() => {
     if (isTauri()) void getVersion().then(setAppVersion).catch(() => undefined);
   }, []);
-  useLayoutEffect(() => {
+  useEffect(() => {
     mainRef.current?.scrollTo({ top: 0, behavior: "auto" });
   }, [page]);
   useEffect(() => {

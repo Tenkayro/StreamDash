@@ -176,16 +176,12 @@ button:focus-visible,
     opacity: 0;
   }
 }
-::view-transition-old(root) {
-  animation: page-fade-out 0.18s ease-in both;
-}
-::view-transition-new(root) {
-  animation: page-fade-in 0.26s cubic-bezier(0.16, 1, 0.3, 1) both;
-}
 @media (prefers-reduced-motion: reduce) {
-  ::view-transition-old(root),
-  ::view-transition-new(root) {
-    animation: none;
+  * {
+    animation-duration: 0.01ms !important;
+    transition-duration: 0.01ms !important;
+    transition-delay: 0s !important;
+    animation-delay: 0s !important;
   }
 }
 .drag-region {
