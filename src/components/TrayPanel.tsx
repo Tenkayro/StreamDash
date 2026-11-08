@@ -123,7 +123,7 @@ export function TrayBridge() {
         dashboard: t("nav.dashboard"),
         stream: t("nav.stream"),
         chat: t("nav.chat"),
-        activity: t("nav.activity"),
+        activity: t("nav.activitys"),
         reconnect: t("tray.reconnect"),
         settings: t("nav.settings"),
         quit: t("tray.quit"),
@@ -235,7 +235,7 @@ export function TrayPanel() {
             <QuickAction icon={LayoutDashboard} label={t("nav.dashboard")} action="dashboard" />
             <QuickAction icon={RadioTower} label={t("nav.stream")} action="stream" />
             <QuickAction icon={MessageSquare} label={t("nav.chat")} action="chat" />
-            <QuickAction icon={Activity} label={t("nav.activity")} action="activity" />
+            <QuickAction icon={Activity} label={t("nav.activitys")} action="activitys" />
             <button
               type="button"
               disabled={reconnecting}

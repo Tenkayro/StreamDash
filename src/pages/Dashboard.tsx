@@ -90,11 +90,11 @@ const widgetCatalog: WidgetCatalogEntry[] = [
     label: "Event count",
     description: "Stored activity total",
   },
-  {
-    id: "activity",
-    label: "Recent activity",
-    description: "Latest events at a glance",
-  },
+    {
+      id: "activitys",
+      label: "Recent activity",
+      description: "Latest events at a glance",
+    },
   {
     id: "streamDetails",
     label: "Stream details",
@@ -270,7 +270,7 @@ function defaultWidgetDimensions(
   id: DashboardItemId,
 ): DashboardWidgetDimensions {
   if (metricWidgetIds.has(id)) return { width: "single", height: 96 };
-  if (id === "activity") return { width: "wide", height: 288 };
+  if (id === "activitys") return { width: "wide", height: 288 };
   if (id === "streamDetails") return { width: "single", height: 224 };
   if (id === "livePreview") return { width: "full", height: 384 };
   if (id === "goals") return { width: "single", height: 208 };
@@ -977,7 +977,7 @@ export function Dashboard() {
     }
     if (
       ![
-        "activity",
+        "activitys",
         "streamDetails",
         "livePreview",
         "goals",
@@ -986,14 +986,14 @@ export function Dashboard() {
       ].includes(id)
     )
       return metric(id as DashboardWidgetId);
-    if (id === "activity")
+    if (id === "activitys")
       return (
         <Card className="overflow-hidden">
           <div className="flex items-center justify-between border-b border-line px-4 py-3">
             <h2 className="text-xs font-semibold">{t("dashboard.recentActivity")}</h2>
             <button
               className="text-[11px] text-accent hover:brightness-125"
-              onClick={() => setPage("activity")}
+              onClick={() => setPage("activitys")}
             >
               {t("dashboard.viewAll")}
             </button>

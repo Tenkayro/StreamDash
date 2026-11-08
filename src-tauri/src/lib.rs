@@ -942,8 +942,9 @@ fn tray_action(app: tauri::AppHandle, action: String) -> Result<(), String> {
     }
     match action.as_str() {
         "open" => show_main_window(&app, None),
-        "dashboard" | "stream" | "chat" | "activity" | "settings" => {
-            show_main_window(&app, Some(&action));
+        "dashboard" | "stream" | "chat" | "activitys" | "activity" | "donations" | "settings" => {
+            let page = if action == "activity" || action == "donations" { "activitys" } else { &action };
+            show_main_window(&app, Some(page));
         }
         "reconnect" => {
             let _ = app.emit("tray-reconnect", ());
@@ -983,7 +984,7 @@ fn tray_configure(
         .text("dashboard", config.dashboard)
         .text("stream", config.stream)
         .text("chat", config.chat)
-        .text("activity", config.activity)
+        .text("activitys", config.activity)
         .separator()
         .text("reconnect", config.reconnect)
         .text("settings", config.settings)
@@ -1126,7 +1127,7 @@ pub fn run() {
                 .text("dashboard", "Dashboard")
                 .text("stream", "Stream")
                 .text("chat", "Chat")
-                .text("activity", "Activity")
+                .text("activitys", "Activitys")
                 .separator()
                 .text("reconnect", "Reconnect services")
                 .text("settings", "Settings")

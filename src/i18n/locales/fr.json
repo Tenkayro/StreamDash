@@ -173,10 +173,110 @@
     "updatePermissions": "Mettre à jour les autorisations"
   },
   "dashboard": {
-    "activityEvents": "Événements d’activité", "add": "Ajouter", "addBrowserSource": "Ajouter une source navigateur", "addWidgets": "Ajouter des widgets", "bitsCollected": "Bits collectés", "browserSource": "Source navigateur", "cancel": "Annuler", "currentViewers": "Spectateurs actuels", "customize": "Personnaliser", "deleteWidget": "Supprimer {{label}}", "donations": "Dons", "edit": "Modifier", "embedHint": "Certains sites bloquent l’intégration. HTTPS et les adresses de développement locales sont pris en charge.", "empty": "Votre tableau de bord est vide", "finish": "Terminer", "followers": "Followers", "hidden": "Masqués", "hiddenHint": "Les widgets masqués apparaissent ici", "hideWidget": "Masquer {{label}}", "httpsOnly": "Utilisez une URL HTTPS ou une adresse de développement locale", "invalidSource": "Source navigateur invalide", "layoutSaveError": "Impossible d’enregistrer la disposition", "manage": "Gérer", "moveWidget": "Déplacer {{label}}", "nameOptional": "Nom (facultatif)", "noStreamInfo": "Aucune information de stream", "open": "Ouvrir", "recentActivity": "Activité récente", "resetDashboard": "Réinitialiser le tableau de bord", "resetError": "Impossible de réinitialiser la disposition", "resizeWidget": "Redimensionner {{label}}", "showWidget": "Afficher {{label}} — {{description}}", "sizeSaveError": "Impossible d’enregistrer la taille du widget", "sourceDeleteError": "Impossible de supprimer la source navigateur", "sourceName": "Nom de la source navigateur", "sourceSaveError": "Impossible d’enregistrer la source navigateur", "sourceUrl": "URL de la source navigateur", "streamDetails": "Détails du stream", "streamDuration": "Durée du stream", "streamStatus": "Statut du stream", "streamTitle": "Titre", "subscribers": "Abonnés", "validUrl": "Saisissez une URL valide", "viewAll": "Tout afficher", "widget": "Widget",
+    "activityEvents": "Événements d’activité",
+    "add": "Ajouter",
+    "addBrowserSource": "Ajouter une source navigateur",
+    "addWidgets": "Ajouter des widgets",
+    "bitsCollected": "Bits collectés",
+    "browserSource": "Source navigateur",
+    "cancel": "Annuler",
+    "currentViewers": "Spectateurs actuels",
+    "customize": "Personnaliser",
+    "deleteWidget": "Supprimer {{label}}",
+    "donations": "Dons",
+    "edit": "Modifier",
+    "embedHint": "Certains sites bloquent l’intégration. HTTPS et les adresses de développement locales sont pris en charge.",
+    "empty": "Votre tableau de bord est vide",
+    "finish": "Terminer",
+    "followers": "Followers",
+    "hidden": "Masqués",
+    "hiddenHint": "Les widgets masqués apparaissent ici",
+    "hideWidget": "Masquer {{label}}",
+    "httpsOnly": "Utilisez une URL HTTPS ou une adresse de développement locale",
+    "invalidSource": "Source navigateur invalide",
+    "layoutSaveError": "Impossible d’enregistrer la disposition",
+    "manage": "Gérer",
+    "moveWidget": "Déplacer {{label}}",
+    "nameOptional": "Nom (facultatif)",
+    "noStreamInfo": "Aucune information de stream",
+    "open": "Ouvrir",
+    "recentActivity": "Activité récente",
+    "resetDashboard": "Réinitialiser le tableau de bord",
+    "resetError": "Impossible de réinitialiser la disposition",
+    "resizeWidget": "Redimensionner {{label}}",
+    "showWidget": "Afficher {{label}} — {{description}}",
+    "sizeSaveError": "Impossible d’enregistrer la taille du widget",
+    "sourceDeleteError": "Impossible de supprimer la source navigateur",
+    "sourceName": "Nom de la source navigateur",
+    "sourceSaveError": "Impossible d’enregistrer la source navigateur",
+    "sourceUrl": "URL de la source navigateur",
+    "streamDetails": "Détails du stream",
+    "streamDuration": "Durée du stream",
+    "streamStatus": "Statut du stream",
+    "streamTitle": "Titre",
+    "subscribers": "Abonnés",
+    "validUrl": "Saisissez une URL valide",
+    "viewAll": "Tout afficher",
+    "widget": "Widget",
     "widgets": {
-      "activity": { "description": "Derniers événements en un coup d’œil", "label": "Activité récente" }, "bits": { "description": "Bits collectés localement", "label": "Bits" }, "connections": { "description": "État des services et comptes", "label": "Connexions" }, "donations": { "description": "Dons collectés localement", "label": "Dons" }, "duration": { "description": "Temps écoulé depuis le début du direct", "label": "Durée du stream" }, "eventCount": { "description": "Total de l’activité enregistrée", "label": "Nombre d’événements" }, "followers": { "description": "Followers Twitch actuels", "label": "Followers" }, "goals": { "description": "Progression vers vos objectifs", "label": "Objectifs" }, "livePreview": { "description": "Regarder votre stream Twitch", "label": "Aperçu en direct" }, "obs": { "description": "État, scène et audio", "label": "OBS" }, "status": { "description": "État du direct et titre", "label": "Statut du stream" }, "streamDetails": { "description": "Titre et catégorie", "label": "Détails du stream" }, "subscribers": { "description": "Abonnements actifs actuels", "label": "Abonnés" }, "viewers": { "description": "Spectateurs actuels du direct", "label": "Spectateurs" }
-    }, "zoomSaveError": "Impossible d’enregistrer le zoom du tableau de bord"
+      "bits": {
+        "description": "Bits collectés localement",
+        "label": "Bits"
+      },
+      "connections": {
+        "description": "État des services et comptes",
+        "label": "Connexions"
+      },
+      "donations": {
+        "description": "Dons collectés localement",
+        "label": "Dons"
+      },
+      "duration": {
+        "description": "Temps écoulé depuis le début du direct",
+        "label": "Durée du stream"
+      },
+      "eventCount": {
+        "description": "Total de l’activité enregistrée",
+        "label": "Nombre d’événements"
+      },
+      "followers": {
+        "description": "Followers Twitch actuels",
+        "label": "Followers"
+      },
+      "goals": {
+        "description": "Progression vers vos objectifs",
+        "label": "Objectifs"
+      },
+      "livePreview": {
+        "description": "Regarder votre stream Twitch",
+        "label": "Aperçu en direct"
+      },
+      "obs": {
+        "description": "État, scène et audio",
+        "label": "OBS"
+      },
+      "status": {
+        "description": "État du direct et titre",
+        "label": "Statut du stream"
+      },
+      "streamDetails": {
+        "description": "Titre et catégorie",
+        "label": "Détails du stream"
+      },
+      "subscribers": {
+        "description": "Abonnements actifs actuels",
+        "label": "Abonnés"
+      },
+      "viewers": {
+        "description": "Spectateurs actuels du direct",
+        "label": "Spectateurs"
+      },
+      "activitys": {
+        "description": "Derniers événements en un coup d’œil",
+        "label": "Activité récente"
+      }
+    },
+    "zoomSaveError": "Impossible d’enregistrer le zoom du tableau de bord"
   },
   "events": {
     "channel_point": "Récompense",
@@ -223,10 +323,20 @@
     "pt-BR": "Portugais (Brésil)"
   },
   "livePreview": {
-    "notConnected": "Connectez Twitch pour afficher l’aperçu", "notConnectedDetail": "StreamDash affichera votre propre chaîne ici après la connexion de votre compte broadcaster."
+    "notConnected": "Connectez Twitch pour afficher l’aperçu",
+    "notConnectedDetail": "StreamDash affichera votre propre chaîne ici après la connexion de votre compte broadcaster."
   },
   "navigation": {
-    "close": "Fermer la navigation rapide", "insights": "Analyses", "main": "Espace de travail", "manageConnections": "Gérer les connexions", "moveHint": "↑↓ Sélectionner", "noResults": "Aucune page correspondante", "openHint": "Entrée Ouvrir", "quickSwitch": "Tout rechercher", "searchPlaceholder": "Rechercher pages, paramètres, personnes, messages…", "system": "Système"
+    "close": "Fermer la navigation rapide",
+    "insights": "Analyses",
+    "main": "Espace de travail",
+    "manageConnections": "Gérer les connexions",
+    "moveHint": "↑↓ Sélectionner",
+    "noResults": "Aucune page correspondante",
+    "openHint": "Entrée Ouvrir",
+    "quickSwitch": "Tout rechercher",
+    "searchPlaceholder": "Rechercher pages, paramètres, personnes, messages…",
+    "system": "Système"
   },
   "obs": {
     "title": "OBS Studio",
@@ -262,17 +372,55 @@
     "stopStream": "Arrêter le stream",
     "stopVirtualCam": "Arrêter la caméra virtuelle",
     "page": {
-      "active": "Actif", "inactive": "Inactif", "paused": "En pause", "running": "En cours",
-      "recordingRequired": "Démarrez d’abord l’enregistrement", "replayRequired": "Démarrez d’abord le tampon de replay", "saveReplayDescription": "Enregistrer le replay actuel sur le disque",
-      "streamOutput": "Sortie du stream", "recordingOutput": "Sortie d’enregistrement", "performance": "Performances", "cpuValue": "{{value}} % d’utilisation CPU", "droppedFrames": "Images perdues", "currentScene": "Actuelle : {{scene}}",
-      "outputControls": "Contrôles des sorties", "outputControlsDescription": "Contrôlez le stream, l’enregistrement, le tampon de replay et la caméra virtuelle.",
-      "scenes": "Scènes", "scenesDescription": "Changez la scène programme d’OBS directement depuis StreamDash.", "program": "Programme", "noScenes": "OBS n’a signalé aucune scène.",
-      "audioMixer": "Mixeur audio", "audioMixerDescription": "Réglez le volume ou coupez les canaux audio OBS actifs.", "noAudio": "OBS n’a signalé aucun canal audio pris en charge.",
-      "details": "Détails OBS", "detailsDescription": "Profil, collection de scènes et connexion WebSocket actuels.", "version": "Version", "profile": "Profil", "sceneCollection": "Collection de scènes", "websocketAddress": "Adresse WebSocket",
-      "volume": "Volume de {{name}}", "connectionSettings": "Paramètres de connexion", "notConnected": "OBS n'est pas lancé", "notConnectedDescription": "Démarrez OBS et activez le serveur WebSocket dans Outils → Paramètres du serveur WebSocket, puis reconnectez-vous ici."
+      "active": "Actif",
+      "inactive": "Inactif",
+      "paused": "En pause",
+      "running": "En cours",
+      "recordingRequired": "Démarrez d’abord l’enregistrement",
+      "replayRequired": "Démarrez d’abord le tampon de replay",
+      "saveReplayDescription": "Enregistrer le replay actuel sur le disque",
+      "streamOutput": "Sortie du stream",
+      "recordingOutput": "Sortie d’enregistrement",
+      "performance": "Performances",
+      "cpuValue": "{{value}} % d’utilisation CPU",
+      "droppedFrames": "Images perdues",
+      "currentScene": "Actuelle : {{scene}}",
+      "outputControls": "Contrôles des sorties",
+      "outputControlsDescription": "Contrôlez le stream, l’enregistrement, le tampon de replay et la caméra virtuelle.",
+      "scenes": "Scènes",
+      "scenesDescription": "Changez la scène programme d’OBS directement depuis StreamDash.",
+      "program": "Programme",
+      "noScenes": "OBS n’a signalé aucune scène.",
+      "audioMixer": "Mixeur audio",
+      "audioMixerDescription": "Réglez le volume ou coupez les canaux audio OBS actifs.",
+      "noAudio": "OBS n’a signalé aucun canal audio pris en charge.",
+      "details": "Détails OBS",
+      "detailsDescription": "Profil, collection de scènes et connexion WebSocket actuels.",
+      "version": "Version",
+      "profile": "Profil",
+      "sceneCollection": "Collection de scènes",
+      "websocketAddress": "Adresse WebSocket",
+      "volume": "Volume de {{name}}",
+      "connectionSettings": "Paramètres de connexion",
+      "notConnected": "OBS n'est pas lancé",
+      "notConnectedDescription": "Démarrez OBS et activez le serveur WebSocket dans Outils → Paramètres du serveur WebSocket, puis reconnectez-vous ici."
     },
     "spotifyOverlay": {
-      "title": "Overlay Spotify", "description": "Affiche le titre actuel de l’application Spotify pour ordinateur dans OBS sans connexion à l’API Spotify.", "browserSource": "Source navigateur OBS", "size": "Taille recommandée : {{width}} × {{height}}", "playing": "Lecture en cours", "paused": "En pause", "waiting": "En attente de Spotify", "urlLabel": "URL de l’overlay Spotify", "desktopOnly": "Disponible dans l’application pour ordinateur", "copy": "Copier l’URL", "copied": "URL de l’overlay Spotify copiée", "copyError": "Impossible de copier l’URL de l’overlay Spotify", "hint": "Ajoutez l’URL dans OBS comme source navigateur. Gardez StreamDash et Spotify ouverts ; l’overlay se masque lorsque Spotify est indisponible.", "previewTitle": "Titre Spotify actuel", "previewArtist": "L’artiste apparaîtra automatiquement"
+      "title": "Overlay Spotify",
+      "description": "Affiche le titre actuel de l’application Spotify pour ordinateur dans OBS sans connexion à l’API Spotify.",
+      "browserSource": "Source navigateur OBS",
+      "size": "Taille recommandée : {{width}} × {{height}}",
+      "playing": "Lecture en cours",
+      "paused": "En pause",
+      "waiting": "En attente de Spotify",
+      "urlLabel": "URL de l’overlay Spotify",
+      "desktopOnly": "Disponible dans l’application pour ordinateur",
+      "copy": "Copier l’URL",
+      "copied": "URL de l’overlay Spotify copiée",
+      "copyError": "Impossible de copier l’URL de l’overlay Spotify",
+      "hint": "Ajoutez l’URL dans OBS comme source navigateur. Gardez StreamDash et Spotify ouverts ; l’overlay se masque lorsque Spotify est indisponible.",
+      "previewTitle": "Titre Spotify actuel",
+      "previewArtist": "L’artiste apparaîtra automatiquement"
     },
     "errors": {
       "authRequired": "OBS demande un mot de passe. Ajoutez-le dans Connexions.",
@@ -286,7 +434,14 @@
   },
   "pageDescriptions": {
     "donations": "Examinez, filtrez et modérez les dons et les événements du stream dans une seule boîte de réception.",
-    "connections": "Connectez vos comptes et vérifiez l’état des services.", "dashboard": "Votre stream, votre audience et votre activité en un coup d’œil.", "goals": "Définissez des objectifs et suivez votre progression.", "livePreview": "Surveillez votre stream Twitch public sans quitter StreamDash.", "obs": "Contrôlez les scènes, l’audio, le stream, l’enregistrement et les sorties OBS au même endroit.", "settings": "Réglez l’apparence, le comportement, les notifications et les données.", "statistics": "Analysez les tendances à partir de vos événements enregistrés."
+    "connections": "Connectez vos comptes et vérifiez l’état des services.",
+    "dashboard": "Votre stream, votre audience et votre activité en un coup d’œil.",
+    "goals": "Définissez des objectifs et suivez votre progression.",
+    "livePreview": "Surveillez votre stream Twitch public sans quitter StreamDash.",
+    "obs": "Contrôlez les scènes, l’audio, le stream, l’enregistrement et les sorties OBS au même endroit.",
+    "settings": "Réglez l’apparence, le comportement, les notifications et les données.",
+    "statistics": "Analysez les tendances à partir de vos événements enregistrés.",
+    "activitys": "Consultez le fil d’activité, les dons et les événements du stream au même endroit."
   },
   "nav": {
     "activity": "Activité",
@@ -304,14 +459,55 @@
     "requiredAttention": "{{label}} : intervention requise",
     "settings": "Paramètres",
     "statistics": "Statistiques",
-    "stream": "Stream"
+    "stream": "Stream",
+    "activitys": "Activitys"
   },
   "onboarding": {
-    "back": "Retour", "connectedAs": "Connecté en tant que {{account}}", "continue": "Continuer", "detectedLanguage": "Détectée : {{language}}", "finishError": "Impossible de terminer la configuration", "integrationsBody": "Connectez les services que vous utilisez. Tout pourra être modifié plus tard dans Connexions.", "integrationsTitle": "Ajoutez vos intégrations", "jwtLabel": "JWT du compte StreamElements", "languageBody": "Choisissez la langue à utiliser. Le mode automatique suit votre ordinateur et reste l’option recommandée.", "languageSummary": "Langue de l’interface", "languageTitle": "Bienvenue dans StreamDash", "next": "Suivant", "preferencesBody": "Définissez le comportement de StreamDash sous Windows. Toutes les options pourront être modifiées ultérieurement.", "preferencesTitle": "Choisissez vos préférences", "readyBody": "La configuration essentielle est terminée. Vous pourrez connecter les services ignorés et tout ajuster dans les paramètres.", "readyTitle": "Vous êtes prêt à diffuser", "skipSetup": "Ignorer la configuration", "start": "Ouvrir le tableau de bord",
-    "steps": { "integrations": "Intégrations", "language": "Langue", "preferences": "Préférences", "ready": "Prêt", "twitch": "Twitch" },
-    "twitchBody": "Connectez votre compte de diffuseur pour gérer le stream, le chat, les statistiques et la modération depuis StreamDash.", "twitchConnectedDetail": "Les données du stream et le chat seront chargés automatiquement.", "twitchOptional": "Cette étape est facultative. Vous pourrez connecter Twitch plus tard dans Connexions.", "twitchTitle": "Connectez votre compte Twitch"
+    "back": "Retour",
+    "connectedAs": "Connecté en tant que {{account}}",
+    "continue": "Continuer",
+    "detectedLanguage": "Détectée : {{language}}",
+    "finishError": "Impossible de terminer la configuration",
+    "integrationsBody": "Connectez les services que vous utilisez. Tout pourra être modifié plus tard dans Connexions.",
+    "integrationsTitle": "Ajoutez vos intégrations",
+    "jwtLabel": "JWT du compte StreamElements",
+    "languageBody": "Choisissez la langue à utiliser. Le mode automatique suit votre ordinateur et reste l’option recommandée.",
+    "languageSummary": "Langue de l’interface",
+    "languageTitle": "Bienvenue dans StreamDash",
+    "next": "Suivant",
+    "preferencesBody": "Définissez le comportement de StreamDash sous Windows. Toutes les options pourront être modifiées ultérieurement.",
+    "preferencesTitle": "Choisissez vos préférences",
+    "readyBody": "La configuration essentielle est terminée. Vous pourrez connecter les services ignorés et tout ajuster dans les paramètres.",
+    "readyTitle": "Vous êtes prêt à diffuser",
+    "skipSetup": "Ignorer la configuration",
+    "start": "Ouvrir le tableau de bord",
+    "steps": {
+      "integrations": "Intégrations",
+      "language": "Langue",
+      "preferences": "Préférences",
+      "ready": "Prêt",
+      "twitch": "Twitch"
+    },
+    "twitchBody": "Connectez votre compte de diffuseur pour gérer le stream, le chat, les statistiques et la modération depuis StreamDash.",
+    "twitchConnectedDetail": "Les données du stream et le chat seront chargés automatiquement.",
+    "twitchOptional": "Cette étape est facultative. Vous pourrez connecter Twitch plus tard dans Connexions.",
+    "twitchTitle": "Connectez votre compte Twitch"
   },
-  "runtime": { "codeExpired": "Le code d’autorisation Twitch a expiré", "connectError": "Impossible de connecter Twitch", "initializeError": "Impossible d’initialiser StreamDash", "moderationPermission": "Reconnectez Twitch pour accorder l’autorisation de modération requise", "permissionsAttention": "Les autorisations Twitch nécessitent votre attention", "permissionsDetail": "Reconnectez Twitch pour activer toutes les fonctions de modération et de chaîne.", "someone": "Quelqu’un", "songCommandCurrent": "@{{user}} Titre actuel : {{artist}} – {{title}}", "songCommandUnavailable": "@{{user}} Aucun titre Spotify en cours n’a été détecté.", "statsUnavailable": "Certaines statistiques Twitch ne sont pas disponibles", "twitchConnected": "Twitch connecté", "userNotFound": "Utilisateur Twitch introuvable", "waitingAuthorization": "En attente de l’autorisation" },
+  "runtime": {
+    "codeExpired": "Le code d’autorisation Twitch a expiré",
+    "connectError": "Impossible de connecter Twitch",
+    "initializeError": "Impossible d’initialiser StreamDash",
+    "moderationPermission": "Reconnectez Twitch pour accorder l’autorisation de modération requise",
+    "permissionsAttention": "Les autorisations Twitch nécessitent votre attention",
+    "permissionsDetail": "Reconnectez Twitch pour activer toutes les fonctions de modération et de chaîne.",
+    "someone": "Quelqu’un",
+    "songCommandCurrent": "@{{user}} Titre actuel : {{artist}} – {{title}}",
+    "songCommandUnavailable": "@{{user}} Aucun titre Spotify en cours n’a été détecté.",
+    "statsUnavailable": "Certaines statistiques Twitch ne sont pas disponibles",
+    "twitchConnected": "Twitch connecté",
+    "userNotFound": "Utilisateur Twitch introuvable",
+    "waitingAuthorization": "En attente de l’autorisation"
+  },
   "settings": {
     "accentColor": "Couleur d’accentuation",
     "accentColorDetail": "Utilisée pour les actions, la progression et la sélection.",
@@ -461,19 +657,104 @@
     "waitingAuthorization": "En attente de l’autorisation Twitch…"
   },
   "titleBar": {
-    "author": "Auteur : Tenkayro", "checkAgain": "Rechercher à nouveau les mises à jour", "checkingStore": "Recherche de mises à jour dans le Microsoft Store", "close": "Fermer", "downloadVersion": "Télécharger StreamDash {{version}}", "downloading": "Téléchargement de la mise à jour : {{progress}} %", "installing": "Installation de la mise à jour", "issues": "Problèmes et commentaires", "loading": "chargement", "maximize": "Agrandir", "minimize": "Réduire", "openGitHub": "Ouvrir le dépôt GitHub", "resetZoom": "Réinitialiser le zoom du tableau de bord", "updateStore": "Mettre à jour StreamDash dans le Microsoft Store", "version": "Version {{version}}, {{channel}}", "zoomLabel": "Zoom du tableau de bord à {{zoom}} pour cent. Réinitialiser le zoom",
+    "author": "Auteur : Tenkayro",
+    "checkAgain": "Rechercher à nouveau les mises à jour",
+    "checkingStore": "Recherche de mises à jour dans le Microsoft Store",
+    "close": "Fermer",
+    "downloadVersion": "Télécharger StreamDash {{version}}",
+    "downloading": "Téléchargement de la mise à jour : {{progress}} %",
+    "installing": "Installation de la mise à jour",
+    "issues": "Problèmes et commentaires",
+    "loading": "chargement",
+    "maximize": "Agrandir",
+    "minimize": "Réduire",
+    "openGitHub": "Ouvrir le dépôt GitHub",
+    "resetZoom": "Réinitialiser le zoom du tableau de bord",
+    "updateStore": "Mettre à jour StreamDash dans le Microsoft Store",
+    "version": "Version {{version}}, {{channel}}",
+    "zoomLabel": "Zoom du tableau de bord à {{zoom}} pour cent. Réinitialiser le zoom",
     "closeOptions": "Options de fermeture",
     "closeToTray": "Réduire dans la zone système",
     "quitApp": "Quitter StreamDash"
   },
   "tray": {
-    "currentViewers": "Spectateurs actuels", "live": "En direct", "offline": "Hors ligne", "open": "Ouvrir StreamDash", "quickActions": "Actions rapides", "quit": "Quitter StreamDash", "reconnect": "Reconnecter les services", "reconnecting": "Reconnexion…", "retry": "Reconnecter", "statusSummary": "{{streamStatus}} · Twitch : {{twitchStatus}}", "tooltip": "StreamDash — {{streamStatus}} · Twitch : {{twitchStatus}}"
+    "currentViewers": "Spectateurs actuels",
+    "live": "En direct",
+    "offline": "Hors ligne",
+    "open": "Ouvrir StreamDash",
+    "quickActions": "Actions rapides",
+    "quit": "Quitter StreamDash",
+    "reconnect": "Reconnecter les services",
+    "reconnecting": "Reconnexion…",
+    "retry": "Reconnecter",
+    "statusSummary": "{{streamStatus}} · Twitch : {{twitchStatus}}",
+    "tooltip": "StreamDash — {{streamStatus}} · Twitch : {{twitchStatus}}"
   },
   "updater": {
-    "available": "StreamDash {{version}} est disponible", "availableDetail": "Utilisez le bouton de téléchargement à côté de la version dans la barre de titre.", "checkError": "Impossible de rechercher les mises à jour", "current": "StreamDash est à jour", "disabledDevelopment": "Les mises à jour sont désactivées en développement", "installError": "Échec de l’installation de la mise à jour", "storeAvailable": "Une mise à jour du Microsoft Store est disponible", "storeAvailableDetail": "Utilisez le bouton Store à côté de la version pour mettre à jour.", "storeOpenError": "Impossible d’ouvrir le Microsoft Store"
+    "available": "StreamDash {{version}} est disponible",
+    "availableDetail": "Utilisez le bouton de téléchargement à côté de la version dans la barre de titre.",
+    "checkError": "Impossible de rechercher les mises à jour",
+    "current": "StreamDash est à jour",
+    "disabledDevelopment": "Les mises à jour sont désactivées en développement",
+    "installError": "Échec de l’installation de la mise à jour",
+    "storeAvailable": "Une mise à jour du Microsoft Store est disponible",
+    "storeAvailableDetail": "Utilisez le bouton Store à côté de la version pour mettre à jour.",
+    "storeOpenError": "Impossible d’ouvrir le Microsoft Store"
   },
   "userCard": {
-    "actions": { "ban": "bannir", "timeout": "exclure temporairement", "unban": "débannir" }, "ban": "Bannir", "banConfirm": "Bannir définitivement {{name}} de votre chat ?", "banned": "Banni", "bannedSuccess": "{{name}} a été banni", "banUser": "Bannir l’utilisateur", "close": "Fermer la fiche utilisateur", "created": "Créé", "deleted": "supprimé", "deleteMessage": "Supprimer le message", "dialogLabel": "Informations sur {{login}}", "followsYou": "Vous suit", "hideInChat": "Masquer dans le chat", "ignoreHighlights": "Ignorer les surbrillances", "makeMod": "Nommer modo", "makeVip": "Nommer VIP", "mention": "Mentionner", "messageDeleted": "Message supprimé", "messageDeleteError": "Impossible de supprimer le message", "messages": "Messages", "moderation": "Modération", "moderationError": "Impossible de {{action}} l’utilisateur", "moderator": "Modérateur", "moderatorRole": "modérateur", "no": "Non", "noMessages": "Aucun message de cet utilisateur.", "noteSaveError": "Impossible d’enregistrer la note", "notesPlaceholder": "Notes privées sur cet utilisateur…", "openProfile": "Ouvrir le profil Twitch", "preferenceSaveError": "Impossible d’enregistrer la préférence du chat", "profileLoadError": "Impossible de charger le profil utilisateur", "reason": "Motif", "reasonPlaceholder": "Motif de modération facultatif", "recentMessages": "Messages récents", "reconnectPermissions": "Reconnectez Twitch pour accorder les autorisations de modération", "removeMod": "Retirer le statut modo", "removeVip": "Retirer le statut VIP", "roleAdded": "{{name}} est maintenant {{role}}", "roleError": "Impossible de modifier le rôle", "roleRemoved": "{{name}} n’est plus {{role}}", "since": "Depuis {{date}}", "timedOutUntil": "Exclu jusqu’à {{time}}", "timeouts": "Exclusions", "timeoutSuccess": "{{name}} a été exclu pendant {{duration}}", "unban": "Débannir", "unbannedSuccess": "{{name}} a été débanni", "unbanUser": "Débannir l’utilisateur", "unknown": "Inconnu", "vipRole": "VIP"
+    "actions": {
+      "ban": "bannir",
+      "timeout": "exclure temporairement",
+      "unban": "débannir"
+    },
+    "ban": "Bannir",
+    "banConfirm": "Bannir définitivement {{name}} de votre chat ?",
+    "banned": "Banni",
+    "bannedSuccess": "{{name}} a été banni",
+    "banUser": "Bannir l’utilisateur",
+    "close": "Fermer la fiche utilisateur",
+    "created": "Créé",
+    "deleted": "supprimé",
+    "deleteMessage": "Supprimer le message",
+    "dialogLabel": "Informations sur {{login}}",
+    "followsYou": "Vous suit",
+    "hideInChat": "Masquer dans le chat",
+    "ignoreHighlights": "Ignorer les surbrillances",
+    "makeMod": "Nommer modo",
+    "makeVip": "Nommer VIP",
+    "mention": "Mentionner",
+    "messageDeleted": "Message supprimé",
+    "messageDeleteError": "Impossible de supprimer le message",
+    "messages": "Messages",
+    "moderation": "Modération",
+    "moderationError": "Impossible de {{action}} l’utilisateur",
+    "moderator": "Modérateur",
+    "moderatorRole": "modérateur",
+    "no": "Non",
+    "noMessages": "Aucun message de cet utilisateur.",
+    "noteSaveError": "Impossible d’enregistrer la note",
+    "notesPlaceholder": "Notes privées sur cet utilisateur…",
+    "openProfile": "Ouvrir le profil Twitch",
+    "preferenceSaveError": "Impossible d’enregistrer la préférence du chat",
+    "profileLoadError": "Impossible de charger le profil utilisateur",
+    "reason": "Motif",
+    "reasonPlaceholder": "Motif de modération facultatif",
+    "recentMessages": "Messages récents",
+    "reconnectPermissions": "Reconnectez Twitch pour accorder les autorisations de modération",
+    "removeMod": "Retirer le statut modo",
+    "removeVip": "Retirer le statut VIP",
+    "roleAdded": "{{name}} est maintenant {{role}}",
+    "roleError": "Impossible de modifier le rôle",
+    "roleRemoved": "{{name}} n’est plus {{role}}",
+    "since": "Depuis {{date}}",
+    "timedOutUntil": "Exclu jusqu’à {{time}}",
+    "timeouts": "Exclusions",
+    "timeoutSuccess": "{{name}} a été exclu pendant {{duration}}",
+    "unban": "Débannir",
+    "unbannedSuccess": "{{name}} a été débanni",
+    "unbanUser": "Débannir l’utilisateur",
+    "unknown": "Inconnu",
+    "vipRole": "VIP"
   },
   "search": {
     "title": "Rechercher dans StreamDash",
@@ -513,7 +794,8 @@
       "appearance": "thème couleur design disposition densité navigation animations",
       "notifications": "alertes notifications dons raids cadeaux",
       "events": "événements filtres historique",
-      "data": "stockage base de données sauvegarde export import"
+      "data": "stockage base de données sauvegarde export import",
+      "activitys": "événements historique abonnés abonnements raids bits pourboires argent donateurs paiements événements boîte modération terminés"
     }
   }
 }

@@ -64,7 +64,7 @@ export interface DashboardStats {
   category?: string
 }
 
-export type DashboardWidgetId = 'followers' | 'subscribers' | 'viewers' | 'duration' | 'bits' | 'donations' | 'status' | 'eventCount' | 'activity' | 'streamDetails' | 'livePreview' | 'goals' | 'connections' | 'obs'
+export type DashboardWidgetId = 'followers' | 'subscribers' | 'viewers' | 'duration' | 'bits' | 'donations' | 'status' | 'eventCount' | 'activitys' | 'streamDetails' | 'livePreview' | 'goals' | 'connections' | 'obs'
 export type DashboardItemId = DashboardWidgetId | `browser:${string}`
 export type DashboardWidgetWidth = 'single' | 'wide' | 'full'
 export interface DashboardWidgetDimensions { width: DashboardWidgetWidth; height: number }

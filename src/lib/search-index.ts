@@ -47,9 +47,9 @@ export function buildSearchIndex(state: ReturnType<typeof useAppStore.getState>,
     const name = event.displayName || event.username || t("activity.anonymous");
     const title = t("search.activityTitle", { name, event: t(`events.${event.eventType}`) });
     entries.push({ id: `event:${event.id}`, group: "activity", title,
-      description: [event.source, event.amount !== undefined ? money(event.amount, event.currency) : "", event.message].filter(Boolean).join(" · "),
+      description: [event.source, event.amount !== undefined ? money(event.amount, event.currency) : "", event.message].filter(Boolean).join(" Â· "),
       keywords: `${event.username ?? ""} ${event.bits ?? ""} ${event.timestamp} ${en(`events.${event.eventType}`)}`,
-      target: { page: event.eventType === "donation" ? "donations" : "activity", filter: event.message || event.username || event.displayName || t("activity.anonymous"), itemId: event.id } });
+      target: { page: "activitys", filter: event.message || event.username || event.displayName || t("activity.anonymous"), itemId: event.id } });
   }
   for (const message of state.chatMessages) {
     if (message.deleted || state.settings.chatHiddenUsers.some((user) => user.toLowerCase() === message.login.toLowerCase())) continue;

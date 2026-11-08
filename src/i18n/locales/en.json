@@ -219,20 +219,62 @@
     "viewAll": "View all",
     "widget": "Widget",
     "widgets": {
-      "activity": { "description": "Latest events at a glance", "label": "Recent activity" },
-      "bits": { "description": "Locally collected bits", "label": "Bits" },
-      "connections": { "description": "Service health and accounts", "label": "Connections" },
-      "donations": { "description": "Locally collected donations", "label": "Donations" },
-      "duration": { "description": "Time since going live", "label": "Stream duration" },
-      "eventCount": { "description": "Stored activity total", "label": "Event count" },
-      "followers": { "description": "Current Twitch followers", "label": "Followers" },
-      "goals": { "description": "Progress toward your targets", "label": "Goals" },
-      "livePreview": { "description": "Watch your Twitch stream", "label": "Live Preview" },
-      "obs": { "description": "Status, scene and audio", "label": "OBS" },
-      "status": { "description": "Live state and title", "label": "Stream status" },
-      "streamDetails": { "description": "Title and category", "label": "Stream details" },
-      "subscribers": { "description": "Current active subscriptions", "label": "Subscribers" },
-      "viewers": { "description": "Current live viewers", "label": "Viewers" }
+      "bits": {
+        "description": "Locally collected bits",
+        "label": "Bits"
+      },
+      "connections": {
+        "description": "Service health and accounts",
+        "label": "Connections"
+      },
+      "donations": {
+        "description": "Locally collected donations",
+        "label": "Donations"
+      },
+      "duration": {
+        "description": "Time since going live",
+        "label": "Stream duration"
+      },
+      "eventCount": {
+        "description": "Stored activity total",
+        "label": "Event count"
+      },
+      "followers": {
+        "description": "Current Twitch followers",
+        "label": "Followers"
+      },
+      "goals": {
+        "description": "Progress toward your targets",
+        "label": "Goals"
+      },
+      "livePreview": {
+        "description": "Watch your Twitch stream",
+        "label": "Live Preview"
+      },
+      "obs": {
+        "description": "Status, scene and audio",
+        "label": "OBS"
+      },
+      "status": {
+        "description": "Live state and title",
+        "label": "Stream status"
+      },
+      "streamDetails": {
+        "description": "Title and category",
+        "label": "Stream details"
+      },
+      "subscribers": {
+        "description": "Current active subscriptions",
+        "label": "Subscribers"
+      },
+      "viewers": {
+        "description": "Current live viewers",
+        "label": "Viewers"
+      },
+      "activitys": {
+        "description": "Latest events at a glance",
+        "label": "Recent activity"
+      }
     },
     "zoomSaveError": "Dashboard zoom could not be saved"
   },
@@ -330,17 +372,55 @@
     "stopStream": "Stop stream",
     "stopVirtualCam": "Stop virtual camera",
     "page": {
-      "active": "Active", "inactive": "Inactive", "paused": "Paused", "running": "Running",
-      "recordingRequired": "Start recording to use this control", "replayRequired": "Start the replay buffer first", "saveReplayDescription": "Write the current replay to disk",
-      "streamOutput": "Stream output", "recordingOutput": "Recording output", "performance": "Performance", "cpuValue": "{{value}}% CPU usage", "droppedFrames": "Dropped frames", "currentScene": "Current: {{scene}}",
-      "outputControls": "Output controls", "outputControlsDescription": "Control streaming, recording, replay buffer and virtual camera.",
-      "scenes": "Scenes", "scenesDescription": "Switch the OBS program scene directly from StreamDash.", "program": "Program", "noScenes": "OBS did not report any scenes.",
-      "audioMixer": "Audio mixer", "audioMixerDescription": "Adjust volume or mute the active OBS audio channels.", "noAudio": "OBS did not report any supported audio channels.",
-      "details": "OBS details", "detailsDescription": "Current profile, scene collection and WebSocket connection.", "version": "Version", "profile": "Profile", "sceneCollection": "Scene collection", "websocketAddress": "WebSocket address",
-      "volume": "Volume for {{name}}", "connectionSettings": "Connection settings", "notConnected": "OBS is not running", "notConnectedDescription": "Start OBS and enable the WebSocket server under Tools → WebSocket Server Settings, then reconnect here."
+      "active": "Active",
+      "inactive": "Inactive",
+      "paused": "Paused",
+      "running": "Running",
+      "recordingRequired": "Start recording to use this control",
+      "replayRequired": "Start the replay buffer first",
+      "saveReplayDescription": "Write the current replay to disk",
+      "streamOutput": "Stream output",
+      "recordingOutput": "Recording output",
+      "performance": "Performance",
+      "cpuValue": "{{value}}% CPU usage",
+      "droppedFrames": "Dropped frames",
+      "currentScene": "Current: {{scene}}",
+      "outputControls": "Output controls",
+      "outputControlsDescription": "Control streaming, recording, replay buffer and virtual camera.",
+      "scenes": "Scenes",
+      "scenesDescription": "Switch the OBS program scene directly from StreamDash.",
+      "program": "Program",
+      "noScenes": "OBS did not report any scenes.",
+      "audioMixer": "Audio mixer",
+      "audioMixerDescription": "Adjust volume or mute the active OBS audio channels.",
+      "noAudio": "OBS did not report any supported audio channels.",
+      "details": "OBS details",
+      "detailsDescription": "Current profile, scene collection and WebSocket connection.",
+      "version": "Version",
+      "profile": "Profile",
+      "sceneCollection": "Scene collection",
+      "websocketAddress": "WebSocket address",
+      "volume": "Volume for {{name}}",
+      "connectionSettings": "Connection settings",
+      "notConnected": "OBS is not running",
+      "notConnectedDescription": "Start OBS and enable the WebSocket server under Tools → WebSocket Server Settings, then reconnect here."
     },
     "spotifyOverlay": {
-      "title": "Spotify overlay", "description": "Show the current Spotify desktop track in OBS without a Spotify API connection.", "browserSource": "OBS browser source", "size": "Recommended size: {{width}} × {{height}}", "playing": "Playing", "paused": "Paused", "waiting": "Waiting for Spotify", "urlLabel": "Spotify overlay URL", "desktopOnly": "Available in the desktop app", "copy": "Copy URL", "copied": "Spotify overlay URL copied", "copyError": "The Spotify overlay URL could not be copied", "hint": "Add the URL to OBS as a Browser source. Keep StreamDash and the Spotify desktop app running; the overlay hides itself when Spotify is unavailable.", "previewTitle": "Current Spotify track", "previewArtist": "Artist appears automatically"
+      "title": "Spotify overlay",
+      "description": "Show the current Spotify desktop track in OBS without a Spotify API connection.",
+      "browserSource": "OBS browser source",
+      "size": "Recommended size: {{width}} × {{height}}",
+      "playing": "Playing",
+      "paused": "Paused",
+      "waiting": "Waiting for Spotify",
+      "urlLabel": "Spotify overlay URL",
+      "desktopOnly": "Available in the desktop app",
+      "copy": "Copy URL",
+      "copied": "Spotify overlay URL copied",
+      "copyError": "The Spotify overlay URL could not be copied",
+      "hint": "Add the URL to OBS as a Browser source. Keep StreamDash and the Spotify desktop app running; the overlay hides itself when Spotify is unavailable.",
+      "previewTitle": "Current Spotify track",
+      "previewArtist": "Artist appears automatically"
     },
     "errors": {
       "authRequired": "OBS requires a password. Add it under Connections.",
@@ -360,7 +440,8 @@
     "livePreview": "Monitor your public Twitch stream without leaving StreamDash.",
     "obs": "Control scenes, audio, streaming, recording and OBS outputs in one place.",
     "settings": "Adjust appearance, behavior, notifications and data.",
-    "statistics": "Understand activity trends from your stored events."
+    "statistics": "Understand activity trends from your stored events.",
+    "activitys": "Review your event feed, donations and stream events in one place."
   },
   "nav": {
     "activity": "Activity",
@@ -378,7 +459,8 @@
     "requiredAttention": "{{label}}: attention required",
     "settings": "Settings",
     "statistics": "Statistics",
-    "stream": "Stream"
+    "stream": "Stream",
+    "activitys": "Activitys"
   },
   "onboarding": {
     "back": "Back",
@@ -411,7 +493,21 @@
     "twitchOptional": "This step is optional. You can connect Twitch later under Connections.",
     "twitchTitle": "Connect your Twitch account"
   },
-  "runtime": { "codeExpired": "The Twitch authorization code expired", "connectError": "Could not connect Twitch", "initializeError": "StreamDash could not initialize", "moderationPermission": "Reconnect Twitch once to grant the required moderation permission", "permissionsAttention": "Twitch permissions need attention", "permissionsDetail": "Reconnect Twitch once to enable all moderation and channel features.", "someone": "Someone", "songCommandCurrent": "@{{user}} Current song: {{artist}} – {{title}}", "songCommandUnavailable": "@{{user}} No current Spotify song was detected.", "statsUnavailable": "Some Twitch statistics are unavailable", "twitchConnected": "Twitch connected", "userNotFound": "Twitch user was not found", "waitingAuthorization": "Waiting for authorization" },
+  "runtime": {
+    "codeExpired": "The Twitch authorization code expired",
+    "connectError": "Could not connect Twitch",
+    "initializeError": "StreamDash could not initialize",
+    "moderationPermission": "Reconnect Twitch once to grant the required moderation permission",
+    "permissionsAttention": "Twitch permissions need attention",
+    "permissionsDetail": "Reconnect Twitch once to enable all moderation and channel features.",
+    "someone": "Someone",
+    "songCommandCurrent": "@{{user}} Current song: {{artist}} – {{title}}",
+    "songCommandUnavailable": "@{{user}} No current Spotify song was detected.",
+    "statsUnavailable": "Some Twitch statistics are unavailable",
+    "twitchConnected": "Twitch connected",
+    "userNotFound": "Twitch user was not found",
+    "waitingAuthorization": "Waiting for authorization"
+  },
   "settings": {
     "accentColor": "Accent color",
     "accentColorDetail": "Used for actions, progress and selection.",
@@ -561,7 +657,22 @@
     "waitingAuthorization": "Waiting for Twitch authorization…"
   },
   "titleBar": {
-    "author": "Author: Tenkayro", "checkAgain": "Check for updates again", "checkingStore": "Checking Microsoft Store for updates", "close": "Close", "downloadVersion": "Download StreamDash {{version}}", "downloading": "Downloading update: {{progress}}%", "installing": "Installing update", "issues": "Issues and feedback", "loading": "loading", "maximize": "Maximize", "minimize": "Minimize", "openGitHub": "Open GitHub repository", "resetZoom": "Reset dashboard zoom", "updateStore": "Update StreamDash in Microsoft Store", "version": "Version {{version}}, {{channel}}", "zoomLabel": "Dashboard zoom {{zoom}} percent. Reset zoom",
+    "author": "Author: Tenkayro",
+    "checkAgain": "Check for updates again",
+    "checkingStore": "Checking Microsoft Store for updates",
+    "close": "Close",
+    "downloadVersion": "Download StreamDash {{version}}",
+    "downloading": "Downloading update: {{progress}}%",
+    "installing": "Installing update",
+    "issues": "Issues and feedback",
+    "loading": "loading",
+    "maximize": "Maximize",
+    "minimize": "Minimize",
+    "openGitHub": "Open GitHub repository",
+    "resetZoom": "Reset dashboard zoom",
+    "updateStore": "Update StreamDash in Microsoft Store",
+    "version": "Version {{version}}, {{channel}}",
+    "zoomLabel": "Dashboard zoom {{zoom}} percent. Reset zoom",
     "closeOptions": "Close options",
     "closeToTray": "Minimize to tray",
     "quitApp": "Quit StreamDash"
@@ -580,10 +691,70 @@
     "tooltip": "StreamDash — {{streamStatus}} · Twitch: {{twitchStatus}}"
   },
   "updater": {
-    "available": "StreamDash {{version}} is available", "availableDetail": "Use the download button beside the version in the title bar.", "checkError": "Could not check for updates", "current": "StreamDash is up to date", "disabledDevelopment": "Updates are disabled in development", "installError": "Update installation failed", "storeAvailable": "A Microsoft Store update is available", "storeAvailableDetail": "Use the Store button beside the version to update.", "storeOpenError": "Could not open Microsoft Store"
+    "available": "StreamDash {{version}} is available",
+    "availableDetail": "Use the download button beside the version in the title bar.",
+    "checkError": "Could not check for updates",
+    "current": "StreamDash is up to date",
+    "disabledDevelopment": "Updates are disabled in development",
+    "installError": "Update installation failed",
+    "storeAvailable": "A Microsoft Store update is available",
+    "storeAvailableDetail": "Use the Store button beside the version to update.",
+    "storeOpenError": "Could not open Microsoft Store"
   },
   "userCard": {
-    "actions": { "ban": "ban", "timeout": "time out", "unban": "unban" }, "ban": "Ban", "banConfirm": "Permanently ban {{name}} from your chat?", "banned": "Banned", "bannedSuccess": "{{name}} was banned", "banUser": "Ban user", "close": "Close user card", "created": "Created", "deleted": "deleted", "deleteMessage": "Delete message", "dialogLabel": "User information for {{login}}", "followsYou": "Follows you", "hideInChat": "Hide in chat", "ignoreHighlights": "Ignore highlights", "makeMod": "Make mod", "makeVip": "Make VIP", "mention": "Mention", "messageDeleted": "Message deleted", "messageDeleteError": "Message could not be deleted", "messages": "Messages", "moderation": "Moderation", "moderationError": "Could not {{action}} user", "moderator": "Moderator", "moderatorRole": "a moderator", "no": "No", "noMessages": "No messages from this user.", "noteSaveError": "Note could not be saved", "notesPlaceholder": "Private notes about this user…", "openProfile": "Open Twitch profile", "preferenceSaveError": "Chat preference could not be saved", "profileLoadError": "User profile could not be loaded", "reason": "Reason", "reasonPlaceholder": "Optional moderation reason", "recentMessages": "Recent messages", "reconnectPermissions": "Reconnect Twitch to grant moderation permissions", "removeMod": "Remove mod", "removeVip": "Remove VIP", "roleAdded": "{{name}} is now {{role}}", "roleError": "Role could not be changed", "roleRemoved": "{{name}} is no longer {{role}}", "since": "Since {{date}}", "timedOutUntil": "Timed out until {{time}}", "timeouts": "Timeouts", "timeoutSuccess": "{{name}} was timed out for {{duration}}", "unban": "Unban", "unbannedSuccess": "{{name}} was unbanned", "unbanUser": "Unban user", "unknown": "Unknown", "vipRole": "a VIP"
+    "actions": {
+      "ban": "ban",
+      "timeout": "time out",
+      "unban": "unban"
+    },
+    "ban": "Ban",
+    "banConfirm": "Permanently ban {{name}} from your chat?",
+    "banned": "Banned",
+    "bannedSuccess": "{{name}} was banned",
+    "banUser": "Ban user",
+    "close": "Close user card",
+    "created": "Created",
+    "deleted": "deleted",
+    "deleteMessage": "Delete message",
+    "dialogLabel": "User information for {{login}}",
+    "followsYou": "Follows you",
+    "hideInChat": "Hide in chat",
+    "ignoreHighlights": "Ignore highlights",
+    "makeMod": "Make mod",
+    "makeVip": "Make VIP",
+    "mention": "Mention",
+    "messageDeleted": "Message deleted",
+    "messageDeleteError": "Message could not be deleted",
+    "messages": "Messages",
+    "moderation": "Moderation",
+    "moderationError": "Could not {{action}} user",
+    "moderator": "Moderator",
+    "moderatorRole": "a moderator",
+    "no": "No",
+    "noMessages": "No messages from this user.",
+    "noteSaveError": "Note could not be saved",
+    "notesPlaceholder": "Private notes about this user…",
+    "openProfile": "Open Twitch profile",
+    "preferenceSaveError": "Chat preference could not be saved",
+    "profileLoadError": "User profile could not be loaded",
+    "reason": "Reason",
+    "reasonPlaceholder": "Optional moderation reason",
+    "recentMessages": "Recent messages",
+    "reconnectPermissions": "Reconnect Twitch to grant moderation permissions",
+    "removeMod": "Remove mod",
+    "removeVip": "Remove VIP",
+    "roleAdded": "{{name}} is now {{role}}",
+    "roleError": "Role could not be changed",
+    "roleRemoved": "{{name}} is no longer {{role}}",
+    "since": "Since {{date}}",
+    "timedOutUntil": "Timed out until {{time}}",
+    "timeouts": "Timeouts",
+    "timeoutSuccess": "{{name}} was timed out for {{duration}}",
+    "unban": "Unban",
+    "unbannedSuccess": "{{name}} was unbanned",
+    "unbanUser": "Unban user",
+    "unknown": "Unknown",
+    "vipRole": "a VIP"
   },
   "search": {
     "title": "Search StreamDash",
@@ -623,7 +794,8 @@
       "appearance": "theme color colour design layout density navigation animations",
       "notifications": "alerts notifications donations raids gifts",
       "events": "events filters history",
-      "data": "storage database backup export import"
+      "data": "storage database backup export import",
+      "activitys": "events history followers subscriptions raids bits tips money donors payments events inbox moderation done"
     }
   }
 }

@@ -21,7 +21,7 @@ export const defaultDashboardWidgets: DashboardItemId[] = [
   "donations",
   "status",
   "eventCount",
-  "activity",
+  "activitys",
   "streamDetails",
 ];
 
@@ -176,11 +176,8 @@ export const useAppStore = create<AppStore>((set) => ({
   pushEvent: (event) =>
     set((s) => {
       const counts = { ...s.unreadCounts };
-      if (s.page !== "donations" && event.eventType === "donation") {
-        counts.donations = (counts.donations ?? 0) + 1;
-      }
-      if (s.page !== "activity") {
-        counts.activity = (counts.activity ?? 0) + 1;
+      if (s.page !== "activitys") {
+        counts.activitys = (counts.activitys ?? 0) + 1;
       }
       return {
         events: [event, ...s.events].slice(0, s.settings.maximumEvents),
