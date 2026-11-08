@@ -41,10 +41,6 @@ const pageLoaders = {
     import("./pages/Donations").then((module) => ({
       default: module.Donations,
     })),
-  donationTool: () =>
-    import("./pages/DonationTool").then((module) => ({
-      default: module.DonationTool,
-    })),
   livePreview: () =>
     import("./pages/LivePreview").then((module) => ({
       default: module.LivePreview,
@@ -72,7 +68,6 @@ const StreamPage = lazy(pageLoaders.stream);
 const ChatPage = lazy(pageLoaders.chat);
 const ActivityPage = lazy(pageLoaders.activity);
 const Donations = lazy(pageLoaders.donations);
-const DonationTool = lazy(pageLoaders.donationTool);
 const LivePreview = lazy(pageLoaders.livePreview);
 const Statistics = lazy(pageLoaders.statistics);
 const Goals = lazy(pageLoaders.goals);
@@ -86,7 +81,6 @@ const pages: Record<string, React.ComponentType> = {
   chat: ChatPage,
   activity: ActivityPage,
   donations: Donations,
-  donationTool: DonationTool,
   livePreview: LivePreview,
   statistics: Statistics,
   goals: Goals,

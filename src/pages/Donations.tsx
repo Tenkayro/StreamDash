@@ -1,27 +1,63 @@
-import { useSearchFilter } from "../lib/search-navigation";
-import { Select } from "../components/Select";
+import { useMemo, useState } from "react";
+import { formatDistanceToNow } from "date-fns";
+import { de, enUS, es, fr, ptBR } from "date-fns/locale";
 import {
+  Activity,
+  Ban,
+  Check,
   ChevronDown,
   ChevronRight,
   CircleDollarSign,
+  Copy,
+  Gift,
+  HandCoins,
   Inbox,
+  Play,
   RadioTower,
   Search,
   SlidersHorizontal,
   Sparkles,
   Star,
   X,
+  type LucideIcon,
 } from "lucide-react";
-import { useMemo, useState } from "react";
-import { formatDistanceToNow } from "date-fns";
-import { de, enUS, es, fr, ptBR } from "date-fns/locale";
 import { useTranslation } from "react-i18next";
-import { Button, Card, EmptyState, PageHeader, ScrollFade } from "../components/ui";
+import { toast } from "sonner";
+import { Select } from "../components/Select";
+import {
+  Button,
+  Card,
+  EmptyState,
+  PageHeader,
+  ScrollFade,
+} from "../components/ui";
+import { useSearchFilter } from "../lib/search-navigation";
 import { money } from "../lib/utils";
+import { saveSetting } from "../services/native";
 import { useAppStore } from "../stores/app-store";
-import type { ActivitySource } from "../types";
+import type { ActivityEvent, ActivitySource, ActivityType } from "../types";
 
+type Tab =
+  | "all"
+  | "tips"
+  | "subscriber"
+  | "subgifts"
+  | "raids"
+  | "cheers"
+  | "done";
 type DonationSort = "newest" | "largest";
+
+const tabs: Tab[] = [
+  "all",
+  "tips",
+  "subscriber",
+  "subgifts",
+  "raids",
+  "cheers",
+  "done",
+];
+
+const noUsers: string[] = [];
 
 const sourceNames: Record<ActivitySource, string> = {
   twitch: "Twitch",
@@ -35,39 +71,91 @@ const sourceStyles: Record<ActivitySource, string> = {
   tipeeestream: "bg-sky-400/10 text-sky-300",
 };
 
+const eventIcons: Partial<Record<ActivityType, LucideIcon>> = {
+  donation: HandCoins,
+  subscription: Star,
+  resubscription: Star,
+  gift_subscription: Gift,
+  community_gift: Gift,
+  cheer: Sparkles,
+  raid: RadioTower,
+};
+
+const actionClass =
+  "inline-flex items-center gap-1 rounded-md px-2 py-1 text-[11px] text-zinc-400 transition hover:bg-white/5 hover:text-zinc-200 disabled:pointer-events-none disabled:opacity-40";
+
+function eventTypeToTab(event: ActivityEvent): Tab | undefined {
+  switch (event.eventType) {
+    case "donation":
+      return "tips";
+    case "subscription":
+    case "resubscription":
+      return "subscriber";
+    case "gift_subscription":
+    case "community_gift":
+      return "subgifts";
+    case "raid":
+      return "raids";
+    case "cheer":
+      return "cheers";
+    default:
+      return undefined;
+  }
+}
+
+function isBlocked(
+  event: ActivityEvent,
+  blockedUsers: string[] | undefined,
+  language: string,
+) {
+  if (!event.username || !blockedUsers?.length) return false;
+  const user = event.username.toLocaleLowerCase(language);
+  return blockedUsers.some(
+    (name) => name.toLocaleLowerCase(language) === user,
+  );
+}
+
 export function Donations() {
   const { t, i18n } = useTranslation();
-  const { events, setPage, streamElements, tipeeStream } = useAppStore();
+  const {
+    events,
+    settings,
+    setSettings,
+    setPage,
+    streamElements,
+    tipeeStream,
+  } = useAppStore();
   const [search, setSearch] = useState("");
   const [searchHit, setSearchHit] = useState<string>();
+  const [tab, setTab] = useState<Tab>("all");
   const [source, setSource] = useState<ActivitySource | "all">("all");
   const [sort, setSort] = useState<DonationSort>("newest");
-  const [selectedId, setSelectedId] = useState<string | null>();
-  useSearchFilter("donations", (value, itemId) => { setSearch(value); setSearchHit(itemId); setSource("all"); });
+  const [minSubgifts, setMinSubgifts] = useState(0);
+  const [selectedId, setSelectedId] = useState<string | null>(null);
+  useSearchFilter("donations", (value, itemId) => {
+    setSearch(value);
+    setSearchHit(itemId);
+    setSource("all");
+    setTab("all");
+  });
   const dateLocale =
     { de, en: enUS, es, fr, "pt-BR": ptBR }[i18n.language] ?? enUS;
+  const doneIds = useMemo(
+    () => new Set(settings.donationToolDoneIds ?? []),
+    [settings.donationToolDoneIds],
+  );
+  const blockedUsers = settings.chatHiddenUsers ?? noUsers;
+  const connected =
+    streamElements.phase === "connected" || tipeeStream.phase === "connected";
 
-  const donations = useMemo(
-    () => events.filter((event) => event.eventType === "donation"),
+  const supported = useMemo(
+    () => events.filter((event) => eventTypeToTab(event) !== undefined),
     [events],
   );
-  const filtered = useMemo(() => {
-    const needle = search.trim().toLocaleLowerCase(i18n.language);
-    return donations
-      .filter(
-        (event) =>
-          (source === "all" || event.source === source) &&
-          (searchHit ? event.id === searchHit : !needle ||
-            `${event.displayName ?? ""} ${event.username ?? ""} ${event.message ?? ""}`
-              .toLocaleLowerCase(i18n.language)
-              .includes(needle)),
-      )
-      .sort((a, b) =>
-        sort === "largest"
-          ? (b.amount ?? 0) - (a.amount ?? 0)
-          : new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime(),
-      );
-  }, [donations, i18n.language, search, searchHit, sort, source]);
+  const donations = useMemo(
+    () => supported.filter((event) => event.eventType === "donation"),
+    [supported],
+  );
   const totals = useMemo(() => {
     const grouped = new Map<string, number>();
     for (const event of donations) {
@@ -85,12 +173,141 @@ export function Donations() {
       )?.id,
     [donations],
   );
-  const selected =
-    selectedId === null
-      ? undefined
-      : filtered.find((event) => event.id === selectedId) ?? filtered[0];
-  const connected =
-    streamElements.phase === "connected" || tipeeStream.phase === "connected";
+
+  const filtered = useMemo(() => {
+    const needle = search.trim().toLocaleLowerCase(i18n.language);
+    return supported
+      .filter((event) => {
+        if (isBlocked(event, blockedUsers, i18n.language)) return false;
+        if (tab === "done") {
+          if (!doneIds.has(event.id)) return false;
+        } else if (tab !== "all" && eventTypeToTab(event) !== tab) {
+          return false;
+        }
+        if (source !== "all" && event.source !== source) return false;
+        if (
+          tab === "subgifts" &&
+          minSubgifts > 0 &&
+          (event.giftCount ?? 0) < minSubgifts
+        )
+          return false;
+        if (searchHit) return event.id === searchHit;
+        if (!needle) return true;
+        return `${event.displayName ?? ""} ${event.username ?? ""} ${event.message ?? ""}`
+          .toLocaleLowerCase(i18n.language)
+          .includes(needle);
+      })
+      .sort((a, b) =>
+        sort === "largest"
+          ? (b.amount ?? 0) - (a.amount ?? 0) ||
+            new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime()
+          : new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime(),
+      );
+  }, [
+    supported,
+    doneIds,
+    blockedUsers,
+    i18n.language,
+    search,
+    searchHit,
+    source,
+    tab,
+    minSubgifts,
+    sort,
+  ]);
+
+  const counts = useMemo(() => {
+    const map = new Map<Tab, number>();
+    for (const tabKey of tabs) map.set(tabKey, 0);
+    for (const event of supported) {
+      if (isBlocked(event, blockedUsers, i18n.language)) continue;
+      map.set("all", (map.get("all") ?? 0) + 1);
+      const eventTab = eventTypeToTab(event);
+      if (eventTab) map.set(eventTab, (map.get(eventTab) ?? 0) + 1);
+      if (doneIds.has(event.id)) map.set("done", (map.get("done") ?? 0) + 1);
+    }
+    return map;
+  }, [supported, doneIds, blockedUsers, i18n.language]);
+
+  const selected = useMemo(() => {
+    const id = searchHit ?? selectedId;
+    if (!id) return undefined;
+    return filtered.find((event) => event.id === id);
+  }, [filtered, searchHit, selectedId]);
+
+  const who = (event: ActivityEvent) =>
+    event.displayName || event.username || t("donations.anonymous");
+  const doneEmpty = tab === "done" && !counts.get("done");
+
+  const replay = (event: ActivityEvent) => {
+    window.dispatchEvent(
+      new CustomEvent("streamdash:donation-replay", { detail: event }),
+    );
+    toast.success(t("donations.replayed"), {
+      description: [
+        who(event),
+        event.amount != null
+          ? money(event.amount, event.currency)
+          : t(`events.${event.eventType}`),
+      ].join(" · "),
+    });
+  };
+
+  const toggleDone = (event: ActivityEvent) => {
+    const previous = settings.donationToolDoneIds ?? [];
+    const wasDone = previous.includes(event.id);
+    const next = wasDone
+      ? previous.filter((id) => id !== event.id)
+      : [event.id, ...previous];
+    setSettings({ donationToolDoneIds: next });
+    toast.success(t(wasDone ? "donations.reopened" : "donations.markedDone"));
+    void saveSetting("donationToolDoneIds", next).catch(() => {
+      setSettings({ donationToolDoneIds: previous });
+      toast.error(t("donations.saveFailed"));
+    });
+  };
+
+  const blockUser = (event: ActivityEvent) => {
+    const name = event.username?.trim();
+    if (!name) return;
+    const key = name.toLocaleLowerCase(i18n.language);
+    if (
+      blockedUsers.some(
+        (user) => user.toLocaleLowerCase(i18n.language) === key,
+      )
+    )
+      return;
+    const previous = blockedUsers;
+    const next = [...previous, key];
+    setSettings({ chatHiddenUsers: next });
+    toast.success(t("donations.blocked", { name }), {
+      action: {
+        label: t("donations.undo"),
+        onClick: () => {
+          const reverted = (
+            useAppStore.getState().settings.chatHiddenUsers ?? []
+          ).filter((user) => user !== key);
+          setSettings({ chatHiddenUsers: reverted });
+          void saveSetting("chatHiddenUsers", reverted).catch(() =>
+            toast.error(t("donations.saveFailed")),
+          );
+        },
+      },
+    });
+    void saveSetting("chatHiddenUsers", next).catch(() => {
+      setSettings({ chatHiddenUsers: previous });
+      toast.error(t("donations.saveFailed"));
+    });
+  };
+
+  const copyText = async (text: string) => {
+    try {
+      await navigator.clipboard.writeText(text);
+      toast.success(t("donations.copied"));
+    } catch {
+      toast.error(t("donations.copyFailed"));
+    }
+  };
 
   return (
     <>
@@ -98,6 +315,14 @@ export function Donations() {
         icon={CircleDollarSign}
         title={t("nav.donations")}
         description={t("pageDescriptions.donations")}
+        actions={
+          connected ? (
+            <span className="inline-flex items-center gap-1.5 rounded-full border border-emerald-400/25 bg-emerald-400/10 px-2.5 py-1 text-[11px] font-medium text-emerald-300">
+              <span className="size-1.5 animate-pulse rounded-full bg-emerald-400" />
+              {t("donations.live")}
+            </span>
+          ) : undefined
+        }
       />
 
       <div className="mb-3 grid gap-3 sm:grid-cols-3">
@@ -111,7 +336,11 @@ export function Donations() {
             </p>
             <p className="mt-0.5 truncate text-base font-semibold">
               {totals.length
-                ? totals.map(([currency, value]) => money(value, currency || undefined)).join(" · ")
+                ? totals
+                    .map(([currency, value]) =>
+                      money(value, currency || undefined),
+                    )
+                    .join(" · ")
                 : money(0)}
             </p>
           </div>
@@ -140,8 +369,10 @@ export function Donations() {
             <p className="mt-0.5 truncate text-base font-semibold">
               {donations.length
                 ? money(
-                    donations.find((event) => event.id === topDonationId)?.amount ?? 0,
-                    donations.find((event) => event.id === topDonationId)?.currency,
+                    donations.find((event) => event.id === topDonationId)
+                      ?.amount ?? 0,
+                    donations.find((event) => event.id === topDonationId)
+                      ?.currency,
                   )
                 : "—"}
             </p>
@@ -150,22 +381,31 @@ export function Donations() {
       </div>
 
       <Card className="overflow-hidden">
-        <div className="grid grid-cols-1 gap-2 border-b border-line bg-white/[.012] p-3 lg:grid-cols-[minmax(220px,1fr)_180px_160px]">
+        <div className="grid grid-cols-1 gap-2 border-b border-line bg-white/[.012] p-3 sm:grid-cols-2 lg:grid-cols-[minmax(200px,1fr)_180px_160px_130px]">
           <div className="relative min-w-0">
-            <Search size={14} className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-zinc-600" />
+            <Search
+              size={14}
+              className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-zinc-600"
+            />
             <input
               className="input input-leading-icon input-trailing-action"
               aria-label={t("donations.searchLabel")}
               placeholder={t("donations.searchPlaceholder")}
               value={search}
-              onChange={(event) => { setSearch(event.target.value); setSearchHit(undefined); }}
+              onChange={(event) => {
+                setSearch(event.target.value);
+                setSearchHit(undefined);
+              }}
             />
             {search && (
               <button
                 type="button"
                 title={t("donations.clearSearch")}
                 aria-label={t("donations.clearSearch")}
-                onClick={() => { setSearch(""); setSearchHit(undefined); }}
+                onClick={() => {
+                  setSearch("");
+                  setSearchHit(undefined);
+                }}
                 className="absolute right-2 top-1/2 grid size-6 -translate-y-1/2 place-items-center rounded-md text-zinc-600 hover:bg-white/5 hover:text-zinc-300"
               >
                 <X size={13} />
@@ -173,107 +413,342 @@ export function Donations() {
             )}
           </div>
           <div className="relative min-w-0">
-            <RadioTower size={14} className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-zinc-600" />
+            <RadioTower
+              size={14}
+              className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-zinc-600"
+            />
             <Select
               className="input input-leading-icon input-trailing-action appearance-none"
               aria-label={t("donations.filterSource")}
               value={source}
-              onChange={(event) => setSource(event.target.value as ActivitySource | "all")}
+              onChange={(event) => {
+                setSource(event.target.value as ActivitySource | "all");
+                setSearchHit(undefined);
+              }}
             >
               <option value="all">{t("donations.allSources")}</option>
               <option value="streamelements">StreamElements</option>
               <option value="tipeeestream">TipeeeStream</option>
+              <option value="twitch">Twitch</option>
             </Select>
-            <ChevronDown size={13} className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-zinc-600" />
+            <ChevronDown
+              size={13}
+              className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-zinc-600"
+            />
           </div>
           <div className="relative min-w-0">
-            <SlidersHorizontal size={14} className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-zinc-600" />
+            <SlidersHorizontal
+              size={14}
+              className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-zinc-600"
+            />
             <Select
               className="input input-leading-icon input-trailing-action appearance-none"
               aria-label={t("donations.sortLabel")}
               value={sort}
-              onChange={(event) => setSort(event.target.value as DonationSort)}
+              onChange={(event) =>
+                setSort(event.target.value as DonationSort)
+              }
             >
               <option value="newest">{t("donations.newest")}</option>
               <option value="largest">{t("donations.largest")}</option>
             </Select>
-            <ChevronDown size={13} className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-zinc-600" />
+            <ChevronDown
+              size={13}
+              className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-zinc-600"
+            />
           </div>
+          <div className="relative min-w-0">
+            <Gift
+              size={14}
+              className={`pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 ${minSubgifts > 0 ? "text-accent" : "text-zinc-600"}`}
+            />
+            <input
+              type="number"
+              min={0}
+              className="input input-leading-icon w-full"
+              aria-label={t("donations.minSubgifts")}
+              placeholder={t("donations.minSubgifts")}
+              value={minSubgifts || ""}
+              onChange={(event) =>
+                setMinSubgifts(Number(event.target.value) || 0)
+              }
+            />
+          </div>
+        </div>
+
+        <div
+          role="tablist"
+          aria-label={t("nav.donations")}
+          className="flex flex-wrap gap-1 border-b border-line bg-white/[.008] px-3 py-2"
+        >
+          {tabs.map((tabKey) => (
+            <button
+              key={tabKey}
+              type="button"
+              role="tab"
+              aria-selected={tab === tabKey}
+              onClick={() => {
+                setTab(tabKey);
+                setSearchHit(undefined);
+              }}
+              className={`rounded-md px-2.5 py-1 text-xs font-medium transition ${
+                tab === tabKey
+                  ? "bg-accent/20 text-accent"
+                  : "text-zinc-400 hover:bg-white/5 hover:text-zinc-200"
+              }`}
+            >
+              {t(`donations.tabs.${tabKey}`)}
+              <span className="ml-1.5 text-[10px] text-zinc-600">
+                {counts.get(tabKey) ?? 0}
+              </span>
+            </button>
+          ))}
         </div>
 
         {!filtered.length ? (
           <EmptyState
             icon={<CircleDollarSign size={25} />}
-            title={t(donations.length ? "donations.noMatches" : "donations.empty")}
-            body={t(donations.length ? "donations.tryFilters" : connected ? "donations.waiting" : "donations.emptyDetail")}
-            action={!donations.length && !connected ? (
-              <Button variant="primary" onClick={() => setPage("connections")}>
-                {t("donations.connectServices")}
-              </Button>
-            ) : undefined}
+            title={t(
+              !supported.length
+                ? "donations.empty"
+                : doneEmpty
+                  ? "donations.doneEmpty"
+                  : "donations.noMatches",
+            )}
+            body={t(
+              !supported.length
+                ? connected
+                  ? "donations.waiting"
+                  : "donations.emptyDetail"
+                : doneEmpty
+                  ? "donations.doneEmptyDetail"
+                  : "donations.tryFilters",
+            )}
+            action={
+              !supported.length && !connected ? (
+                <Button
+                  variant="primary"
+                  onClick={() => setPage("connections")}
+                >
+                  {t("donations.connectServices")}
+                </Button>
+              ) : undefined
+            }
           />
         ) : (
           <ScrollFade color="#242526" size={32}>
-            <div className="max-h-[calc(100vh-306px)] min-h-52 overflow-y-auto p-2">
-              {filtered.map((donation) => {
-                const isSelected = donation.id === selected?.id;
-                const isTop = donation.id === topDonationId;
-                const who = donation.displayName || donation.username || t("donations.anonymous");
+            <div className="max-h-[calc(100vh-376px)] min-h-52 overflow-y-auto p-2">
+              {filtered.map((event) => {
+                const isSelected = event.id === selected?.id;
+                const isDone = doneIds.has(event.id);
+                const isTop =
+                  event.eventType === "donation" &&
+                  event.id === topDonationId;
+                const Icon = eventIcons[event.eventType] ?? Activity;
+                const name = who(event);
+                const metric =
+                  event.giftCount != null
+                    ? `×${event.giftCount}`
+                    : event.bits != null
+                      ? `${event.bits} ${t("donations.bits")}`
+                      : event.viewerCount != null
+                        ? `${event.viewerCount} ${t("donations.viewers")}`
+                        : null;
                 return (
-                  <button
-                    type="button"
-                    key={donation.id}
-                    aria-expanded={isSelected}
-                    aria-label={t(isSelected ? "donations.collapseDonation" : "donations.expandDonation", { name: who })}
-                    onClick={() => setSelectedId(isSelected ? null : donation.id)}
-                    className={`event-enter mb-1.5 w-full rounded-lg border px-3.5 text-left transition-colors last:mb-0 ${
+                  <article
+                    key={event.id}
+                    className={`event-enter mb-1.5 overflow-hidden rounded-lg border transition-colors last:mb-0 ${
                       isTop
                         ? "border-amber-400/25 bg-linear-to-r from-amber-400/10 to-transparent"
                         : isSelected
                           ? "border-accent/30 bg-accent-soft"
-                          : "border-transparent bg-white/[.018] hover:border-line hover:bg-white/3"
+                          : isDone
+                            ? "border-emerald-400/25 bg-emerald-400/5"
+                            : "border-transparent bg-white/[.018] hover:border-line hover:bg-white/3"
                     }`}
                   >
-                    <div className="flex min-h-14 items-center gap-3 py-2.5">
-                      <span className={`grid size-8 shrink-0 place-items-center rounded-lg ${sourceStyles[donation.source]}`}>
-                        {isTop ? <Star size={15} /> : <CircleDollarSign size={15} />}
+                    <button
+                      type="button"
+                      aria-expanded={isSelected}
+                      aria-label={t(
+                        isSelected
+                          ? "donations.collapseDonation"
+                          : "donations.expandDonation",
+                        { name },
+                      )}
+                      onClick={() =>
+                        setSelectedId(isSelected ? null : event.id)
+                      }
+                      className="flex min-h-14 w-full items-center gap-3 px-3.5 py-2.5 text-left"
+                    >
+                      <span
+                        className={`grid size-8 shrink-0 place-items-center rounded-lg ${sourceStyles[event.source]}`}
+                      >
+                        <Icon size={15} />
                       </span>
                       <div className="min-w-0 flex-1">
-                        <div className="flex min-w-0 items-center gap-2">
-                          <span className={`truncate text-sm font-semibold ${isTop ? "text-amber-200" : "text-zinc-200"}`}>{who}</span>
-                          <span className={`shrink-0 rounded-full px-2 py-0.5 text-xs font-bold ${isTop ? "bg-amber-300 text-amber-950" : "bg-emerald-300 text-emerald-950"}`}>
-                            {donation.amount != null ? money(donation.amount, donation.currency) : t("events.donation")}
+                        <div className="flex min-w-0 flex-wrap items-center gap-x-2 gap-y-1">
+                          <span
+                            className={`max-w-full truncate text-sm font-semibold ${isTop ? "text-amber-200" : "text-zinc-200"}`}
+                          >
+                            {name}
                           </span>
-                          {isTop && <Sparkles size={13} className="shrink-0 text-amber-300" />}
+                          <span className="shrink-0 rounded bg-white/5 px-1.5 py-0.5 text-[10px] font-medium uppercase tracking-wide text-zinc-500">
+                            {t(`events.${event.eventType}`)}
+                          </span>
+                          {event.amount != null && (
+                            <span
+                              className={`shrink-0 rounded-full px-2 py-0.5 text-xs font-bold ${
+                                isTop
+                                  ? "bg-amber-300 text-amber-950"
+                                  : "bg-emerald-300 text-emerald-950"
+                              }`}
+                            >
+                              {money(event.amount, event.currency)}
+                            </span>
+                          )}
+                          {metric && (
+                            <span className="shrink-0 rounded-full border border-line px-2 py-0.5 text-[11px] font-medium text-zinc-400">
+                              {metric}
+                            </span>
+                          )}
+                          {isTop && (
+                            <Sparkles
+                              size={13}
+                              className="shrink-0 text-amber-300"
+                            />
+                          )}
+                          {isDone && (
+                            <Check
+                              size={13}
+                              className="shrink-0 text-emerald-400"
+                            />
+                          )}
                         </div>
-                        {!isSelected && donation.message && (
-                          <p className="mt-0.5 truncate text-xs text-muted">{donation.message}</p>
+                        {!isSelected && event.message && (
+                          <p className="mt-0.5 truncate text-xs text-muted">
+                            {event.message}
+                          </p>
                         )}
                       </div>
-                      <span className="shrink-0 text-[11px] text-zinc-600">
-                        {formatDistanceToNow(new Date(donation.timestamp), { addSuffix: true, locale: dateLocale })}
+                      <span
+                        className="shrink-0 text-[11px] text-zinc-600"
+                        title={new Intl.DateTimeFormat(i18n.language, {
+                          dateStyle: "medium",
+                          timeStyle: "short",
+                        }).format(new Date(event.timestamp))}
+                      >
+                        {formatDistanceToNow(new Date(event.timestamp), {
+                          addSuffix: true,
+                          locale: dateLocale,
+                        })}
                       </span>
-                      {isSelected ? <ChevronDown size={14} className="shrink-0 text-zinc-500" /> : <ChevronRight size={14} className="shrink-0 text-zinc-600" />}
-                    </div>
+                      {isSelected ? (
+                        <ChevronDown
+                          size={14}
+                          className="shrink-0 text-zinc-500"
+                        />
+                      ) : (
+                        <ChevronRight
+                          size={14}
+                          className="shrink-0 text-zinc-600"
+                        />
+                      )}
+                    </button>
                     {isSelected && (
-                      <div className="border-t border-white/6 pb-3 pt-3">
-                        {donation.message ? (
-                          <p className="max-w-3xl whitespace-pre-wrap text-sm leading-6 text-zinc-300">{donation.message}</p>
+                      <div className="border-t border-white/6 px-3.5 pb-3 pt-3">
+                        {event.message ? (
+                          <p className="max-w-3xl whitespace-pre-wrap text-sm leading-6 text-zinc-300">
+                            {event.message}
+                          </p>
                         ) : (
-                          <p className="text-sm italic text-zinc-600">{t("donations.noMessage")}</p>
+                          <p className="text-sm italic text-zinc-600">
+                            {t("donations.noMessage")}
+                          </p>
                         )}
-                        <div className="mt-3 flex items-center gap-2 text-[11px] text-muted">
-                          <span className={`rounded-md px-2 py-1 font-medium ${sourceStyles[donation.source]}`}>{sourceNames[donation.source]}</span>
-                          <span>{new Intl.DateTimeFormat(i18n.language, { dateStyle: "medium", timeStyle: "short" }).format(new Date(donation.timestamp))}</span>
+                        <div className="mt-3 flex flex-wrap items-center gap-2 text-[11px] text-muted">
+                          <span
+                            className={`rounded-md px-2 py-1 font-medium ${sourceStyles[event.source]}`}
+                          >
+                            {sourceNames[event.source]}
+                          </span>
+                          <span>
+                            {new Intl.DateTimeFormat(i18n.language, {
+                              dateStyle: "medium",
+                              timeStyle: "short",
+                            }).format(new Date(event.timestamp))}
+                          </span>
+                        </div>
+                        <div className="mt-2 flex flex-wrap items-center gap-1.5 border-t border-white/6 pt-2">
+                          <button
+                            type="button"
+                            onClick={() => replay(event)}
+                            className={actionClass}
+                          >
+                            <Play size={12} />
+                            {t("donations.replay")}
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => toggleDone(event)}
+                            className={`${actionClass} ${
+                              isDone
+                                ? "text-emerald-300 hover:text-emerald-200"
+                                : "hover:text-emerald-300"
+                            }`}
+                          >
+                            <Check size={12} />
+                            {t(
+                              isDone
+                                ? "donations.reopen"
+                                : "donations.markDone",
+                            )}
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => blockUser(event)}
+                            disabled={!event.username}
+                            title={
+                              event.username
+                                ? t("donations.block")
+                                : t("donations.blockUnavailable")
+                            }
+                            className={`${actionClass} hover:text-red-300`}
+                          >
+                            <Ban size={12} />
+                            {t("donations.block")}
+                          </button>
+                          {event.message && (
+                            <button
+                              type="button"
+                              onClick={() => void copyText(event.message ?? "")}
+                              className={actionClass}
+                            >
+                              <Copy size={12} />
+                              {t("donations.copyText")}
+                            </button>
+                          )}
+                          <button
+                            type="button"
+                            onClick={() => void copyText(event.id)}
+                            className={actionClass}
+                          >
+                            <Copy size={12} />
+                            {t("donations.copyId")}
+                          </button>
                         </div>
                       </div>
                     )}
-                  </button>
+                  </article>
                 );
               })}
             </div>
           </ScrollFade>
         )}
+
+        <div className="border-t border-line bg-white/[.012] px-4 py-2 text-[11px] text-zinc-600">
+          {t("donations.eventsFound", { count: filtered.length })}
+        </div>
       </Card>
     </>
   );
