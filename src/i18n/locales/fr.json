@@ -115,7 +115,11 @@
       "subgifts": "Abonnements offerts",
       "raids": "Raids",
       "cheers": "Cheers",
-      "done": "Terminé"
+      "done": "Terminé",
+      "follow": "Follows",
+      "channel_point": "Points de cha�ne",
+      "stream": "Statut du stream",
+      "other": "Autre"
     },
     "topDonation": "Don le plus élevé",
     "totalReceived": "Total reçu",

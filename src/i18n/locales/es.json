@@ -115,7 +115,11 @@
       "subgifts": "Suscripciones regaladas",
       "raids": "Raids",
       "cheers": "Cheers",
-      "done": "Hecho"
+      "done": "Hecho",
+      "follow": "Seguidores",
+      "channel_point": "Puntos del canal",
+      "stream": "Estado del stream",
+      "other": "Otros"
     },
     "topDonation": "Mayor donación",
     "totalReceived": "Total recibido",

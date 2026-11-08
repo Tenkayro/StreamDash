@@ -115,7 +115,11 @@
       "subgifts": "Geschenkabos",
       "raids": "Raids",
       "cheers": "Cheers",
-      "done": "Erledigt"
+      "done": "Erledigt",
+      "follow": "Follower",
+      "channel_point": "Kanalpunkte",
+      "stream": "Stream-Status",
+      "other": "Sonstiges"
     },
     "topDonation": "Höchste Spende",
     "totalReceived": "Insgesamt erhalten",

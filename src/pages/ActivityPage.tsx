@@ -1,7 +1,7 @@
 import { useSearchFilter } from "../lib/search-navigation";
 import { Select } from "../components/Select";
 import {
-  Activity, Ban, Check, ChevronDown, ChevronRight, CircleDollarSign, Copy, Gift, HandCoins, Inbox, ListFilter, Play, RadioTower, Search, SlidersHorizontal, Sparkles, Star, Trash2, X, type LucideIcon,
+  Activity, Ban, Check, ChevronDown, ChevronRight, CircleDollarSign, Copy, Gift, HandCoins, Heart, Inbox, ListFilter, Play, Radio, RadioTower, Search, SlidersHorizontal, Sparkles, Star, Trash2, Tv, X, type LucideIcon,
 } from "lucide-react";
 import { formatDistanceToNow } from "date-fns";
 import { de, enUS, es, fr, ptBR } from "date-fns/locale";
@@ -16,24 +16,27 @@ import { clearEvents as clearNativeEvents, saveSetting } from "../services/nativ
 import { useAppStore } from "../stores/app-store";
 import type { ActivityEvent, ActivitySource, ActivityType } from "../types";
 
-type FocusTab = "all" | "tips" | "subscriber" | "subgifts" | "raids" | "cheers" | "done" | "activity";
+type FocusTab = "all" | "tips" | "subscriber" | "subgifts" | "raids" | "cheers" | "follow" | "channel_point" | "stream" | "other" | "done" | "activity";
 type SortMode = "newest" | "largest";
 
-const focusTabs: FocusTab[] = ["all", "tips", "subscriber", "subgifts", "raids", "cheers", "done", "activity"];
+const focusTabs: FocusTab[] = ["all", "tips", "subscriber", "subgifts", "raids", "cheers", "follow", "channel_point", "stream", "other", "done", "activity"];
 const noUsers: string[] = [];
 const sourceNames: Record<ActivitySource, string> = { twitch: "Twitch", streamelements: "StreamElements", tipeeestream: "TipeeeStream" };
 const sourceStyles: Record<ActivitySource, string> = { twitch: "bg-violet-400/10 text-violet-300", streamelements: "bg-emerald-400/10 text-emerald-300", tipeeestream: "bg-sky-400/10 text-sky-300" };
-const eventIcons: Partial<Record<ActivityType, LucideIcon>> = { donation: HandCoins, subscription: Star, resubscription: Star, gift_subscription: Gift, community_gift: Gift, cheer: Sparkles, raid: RadioTower };
+const eventIcons: Partial<Record<ActivityType, LucideIcon>> = { donation: HandCoins, subscription: Star, resubscription: Star, gift_subscription: Gift, community_gift: Gift, cheer: Sparkles, raid: RadioTower, follow: Heart, channel_point: Sparkles, stream_online: Tv, stream_offline: Radio };
 const actionClass = "inline-flex items-center gap-1 rounded-md px-2 py-1 text-[11px] text-zinc-400 transition hover:bg-white/5 hover:text-zinc-200 disabled:pointer-events-none disabled:opacity-40";
 
-function donationTab(event: ActivityEvent): FocusTab | undefined {
+function eventTab(event: ActivityEvent): FocusTab {
   switch (event.eventType) {
     case "donation": return "tips";
     case "subscription": case "resubscription": return "subscriber";
     case "gift_subscription": case "community_gift": return "subgifts";
     case "raid": return "raids";
     case "cheer": return "cheers";
-    default: return undefined;
+    case "follow": return "follow";
+    case "channel_point": return "channel_point";
+    case "stream_online": case "stream_offline": return "stream";
+    default: return "other";
   }
 }
 function isBlocked(event: ActivityEvent, blockedUsers: string[] | undefined, language: string) {
@@ -61,8 +64,7 @@ export function ActivityPage() {
   const doneIds = useMemo(() => new Set(settings.donationToolDoneIds ?? []), [settings.donationToolDoneIds]);
   const blockedUsers = settings.chatHiddenUsers ?? noUsers;
   const connected = streamElements.phase === "connected" || tipeeStream.phase === "connected";
-  const inboxEvents = useMemo(() => events.filter((event) => donationTab(event) !== undefined), [events]);
-  const donations = useMemo(() => inboxEvents.filter((event) => event.eventType === "donation"), [inboxEvents]);
+  const donations = useMemo(() => events.filter((event) => event.eventType === "donation"), [events]);
   const totals = useMemo(() => {
     const grouped = new Map<string, number>();
     for (const event of donations) { const currency = event.currency ?? ""; grouped.set(currency, (grouped.get(currency) ?? 0) + (event.amount ?? 0)); }
@@ -73,28 +75,28 @@ export function ActivityPage() {
   const matchesText = useCallback((event: ActivityEvent) => !needle || `${event.displayName ?? ""} ${event.username ?? ""} ${event.message ?? ""}`.toLocaleLowerCase(i18n.language).includes(needle), [needle, i18n.language]);
 
   const feedEvents = useMemo(() => events.filter((e) => (type === "all" || e.eventType === type) && (source === "all" || e.source === source) && (searchHit ? e.id === searchHit : matchesText(e))), [events, searchHit, type, source, matchesText]);
-  const inboxFiltered = useMemo(() => inboxEvents.filter((event) => {
+  const inboxFiltered = useMemo(() => events.filter((event) => {
     if (isBlocked(event, blockedUsers, i18n.language)) return false;
     if (tab === "done") { if (!doneIds.has(event.id)) return false; }
-    else if (tab !== "all" && tab !== "activity" && donationTab(event) !== tab) return false;
+    else if (tab !== "all" && tab !== "activity" && eventTab(event) !== tab) return false;
     if (source !== "all" && event.source !== source) return false;
     if (tab === "subgifts" && minSubgifts > 0 && (event.giftCount ?? 0) < minSubgifts) return false;
     if (searchHit) return event.id === searchHit;
     return matchesText(event);
-  }).sort((a, b) => sort === "largest" ? (b.amount ?? 0) - (a.amount ?? 0) || new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime() : new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime()), [inboxEvents, doneIds, blockedUsers, i18n.language, searchHit, source, tab, minSubgifts, sort, matchesText]);
+  }).sort((a, b) => sort === "largest" ? (b.amount ?? 0) - (a.amount ?? 0) || new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime() : new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime()), [events, doneIds, blockedUsers, i18n.language, searchHit, source, tab, minSubgifts, sort, matchesText]);
 
   const counts = useMemo(() => {
     const map = new Map<FocusTab, number>();
     for (const key of focusTabs) map.set(key, 0);
     map.set("activity", events.length);
-    for (const event of inboxEvents) {
+    for (const event of events) {
       if (isBlocked(event, blockedUsers, i18n.language)) continue;
       map.set("all", (map.get("all") ?? 0) + 1);
-      const eventTab = donationTab(event); if (eventTab) map.set(eventTab, (map.get(eventTab) ?? 0) + 1);
+      const key = eventTab(event); map.set(key, (map.get(key) ?? 0) + 1);
       if (doneIds.has(event.id)) map.set("done", (map.get("done") ?? 0) + 1);
     }
     return map;
-  }, [events.length, inboxEvents, doneIds, blockedUsers, i18n.language]);
+  }, [events, doneIds, blockedUsers, i18n.language]);
 
   const selected = useMemo(() => { const id = searchHit ?? selectedId; if (!id) return undefined; return inboxFiltered.find((event) => event.id === id); }, [inboxFiltered, searchHit, selectedId]);
   const who = (event: ActivityEvent) => event.displayName || event.username || t("donations.anonymous");
@@ -126,20 +128,20 @@ export function ActivityPage() {
       <div className="grid grid-cols-1 gap-2 border-b border-line bg-white/[.012] p-3 sm:grid-cols-2 lg:grid-cols-[minmax(200px,1fr)_170px_160px_130px]">
         <div className="relative min-w-0"><Search size={14} className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-zinc-600" /><input className="input input-leading-icon input-trailing-action" aria-label={t("activity.searchLabel")} placeholder={t("activity.searchPlaceholder")} value={search} onChange={(e) => { setSearch(e.target.value); setSearchHit(undefined); }} />{search && <button type="button" title={t("activity.clearSearch")} aria-label={t("activity.clearSearch")} onClick={() => { setSearch(""); setSearchHit(undefined); }} className="absolute right-2 top-1/2 grid size-6 -translate-y-1/2 place-items-center rounded-md text-zinc-600 hover:bg-white/5 hover:text-zinc-300"><X size={13} /></button>}</div>
         <div className="relative min-w-0"><RadioTower size={14} className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-zinc-600" /><Select className="input input-leading-icon input-trailing-action appearance-none" aria-label={t("activity.filterSource")} value={source} onChange={(e) => { setSource(e.target.value as ActivitySource | "all"); setSearchHit(undefined); }}><option value="all">{t("activity.allSources")}</option><option value="twitch">Twitch</option><option value="streamelements">StreamElements</option><option value="tipeeestream">TipeeeStream</option></Select><ChevronDown size={13} className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-zinc-600" /></div>
-        {tab === "activity" ? (<div className="relative min-w-0"><ListFilter size={14} className={`pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 ${type === "all" ? "text-zinc-600" : "text-accent"}`} /><Select className="input input-leading-icon input-trailing-action appearance-none" aria-label={t("activity.filterType")} value={type} onChange={(e) => setType(e.target.value as ActivityType | "all")}><option value="all">{t("activity.allTypes")}</option>{["follow","subscription","resubscription","gift_subscription","community_gift","cheer","raid","donation","channel_point"].map((v) => <option value={v} key={v}>{t(`events.${v}`)}</option>)}</Select><ChevronDown size={13} className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-zinc-600" /></div>) : (<div className="relative min-w-0"><SlidersHorizontal size={14} className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-zinc-600" /><Select className="input input-leading-icon input-trailing-action appearance-none" aria-label={t("donations.sortLabel")} value={sort} onChange={(e) => setSort(e.target.value as SortMode)}><option value="newest">{t("donations.newest")}</option><option value="largest">{t("donations.largest")}</option></Select><ChevronDown size={13} className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-zinc-600" /></div>)}
+        {tab === "activity" ? (<div className="relative min-w-0"><ListFilter size={14} className={`pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 ${type === "all" ? "text-zinc-600" : "text-accent"}`} /><Select className="input input-leading-icon input-trailing-action appearance-none" aria-label={t("activity.filterType")} value={type} onChange={(e) => setType(e.target.value as ActivityType | "all")}><option value="all">{t("activity.allTypes")}</option>{["follow","subscription","resubscription","gift_subscription","community_gift","cheer","raid","donation","channel_point","stream_online","stream_offline","other"].map((v) => <option value={v} key={v}>{t(`events.${v}`)}</option>)}</Select><ChevronDown size={13} className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-zinc-600" /></div>) : (<div className="relative min-w-0"><SlidersHorizontal size={14} className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-zinc-600" /><Select className="input input-leading-icon input-trailing-action appearance-none" aria-label={t("donations.sortLabel")} value={sort} onChange={(e) => setSort(e.target.value as SortMode)}><option value="newest">{t("donations.newest")}</option><option value="largest">{t("donations.largest")}</option></Select><ChevronDown size={13} className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-zinc-600" /></div>)}
         <div className="relative min-w-0"><Gift size={14} className={`pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 ${minSubgifts > 0 ? "text-accent" : "text-zinc-600"}`} /><input type="number" min={0} className="input input-leading-icon w-full" aria-label={t("donations.minSubgifts")} placeholder={t("donations.minSubgifts")} value={minSubgifts || ""} onChange={(e) => setMinSubgifts(Number(e.target.value) || 0)} /></div>
       </div>
       <div role="tablist" aria-label={t("nav.activitys")} className="flex flex-wrap gap-1 border-b border-line bg-white/[.008] px-3 py-2">
         {focusTabs.map((key) => <button key={key} type="button" role="tab" aria-selected={tab === key} onClick={() => { setTab(key); setSearchHit(undefined); }} className={`rounded-md px-2.5 py-1 text-xs font-medium transition ${tab === key ? "bg-accent/20 text-accent" : "text-zinc-400 hover:bg-white/5 hover:text-zinc-200"}`}>{t(key === "activity" ? "nav.activity" : `donations.tabs.${key}`)}<span className="ml-1.5 text-[10px] text-zinc-600">{counts.get(key) ?? 0}</span></button>)}
       </div>
-      {tab === "activity" ? (<ScrollFade color="#242526" size={32}><div className="max-h-[calc(100vh-376px)] overflow-y-auto"><ActivityFeed events={feedEvents} compact={settings.compactFeed} onUser={twitch.phase === "connected" ? setSelectedUser : undefined} emptyTitle={events.length ? t("activity.noMatches") : t("activity.empty")} emptyBody={events.length ? t("activity.tryFilters") : undefined} /></div></ScrollFade>) : !inboxFiltered.length ? (<EmptyState icon={<CircleDollarSign size={25} />} title={t(!inboxEvents.length ? "donations.empty" : tab === "done" && !counts.get("done") ? "donations.doneEmpty" : "donations.noMatches")} body={t(!inboxEvents.length ? (connected ? "donations.waiting" : "donations.emptyDetail") : tab === "done" && !counts.get("done") ? "donations.doneEmptyDetail" : "donations.tryFilters")} action={!inboxEvents.length && !connected ? <Button variant="primary" onClick={() => setPage("connections")}>{t("donations.connectServices")}</Button> : undefined} />) : (<ScrollFade color="#242526" size={32}><div className="max-h-[calc(100vh-376px)] min-h-52 overflow-y-auto p-2">
+      {tab === "activity" ? (<ScrollFade color="#242526" size={32}><div className="max-h-[calc(100vh-376px)] overflow-y-auto"><ActivityFeed events={feedEvents} compact={settings.compactFeed} onUser={twitch.phase === "connected" ? setSelectedUser : undefined} emptyTitle={events.length ? t("activity.noMatches") : t("activity.empty")} emptyBody={events.length ? t("activity.tryFilters") : undefined} /></div></ScrollFade>) : !inboxFiltered.length ? (<EmptyState icon={<CircleDollarSign size={25} />} title={t(!events.length ? "donations.empty" : tab === "done" && !counts.get("done") ? "donations.doneEmpty" : "donations.noMatches")} body={t(!events.length ? (connected ? "donations.waiting" : "donations.emptyDetail") : tab === "done" && !counts.get("done") ? "donations.doneEmptyDetail" : "donations.tryFilters")} action={!events.length && !connected ? <Button variant="primary" onClick={() => setPage("connections")}>{t("donations.connectServices")}</Button> : undefined} />) : (<ScrollFade color="#242526" size={32}><div className="max-h-[calc(100vh-376px)] min-h-52 overflow-y-auto p-2">
         {inboxFiltered.map((event) => {
           const isSelected = event.id === selected?.id; const isDone = doneIds.has(event.id); const isTop = event.eventType === "donation" && event.id === topDonationId; const Icon = eventIcons[event.eventType] ?? Activity; const name = who(event);
-          const metric = event.giftCount != null ? `×${event.giftCount}` : event.bits != null ? `${event.bits} ${t("donations.bits")}` : event.viewerCount != null ? `${event.viewerCount} ${t("donations.viewers")}` : null;
+          const metric = event.amount != null ? money(event.amount, event.currency) : event.giftCount != null ? `×${event.giftCount}` : event.bits != null ? `${event.bits} ${t("donations.bits")}` : event.viewerCount != null ? `${event.viewerCount} ${t("donations.viewers")}` : null;
           return <article key={event.id} className={`event-enter mb-1.5 overflow-hidden rounded-lg border transition-colors last:mb-0 ${isTop ? "border-amber-400/25 bg-linear-to-r from-amber-400/10 to-transparent" : isSelected ? "border-accent/30 bg-accent-soft" : isDone ? "border-emerald-400/25 bg-emerald-400/5" : "border-transparent bg-white/[.018] hover:border-line hover:bg-white/3"}`}>
             <button type="button" aria-expanded={isSelected} aria-label={t(isSelected ? "donations.collapseDonation" : "donations.expandDonation", { name })} onClick={() => setSelectedId(isSelected ? null : event.id)} className="flex min-h-14 w-full items-center gap-3 px-3.5 py-2.5 text-left">
               <span className={`grid size-8 shrink-0 place-items-center rounded-lg ${sourceStyles[event.source]}`}><Icon size={15} /></span>
-              <div className="min-w-0 flex-1"><div className="flex min-w-0 flex-wrap items-center gap-x-2 gap-y-1"><span className={`max-w-full truncate text-sm font-semibold ${isTop ? "text-amber-200" : "text-zinc-200"}`}>{name}</span><span className="shrink-0 rounded bg-white/5 px-1.5 py-0.5 text-[10px] font-medium uppercase tracking-wide text-zinc-500">{t(`events.${event.eventType}`)}</span>{event.amount != null && <span className={`shrink-0 rounded-full px-2 py-0.5 text-xs font-bold ${isTop ? "bg-amber-300 text-amber-950" : "bg-emerald-300 text-emerald-950"}`}>{money(event.amount, event.currency)}</span>}{metric && <span className="shrink-0 rounded-full border border-line px-2 py-0.5 text-[11px] font-medium text-zinc-400">{metric}</span>}{isTop && <Sparkles size={13} className="shrink-0 text-amber-300" />}{isDone && <Check size={13} className="shrink-0 text-emerald-400" />}</div>{!isSelected && event.message && <p className="mt-0.5 truncate text-xs text-muted">{event.message}</p>}</div>
+              <div className="min-w-0 flex-1"><div className="flex min-w-0 flex-wrap items-center gap-x-2 gap-y-1"><span className={`max-w-full truncate text-sm font-semibold ${isTop ? "text-amber-200" : "text-zinc-200"}`}>{name}</span><span className="shrink-0 rounded bg-white/5 px-1.5 py-0.5 text-[10px] font-medium uppercase tracking-wide text-zinc-500">{t(`events.${event.eventType}`)}</span>{metric && <span className={`shrink-0 rounded-full px-2 py-0.5 text-[11px] font-medium ${isTop ? "bg-amber-300 text-amber-950 font-bold" : event.amount != null ? "bg-emerald-300 font-bold text-emerald-950" : "border border-line text-zinc-400"}`}>{metric}</span>}{isTop && <Sparkles size={13} className="shrink-0 text-amber-300" />}{isDone && <Check size={13} className="shrink-0 text-emerald-400" />}</div>{!isSelected && event.message && <p className="mt-0.5 truncate text-xs text-muted">{event.message}</p>}</div>
               <span className="shrink-0 text-[11px] text-zinc-600" title={new Intl.DateTimeFormat(i18n.language, { dateStyle: "medium", timeStyle: "short" }).format(new Date(event.timestamp))}>{formatDistanceToNow(new Date(event.timestamp), { addSuffix: true, locale: dateLocale })}</span>
               {isSelected ? <ChevronDown size={14} className="shrink-0 text-zinc-500" /> : <ChevronRight size={14} className="shrink-0 text-zinc-600" />}
             </button>
@@ -152,3 +154,4 @@ export function ActivityPage() {
     {selectedUser && <UserCard login={selectedUser} messages={chatMessages} onClose={() => setSelectedUser(undefined)} />}
   </>);
 }
+

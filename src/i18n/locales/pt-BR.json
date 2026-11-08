@@ -115,7 +115,11 @@
       "subgifts": "Inscrições de presente",
       "raids": "Raids",
       "cheers": "Cheers",
-      "done": "Concluído"
+      "done": "Concluído",
+      "follow": "Seguidores",
+      "channel_point": "Pontos do canal",
+      "stream": "Status da transmiss�o",
+      "other": "Outros"
     },
     "topDonation": "Maior doação",
     "totalReceived": "Total recebido",
