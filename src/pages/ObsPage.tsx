@@ -153,7 +153,6 @@ function SpotifyOverlayCard() {
               {coverUrl ? <img src={coverUrl} alt="" className="size-full object-cover" /> : <Music2 size={34} />}
             </div>
             <div className="flex min-w-0 flex-col justify-center px-5">
-              <div className="mb-1.5 flex items-center gap-1.5 text-[10px] font-bold text-[#1ed760]"><Music2 size={11} />Spotify</div>
               <div className="truncate text-[clamp(1rem,2vw,1.75rem)] font-extrabold tracking-tight text-white">{status?.available ? status.title : t("obs.spotifyOverlay.previewTitle")}</div>
               <div className="truncate text-[clamp(.75rem,1.4vw,1.1rem)] text-white/70">{status?.available ? status.artist || status.album : t("obs.spotifyOverlay.previewArtist")}</div>
             </div>
