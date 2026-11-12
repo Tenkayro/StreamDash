@@ -4,7 +4,7 @@
 
 ### Your stream. One clean desktop workspace.
 
-A fast, lightweight **Windows 10 & 11** desktop app for managing, automating, and monitoring your Twitch stream in real time — without juggling a dozen browser tabs.
+A fast, lightweight **Windows, macOS & Linux** desktop app for managing, automating, and monitoring your Twitch stream in real time — without juggling a dozen browser tabs.
 
 **Available in 5 languages:** English · Deutsch · Español · Français · Português (Brasil)
 
@@ -62,6 +62,18 @@ Want your setup available anywhere without manual file transfers? **StreamDash P
 
 ---
 
+## 📦 Download & Install
+
+- **Windows:** Download `StreamDash-Setup.msi` from [GitHub Releases](https://github.com/Tenkayro/StreamDash/releases/latest)
+- **macOS:** Download the Universal `.dmg` from [GitHub Releases](https://github.com/Tenkayro/StreamDash/releases/latest)
+- **Linux (Recommended):** Auto-detects your distro (`.deb`, `.rpm`, or `.AppImage`) with an interactive install / update / uninstall menu:
+
+```bash
+curl -fsSL https://tenkayro.de/sh/streamdash.sh | bash
+```
+
+---
+
 ## 📸 Preview
 
 ### Dashboard
@@ -94,6 +106,6 @@ Want your setup available anywhere without manual file transfers? **StreamDash P
 
 **Built for streamers who want everything in one place.**
 
-Windows 10 & 11
+Windows · macOS · Linux
 
 </div>
