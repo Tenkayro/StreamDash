@@ -64,13 +64,26 @@ Want your setup available anywhere without manual file transfers? **StreamDash P
 
 ## 📦 Download & Install
 
-- **Windows:** Download `StreamDash-Setup.msi` from [GitHub Releases](https://github.com/Tenkayro/StreamDash/releases/latest)
-- **macOS:** Download the Universal `.dmg` from [GitHub Releases](https://github.com/Tenkayro/StreamDash/releases/latest)
-- **Linux (Recommended):** Auto-detects your distro (`.deb`, `.rpm`, or `.AppImage`) with an interactive install / update / uninstall menu:
+### Windows (10 & 11 · x64)
+- **Installer (Recommended):** Download [`StreamDash-Setup.msi`](https://github.com/Tenkayro/StreamDash/releases/latest/download/StreamDash-Setup.msi) and run it (includes signed built-in auto-updates)
+- **Microsoft Store:** Available on the [Microsoft Store](https://apps.microsoft.com/detail/9P8MCZJVPTDQ)
+
+### macOS (Apple Silicon & Intel)
+1. Download the Universal **`.dmg`** from [GitHub Releases](https://github.com/Tenkayro/StreamDash/releases/latest)
+2. Open the `.dmg` and drag **StreamDash** into **Applications**
+3. *First launch (unsigned build):* Right-click **StreamDash** → **Open** (built-in updates are signed and work automatically afterwards)
+
+### Linux (x64)
+- **Recommended (Auto-Installer):** Automatically detects your distro (`.deb`, `.rpm`, or `.AppImage`), sets up desktop integration, and includes an interactive install / update / uninstall menu:
 
 ```bash
 curl -fsSL https://tenkayro.de/sh/streamdash.sh | bash
 ```
+
+- **Manual Packages** *(from [GitHub Releases](https://github.com/Tenkayro/StreamDash/releases/latest))*:
+  - **AppImage** (Universal · includes built-in auto-updates): `chmod +x StreamDash_*.AppImage && ./StreamDash_*.AppImage`
+  - **Debian / Ubuntu / Mint (`.deb`)**: `sudo apt install ./StreamDash_*.deb`
+  - **Fedora / RHEL / openSUSE (`.rpm`)**: `sudo dnf install ./StreamDash-*.rpm` *(or `sudo zypper install ./StreamDash-*.rpm`)*
 
 ---
 
