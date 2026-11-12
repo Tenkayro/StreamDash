@@ -1,6 +1,7 @@
 import {
   Activity,
   BarChart3,
+  BellRing,
   Clapperboard,
   Gift,
   Goal,
@@ -32,6 +33,7 @@ export const navigationItems: NavigationItem[] = [
   { id: "chat", label: "chat", icon: MessageSquare, group: "main" },
   { id: "activitys", label: "activitys", icon: Activity, group: "main" },
   { id: "commands", label: "commands", icon: Terminal, group: "tools" },
+  { id: "chatAlerts", label: "chatAlerts", icon: BellRing, group: "tools" },
   { id: "channelPoints", label: "channelPoints", icon: Sparkles, group: "tools" },
   { id: "giveaways", label: "giveaways", icon: Gift, group: "tools" },
   { id: "livePreview", label: "livePreview", icon: MonitorPlay, group: "insights" },

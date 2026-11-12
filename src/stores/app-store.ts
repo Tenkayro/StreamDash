@@ -5,6 +5,7 @@ import type {
   ActivityEvent,
   AppSettings,
   ChannelPointReward,
+  ChatAlertsConfig,
   ChatCommand,
   ChatEmote,
   ChatMessage,
@@ -113,6 +114,95 @@ export const defaultCommands: ChatCommand[] = [
     createdAt: 0,
   },
 ];
+export const defaultChatAlerts: ChatAlertsConfig = {
+  subTier1: {
+    enabled: false,
+    message: "$(user) just subscribed! PogChamp",
+  },
+  subTier2: {
+    enabled: false,
+    message: "$(user) just subscribed with Tier 2! PogChamp",
+  },
+  subTier3: {
+    enabled: false,
+    message: "$(user) just subscribed with Tier 3! PogChamp",
+  },
+  subPrime: {
+    enabled: false,
+    message: "$(user) just subscribed with Prime Gaming! PogChamp",
+  },
+  resubTier1: {
+    enabled: false,
+    message: "$(user) just resubscribed for $(months) months! PogChamp",
+  },
+  resubTier2: {
+    enabled: false,
+    message:
+      "$(user) just resubscribed for $(months) months with Tier 2! PogChamp",
+  },
+  resubTier3: {
+    enabled: false,
+    message:
+      "$(user) just resubscribed for $(months) months with Tier 3! PogChamp",
+  },
+  resubPrime: {
+    enabled: false,
+    message:
+      "$(user) just resubscribed for $(months) months with Prime Gaming! PogChamp",
+  },
+  giftTier1: {
+    enabled: false,
+    message: "$(user) just gifted a sub to $(recipient)! bleedPurple",
+  },
+  giftTier2: {
+    enabled: false,
+    message: "$(user) just gifted a Tier 2 sub to $(recipient)! bleedPurple",
+  },
+  giftTier3: {
+    enabled: false,
+    message: "$(user) just gifted a Tier 3 sub to $(recipient)! bleedPurple",
+  },
+  massGiftTier1: {
+    enabled: false,
+    message: "$(user) just gifted $(amount) subs! PogChamp",
+  },
+  massGiftTier2: {
+    enabled: false,
+    message: "$(user) just gifted $(amount) Tier 2 subs! PogChamp",
+  },
+  massGiftTier3: {
+    enabled: false,
+    message: "$(user) just gifted $(amount) Tier 3 subs! PogChamp",
+  },
+  raid: {
+    enabled: false,
+    message: "$(user) is raiding the stream with $(viewers) viewers! TombRaid",
+    minimum: 5,
+  },
+  bits: {
+    enabled: false,
+    message: "$(user) just cheered $(bits) bits! PogChamp",
+    minimum: 100,
+  },
+  follower: {
+    enabled: false,
+    message: "$(user) just followed the stream! bleedPurple",
+  },
+  goLive: {
+    enabled: false,
+    message:
+      "$(channel.display_name) just went live! They're playing $(game)! PogChamp",
+  },
+  gameChange: {
+    enabled: false,
+    message: "$(channel.display_name) changed their game to $(game)! PogChamp",
+  },
+  titleChange: {
+    enabled: false,
+    message:
+      '$(channel.display_name) changed their title to "$(title)"! PogChamp',
+  },
+};
 interface AppStore {
   searchTarget?: SearchTarget;
   setSearchTarget: (target?: SearchTarget) => void;
@@ -173,6 +263,8 @@ interface AppStore {
   setChannelRewards: (rewards: ChannelPointReward[]) => void;
   upsertChannelReward: (reward: ChannelPointReward) => void;
   deleteChannelReward: (id: string) => void;
+  chatAlerts: ChatAlertsConfig;
+  setChatAlerts: (patch: Partial<ChatAlertsConfig>) => void;
 }
 export const useAppStore = create<AppStore>((set) => ({
   searchTarget: undefined,
@@ -527,5 +619,14 @@ export const useAppStore = create<AppStore>((set) => ({
         );
       }
       return { channelRewards: nextRewards };
+    }),
+  chatAlerts: defaultChatAlerts,
+  setChatAlerts: (patch) =>
+    set((s) => {
+      const nextAlerts = { ...s.chatAlerts, ...patch };
+      if (s.ready) {
+        void saveLocalState("chatAlerts", nextAlerts).catch(() => undefined);
+      }
+      return { chatAlerts: nextAlerts };
     }),
 }));

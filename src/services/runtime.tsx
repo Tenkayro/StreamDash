@@ -45,6 +45,7 @@ import type {
   ActivityEvent,
   AppSettings,
   ChannelPointReward,
+  ChatAlertsConfig,
   ChatCommand,
   ChatMessage,
   ChatUserProfile,
@@ -62,6 +63,7 @@ type Bootstrap = {
   cachedStats?: Partial<DashboardStats>;
   commands?: ChatCommand[];
   channelRewards?: ChannelPointReward[];
+  chatAlerts?: Partial<ChatAlertsConfig>;
   events: ActivityEvent[];
   chatMessages: ChatMessage[];
 };
@@ -76,12 +78,14 @@ function loadBootstrap() {
       cachedStats,
       commands,
       channelRewards,
+      chatAlerts,
       ...restSettings
     } = raw as Partial<AppSettings> & {
       giveaway?: Partial<GiveawayState>;
       cachedStats?: Partial<DashboardStats>;
       commands?: ChatCommand[];
       channelRewards?: ChannelPointReward[];
+      chatAlerts?: Partial<ChatAlertsConfig>;
     };
     const settings: Partial<AppSettings> = { ...restSettings };
     if (typeof settings.onboardingCompleted !== "boolean") {
@@ -111,6 +115,7 @@ function loadBootstrap() {
       cachedStats,
       commands,
       channelRewards,
+      chatAlerts,
       events,
       chatMessages,
     };
@@ -228,30 +233,6 @@ export function RuntimeProvider({ children }: { children: ReactNode }) {
     }
   }, [ state, stats.live, twitchPhase, twitchUserId ]);
 
-  useEffect(() => {
-    if (twitchPhase !== "connected" || !twitchUserId) return;
-    let disposed = false;
-    let refreshing = false;
-    const refresh = async () => {
-      if (refreshing) return;
-      refreshing = true;
-      try {
-        const snapshot = await loadTwitchStreamStatus(TWITCH_CLIENT_ID, twitchUserId);
-        if (!disposed) state().setStats(snapshot);
-      } catch {
-        /* EventSub remains the primary source; the poll is a consistency check. */
-      } finally {
-        refreshing = false;
-      }
-    };
-    void refresh();
-    const timer = window.setInterval(() => void refresh(), 15_000);
-    return () => {
-      disposed = true;
-      window.clearInterval(timer);
-    };
-  }, [state, twitchPhase, twitchUserId]);
-
   const sendChat = useCallback(async (text: string, replyParentId?: string) => {
     const message = text.trim();
     const userId = state().twitch.userId;
@@ -314,6 +295,73 @@ export function RuntimeProvider({ children }: { children: ReactNode }) {
     [sendChat, state],
   );
 
+  useEffect(() => {
+    if (twitchPhase !== "connected" || !twitchUserId) return;
+    let disposed = false;
+    let refreshing = false;
+    let initialized = false;
+    let prevCategory = state().stats.category;
+    let prevTitle = state().stats.title;
+    const refresh = async () => {
+      if (refreshing) return;
+      refreshing = true;
+      try {
+        const snapshot = await loadTwitchStreamStatus(TWITCH_CLIENT_ID, twitchUserId);
+        if (disposed) return;
+        const current = state();
+        const channelName = current.twitch.account || "";
+        if (initialized) {
+          if (
+            snapshot.category &&
+            prevCategory &&
+            snapshot.category !== prevCategory &&
+            current.chatAlerts.gameChange.enabled
+          ) {
+            const msg = current.chatAlerts.gameChange.message
+              .replace(
+                /\$\(channel\.display_name\)|\$\(channel\)|\{channel\}/gi,
+                channelName,
+              )
+              .replace(/\$\(game\)|\{game\}/gi, snapshot.category)
+              .replace(/\$\(title\)|\{title\}/gi, snapshot.title ?? prevTitle ?? "")
+              .trim();
+            if (msg) void sendCommandReply(msg.slice(0, 480)).catch(() => undefined);
+          }
+          if (
+            snapshot.title &&
+            prevTitle &&
+            snapshot.title !== prevTitle &&
+            current.chatAlerts.titleChange.enabled
+          ) {
+            const msg = current.chatAlerts.titleChange.message
+              .replace(
+                /\$\(channel\.display_name\)|\$\(channel\)|\{channel\}/gi,
+                channelName,
+              )
+              .replace(/\$\(game\)|\{game\}/gi, snapshot.category ?? prevCategory ?? "")
+              .replace(/\$\(title\)|\{title\}/gi, snapshot.title)
+              .trim();
+            if (msg) void sendCommandReply(msg.slice(0, 480)).catch(() => undefined);
+          }
+        }
+        if (snapshot.category) prevCategory = snapshot.category;
+        if (snapshot.title) prevTitle = snapshot.title;
+        initialized = true;
+        current.setStats(snapshot);
+      } catch {
+        /* EventSub remains the primary source; the poll is a consistency check. */
+      } finally {
+        refreshing = false;
+      }
+    };
+    void refresh();
+    const timer = window.setInterval(() => void refresh(), 15_000);
+    return () => {
+      disposed = true;
+      window.clearInterval(timer);
+    };
+  }, [sendCommandReply, state, twitchPhase, twitchUserId]);
+
   const ingest = useCallback(
     async (event: ActivityEvent) => {
       const current = state();
@@ -349,6 +397,73 @@ export function RuntimeProvider({ children }: { children: ReactNode }) {
         current.setStats({ live: true, startedAt: event.timestamp });
       if (event.eventType === "stream_offline")
         current.setStats({ live: false, viewers: 0, startedAt: undefined });
+
+      const alerts = current.chatAlerts;
+      const user = event.displayName || event.username || i18n.t("runtime.someone");
+      const channelName = current.twitch.account || "";
+      const gameName = current.stats.category || "";
+      const streamTitle = current.stats.title || "";
+      const months = Number(event.metadata?.months ?? 1);
+      const isPrime = Boolean(event.metadata?.isPrime);
+      const recipient = String(event.metadata?.recipient ?? "");
+      const tier = event.tier;
+
+      let alertTemplate: string | undefined;
+      if (event.eventType === "subscription") {
+        if (isPrime && alerts.subPrime.enabled) alertTemplate = alerts.subPrime.message;
+        else if (tier === "3000" && alerts.subTier3.enabled) alertTemplate = alerts.subTier3.message;
+        else if (tier === "2000" && alerts.subTier2.enabled) alertTemplate = alerts.subTier2.message;
+        else if (alerts.subTier1.enabled) alertTemplate = alerts.subTier1.message;
+      } else if (event.eventType === "resubscription") {
+        if (isPrime && alerts.resubPrime.enabled) alertTemplate = alerts.resubPrime.message;
+        else if (tier === "3000" && alerts.resubTier3.enabled) alertTemplate = alerts.resubTier3.message;
+        else if (tier === "2000" && alerts.resubTier2.enabled) alertTemplate = alerts.resubTier2.message;
+        else if (alerts.resubTier1.enabled) alertTemplate = alerts.resubTier1.message;
+      } else if (event.eventType === "gift_subscription") {
+        if (tier === "3000" && alerts.giftTier3.enabled) alertTemplate = alerts.giftTier3.message;
+        else if (tier === "2000" && alerts.giftTier2.enabled) alertTemplate = alerts.giftTier2.message;
+        else if (alerts.giftTier1.enabled) alertTemplate = alerts.giftTier1.message;
+      } else if (event.eventType === "community_gift") {
+        if (tier === "3000" && alerts.massGiftTier3.enabled) alertTemplate = alerts.massGiftTier3.message;
+        else if (tier === "2000" && alerts.massGiftTier2.enabled) alertTemplate = alerts.massGiftTier2.message;
+        else if (alerts.massGiftTier1.enabled) alertTemplate = alerts.massGiftTier1.message;
+      } else if (
+        event.eventType === "raid" &&
+        alerts.raid.enabled &&
+        (event.viewerCount ?? 0) >= alerts.raid.minimum
+      ) {
+        alertTemplate = alerts.raid.message;
+      } else if (
+        event.eventType === "cheer" &&
+        alerts.bits.enabled &&
+        (event.bits ?? 0) >= alerts.bits.minimum
+      ) {
+        alertTemplate = alerts.bits.message;
+      } else if (event.eventType === "follow" && alerts.follower.enabled) {
+        alertTemplate = alerts.follower.message;
+      } else if (event.eventType === "stream_online" && alerts.goLive.enabled) {
+        alertTemplate = alerts.goLive.message;
+      }
+
+      if (alertTemplate && current.twitch.phase === "connected") {
+        const formatted = alertTemplate
+          .replace(/\$\(user\)|\{user\}/gi, user)
+          .replace(/\$\(months\)|\{months\}/gi, String(months))
+          .replace(/\$\(recipient\)|\{recipient\}/gi, recipient || user)
+          .replace(/\$\(amount\)|\{amount\}/gi, String(event.giftCount ?? 1))
+          .replace(/\$\(viewers\)|\{viewers\}/gi, String(event.viewerCount ?? 0))
+          .replace(/\$\(bits\)|\{bits\}/gi, String(event.bits ?? 0))
+          .replace(
+            /\$\(channel\.display_name\)|\$\(channel\)|\{channel\}/gi,
+            channelName,
+          )
+          .replace(/\$\(game\)|\{game\}/gi, gameName)
+          .replace(/\$\(title\)|\{title\}/gi, streamTitle)
+          .trim();
+        if (formatted) {
+          void sendCommandReply(formatted.slice(0, 480)).catch(() => undefined);
+        }
+      }
       const notify =
         current.settings.notifications &&
         ((event.eventType === "donation" && current.settings.notifyDonations) ||
@@ -755,6 +870,7 @@ export function RuntimeProvider({ children }: { children: ReactNode }) {
           cachedStats,
           commands,
           channelRewards,
+          chatAlerts,
           events,
           chatMessages,
         } = await loadBootstrap();
@@ -767,6 +883,9 @@ export function RuntimeProvider({ children }: { children: ReactNode }) {
         }
         if (Array.isArray(channelRewards)) {
           state().setChannelRewards(channelRewards);
+        }
+        if (chatAlerts && typeof chatAlerts === "object") {
+          state().setChatAlerts(chatAlerts);
         }
         if (giveaway && typeof giveaway === "object") {
           state().setGiveaway({

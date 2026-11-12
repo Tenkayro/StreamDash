@@ -41,6 +41,10 @@ const pageLoaders = {
     import("./pages/CommandsPage").then((module) => ({
       default: module.CommandsPage,
     })),
+  chatAlerts: () =>
+    import("./pages/ChatAlertsPage").then((module) => ({
+      default: module.ChatAlertsPage,
+    })),
   channelPoints: () =>
     import("./pages/ChannelPointsPage").then((module) => ({
       default: module.ChannelPointsPage,
@@ -76,6 +80,7 @@ const StreamPage = lazy(pageLoaders.stream);
 const ChatPage = lazy(pageLoaders.chat);
 const ActivityPage = lazy(pageLoaders.activitys);
 const CommandsPage = lazy(pageLoaders.commands);
+const ChatAlertsPage = lazy(pageLoaders.chatAlerts);
 const ChannelPointsPage = lazy(pageLoaders.channelPoints);
 const GiveawaysPage = lazy(pageLoaders.giveaways);
 const LivePreview = lazy(pageLoaders.livePreview);
@@ -93,6 +98,7 @@ const pages: Record<string, React.ComponentType> = {
   activity: ActivityPage,
   donations: ActivityPage,
   commands: CommandsPage,
+  chatAlerts: ChatAlertsPage,
   channelPoints: ChannelPointsPage,
   giveaways: GiveawaysPage,
   livePreview: LivePreview,
@@ -240,6 +246,7 @@ export default function App() {
   const isViewportPage = [
     "chat",
     "commands",
+    "chatAlerts",
     "channelPoints",
     "giveaways",
     "livePreview",

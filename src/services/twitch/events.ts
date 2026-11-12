@@ -21,6 +21,15 @@ export function normalizeTwitch(messageId: string, subscriptionType: string, raw
     timestamp: text(raw.followed_at) ?? text(raw.redeemed_at) ?? text(raw.started_at) ?? timestamp,
     message: text(raw.message) ?? text((raw.message as Raw | undefined)?.text) ?? text(raw.user_input),
     tier: text(raw.tier), giftCount: num(raw.total), bits: num(raw.bits), viewerCount: num(raw.viewers),
-    metadata: reward ? { rewardTitle: reward.title, rewardCost: reward.cost } : {},
+    metadata: {
+      ...(reward ? { rewardTitle: reward.title, rewardCost: reward.cost } : {}),
+      ...(num(raw.cumulative_months) != null || num(raw.duration_months) != null
+        ? { months: num(raw.cumulative_months) ?? num(raw.duration_months) }
+        : {}),
+      ...(typeof raw.is_prime === 'boolean' ? { isPrime: raw.is_prime } : {}),
+      ...(text(raw.recipient_user_name) || text(raw.recipient_user_login)
+        ? { recipient: text(raw.recipient_user_name) ?? text(raw.recipient_user_login) }
+        : {}),
+    },
   }
 }

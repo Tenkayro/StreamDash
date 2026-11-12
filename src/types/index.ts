@@ -229,3 +229,35 @@ export interface ChannelPointReward {
   imageUrl?: string
   manageable?: boolean
 }
+
+export interface ChatAlertItem {
+  enabled: boolean
+  message: string
+}
+
+export interface ChatAlertThresholdItem extends ChatAlertItem {
+  minimum: number
+}
+
+export interface ChatAlertsConfig {
+  subTier1: ChatAlertItem
+  subTier2: ChatAlertItem
+  subTier3: ChatAlertItem
+  subPrime: ChatAlertItem
+  resubTier1: ChatAlertItem
+  resubTier2: ChatAlertItem
+  resubTier3: ChatAlertItem
+  resubPrime: ChatAlertItem
+  giftTier1: ChatAlertItem
+  giftTier2: ChatAlertItem
+  giftTier3: ChatAlertItem
+  massGiftTier1: ChatAlertItem
+  massGiftTier2: ChatAlertItem
+  massGiftTier3: ChatAlertItem
+  raid: ChatAlertThresholdItem
+  bits: ChatAlertThresholdItem
+  follower: ChatAlertItem
+  goLive: ChatAlertItem
+  gameChange: ChatAlertItem
+  titleChange: ChatAlertItem
+}
