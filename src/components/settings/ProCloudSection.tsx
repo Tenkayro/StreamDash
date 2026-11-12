@@ -233,7 +233,7 @@ export function ProCloudSection() {
     <section id="pro" className="scroll-mt-16">
       <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
         <div className="flex items-center gap-2 text-xs font-semibold text-zinc-200">
-          <span className="grid size-6 place-items-center rounded-md bg-white/[0.06] text-zinc-300">
+          <span className="grid size-6 place-items-center rounded-lg bg-white/6 text-zinc-300">
             <Crown size={13} />
           </span>
           <span>{t("settings.proCloud")}</span>

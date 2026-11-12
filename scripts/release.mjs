@@ -111,11 +111,9 @@ async function updateVersions(version) {
 
 async function main() {
   p.intro("StreamDash Release");
-  if (process.platform !== "win32") throw new Error("Windows is required for MSI and MSIX builds.");
 
   const check = p.spinner();
-  check.start("Checking Git, GitHub, and updater signing configuration");
-  let keyPath;
+  check.start("Checking Git and GitHub configuration");
   let pendingChanges = "";
   try {
     const [status, , remote, branch] = await Promise.all([
@@ -129,18 +127,6 @@ async function main() {
       throw new Error(`origin does not point to ${repo}.`);
     if (branch.stdout !== "main")
       throw new Error("Releases must be created from the main branch.");
-
-    keyPath =
-      process.env.TAURI_SIGNING_PRIVATE_KEY ||
-      join(homedir(), ".tauri", "streamdash-updater.key");
-    const publicKey = (await readFile(`${keyPath}.pub`, "utf8")).trim();
-    const tauriConfig = JSON.parse(
-      await readFile(join(root, "src-tauri/tauri.conf.json"), "utf8"),
-    );
-    if (tauriConfig.plugins?.updater?.pubkey !== publicKey)
-      throw new Error(
-        "The configured updater public key does not match the local signing key.",
-      );
     check.stop("Release environment is ready");
   } catch (error) {
     check.stop("Release environment check failed");
@@ -241,14 +227,13 @@ async function main() {
       `${currentVersion}  ->  ${version}`,
       "Channel: Stable",
       `Repository: ${repo}`,
-      "GitHub: MSI installer, updater signature, latest.json",
-      "Local only: Microsoft Store MSIX (never uploaded to GitHub)",
-      "GitHub release notes: generated automatically",
+      "GitHub Actions: Windows (.msi + private .msix), Linux (.AppImage, .deb, .rpm), macOS (.dmg)",
+      "Local PC: only version bump, check, commit & tag push (no local build)",
     ].join("\n"),
     "Release summary",
   );
   const confirmed = await p.confirm({
-    message: `Build, commit${pendingChanges ? " pending changes" : ""}, tag, push, and publish ${tag}?`,
+    message: `Check, commit${pendingChanges ? " pending changes" : ""}, tag, and trigger GitHub Actions release ${tag}?`,
     initialValue: true,
   });
   cancelled(confirmed);
@@ -273,85 +258,14 @@ async function main() {
   let committed = false;
   try {
     const progress = p.spinner();
-    releaseStatus(5, "Preparing release files");
+    releaseStatus(10, "Preparing release files");
     progress.start(`Updating project versions to ${version}`);
     await updateVersions(version);
-    progress.message("Validating the application");
-    const [, sccache] = await Promise.all([
-      run("npm", ["run", "lint"]),
-      run("sccache", ["--version"], { allowFailure: true }).catch(() => ({
-        code: 1,
-      })),
-    ]);
-    const buildEnvironment = {
-      ...process.env,
-      ...(sccache.code === 0 && !process.env.RUSTC_WRAPPER
-        ? { RUSTC_WRAPPER: "sccache" }
-        : {}),
-      TAURI_SIGNING_PRIVATE_KEY: keyPath,
-      CARGO_TERM_PROGRESS_WHEN:
-        process.env.CARGO_TERM_PROGRESS_WHEN || "always",
-      CARGO_TERM_PROGRESS_WIDTH:
-        process.env.CARGO_TERM_PROGRESS_WIDTH || "80",
-    };
-
-    const installerAssetName = "StreamDash-Setup.msi";
+    progress.message("Validating TypeScript and lint");
+    await run("npm", ["run", "check"]);
     progress.stop("Validation complete");
-    releaseStatus(
-      20,
-      "Building the signed MSI updater package",
-    );
-    const setupArguments = ["run", "setup"];
-    await run("npm", setupArguments, {
-      env: buildEnvironment,
-      stream: true,
-    });
-    releaseStatus(70, "MSI build and updater signature complete");
 
-    releaseStatus(
-      75,
-      "Packaging the Microsoft Store MSIX without rebuilding",
-    );
-    await run(
-      "powershell",
-      [
-        "-NoProfile",
-        "-ExecutionPolicy",
-        "Bypass",
-        "-File",
-        "scripts/build-msix.ps1",
-        "-SkipBuild",
-      ],
-      { stream: true },
-    );
-
-    releaseStatus(82, "Creating the update manifest");
-    const bundleDirectory = join(root, "src-tauri", "target", "release", "bundle", "msi");
-    const installerAsset = join(bundleDirectory, installerAssetName);
-    const signatureAsset = `${installerAsset}.sig`;
-    const signature = (await readFile(signatureAsset, "utf8")).trim();
-    const manifest = {
-      version,
-      notes: (summary ?? "").trim(),
-      pub_date: new Date().toISOString(),
-      platforms: {
-        "windows-x86_64": {
-          signature,
-          url: `https://github.com/${repo}/releases/download/${tag}/${installerAssetName}`,
-        },
-      },
-    };
-    const manifestPath = join(bundleDirectory, "latest.json");
-    await writeFile(manifestPath, `${JSON.stringify(manifest, null, 2)}\n`);
-    releaseStatus(
-      86,
-      "GitHub artifacts and local Store MSIX are ready",
-    );
-
-    releaseStatus(
-      88,
-      "Committing the release version",
-    );
+    releaseStatus(50, "Committing the release version");
     await run("git", ["add", ...releaseFiles]);
     const stagedVersionChanges = await run(
       "git",
@@ -366,42 +280,22 @@ async function main() {
       "-a",
       tag,
       "-m",
-      `StreamDash ${version}`,
+      (summary ?? "").trim() || `StreamDash ${version}`,
     ]);
-    releaseStatus(92, "Pushing main and the release tag");
+    releaseStatus(80, "Pushing main and the release tag to GitHub");
     await run("git", ["push", "--atomic", "origin", "main", tag], {
       stream: true,
     });
-    releaseStatus(
-      96,
-      "Publishing the GitHub release (Store MSIX stays local)",
-    );
-    await run("gh", [
-      "release",
-      "create",
-      tag,
-      installerAsset,
-      signatureAsset,
-      manifestPath,
-      "--repo",
-      repo,
-      "--title",
-      `StreamDash ${version}`,
-      "--notes",
-      (summary ?? "").trim(),
-      "--generate-notes",
-      "--verify-tag",
-      "--latest",
-    ], { stream: true });
-    releaseStatus(
-      100,
-      `StreamDash ${version} is published`,
-    );
+    releaseStatus(100, `Tag ${tag} pushed — GitHub Actions is building all platforms`);
     p.note(
-      join(root, "src-tauri", "target", "release", "bundle", "msix"),
-      "Microsoft Store MSIX (local only)",
+      [
+        `Actions: https://github.com/${repo}/actions`,
+        `Release (once built): https://github.com/${repo}/releases/tag/${tag}`,
+        "Download Store .msix from the Actions run Artifacts tab.",
+      ].join("\n"),
+      "Next",
     );
-    p.outro(`https://github.com/${repo}/releases/tag/${tag}`);
+    p.outro(`https://github.com/${repo}/actions`);
   } catch (error) {
     if (!committed)
       await Promise.all(

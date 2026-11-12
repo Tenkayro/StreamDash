@@ -32,12 +32,12 @@ tokio = { version = "1", features = ["macros", "sync"] }
 tokio-tungstenite = { version = "0.24", features = ["native-tls"] }
 futures-util = "0.3"
 axum = "0.8"
-keyring = { version = "3", features = ["windows-native"] }
 tauri-plugin-updater = "2.14.0"
 ring = "0.17"
 hex = "0.4"
 
 [target.'cfg(windows)'.dependencies]
+keyring = { version = "3", features = ["windows-native"] }
 windows = { version = "0.62", features = [
   "Foundation",
   "Foundation_Collections",
@@ -47,6 +47,12 @@ windows = { version = "0.62", features = [
   "Win32_Foundation",
   "Win32_Storage_Packaging_Appx",
 ] }
+
+[target.'cfg(target_os = "linux")'.dependencies]
+keyring = { version = "3", features = ["sync-secret-service"] }
+
+[target.'cfg(target_os = "macos")'.dependencies]
+keyring = { version = "3", features = ["apple-native"] }
 
 [profile.dev]
 # Skip debug symbols during development: faster linking and startup.
