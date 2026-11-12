@@ -29,7 +29,7 @@ export async function updateChatMessage(opts: { id?: string; login?: string; del
 export async function clearChatMessages() {
   if (isTauri()) await invoke("chat_messages_clear");
 }
-export async function loadSettings(): Promise<Partial<AppSettings>> {
+export async function loadSettings(): Promise<Record<string, unknown>> {
   return isTauri()
     ? invoke("settings_load")
     : JSON.parse(localStorage.getItem("streamdash-settings") || "{}");
@@ -38,6 +38,9 @@ export async function saveSetting<K extends keyof AppSettings>(
   key: K,
   value: AppSettings[K],
 ) {
+  await saveLocalState(key, value);
+}
+export async function saveLocalState(key: string, value: unknown) {
   if (isTauri()) await invoke("setting_save", { key, value });
   else {
     const existing = await loadSettings();
@@ -72,7 +75,7 @@ export async function secretGet(name: IntegrationSecret): Promise<string | null>
   return invoke("secret_get", { name });
 }
 export async function secretDelete(
-  name: IntegrationSecret | "twitch-oauth",
+  name: IntegrationSecret | "twitch-oauth" | "twitch-bot-oauth",
 ) {
   return invoke("secret_delete", { name });
 }
@@ -86,14 +89,20 @@ export const twitchNative = {
       expires_in: number;
       interval: number;
     }>("twitch_device_start", { clientId, scopes }),
-  devicePoll: (clientId: string, deviceCode: string, scopes: string[]) =>
+  devicePoll: (
+    clientId: string,
+    deviceCode: string,
+    scopes: string[],
+    bot = false,
+  ) =>
     invoke<{ status: string }>("twitch_device_poll", {
       clientId,
       deviceCode,
       scopes,
+      bot,
     }),
-  session: (clientId: string) =>
-    invoke<TwitchSession | null>("twitch_session", { clientId }),
+  session: (clientId: string, bot = false) =>
+    invoke<TwitchSession | null>("twitch_session", { clientId, bot }),
   helix: <T>(clientId: string, path: string, query: [string, string][] = []) =>
     invoke<T>("twitch_helix_get", { clientId, path, query }),
   helixPatch: <T>(
@@ -107,7 +116,8 @@ export const twitchNative = {
     path: string,
     query: [string, string][],
     body: Record<string, unknown>,
-  ) => invoke<T>("twitch_helix_post", { clientId, path, query, body }),
+    bot = false,
+  ) => invoke<T>("twitch_helix_post", { clientId, path, query, body, bot }),
   helixPut: <T>(
     clientId: string,
     path: string,

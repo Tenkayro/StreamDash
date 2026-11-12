@@ -33,6 +33,7 @@ import {
   loadTwitchStreamStatus,
   needsTwitchPermissionUpdate,
   TwitchEventSub,
+  TWITCH_BOT_SCOPES,
   TWITCH_SCOPES,
 } from "./twitch/client";
 import { TWITCH_CLIENT_ID } from "./twitch/config";
@@ -40,12 +41,21 @@ import { TwitchChatClient } from "./twitch/chat";
 import { StreamElementsClient } from "./streamelements/client";
 import { TipeeeStreamClient } from "./tipeeestream/client";
 import { DEFAULT_OBS_ADDRESS, ObsClient } from "./obs/client";
-import type { ActivityEvent, AppSettings, ChatUserProfile, GoalMetric } from "../types";
+import type {
+  ActivityEvent,
+  AppSettings,
+  ChatUserProfile,
+  DashboardStats,
+  GiveawayState,
+  GoalMetric,
+} from "../types";
 import { RuntimeContext, type DeviceAuth } from "./runtime-context";
-import i18n from "../i18n";
+import i18n, { resolveLanguage } from "../i18n";
 
 type Bootstrap = {
   settings: Partial<AppSettings>;
+  giveaway?: Partial<GiveawayState>;
+  cachedStats?: Partial<DashboardStats>;
   events: ActivityEvent[];
   chatMessages: import("../types").ChatMessage[];
 };
@@ -54,7 +64,16 @@ let bootstrapPromise: Promise<Bootstrap> | undefined;
 
 function loadBootstrap() {
   bootstrapPromise ??= (async () => {
-    const settings = await loadSettings();
+    const raw = await loadSettings();
+    const {
+      giveaway,
+      cachedStats,
+      ...restSettings
+    } = raw as Partial<AppSettings> & {
+      giveaway?: Partial<GiveawayState>;
+      cachedStats?: Partial<DashboardStats>;
+    };
+    const settings: Partial<AppSettings> = { ...restSettings };
     if (typeof settings.onboardingCompleted !== "boolean") {
       settings.onboardingCompleted = Object.keys(settings).length > 0;
       await saveSetting("onboardingCompleted", settings.onboardingCompleted);
@@ -76,7 +95,7 @@ function loadBootstrap() {
       loadEvents(settings.maximumEvents ?? 5000),
       loadChatMessages(settings.maximumChatMessages ?? 1000),
     ]);
-    return { settings, events, chatMessages };
+    return { settings, giveaway, cachedStats, events, chatMessages };
   })().catch((error) => {
     bootstrapPromise = undefined;
     throw error;
@@ -98,12 +117,25 @@ export function RuntimeProvider({ children }: { children: ReactNode }) {
   const obsRef = useRef<ObsClient | undefined>(undefined);
   const chatRef = useRef<TwitchChatClient | undefined>(undefined);
   const songCommandCooldownsRef = useRef(new Map<string, number>());
+  const twitchAuthAttemptRef = useRef(0);
+  const botAuthAttemptRef = useRef(0);
   const [deviceAuth, setDeviceAuth] = useState<DeviceAuth>();
+  const [botDeviceAuth, setBotDeviceAuth] = useState<DeviceAuth>();
   const ready = useAppStore((s) => s.ready);
   const stats = useAppStore((s) => s.stats);
   const events = useAppStore((s) => s.events);
   const goals = useAppStore((s) => s.settings.goals);
   const goalAutomation = useAppStore((s) => s.settings.goalAutomation);
+  const giveawayRunning = useAppStore((s) => s.giveaway.running);
+  const giveawayTimeout = useAppStore((s) => s.giveaway.inactivityTimeout);
+
+  useEffect(() => {
+    if (!giveawayRunning || giveawayTimeout <= 0) return;
+    const timer = window.setInterval(() => {
+      state().pruneInactiveGiveawayEntries();
+    }, 1000);
+    return () => window.clearInterval(timer);
+  }, [giveawayRunning, giveawayTimeout, state]);
 
   useEffect(() => {
     if (!ready) return;
@@ -194,7 +226,45 @@ export function RuntimeProvider({ children }: { children: ReactNode }) {
     });
     const dropped = result.data?.find((entry) => entry.is_sent === false);
     if (dropped) throw new Error(dropped.drop_reason?.message ?? "Twitch rejected the message");
+    chatRef.current?.echo(message);
   }, [state]);
+
+  const sendCommandReply = useCallback(
+    async (text: string, replyParentId?: string) => {
+      const message = text.trim();
+      const current = state();
+      const broadcasterId = current.twitch.userId;
+      const botId = current.twitchBot.userId;
+      if (!message) return;
+      if (!broadcasterId) throw new Error(i18n.t("stream.notConnected"));
+      if (current.twitchBot.phase === "connected" && botId) {
+        const result = await twitchNative.helixPost<{
+          data?: Array<{ is_sent?: boolean; drop_reason?: { message?: string } }>;
+        }>(
+          TWITCH_CLIENT_ID,
+          "chat/messages",
+          [],
+          {
+            broadcaster_id: broadcasterId,
+            sender_id: botId,
+            message,
+            ...(replyParentId ? { reply_parent_message_id: replyParentId } : {}),
+          },
+          true,
+        );
+        const dropped = result.data?.find((entry) => entry.is_sent === false);
+        if (dropped) {
+          throw new Error(
+            dropped.drop_reason?.message ?? "Twitch rejected the message",
+          );
+        }
+        chatRef.current?.echo(message, current.twitchBot.account);
+        return;
+      }
+      await sendChat(message, replyParentId);
+    },
+    [sendChat, state],
+  );
 
   const ingest = useCallback(
     async (event: ActivityEvent) => {
@@ -202,6 +272,24 @@ export function RuntimeProvider({ children }: { children: ReactNode }) {
       if (current.settings.disabledEventTypes.includes(event.eventType)) return;
       if (!(await saveEvent(event, current.settings.maximumEvents))) return;
       current.pushEvent(event);
+      if (event.eventType === "follow" && current.stats.followers != null) {
+        current.setStats({ followers: current.stats.followers + 1 });
+      }
+      if (
+        (event.eventType === "subscription" ||
+          event.eventType === "gift_subscription") &&
+        current.stats.subscribers != null
+      ) {
+        current.setStats({ subscribers: current.stats.subscribers + 1 });
+      }
+      if (
+        event.eventType === "community_gift" &&
+        current.stats.subscribers != null
+      ) {
+        current.setStats({
+          subscribers: current.stats.subscribers + (event.giftCount ?? 1),
+        });
+      }
       if (event.bits)
         current.setStats({ bits: current.stats.bits + event.bits });
       if (event.amount)
@@ -303,18 +391,39 @@ export function RuntimeProvider({ children }: { children: ReactNode }) {
         (message) => {
           void saveChatMessage(message, state().settings.maximumChatMessages).catch(() => undefined);
           state().pushChatMessage(message);
+          state().ingestGiveawayChatMessage(message, state().twitchBot.account);
           if (message.text.trim().toLowerCase() !== "!song") return;
           const now = Date.now();
           const previous = songCommandCooldownsRef.current.get(message.login) ?? 0;
           if (now - previous < 10_000) return;
           songCommandCooldownsRef.current.set(message.login, now);
-          void spotifyOverlayNative.status().then((song) => {
-            const user = message.displayName || message.login;
-            const response = song.available && song.title
-              ? i18n.t("runtime.songCommandCurrent", { user, artist: song.artist || song.album, title: song.title })
-              : i18n.t("runtime.songCommandUnavailable", { user });
-            return sendChat(response.slice(0, 480), message.id);
-          }).catch(() => sendChat(i18n.t("runtime.songCommandUnavailable", { user: message.displayName || message.login }), message.id)).catch(() => undefined);
+          void spotifyOverlayNative
+            .status()
+            .then(
+              (song) => {
+                const lng = resolveLanguage(state().settings.language);
+                const user = message.displayName || message.login;
+                return song.available && song.title
+                  ? i18n.t("runtime.songCommandCurrent", {
+                      lng,
+                      user,
+                      artist: song.artist || song.album,
+                      title: song.title,
+                    })
+                  : i18n.t("runtime.songCommandUnavailable", { lng, user });
+              },
+              () =>
+                i18n.t("runtime.songCommandUnavailable", {
+                  lng: resolveLanguage(state().settings.language),
+                  user: message.displayName || message.login,
+                }),
+            )
+            .then((response) => sendCommandReply(response.slice(0, 480), message.id))
+            .catch((error) => {
+              toast.error(i18n.t("chat.sendError"), {
+                description: errorMessage(error),
+              });
+            });
         },
         (phase, detail) => state().setChat({ phase, detail }),
         (id) => state().removeChatMessage(id),
@@ -328,7 +437,32 @@ export function RuntimeProvider({ children }: { children: ReactNode }) {
       state().setChat({ phase: "error", detail: errorMessage(error) });
       state().setTwitch({ phase: "expired", detail: errorMessage(error) });
     }
-  }, [ingest, sendChat, state]);
+  }, [ingest, sendCommandReply, state]);
+
+  const startTwitchBot = useCallback(async () => {
+    if (!isTauri()) {
+      state().setTwitchBot({ phase: "disconnected" });
+      return;
+    }
+    try {
+      const session = await twitchNative.session(TWITCH_CLIENT_ID, true);
+      if (!session) {
+        state().setTwitchBot({ phase: "disconnected" });
+        return;
+      }
+      state().setTwitchBot({
+        phase: "connected",
+        account: session.login,
+        userId: session.userId,
+        scopes: session.scopes,
+      });
+    } catch (error) {
+      state().setTwitchBot({
+        phase: "expired",
+        detail: errorMessage(error),
+      });
+    }
+  }, [state]);
 
   const startStreamElements = useCallback(async () => {
     if (!isTauri()) return;
@@ -404,11 +538,12 @@ export function RuntimeProvider({ children }: { children: ReactNode }) {
   const reconnect = useCallback(async () => {
     await Promise.all([
       startTwitch(),
+      startTwitchBot(),
       startStreamElements(),
       startTipeeeStream(),
       startObs(),
     ]);
-  }, [startTwitch, startStreamElements, startTipeeeStream, startObs]);
+  }, [startTwitch, startTwitchBot, startStreamElements, startTipeeeStream, startObs]);
 
   const shutdown = useCallback(async () => {
     twitchRef.current?.stop();
@@ -429,17 +564,30 @@ export function RuntimeProvider({ children }: { children: ReactNode }) {
     const unlisten: Array<() => void> = [];
     (async () => {
       try {
-        const { settings, events, chatMessages } = await loadBootstrap();
+        const { settings, giveaway, cachedStats, events, chatMessages } =
+          await loadBootstrap();
         if (disposed) return;
         setSettings(settings);
         setEvents(events);
         setChatMessages(chatMessages);
+        if (giveaway && typeof giveaway === "object") {
+          state().setGiveaway({
+            ...giveaway,
+            entries: Array.isArray(giveaway.entries) ? giveaway.entries : [],
+            disqualifiedUsers: Array.isArray(giveaway.disqualifiedUsers)
+              ? giveaway.disqualifiedUsers
+              : [],
+          });
+        }
         const bits = events.reduce((n, e) => n + (e.bits ?? 0), 0);
         const donations = events.reduce((n, e) => n + (e.amount ?? 0), 0);
         state().setStats({
+          ...(cachedStats && typeof cachedStats === "object" ? cachedStats : {}),
           bits,
           donations,
-          donationCurrency: events.find((e) => e.currency)?.currency,
+          donationCurrency:
+            events.find((e) => e.currency)?.currency ??
+            cachedStats?.donationCurrency,
         });
         setReady(true);
         await reconnect();
@@ -470,6 +618,7 @@ export function RuntimeProvider({ children }: { children: ReactNode }) {
   }, [reconnect, setChatMessages, setEvents, setReady, setSettings, state]);
 
   const connectTwitch = async () => {
+    const attempt = ++twitchAuthAttemptRef.current;
     try {
       state().setTwitch({
         phase: "connecting",
@@ -479,6 +628,7 @@ export function RuntimeProvider({ children }: { children: ReactNode }) {
         TWITCH_CLIENT_ID,
         TWITCH_SCOPES,
       );
+      if (twitchAuthAttemptRef.current !== attempt) return;
       setDeviceAuth({
         code: device.user_code,
         url: device.verification_uri,
@@ -489,11 +639,13 @@ export function RuntimeProvider({ children }: { children: ReactNode }) {
       const expiresAt = Date.now() + device.expires_in * 1000;
       while (Date.now() < expiresAt) {
         await new Promise((r) => setTimeout(r, interval));
+        if (twitchAuthAttemptRef.current !== attempt) return;
         const result = await twitchNative.devicePoll(
           TWITCH_CLIENT_ID,
           device.device_code,
           TWITCH_SCOPES,
         );
+        if (twitchAuthAttemptRef.current !== attempt) return;
         if (result.status === "authorized") {
           setDeviceAuth(undefined);
           toast.success(i18n.t("runtime.twitchConnected"));
@@ -504,6 +656,7 @@ export function RuntimeProvider({ children }: { children: ReactNode }) {
       }
       throw new Error(i18n.t("runtime.codeExpired"));
     } catch (error) {
+      if (twitchAuthAttemptRef.current !== attempt) return;
       setDeviceAuth(undefined);
       state().setTwitch({ phase: "error", detail: errorMessage(error) });
       toast.error(i18n.t("runtime.connectError"), {
@@ -512,6 +665,8 @@ export function RuntimeProvider({ children }: { children: ReactNode }) {
     }
   };
   const disconnectTwitch = async () => {
+    twitchAuthAttemptRef.current++;
+    setDeviceAuth(undefined);
     twitchRef.current?.stop();
     chatRef.current?.stop();
     state().setChat({ phase: "disconnected" });
@@ -530,6 +685,64 @@ export function RuntimeProvider({ children }: { children: ReactNode }) {
   const reauthorizeTwitch = async () => {
     await disconnectTwitch();
     await connectTwitch();
+  };
+  const connectTwitchBot = async () => {
+    const attempt = ++botAuthAttemptRef.current;
+    try {
+      state().setTwitchBot({
+        phase: "connecting",
+        detail: i18n.t("runtime.waitingAuthorization"),
+      });
+      const device = await twitchNative.deviceStart(
+        TWITCH_CLIENT_ID,
+        TWITCH_BOT_SCOPES,
+      );
+      if (botAuthAttemptRef.current !== attempt) return;
+      setBotDeviceAuth({
+        code: device.user_code,
+        url: device.verification_uri,
+        expiresAt: Date.now() + device.expires_in * 1000,
+      });
+      await openUrl(device.verification_uri);
+      let interval = Math.max(device.interval, 1) * 1000;
+      const expiresAt = Date.now() + device.expires_in * 1000;
+      while (Date.now() < expiresAt) {
+        await new Promise((r) => setTimeout(r, interval));
+        if (botAuthAttemptRef.current !== attempt) return;
+        const result = await twitchNative.devicePoll(
+          TWITCH_CLIENT_ID,
+          device.device_code,
+          TWITCH_BOT_SCOPES,
+          true,
+        );
+        if (botAuthAttemptRef.current !== attempt) return;
+        if (result.status === "authorized") {
+          setBotDeviceAuth(undefined);
+          toast.success(i18n.t("runtime.twitchBotConnected"));
+          await startTwitchBot();
+          return;
+        }
+        if (result.status === "slow_down") interval += 5000;
+      }
+      throw new Error(i18n.t("runtime.codeExpired"));
+    } catch (error) {
+      if (botAuthAttemptRef.current !== attempt) return;
+      setBotDeviceAuth(undefined);
+      state().setTwitchBot({ phase: "error", detail: errorMessage(error) });
+      toast.error(i18n.t("runtime.connectBotError"), {
+        description: errorMessage(error),
+      });
+    }
+  };
+  const disconnectTwitchBot = async () => {
+    botAuthAttemptRef.current++;
+    setBotDeviceAuth(undefined);
+    await secretDelete("twitch-bot-oauth");
+    state().setTwitchBot({ phase: "disconnected" });
+  };
+  const reauthorizeTwitchBot = async () => {
+    await disconnectTwitchBot();
+    await connectTwitchBot();
   };
   const connectStreamElements = async (token: string) => {
     if (!token.trim()) return;
@@ -748,9 +961,13 @@ export function RuntimeProvider({ children }: { children: ReactNode }) {
     <RuntimeContext.Provider
       value={{
         deviceAuth,
+        botDeviceAuth,
         connectTwitch,
         disconnectTwitch,
         reauthorizeTwitch,
+        connectTwitchBot,
+        disconnectTwitchBot,
+        reauthorizeTwitchBot,
         connectStreamElements,
         retryStreamElements: startStreamElements,
         disconnectStreamElements,
@@ -770,6 +987,7 @@ export function RuntimeProvider({ children }: { children: ReactNode }) {
         saveObsReplayBuffer,
         setObsVirtualCam,
         sendChatMessage,
+        sendBotChatMessage: sendCommandReply,
         getChatUserProfile,
         moderateChatUser,
         unbanChatUser,

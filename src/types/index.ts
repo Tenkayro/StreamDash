@@ -151,3 +151,29 @@ export interface ChatUserProfile {
   moderator: boolean
   vip: boolean
 }
+
+export type GiveawayType = 'keyword' | 'active'
+
+export interface GiveawayEntry {
+  login: string
+  displayName: string
+  color: string
+  badges: ChatBadge[]
+  subscriber: boolean
+  enteredAt: number
+  lastActiveAt: number
+  keywordCount: number
+}
+
+export interface GiveawayState {
+  running: boolean
+  chatAnnouncements: boolean
+  type: GiveawayType
+  keyword: string
+  antiSpamLimit: number
+  inactivityTimeout: number
+  subscriberLuck: number
+  entries: GiveawayEntry[]
+  disqualifiedUsers: string[]
+  winner?: GiveawayEntry
+}

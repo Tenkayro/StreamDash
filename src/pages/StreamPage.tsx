@@ -358,15 +358,15 @@ export function StreamPage() {
           </Button>
         </Card>
       )}
-      <div className="grid gap-4 xl:grid-cols-[minmax(0,1fr)_300px]">
-        <Card className="p-5">
+      <div className="grid gap-3 xl:grid-cols-[minmax(0,1fr)_300px]">
+        <Card className="p-4">
           <label className="label" htmlFor="stream-title">
             {t("stream.streamTitle")}
           </label>
-          <p className="mt-1 text-xs leading-5 text-muted">
+          <p className="mt-0.5 text-xs leading-4 text-muted">
             {t("stream.streamTitleDetail")}
           </p>
-          <div className="relative mt-3">
+          <div className="relative mt-2">
             {busyLoading ? (
               <LoadingIndicator className="h-8.5 w-full" />
             ) : (
@@ -388,7 +388,7 @@ export function StreamPage() {
             )}
           </div>
 
-          <div className="mt-6">
+          <div className="mt-4">
             <label
               className="label inline-flex items-center gap-1.5"
               htmlFor="stream-category"
@@ -396,20 +396,20 @@ export function StreamPage() {
               <Gamepad2 size={13} />
               {t("stream.category")}
             </label>
-            <p className="mt-1 text-xs leading-5 text-muted">
+            <p className="mt-0.5 text-xs leading-4 text-muted">
               {t("stream.categoryDetail")}
             </p>
             {busyLoading ? (
-              <div className="mt-3 flex items-center gap-3 rounded-xl border border-line bg-[#101116] p-2.5">
-                <LoadingIndicator className="h-12 w-9 shrink-0" />
+              <div className="mt-2 flex items-center gap-3 rounded-xl border border-line bg-[#101116] p-2">
+                <LoadingIndicator className="h-11 w-8 shrink-0" />
                 <div className="flex-1">
                   <LoadingIndicator className="h-3.5 w-32" />
                   <LoadingIndicator className="mt-2 h-2.5 w-20" />
                 </div>
               </div>
             ) : category && (
-              <div className="mt-3 flex items-center gap-3 rounded-xl border border-line bg-[#101116] p-2.5">
-                <BoxArt category={category} className="h-12 w-9" />
+              <div className="mt-2 flex items-center gap-3 rounded-xl border border-line bg-[#101116] p-2">
+                <BoxArt category={category} className="h-11 w-8" />
                 <div className="min-w-0 flex-1">
                   <div className="truncate text-sm">{category.name}</div>
                   <div className="mt-0.5 text-[11px] text-zinc-600">
@@ -418,7 +418,7 @@ export function StreamPage() {
                 </div>
               </div>
             )}
-            <div className="relative mt-3">
+            <div className="relative mt-2">
               {busyLoading ? (
                 <LoadingIndicator className="h-8.5 w-full" />
               ) : (
@@ -439,7 +439,7 @@ export function StreamPage() {
               />
               {showResults && (
                 <ScrollFade className="absolute z-10 mt-1 w-full overflow-hidden rounded-xl border border-line bg-[#14151b] shadow-2xl shadow-black/40" color="#14151b" size={28}>
-                  <div className="max-h-80 overflow-y-auto p-1">
+                  <div className="max-h-72 overflow-y-auto p-1">
                     {searching && (
                       <div className="space-y-2 px-2 py-2">
                         {[0, 1, 2].map((item) => (
@@ -480,7 +480,7 @@ export function StreamPage() {
             </div>
           </div>
 
-          <div className="mt-6">
+          <div className="mt-4">
             <label
               className="label inline-flex items-center gap-1.5"
               htmlFor="stream-language"
@@ -488,15 +488,15 @@ export function StreamPage() {
               <Languages size={13} />
               {t("stream.language")}
             </label>
-            <p className="mt-1 text-xs leading-5 text-muted">
+            <p className="mt-0.5 text-xs leading-4 text-muted">
               {t("stream.languageDetail")}
             </p>
             {busyLoading ? (
-              <LoadingIndicator className="mt-3 h-8.5 w-full max-w-xs" />
+              <LoadingIndicator className="mt-2 h-8.5 w-full max-w-xs" />
             ) : (
             <Select
               id="stream-language"
-              className="input mt-3 max-w-xs"
+              className="input mt-2 max-w-xs"
               value={language}
               disabled={missingScope}
               onChange={(event) => setLanguage(event.target.value)}
@@ -513,8 +513,8 @@ export function StreamPage() {
             )}
           </div>
 
-          <div className="mt-6 flex flex-wrap items-center justify-between gap-4 border-t border-line pt-5">
-            <p className="text-[11px] leading-5 text-zinc-600">
+          <div className="mt-4 flex flex-wrap items-center justify-between gap-4 border-t border-line pt-4">
+            <p className="text-[11px] leading-4 text-zinc-600">
               {t("stream.changesImmediate")}
             </p>
             <Button
@@ -534,13 +534,13 @@ export function StreamPage() {
 
         <div className="space-y-3">
           <ObsCard />
-          <Card className="h-fit p-4">
+          <Card className="h-fit p-3.5">
             <h2 className="text-sm font-semibold">{t("stream.channelPreview")}</h2>
-          <div className="mt-4 flex gap-3">
+          <div className="mt-3 flex gap-3">
             {busyLoading ? (
-              <LoadingIndicator className="h-24 w-16 shrink-0" />
+              <LoadingIndicator className="h-20 w-14 shrink-0" />
             ) : (
-              <BoxArt category={category} className="h-24 w-16 shrink-0" />
+              <BoxArt category={category} className="h-20 w-14 shrink-0" />
             )}
             <div className="min-w-0">
               {busyLoading ? (
@@ -565,7 +565,7 @@ export function StreamPage() {
               )}
             </div>
           </div>
-          <div className="mt-4 space-y-2 border-t border-line pt-3 text-xs">
+          <div className="mt-3 space-y-1.5 border-t border-line pt-2.5 text-xs">
             <div className="flex items-center justify-between">
               <span className="text-muted">{t("stream.status")}</span>
               {statsLoading ? (

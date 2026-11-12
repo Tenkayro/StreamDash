@@ -238,14 +238,16 @@ export class TwitchChatClient {
     void twitchNative.chatStop()
   }
 
-  echo(text: string) {
+  echo(text: string, customLogin?: string) {
     const timestamp = Date.now()
+    const senderLogin = (customLogin || this.login).toLowerCase()
+    const isSelf = senderLogin === this.login.toLowerCase()
     this.onMessage({
       id: `local-${timestamp}-${Math.random().toString(36).slice(2, 8)}`,
-      login: this.login,
-      displayName: this.self.displayName || this.login,
-      color: this.self.color || colorFor(this.login),
-      badges: this.self.badges,
+      login: senderLogin,
+      displayName: isSelf ? (this.self.displayName || this.login) : (customLogin || senderLogin),
+      color: isSelf ? (this.self.color || colorFor(this.login)) : colorFor(senderLogin),
+      badges: isSelf ? this.self.badges : [],
       timestamp,
       text,
       parts: buildChatParts(text, undefined, this.emotes),

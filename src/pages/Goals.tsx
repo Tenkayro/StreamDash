@@ -72,11 +72,11 @@ function GoalCard({
     onAutomation({ enabled: automation?.enabled ?? false, increasePercent });
   };
   return (
-    <Card data-search-label={label} className="flex min-h-52 flex-col p-4">
+    <Card data-search-label={label} className="flex flex-col p-3.5">
       <div className="flex items-start justify-between gap-3">
         <div className="flex min-w-0 items-center gap-2.5">
-          <span className="grid size-9 shrink-0 place-items-center rounded-lg bg-accent-soft text-accent">
-            <Icon size={17} aria-hidden="true" />
+          <span className="grid size-8 shrink-0 place-items-center rounded-lg bg-accent-soft text-accent">
+            <Icon size={15} aria-hidden="true" />
           </span>
           <div className="min-w-0">
             <div className="truncate text-sm font-semibold">{label}</div>
@@ -85,14 +85,14 @@ function GoalCard({
             </div>
           </div>
         </div>
-        <span className="shrink-0 rounded-md bg-white/5 px-2 py-1 text-[10px] font-semibold tabular-nums text-zinc-400">
+        <span className="shrink-0 rounded-md bg-white/5 px-2 py-0.5 text-[10px] font-semibold tabular-nums text-zinc-400">
           {target ? `${Math.round(percent)}%` : "—"}
         </span>
       </div>
 
-      <div className="mt-5 min-h-8 text-2xl font-semibold tracking-[-.03em]">
+      <div className="mt-3 min-h-7 text-xl font-semibold tracking-[-.03em]">
         {loading ? (
-          <LoadingIndicator className="h-7 w-20" />
+          <LoadingIndicator className="h-6 w-20" />
         ) : formattedValue == null ? (
           <span className="text-sm font-normal tracking-normal text-muted">
             {t("goals.unavailable")}
@@ -102,22 +102,22 @@ function GoalCard({
         )}
       </div>
 
-      <div className="mt-3 h-2 overflow-hidden rounded-full bg-white/5">
+      <div className="mt-2 h-1.5 overflow-hidden rounded-full bg-white/5">
         <div
           className="h-full rounded-full bg-accent transition-all"
           style={{ width: `${loading ? 0 : percent}%` }}
         />
       </div>
 
-      <label className="block pt-4">
-        <span className="mb-1.5 block text-[10px] font-medium uppercase tracking-widest text-zinc-600">
+      <label className="block pt-3">
+        <span className="mb-1 block text-[10px] font-medium uppercase tracking-widest text-zinc-600">
           {t("goals.target")}
         </span>
         <input
           aria-label={t("goals.targetLabel", { label })}
           type="number"
           min="1"
-          className="input"
+          className="input h-8 min-h-8 text-xs"
           placeholder="—"
           key={target ?? "empty"}
           defaultValue={target?.toString() ?? ""}
@@ -127,7 +127,7 @@ function GoalCard({
           }}
         />
       </label>
-      <div className="mt-3 border-t border-line pt-3">
+      <div className="mt-2.5 border-t border-line pt-2.5">
         <div className="flex items-center justify-between gap-3">
           <div className="min-w-0">
             <div className="text-xs font-medium text-zinc-300">{t("goals.autoTarget")}</div>
@@ -144,11 +144,11 @@ function GoalCard({
           />
         </div>
         {automation?.enabled && (
-          <label className="mt-3 flex items-center justify-between gap-3">
+          <label className="mt-2 flex items-center justify-between gap-3">
             <span className="text-[10px] font-medium uppercase tracking-widest text-zinc-600">
               {t("goals.increaseBy")}
             </span>
-            <span className="relative w-24">
+            <span className="relative w-22">
               <input
                 type="number"
                 min="5"
@@ -161,14 +161,14 @@ function GoalCard({
                 onKeyDown={(event) => {
                   if (event.key === "Enter") event.currentTarget.blur();
                 }}
-                className="input pr-7 text-right tabular-nums"
+                className="input h-7 min-h-7 pr-6 text-right text-xs tabular-nums"
               />
-              <span className="pointer-events-none absolute right-2.5 top-1/2 -translate-y-1/2 text-xs text-zinc-600">%</span>
+              <span className="pointer-events-none absolute right-2 top-1/2 -translate-y-1/2 text-[11px] text-zinc-600">%</span>
             </span>
           </label>
         )}
         {automation?.enabled && formattedNext && (
-          <p className="mt-2 text-right text-[10px] tabular-nums text-zinc-500">
+          <p className="mt-1.5 text-right text-[10px] tabular-nums text-zinc-500">
             {t("goals.nextTarget", { value: formattedNext })}
           </p>
         )}

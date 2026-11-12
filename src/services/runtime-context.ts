@@ -8,9 +8,13 @@ export interface DeviceAuth {
 }
 export interface RuntimeValue {
   deviceAuth?: DeviceAuth;
+  botDeviceAuth?: DeviceAuth;
   connectTwitch: () => Promise<void>;
   disconnectTwitch: () => Promise<void>;
   reauthorizeTwitch: () => Promise<void>;
+  connectTwitchBot: () => Promise<void>;
+  disconnectTwitchBot: () => Promise<void>;
+  reauthorizeTwitchBot: () => Promise<void>;
   connectStreamElements: (token: string) => Promise<void>;
   retryStreamElements: () => Promise<void>;
   disconnectStreamElements: () => Promise<void>;
@@ -30,6 +34,7 @@ export interface RuntimeValue {
   saveObsReplayBuffer: () => Promise<void>;
   setObsVirtualCam: (active: boolean) => Promise<void>;
   sendChatMessage: (text: string) => Promise<void>;
+  sendBotChatMessage: (text: string, replyParentId?: string) => Promise<void>;
   getChatUserProfile: (login: string) => Promise<ChatUserProfile>;
   moderateChatUser: (
     userId: string,

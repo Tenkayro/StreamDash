@@ -440,6 +440,7 @@ export function Dashboard() {
     events,
     settings,
     twitch,
+    twitchBot,
     streamElements,
     tipeeStream,
     obs,
@@ -1192,6 +1193,7 @@ export function Dashboard() {
         </div>
         {[
           ["Twitch", twitch],
+          [t("connections.twitchBot"), twitchBot],
           ["StreamElements", streamElements],
           ["TipeeeStream", tipeeStream],
           ["OBS", obs],

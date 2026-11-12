@@ -37,6 +37,10 @@ const pageLoaders = {
     import("./pages/ActivityPage").then((module) => ({
       default: module.ActivityPage,
     })),
+  giveaways: () =>
+    import("./pages/GiveawaysPage").then((module) => ({
+      default: module.GiveawaysPage,
+    })),
   livePreview: () =>
     import("./pages/LivePreview").then((module) => ({
       default: module.LivePreview,
@@ -63,6 +67,7 @@ const Dashboard = lazy(pageLoaders.dashboard);
 const StreamPage = lazy(pageLoaders.stream);
 const ChatPage = lazy(pageLoaders.chat);
 const ActivityPage = lazy(pageLoaders.activitys);
+const GiveawaysPage = lazy(pageLoaders.giveaways);
 const LivePreview = lazy(pageLoaders.livePreview);
 const Statistics = lazy(pageLoaders.statistics);
 const Goals = lazy(pageLoaders.goals);
@@ -77,6 +82,7 @@ const pages: Record<string, React.ComponentType> = {
   activitys: ActivityPage,
   activity: ActivityPage,
   donations: ActivityPage,
+  giveaways: GiveawaysPage,
   livePreview: LivePreview,
   statistics: Statistics,
   goals: Goals,
@@ -219,6 +225,15 @@ export default function App() {
     wide: "max-w-[1500px]",
     full: "max-w-none",
   };
+  const isViewportPage = [
+    "chat",
+    "giveaways",
+    "livePreview",
+    "activitys",
+    "activity",
+    "donations",
+  ].includes(page);
+  const isFullWidthPage = page === "chat" || page === "giveaways";
   if (shuttingDown) return <LifecycleScreen version={appVersion} />;
   if (!ready) return <LifecycleScreen version={appVersion} starting />;
   if (!settings.onboardingCompleted)
@@ -254,19 +269,24 @@ export default function App() {
         <div className="app-workspace flex min-h-0 flex-1">
           <Sidebar />
           <div className="relative flex min-w-0 flex-1">
-            <main ref={mainRef} className="app-main min-w-0 flex-1 overflow-y-auto">
+            <main
+              ref={mainRef}
+              className={`app-main min-w-0 flex-1 ${isViewportPage ? "overflow-hidden" : "overflow-y-auto"}`}
+            >
               <div
-                className={`app-content mx-auto ${widths[settings.contentWidth]} ${settings.uiDensity === "compact" ? "p-3 lg:p-4" : "p-3 sm:p-4 xl:p-6"}`}
+                className={`app-content mx-auto w-full ${isFullWidthPage ? "max-w-none" : widths[settings.contentWidth]} ${isViewportPage ? "flex h-full min-h-0 flex-col" : ""} ${settings.uiDensity === "compact" ? "p-3 lg:p-4" : "p-3 sm:p-4 xl:p-5"}`}
               >
                 <Suspense fallback={loading}>
                   <Page />
                 </Suspense>
               </div>
             </main>
-            <div
-              aria-hidden="true"
-              className="app-bottom-fade pointer-events-none absolute inset-x-0 bottom-0 h-10"
-            />
+            {!isViewportPage && (
+              <div
+                aria-hidden="true"
+                className="app-bottom-fade pointer-events-none absolute inset-x-0 bottom-0 h-10"
+              />
+            )}
           </div>
         </div>
       </div>

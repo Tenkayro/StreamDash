@@ -1,5 +1,6 @@
 import {
   CheckCircle2,
+  Copy,
   ExternalLink,
   Link2,
   LoaderCircle,
@@ -21,7 +22,10 @@ import { useAppStore } from "../stores/app-store";
 import { saveSetting } from "../services/native";
 import { useRuntime } from "../services/runtime-context";
 import { isTauri, cn } from "../lib/utils";
-import { needsTwitchPermissionUpdate } from "../services/twitch/client";
+import {
+  needsTwitchBotPermissionUpdate,
+  needsTwitchPermissionUpdate,
+} from "../services/twitch/client";
 import twitchIcon from "../assets/services/twitch.webp";
 import streamElementsIcon from "../assets/services/streamelements.webp";
 import tipeeStreamIcon from "../assets/services/tipeeestream.webp";
@@ -278,6 +282,7 @@ function ObsForm({
 export function Connections() {
   const { t } = useTranslation();
   const twitch = useAppStore((state) => state.twitch);
+  const twitchBot = useAppStore((state) => state.twitchBot);
   const streamElements = useAppStore((state) => state.streamElements);
   const tipeeStream = useAppStore((state) => state.tipeeStream);
   const obs = useAppStore((state) => state.obs);
@@ -289,6 +294,9 @@ export function Connections() {
   const [obsAddress, setObsAddress] = useState(settings.obsAddress);
   const [obsPassword, setObsPassword] = useState("");
   const twitchBusy = ["connecting", "reconnecting"].includes(twitch.phase);
+  const twitchBotBusy = ["connecting", "reconnecting"].includes(
+    twitchBot.phase,
+  );
   const seBusy = ["connecting", "reconnecting"].includes(streamElements.phase);
   const tipeeStreamBusy = ["connecting", "reconnecting"].includes(
     tipeeStream.phase,
@@ -296,6 +304,17 @@ export function Connections() {
   const obsBusy = ["connecting", "reconnecting"].includes(obs.phase);
   const missingModeration =
     twitch.phase === "connected" && needsTwitchPermissionUpdate(twitch.scopes);
+  const missingBotPermissions =
+    twitchBot.phase === "connected" &&
+    needsTwitchBotPermissionUpdate(twitchBot.scopes);
+  const copyActivationUrl = async (url: string) => {
+    try {
+      await navigator.clipboard.writeText(url);
+      toast.success(t("donations.copied"));
+    } catch {
+      toast.error(t("donations.copyFailed"));
+    }
+  };
   const obsWidgetAdded = settings.dashboardWidgets.includes("obs");
   const addObsWidget = () => {
     if (obsWidgetAdded) return;
@@ -379,6 +398,85 @@ export function Connections() {
                 <ExternalLink size={14} />
                 {t("connections.openActivation")}
               </Button>
+            </div>
+          )}
+        </ServiceRow>
+
+        <ServiceRow
+          name={t("connections.twitchBot")}
+          icon={twitchIcon}
+          tint="bg-[#9146ff]/10"
+          phase={twitchBot.phase}
+          purpose={t("connections.twitchBotPurpose")}
+          meta={
+            twitchBotBusy && !twitchBot.account ? (
+              <LoadingIndicator className="h-2.5 w-24" />
+            ) : (
+              twitchBot.account
+            )
+          }
+          error={twitchBot.detail}
+          action={
+            <>
+              {missingBotPermissions && (
+                <Button
+                  variant="primary"
+                  onClick={runtime.reauthorizeTwitchBot}
+                >
+                  <ShieldCheck size={14} />
+                  {t("connections.updatePermissions")}
+                </Button>
+              )}
+              {twitchBot.phase === "connected" ? (
+                <RowAction onClick={runtime.disconnectTwitchBot}>
+                  {t("connections.disconnect")}
+                </RowAction>
+              ) : twitchBotBusy ? (
+                <RowAction onClick={runtime.disconnectTwitchBot}>
+                  {t("connections.cancelConnection")}
+                </RowAction>
+              ) : (
+                <Button
+                  variant="primary"
+                  disabled={twitchBotBusy || !isTauri()}
+                  onClick={runtime.connectTwitchBot}
+                >
+                  <Link2 size={15} />
+                  {t("connections.connectTwitchBot")}
+                </Button>
+              )}
+            </>
+          }
+        >
+          {missingBotPermissions && (
+            <p className="px-4 pb-3 text-xs leading-5 text-amber-300 sm:pl-16">
+              {t("connections.reconnectBotPermissions")}
+            </p>
+          )}
+          {runtime.botDeviceAuth && (
+            <div className="mx-4 mb-3 flex flex-wrap items-center gap-3 rounded-lg border border-violet-500/30 bg-violet-500/6 px-3 py-2 sm:ml-16">
+              <span className="font-mono text-lg font-semibold tracking-[.16em]">
+                {runtime.botDeviceAuth.code}
+              </span>
+              <span className="text-xs text-muted">
+                {t("connections.twitchBotActivateHint")}
+              </span>
+              <div className="ml-auto flex flex-wrap items-center gap-2">
+                <Button
+                  onClick={() =>
+                    void copyActivationUrl(runtime.botDeviceAuth!.url)
+                  }
+                >
+                  <Copy size={14} />
+                  {t("connections.copyActivationLink")}
+                </Button>
+                <Button
+                  onClick={() => void openUrl(runtime.botDeviceAuth!.url)}
+                >
+                  <ExternalLink size={14} />
+                  {t("connections.openActivation")}
+                </Button>
+              </div>
             </div>
           )}
         </ServiceRow>

@@ -3,27 +3,52 @@ import { twitchNative } from '../native'
 import { normalizeTwitch } from './events'
 
 export const TWITCH_SCOPES = ['moderator:read:followers', 'moderator:manage:banned_users', 'moderator:manage:chat_messages', 'moderator:manage:shield_mode', 'channel:manage:moderators', 'channel:manage:vips', 'channel:read:subscriptions', 'bits:read', 'channel:read:redemptions', 'channel:manage:broadcast', 'user:write:chat', 'chat:read', 'chat:edit']
+export const TWITCH_BOT_SCOPES = ['user:write:chat', 'chat:read', 'chat:edit']
 export const needsTwitchPermissionUpdate = (scopes?: string[]) => TWITCH_SCOPES.some((scope) => !scopes?.includes(scope))
+export const needsTwitchBotPermissionUpdate = (scopes?: string[]) => TWITCH_BOT_SCOPES.some((scope) => !scopes?.includes(scope))
 type EventSubEnvelope = { metadata: { message_id: string; message_type: string; message_timestamp: string }; payload: { session?: { id: string; keepalive_timeout_seconds?: number; reconnect_url?: string }; subscription?: { type: string }; event?: Record<string, unknown> } }
 
 export async function loadTwitchSnapshot(clientId: string, session: TwitchSession): Promise<Partial<DashboardStats>> {
-  const [followers, subscriptions, stream, channel] = await Promise.all([
+  const [followers, subscriptions, stream, channel] = await Promise.allSettled([
     twitchNative.helix<{ total: number }>(clientId, 'channels/followers', [['broadcaster_id', session.userId], ['moderator_id', session.userId]]),
     twitchNative.helix<{ total: number }>(clientId, 'subscriptions', [['broadcaster_id', session.userId]]),
     twitchNative.helix<{ data: Array<{ viewer_count: number; started_at: string; title: string; game_name: string }> }>(clientId, 'streams', [['user_id', session.userId]]),
     twitchNative.helix<{ data: Array<{ title: string; game_name: string }> }>(clientId, 'channels', [['broadcaster_id', session.userId]]),
   ])
-  const live = stream.data[0]
-  return { followers: followers.total, subscribers: subscriptions.total, viewers: live?.viewer_count ?? 0, live: !!live,
-    startedAt: live?.started_at, title: live?.title ?? channel.data[0]?.title, category: live?.game_name ?? channel.data[0]?.game_name }
+  const live = stream.status === 'fulfilled' ? stream.value.data[0] : undefined
+  const channelInfo = channel.status === 'fulfilled' ? channel.value.data[0] : undefined
+  const snapshot: Partial<DashboardStats> = {
+    viewers: live?.viewer_count ?? 0,
+    live: Boolean(live),
+    startedAt: live?.started_at,
+    title: live?.title ?? channelInfo?.title,
+    category: live?.game_name ?? channelInfo?.game_name,
+  }
+  if (followers.status === 'fulfilled') snapshot.followers = followers.value.total
+  if (subscriptions.status === 'fulfilled') snapshot.subscribers = subscriptions.value.total
+  return snapshot
 }
 
 export async function loadTwitchStreamStatus(clientId: string, userId: string): Promise<Partial<DashboardStats>> {
-  const stream = await twitchNative.helix<{ data: Array<{ viewer_count: number; started_at: string; title: string; game_name: string }> }>(clientId, 'streams', [['user_id', userId]])
-  const live = stream.data[0]
-  return live
+  const [stream, channel, followers, subscriptions] = await Promise.allSettled([
+    twitchNative.helix<{ data: Array<{ viewer_count: number; started_at: string; title: string; game_name: string }> }>(clientId, 'streams', [['user_id', userId]]),
+    twitchNative.helix<{ data: Array<{ title: string; game_name: string }> }>(clientId, 'channels', [['broadcaster_id', userId]]),
+    twitchNative.helix<{ total: number }>(clientId, 'channels/followers', [['broadcaster_id', userId], ['moderator_id', userId]]),
+    twitchNative.helix<{ total: number }>(clientId, 'subscriptions', [['broadcaster_id', userId]]),
+  ])
+  const live = stream.status === 'fulfilled' ? stream.value.data[0] : undefined
+  const channelInfo = channel.status === 'fulfilled' ? channel.value.data[0] : undefined
+  const patch: Partial<DashboardStats> = live
     ? { live: true, viewers: live.viewer_count, startedAt: live.started_at, title: live.title, category: live.game_name }
-    : { live: false, viewers: 0, startedAt: undefined }
+    : {
+        live: false,
+        viewers: 0,
+        startedAt: undefined,
+        ...(channelInfo ? { title: channelInfo.title, category: channelInfo.game_name } : {}),
+      }
+  if (followers.status === 'fulfilled') patch.followers = followers.value.total
+  if (subscriptions.status === 'fulfilled') patch.subscribers = subscriptions.value.total
+  return patch
 }
 
 const subscriptions = (userId: string) => [

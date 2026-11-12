@@ -31,7 +31,7 @@ export function buildSearchIndex(state: ReturnType<typeof useAppStore.getState>,
     entries.push({ id: `feature:${key}`, group: "features", title: t(key), description: t(`nav.${page}`),
       keywords: `${en(key)} ${page} ${t(`search.aliases.${page}`, { defaultValue: "" })}`, target: { page, ...(page === "goals" ? { label: t(key) } : {}) } });
   }
-  for (const [name, connection] of [["Twitch", state.twitch], ["StreamElements", state.streamElements], ["TipeeeStream", state.tipeeStream], ["OBS", state.obs]] as const) {
+  for (const [name, connection] of [["Twitch", state.twitch], [t("connections.twitchBot"), state.twitchBot], ["StreamElements", state.streamElements], ["TipeeeStream", state.tipeeStream], ["OBS", state.obs]] as const) {
     entries.push({ id: `service:${name}`, group: "features", title: name,
       description: t("search.serviceStatus", { account: connection.account || t("nav.connections"), status: t(`connectionPhases.${connection.phase}`) }),
       keywords: `${connection.account ?? ""} ${t("nav.connections")} ${en("nav.connections")}`,

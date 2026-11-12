@@ -9,9 +9,15 @@ import type {
   ConnectionState,
   DashboardStats,
   DashboardItemId,
+  GiveawayEntry,
+  GiveawayState,
   ObsSnapshot,
 } from "../types";
-import { clearChatMessages, updateChatMessage } from "../services/native";
+import {
+  clearChatMessages,
+  saveLocalState,
+  updateChatMessage,
+} from "../services/native";
 
 export const defaultDashboardWidgets: DashboardItemId[] = [
   "followers",
@@ -67,6 +73,18 @@ export const defaultSettings: AppSettings = {
   goalAutomation: {},
 };
 const emptyStats: DashboardStats = { bits: 0, donations: 0, live: false };
+const initialGiveaway: GiveawayState = {
+  running: false,
+  chatAnnouncements: true,
+  type: "keyword",
+  keyword: "!enter",
+  antiSpamLimit: 0,
+  inactivityTimeout: 0,
+  subscriberLuck: 1,
+  entries: [],
+  disqualifiedUsers: [],
+  winner: undefined,
+};
 interface AppStore {
   searchTarget?: SearchTarget;
   setSearchTarget: (target?: SearchTarget) => void;
@@ -87,6 +105,8 @@ interface AppStore {
   clearEvents: () => void;
   twitch: ConnectionState;
   setTwitch: (state: ConnectionState) => void;
+  twitchBot: ConnectionState;
+  setTwitchBot: (state: ConnectionState) => void;
   streamElements: ConnectionState;
   setStreamElements: (state: ConnectionState) => void;
   tipeeStream: ConnectionState;
@@ -110,6 +130,12 @@ interface AppStore {
   setStats: (stats: Partial<DashboardStats>) => void;
   settings: AppSettings;
   setSettings: (settings: Partial<AppSettings>) => void;
+  giveaway: GiveawayState;
+  setGiveaway: (patch: Partial<GiveawayState>) => void;
+  ingestGiveawayChatMessage: (message: ChatMessage, botLogin?: string) => void;
+  removeGiveawayEntry: (login: string) => void;
+  clearGiveawayEntries: () => void;
+  pruneInactiveGiveawayEntries: (now?: number) => void;
 }
 export const useAppStore = create<AppStore>((set) => ({
   searchTarget: undefined,
@@ -186,9 +212,21 @@ export const useAppStore = create<AppStore>((set) => ({
         unreadCounts: counts,
       };
     }),
-  clearEvents: () => set({ events: [] }),
+  clearEvents: () =>
+    set((s) => {
+      const nextStats = {
+        ...s.stats,
+        bits: 0,
+        donations: 0,
+        donationCurrency: undefined,
+      };
+      if (s.ready) void saveLocalState("cachedStats", nextStats).catch(() => undefined);
+      return { events: [], stats: nextStats };
+    }),
   twitch: { phase: "disconnected" },
   setTwitch: (twitch) => set({ twitch }),
+  twitchBot: { phase: "disconnected" },
+  setTwitchBot: (twitchBot) => set({ twitchBot }),
   streamElements: { phase: "disconnected" },
   setStreamElements: (streamElements) => set({ streamElements }),
   tipeeStream: { phase: "disconnected" },
@@ -248,8 +286,138 @@ export const useAppStore = create<AppStore>((set) => ({
   stats: emptyStats,
   statsLoading: false,
   setStatsLoading: (statsLoading) => set({ statsLoading }),
-  setStats: (stats) => set((s) => ({ stats: { ...s.stats, ...stats } })),
+  setStats: (stats) =>
+    set((s) => {
+      const nextStats = { ...s.stats, ...stats };
+      if (s.ready) {
+        void saveLocalState("cachedStats", nextStats).catch(() => undefined);
+      }
+      return { stats: nextStats };
+    }),
   settings: defaultSettings,
   setSettings: (settings) =>
     set((s) => ({ settings: { ...s.settings, ...settings } })),
+  giveaway: initialGiveaway,
+  setGiveaway: (patch) =>
+    set((s) => {
+      const nextGiveaway = { ...s.giveaway, ...patch };
+      if (s.ready) {
+        void saveLocalState("giveaway", nextGiveaway).catch(() => undefined);
+      }
+      return { giveaway: nextGiveaway };
+    }),
+  ingestGiveawayChatMessage: (message, botLogin) =>
+    set((s) => {
+      if (!s.giveaway.running || message.deleted) return s;
+      const login = message.login.toLowerCase();
+      if (botLogin && login === botLogin.toLowerCase()) return s;
+      if (s.giveaway.disqualifiedUsers.includes(login)) return s;
+      const subscriber = message.badges.some(
+        (badge) => badge.id === "subscriber" || badge.id === "founder",
+      );
+      const phrase = s.giveaway.keyword.trim().toLocaleLowerCase();
+      const matchesKeyword =
+        s.giveaway.type === "active" ||
+        (Boolean(phrase) &&
+          message.text.toLocaleLowerCase().includes(phrase));
+      const existingIndex = s.giveaway.entries.findIndex(
+        (entry) => entry.login === login,
+      );
+      if (existingIndex !== -1) {
+        const existing = s.giveaway.entries[existingIndex];
+        const nextKeywordCount = matchesKeyword
+          ? existing.keywordCount + 1
+          : existing.keywordCount;
+        if (
+          matchesKeyword &&
+          s.giveaway.antiSpamLimit >= 2 &&
+          nextKeywordCount >= s.giveaway.antiSpamLimit
+        ) {
+          const nextGiveaway = {
+            ...s.giveaway,
+            entries: s.giveaway.entries.filter((entry) => entry.login !== login),
+            disqualifiedUsers: [...s.giveaway.disqualifiedUsers, login],
+          };
+          if (s.ready) {
+            void saveLocalState("giveaway", nextGiveaway).catch(() => undefined);
+          }
+          return { giveaway: nextGiveaway };
+        }
+        const updatedEntries = [...s.giveaway.entries];
+        updatedEntries[existingIndex] = {
+          ...existing,
+          displayName: message.displayName,
+          color: message.color,
+          badges: message.badges,
+          subscriber,
+          lastActiveAt: message.timestamp,
+          keywordCount: nextKeywordCount,
+        };
+        const nextGiveaway = { ...s.giveaway, entries: updatedEntries };
+        if (s.ready) {
+          void saveLocalState("giveaway", nextGiveaway).catch(() => undefined);
+        }
+        return { giveaway: nextGiveaway };
+      }
+      if (!matchesKeyword) return s;
+      const nextEntry: GiveawayEntry = {
+        login,
+        displayName: message.displayName,
+        color: message.color,
+        badges: message.badges,
+        subscriber,
+        enteredAt: message.timestamp,
+        lastActiveAt: message.timestamp,
+        keywordCount: 1,
+      };
+      const nextGiveaway = {
+        ...s.giveaway,
+        entries: [...s.giveaway.entries, nextEntry],
+      };
+      if (s.ready) {
+        void saveLocalState("giveaway", nextGiveaway).catch(() => undefined);
+      }
+      return { giveaway: nextGiveaway };
+    }),
+  removeGiveawayEntry: (login) =>
+    set((s) => {
+      const target = login.toLowerCase();
+      const nextGiveaway = {
+        ...s.giveaway,
+        entries: s.giveaway.entries.filter((entry) => entry.login !== target),
+      };
+      if (s.ready) {
+        void saveLocalState("giveaway", nextGiveaway).catch(() => undefined);
+      }
+      return { giveaway: nextGiveaway };
+    }),
+  clearGiveawayEntries: () =>
+    set((s) => {
+      const nextGiveaway = {
+        ...s.giveaway,
+        entries: [],
+        disqualifiedUsers: [],
+        winner: undefined,
+      };
+      if (s.ready) {
+        void saveLocalState("giveaway", nextGiveaway).catch(() => undefined);
+      }
+      return { giveaway: nextGiveaway };
+    }),
+  pruneInactiveGiveawayEntries: (now = Date.now()) =>
+    set((s) => {
+      const timeoutSeconds = s.giveaway.inactivityTimeout;
+      if (!s.giveaway.running || timeoutSeconds <= 0 || !s.giveaway.entries.length)
+        return s;
+      const cutoff = now - timeoutSeconds * 1000;
+      const filtered = s.giveaway.entries.filter(
+        (entry) => entry.lastActiveAt >= cutoff,
+      );
+      if (filtered.length === s.giveaway.entries.length) return s;
+      const nextGiveaway = { ...s.giveaway, entries: filtered };
+      if (s.ready) {
+        void saveLocalState("giveaway", nextGiveaway).catch(() => undefined);
+      }
+      return { giveaway: nextGiveaway };
+    }),
 }));

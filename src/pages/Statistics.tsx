@@ -71,12 +71,12 @@ export function Statistics() {
         </Card>
       ) : (
         <>
-      <Card className="p-5">
-        <div className="mb-5">
+      <Card className="p-4">
+        <div className="mb-3">
           <h2 className="text-sm font-semibold">{t("statistics.activityOverTime")}</h2>
-          <p className="mt-1 text-xs text-muted">{t("statistics.lastDays", { count: 14 })}</p>
+          <p className="mt-0.5 text-xs text-muted">{t("statistics.lastDays", { count: 14 })}</p>
         </div>
-        <div className="h-64">
+        <div className="h-52">
           <ResponsiveContainer width="100%" height="100%">
             <BarChart data={data}>
               <CartesianGrid stroke="#24262d" vertical={false} />
@@ -112,20 +112,20 @@ export function Statistics() {
           </ResponsiveContainer>
         </div>
       </Card>
-      <div className="mt-4 grid grid-cols-3 gap-4">
-        <Card className="p-5">
+      <div className="mt-3 grid grid-cols-3 gap-3">
+        <Card className="p-4">
           <div className="text-xs text-muted">{t("statistics.totalEvents")}</div>
-          <div className="mt-2 text-3xl font-semibold">
+          <div className="mt-1.5 text-2xl font-semibold">
             {events.length.toLocaleString(i18n.language)}
           </div>
         </Card>
-        <Card className="p-5">
+        <Card className="p-4">
           <div className="text-xs text-muted">{t("statistics.eventTypes")}</div>
-          <div className="mt-2 text-3xl font-semibold">{types.length}</div>
+          <div className="mt-1.5 text-2xl font-semibold">{types.length}</div>
         </Card>
-        <Card className="p-5">
+        <Card className="p-4">
           <div className="text-xs text-muted">{t("statistics.mostCommon")}</div>
-          <div className="mt-2 text-xl font-semibold capitalize">
+          <div className="mt-1.5 text-lg font-semibold capitalize">
             {types[0] ? t(`events.${types[0][0]}`) : "—"}
           </div>
         </Card>

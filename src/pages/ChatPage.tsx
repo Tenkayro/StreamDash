@@ -566,7 +566,7 @@ export function ChatPage() {
       {chat.detail && chat.phase === "error" && (
         <p className="mb-3 px-1 text-xs text-red-300">{chat.detail}</p>
       )}
-      <Card className="flex h-[calc(100vh-145px)] min-h-72 flex-col overflow-hidden">
+      <Card className="flex min-h-0 flex-1 flex-col overflow-hidden">
         <div className="flex min-h-10 items-center justify-between gap-3 border-b border-line px-3">
           {searchOpen ? (
             <div className="relative flex-1">

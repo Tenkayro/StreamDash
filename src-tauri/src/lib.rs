@@ -209,6 +209,7 @@ fn remove_directory_if_present(path: PathBuf) -> Result<(), String> {
 pub fn uninstall_cleanup() -> Result<(), String> {
     for secret in [
         "twitch-oauth",
+        "twitch-bot-oauth",
         "streamelements-token",
         "tipeeestream-api-key",
         "obs-password",
@@ -245,14 +246,22 @@ pub fn uninstall_cleanup() -> Result<(), String> {
     Ok(())
 }
 
-fn load_twitch_tokens() -> Result<TwitchTokens, String> {
-    let raw = load_secret("twitch-oauth")?.ok_or("Twitch is not connected")?;
+fn twitch_secret_name(bot: bool) -> &'static str {
+    if bot {
+        "twitch-bot-oauth"
+    } else {
+        "twitch-oauth"
+    }
+}
+
+fn load_twitch_tokens_for(bot: bool) -> Result<TwitchTokens, String> {
+    let raw = load_secret(twitch_secret_name(bot))?.ok_or("Twitch is not connected")?;
     serde_json::from_str(&raw).map_err(|_| "Stored Twitch credentials are invalid".to_string())
 }
 
-fn store_twitch_tokens(tokens: &TwitchTokens) -> Result<(), String> {
+fn store_twitch_tokens_for(bot: bool, tokens: &TwitchTokens) -> Result<(), String> {
     save_secret(
-        "twitch-oauth",
+        twitch_secret_name(bot),
         &serde_json::to_string(tokens).map_err(|e| e.to_string())?,
     )
 }
@@ -466,6 +475,12 @@ fn chat_message_insert(
     max_messages: u32,
 ) -> Result<bool, String> {
     let conn = state.history.lock().map_err(|_| "Database lock failed")?;
+    if !message.id.starts_with("local-") {
+        let _ = conn.execute(
+            "DELETE FROM chat_messages WHERE id LIKE 'local-%' AND login = ?1 AND text = ?2 AND ABS(timestamp - ?3) < 15000",
+            params![message.login, message.text, message.timestamp],
+        );
+    }
     let changed = conn.execute(
         "INSERT OR IGNORE INTO chat_messages (id,login,display_name,color,badges,timestamp,text,parts,first_message,action,reply,deleted)
          VALUES (?1,?2,?3,?4,?5,?6,?7,?8,?9,?10,?11,?12)",
@@ -576,6 +591,7 @@ fn secret_delete(name: String) -> Result<(), String> {
             | "tipeeestream-api-key"
             | "obs-password"
             | "twitch-oauth"
+            | "twitch-bot-oauth"
     ) {
         return Err("Unsupported credential key".into());
     }
@@ -607,6 +623,7 @@ async fn twitch_device_poll(
     client_id: String,
     device_code: String,
     scopes: Vec<String>,
+    bot: Option<bool>,
 ) -> Result<Value, String> {
     let response = http()
         .post("https://id.twitch.tv/oauth2/token")
@@ -641,7 +658,7 @@ async fn twitch_device_poll(
                 })
                 .unwrap_or(scopes),
         };
-        store_twitch_tokens(&tokens)?;
+        store_twitch_tokens_for(bot.unwrap_or(false), &tokens)?;
         return Ok(json!({"status":"authorized"}));
     }
     let message = body
@@ -657,7 +674,11 @@ async fn twitch_device_poll(
     }
 }
 
-async fn refresh_twitch(client_id: &str, current: TwitchTokens) -> Result<TwitchTokens, String> {
+async fn refresh_twitch_for(
+    client_id: &str,
+    current: TwitchTokens,
+    bot: bool,
+) -> Result<TwitchTokens, String> {
     let refresh = current
         .refresh_token
         .ok_or("Twitch session expired; reconnect required")?;
@@ -695,27 +716,35 @@ async fn refresh_twitch(client_id: &str, current: TwitchTokens) -> Result<Twitch
             })
             .unwrap_or(current.scope),
     };
-    store_twitch_tokens(&updated)?;
+    store_twitch_tokens_for(bot, &updated)?;
     Ok(updated)
 }
 
-async fn valid_tokens(client_id: &str) -> Result<TwitchTokens, String> {
-    let tokens = load_twitch_tokens()?;
+async fn valid_tokens_for(client_id: &str, bot: bool) -> Result<TwitchTokens, String> {
+    let tokens = load_twitch_tokens_for(bot)?;
     if tokens.expires_at <= now_epoch() + 120 {
-        refresh_twitch(client_id, tokens).await
+        refresh_twitch_for(client_id, tokens, bot).await
     } else {
         Ok(tokens)
     }
 }
 
+async fn valid_tokens(client_id: &str) -> Result<TwitchTokens, String> {
+    valid_tokens_for(client_id, false).await
+}
+
 #[tauri::command]
-async fn twitch_session(client_id: String) -> Result<Option<TwitchSession>, String> {
-    let tokens = match load_twitch_tokens() {
+async fn twitch_session(
+    client_id: String,
+    bot: Option<bool>,
+) -> Result<Option<TwitchSession>, String> {
+    let is_bot = bot.unwrap_or(false);
+    let tokens = match load_twitch_tokens_for(is_bot) {
         Ok(v) => v,
         Err(_) => return Ok(None),
     };
     let tokens = if tokens.expires_at <= now_epoch() + 120 {
-        refresh_twitch(&client_id, tokens).await?
+        refresh_twitch_for(&client_id, tokens, is_bot).await?
     } else {
         tokens
     };
@@ -726,12 +755,12 @@ async fn twitch_session(client_id: String) -> Result<Option<TwitchSession>, Stri
         .await
         .map_err(|e| e.to_string())?;
     if response.status().as_u16() == 401 {
-        delete_secret_value("twitch-oauth")?;
+        delete_secret_value(twitch_secret_name(is_bot))?;
         return Ok(None);
     }
     let value: Value = response.json().await.map_err(|e| e.to_string())?;
     if value["client_id"].as_str() != Some(client_id.as_str()) {
-        delete_secret_value("twitch-oauth")?;
+        delete_secret_value(twitch_secret_name(is_bot))?;
         return Ok(None);
     }
     Ok(Some(TwitchSession {
@@ -826,11 +855,12 @@ async fn twitch_helix_post(
     path: String,
     query: Vec<(String, String)>,
     body: Value,
+    bot: Option<bool>,
 ) -> Result<Value, String> {
     if path.contains("..") || path.contains("://") {
         return Err("Invalid Helix path".into());
     }
-    let tokens = valid_tokens(&client_id).await?;
+    let tokens = valid_tokens_for(&client_id, bot.unwrap_or(false)).await?;
     let url = format!(
         "https://api.twitch.tv/helix/{}",
         path.trim_start_matches('/')

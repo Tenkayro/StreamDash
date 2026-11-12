@@ -326,9 +326,9 @@ button:focus-visible,
     radial-gradient(ellipse at 65% 100%, color-mix(in srgb, var(--app-accent) 5%, transparent), transparent 55%),
     linear-gradient(120deg, #262728, #202122 55%, #292a2b);
 }
-.app-workspace { padding: 14px 0 0; gap: 12px; }
+.app-workspace { padding: 10px 0 0; gap: 12px; }
 .app-main { scrollbar-gutter: stable; }
-.app-content { padding: 24px; }
+.app-content { padding: 16px 20px; }
 .app-bottom-fade { background: linear-gradient(to top, #232425, transparent); }
 .app-titlebar {
   height: 44px;
@@ -357,15 +357,15 @@ button:focus-visible,
 .sidebar-search { box-shadow: inset 2px 2px 6px #00000026; background: #17181980; }
 .sidebar-group-label { color: #848586; }
 .sidebar-bottom-fade { background: linear-gradient(to top, #1b1c1d, transparent); }
-.page-header { margin-bottom: 24px; align-items: center; }
-.page-header h1 { font-size: 24px; font-weight: 600; letter-spacing: -.04em; }
-.page-header p { margin-top: 7px; line-height: 1.6; }
+.page-header { margin-bottom: 12px; align-items: center; flex-shrink: 0; }
+.page-header h1 { font-size: 20px; font-weight: 600; letter-spacing: -.04em; }
+.page-header p { margin-top: 2px; line-height: 1.4; }
 .page-header-icon, .metric-icon {
   border: 1px solid #ffffff0b;
   background: linear-gradient(145deg, #ffffff09, #0000000c);
   box-shadow: 3px 3px 8px #00000020, inset 0 1px 0 #ffffff07;
 }
-.page-header-icon { width: 38px; height: 38px; border-radius: 12px; margin-right: 4px; }
+.page-header-icon { width: 34px; height: 34px; border-radius: 10px; margin-right: 4px; }
 .metric-card { padding: 16px; position: relative; }
 .metric-icon { width: 28px; height: 28px; display: grid; place-items: center; border-radius: 9px; color: var(--app-accent); }
 .metric-value { font-variant-numeric: tabular-nums; font-size: 25px; line-height: 1.15; }
@@ -384,8 +384,8 @@ select.input option { background: #242526; }
 [data-accent] .text-zinc-500 { color: #a0a1a4; }
 [data-accent] .bg-panel { background-color: #242526; }
 [data-accent] .bg-raised { background-color: #2c2d2e; }
-[data-density="compact"] .app-content { padding: 20px; }
-[data-density="compact"] .page-header { margin-bottom: 20px; }
+[data-density="compact"] .app-content { padding: 14px 18px; }
+[data-density="compact"] .page-header { margin-bottom: 10px; }
 @media (max-width: 900px) {
   .app-workspace { padding: 8px 0 0; gap: 4px; }
   .app-sidebar { margin-left: 8px; margin-bottom: 8px; padding-inline: 6px; }

@@ -43,20 +43,20 @@ export function LivePreview() {
         title={t("nav.livePreview")}
         description={t("pageDescriptions.livePreview")}
       />
-      <div className="flex flex-col gap-3">
-        <div className="relative w-full overflow-hidden rounded-xl border border-line bg-black shadow-2xl shadow-black/20 flex-shrink-0 flex items-center justify-center max-h-[calc(100vh-280px)]">
-          <TwitchPlayer className="aspect-[16/9] max-w-full max-h-full" />
+      <div className="flex min-h-0 flex-1 flex-col gap-2.5">
+        <div className="relative flex min-h-0 flex-1 items-center justify-center overflow-hidden rounded-xl border border-line bg-black shadow-2xl shadow-black/20">
+          <TwitchPlayer className="aspect-video max-h-full max-w-full" />
         </div>
-        <div className="grid border-t border-line bg-panel lg:grid-cols-[minmax(260px,.7fr)_minmax(480px,1.3fr)] p-3 gap-3">
-          <section className="border-b border-line p-3 lg:border-b-0 lg:border-r">
-            <div className="mb-2 flex items-center justify-between"><div className="flex items-center gap-2 text-[10px] font-bold uppercase tracking-wider text-zinc-500"><Radio size={12} className="text-[#9147ff]" />Twitch</div><Badge tone={stats.live ? "green" : twitch.phase === "connected" ? "neutral" : "amber"}>{stats.live ? t("stream.live") : twitch.phase === "connected" ? t("stream.offline") : t(`connectionPhases.${twitch.phase}`)}</Badge></div>
+        <div className="grid shrink-0 gap-2.5 rounded-xl border border-line bg-panel p-2.5 lg:grid-cols-[minmax(240px,.7fr)_minmax(420px,1.3fr)]">
+          <section className="border-b border-line p-2 lg:border-b-0 lg:border-r lg:pr-3">
+            <div className="mb-1.5 flex items-center justify-between"><div className="flex items-center gap-2 text-[10px] font-bold uppercase tracking-wider text-zinc-500"><Radio size={12} className="text-[#9147ff]" />Twitch</div><Badge tone={stats.live ? "green" : twitch.phase === "connected" ? "neutral" : "amber"}>{stats.live ? t("stream.live") : twitch.phase === "connected" ? t("stream.offline") : t(`connectionPhases.${twitch.phase}`)}</Badge></div>
             <div className="grid grid-cols-2 gap-2">
               <Stat icon={Eye} label={t("stream.viewers")} value={twitch.phase === "connected" ? (stats.viewers ?? 0).toLocaleString() : "—"} />
               <Stat icon={Clock3} label={t("dashboard.streamDuration")} value={streamDuration(stats.startedAt)} />
             </div>
           </section>
-          <section className="p-3">
-            <div className="mb-2 flex items-center justify-between"><div className="flex items-center gap-2 text-[10px] font-bold uppercase tracking-wider text-zinc-500"><MonitorPlay size={12} className="text-accent" />OBS</div><Badge tone={obs.phase === "connected" ? "green" : obs.phase === "reconnecting" || obs.phase === "connecting" ? "amber" : "neutral"}>{t(`connectionPhases.${obs.phase}`)}</Badge></div>
+          <section className="p-2">
+            <div className="mb-1.5 flex items-center justify-between"><div className="flex items-center gap-2 text-[10px] font-bold uppercase tracking-wider text-zinc-500"><MonitorPlay size={12} className="text-accent" />OBS</div><Badge tone={obs.phase === "connected" ? "green" : obs.phase === "reconnecting" || obs.phase === "connecting" ? "amber" : "neutral"}>{t(`connectionPhases.${obs.phase}`)}</Badge></div>
             <div className="grid grid-cols-2 gap-2 xl:grid-cols-4">
               <Stat icon={Gauge} label={t("obs.bitrate")} value={snapshot?.streamBitrate != null ? `${snapshot.streamBitrate.toLocaleString()} kbit/s` : "—"} />
               <Stat icon={Cpu} label={t("obs.page.performance")} value={performance} />
