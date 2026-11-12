@@ -96,7 +96,7 @@ export function Toggle({
 export function ScrollFade({
   children,
   className,
-  color = "#242526",
+  color = "#121418",
   size = 36,
   scrollbar = true,
 }: {
@@ -154,16 +154,16 @@ export function Badge({
   tone?: "neutral" | "green" | "amber" | "red" | "purple";
 }) {
   const styles = {
-    neutral: "bg-white/5 text-muted",
-    green: "bg-emerald-400/10 text-emerald-300",
-    amber: "bg-amber-400/10 text-amber-300",
-    red: "bg-red-400/10 text-red-300",
-    purple: "bg-accent-soft text-accent",
+    neutral: "border-white/10 bg-white/[0.04] text-muted",
+    green: "border-emerald-400/20 bg-emerald-400/10 text-emerald-300",
+    amber: "border-amber-400/20 bg-amber-400/10 text-amber-300",
+    red: "border-red-400/20 bg-red-400/10 text-red-300",
+    purple: "border-accent/25 bg-accent-soft text-accent",
   };
   return (
     <span
       className={cn(
-        "inline-flex items-center rounded-md px-2 py-1 text-[11px] font-semibold capitalize",
+        "inline-flex items-center rounded-lg border px-2 py-0.5 text-[11px] font-medium capitalize shadow-[inset_0_1px_0_rgba(255,255,255,0.06)] backdrop-blur-sm",
         styles[tone],
       )}
     >

@@ -421,7 +421,7 @@ function DashboardWidget({
           )}
         </div>
       )}
-      <div className="h-full overflow-hidden [&>.card]:h-full">{children}</div>
+      <div className="h-full [&>.card]:h-full [&>.card]:overflow-hidden">{children}</div>
       {editing && (
         <button
           type="button"

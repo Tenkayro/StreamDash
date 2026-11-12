@@ -149,7 +149,7 @@ export function Sidebar() {
         aria-label={t("navigation.quickSwitch")}
         onClick={() => window.dispatchEvent(new Event(OPEN_COMMAND_PALETTE))}
         className={cn(
-          "sidebar-search mb-3 flex h-9 w-full shrink-0 items-center rounded-lg border border-line bg-black/15 text-zinc-500 transition hover:border-accent/30 hover:text-zinc-200",
+          "sidebar-search mb-3 flex h-9 w-full shrink-0 items-center rounded-xl border border-line bg-black/15 text-zinc-500 transition hover:border-accent/30 hover:text-zinc-200",
           compact ? "justify-center" : "gap-2 px-3",
         )}
       >
@@ -157,19 +157,19 @@ export function Sidebar() {
         {!compact && (
           <>
             <span className="min-w-0 flex-1 truncate text-left text-xs">{t("navigation.quickSwitch")}</span>
-            <kbd className="rounded border border-line px-1.5 py-0.5 text-[9px] text-zinc-600">Ctrl K</kbd>
+            <kbd className="rounded-md border border-line px-1.5 py-0.5 text-[9px] text-zinc-600">Ctrl K</kbd>
           </>
         )}
       </button>
       <div className="relative min-h-0 flex-1">
-        <div className="h-full overflow-x-hidden overflow-y-auto pr-1">
+        <div className="h-full overflow-y-auto px-1.5 -mx-1.5">
           <nav ref={navRef} className="relative pb-7">
           <span
             aria-hidden="true"
             ref={indicatorRef}
-            className="nav-indicator pointer-events-none absolute inset-x-0 top-0 h-9 rounded-lg bg-accent-soft"
+            className="nav-indicator pointer-events-none absolute inset-x-0 top-0 h-9 rounded-xl bg-accent-soft"
           >
-            <span className="absolute left-0 top-1/2 h-4 w-0.5 -translate-y-1/2 rounded-full bg-accent" />
+            <span className="absolute left-1 top-1/2 h-4 w-0.5 -translate-y-1/2 rounded-full bg-accent" />
           </span>
           {navigationGroups.map((group, groupIndex) => (
             <div key={group} className={cn(groupIndex > 0 && "mt-3")}>
@@ -202,7 +202,7 @@ export function Sidebar() {
                   setPage(id);
                 }}
                 className={cn(
-                  "relative flex h-9 w-full items-center rounded-lg text-sm text-zinc-500 transition-colors hover:bg-white/4 hover:text-zinc-200",
+                  "relative flex h-9 w-full items-center rounded-xl text-sm text-zinc-500 transition-colors hover:bg-white/4 hover:text-zinc-200",
                   compact ? "justify-center" : "gap-3 px-3",
                   page === id && "text-accent",
                 )}
@@ -255,7 +255,7 @@ export function Sidebar() {
             type="button"
             onClick={() => setPage("connections")}
             title={t("navigation.manageConnections")}
-            className="mb-2 block w-full rounded-lg border border-line bg-panel px-2 py-1 text-left transition hover:border-accent/30 hover:bg-white/2.5"
+            className="mb-2 block w-full rounded-xl border border-white/[0.07] bg-white/[0.025] px-2.5 py-1.5 text-left shadow-[inset_2px_2px_6px_rgba(0,0,0,0.45)] transition hover:border-accent/30 hover:bg-white/[0.04]"
           >
             {services.map(({ name, icon, state }) => (
               <Status key={name} icon={icon} name={name} state={state} />

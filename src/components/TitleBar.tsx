@@ -10,6 +10,7 @@ import {
   LoaderCircle,
   Minus,
   PanelBottomClose,
+  Plus,
   Power,
   RotateCcw,
   Square,
@@ -45,7 +46,7 @@ function TitleAction({
       title={label}
       aria-label={label}
       onClick={onClick}
-      className="grid size-7 place-items-center rounded-md text-zinc-500 transition hover:bg-white/5.5 hover:text-zinc-200"
+      className="grid size-7 place-items-center rounded-lg text-zinc-500 transition hover:bg-white/6 hover:text-zinc-200"
     >
       <Icon size={13} />
     </button>
@@ -156,8 +157,15 @@ export function TitleBar({ setup = false }: { setup?: boolean }) {
   const [menuPos, setMenuPos] = useState({ right: 0, top: 0 });
   const closeMenuRef = useRef<HTMLDivElement>(null);
   const closeButtonRef = useRef<HTMLButtonElement>(null);
-  const { page, settings, setSettings, entitlements } = useAppStore();
+  const { settings, setSettings, entitlements } = useAppStore();
   const proActive = entitlements.pro;
+  const zoom = Math.max(50, Math.min(150, settings.dashboardZoom || 100));
+  const applyZoom = (next: number) => {
+    const clamped = Math.max(50, Math.min(150, Math.round(next / 5) * 5));
+    if (clamped === zoom) return;
+    setSettings({ dashboardZoom: clamped });
+    void saveSetting("dashboardZoom", clamped);
+  };
   const channel = import.meta.env.DEV
     ? "DEV"
     : updater.channel === "store"
@@ -229,25 +237,47 @@ export function TitleBar({ setup = false }: { setup?: boolean }) {
       </div>
       <div data-tauri-drag-region className="h-full min-w-8 flex-1" />
       <div data-tauri-drag-region="false" className="no-drag flex h-full shrink-0 items-center">
-        {!setup && <div className="flex items-center gap-0.5 px-1.5">
-          {page === "dashboard" && (
+        {!setup && <div className="flex items-center gap-1 px-1.5">
+          <div
+            role="group"
+            aria-label={t("titleBar.zoomLabel", { zoom })}
+            className="flex h-7 items-center gap-0.5 rounded-full border border-white/[0.08] bg-black/30 px-1 shadow-[inset_2px_2px_5px_rgba(0,0,0,0.55),inset_-1px_-1px_2px_rgba(255,255,255,0.03)] backdrop-blur-md"
+          >
+            <button
+              type="button"
+              disabled={zoom <= 50}
+              title="-10%"
+              aria-label="Zoom out"
+              onClick={() => applyZoom(zoom - 10)}
+              className="grid size-5 place-items-center rounded-full text-zinc-400 transition hover:bg-white/10 hover:text-zinc-100 disabled:opacity-35"
+            >
+              <Minus size={10} />
+            </button>
             <button
               type="button"
               title={t("titleBar.resetZoom")}
-              aria-label={t("titleBar.zoomLabel", { zoom: settings.dashboardZoom })}
-              onClick={() => {
-                setSettings({ dashboardZoom: 100 });
-                void saveSetting("dashboardZoom", 100);
-              }}
-              className="flex h-7 items-center gap-1.5 rounded-md px-2 text-zinc-500 transition hover:bg-white/5.5 hover:text-zinc-200"
+              aria-label={t("titleBar.zoomLabel", { zoom })}
+              onClick={() => applyZoom(100)}
+              className={`flex h-5 items-center gap-1 rounded-full px-1.5 text-[10px] font-medium tabular-nums transition ${
+                zoom !== 100
+                  ? "bg-accent-soft text-accent hover:brightness-110"
+                  : "text-zinc-400 hover:bg-white/8 hover:text-zinc-100"
+              }`}
             >
-              <ZoomIn size={13} />
-              <span className="min-w-7 text-right text-[10px] tabular-nums">
-                {settings.dashboardZoom}%
-              </span>
-              {settings.dashboardZoom !== 100 && <RotateCcw size={10} />}
+              <ZoomIn size={11} className="shrink-0 opacity-80" />
+              <span>{zoom}%</span>
             </button>
-          )}
+            <button
+              type="button"
+              disabled={zoom >= 150}
+              title="+10%"
+              aria-label="Zoom in"
+              onClick={() => applyZoom(zoom + 10)}
+              className="grid size-5 place-items-center rounded-full text-zinc-400 transition hover:bg-white/10 hover:text-zinc-100 disabled:opacity-35"
+            >
+              <Plus size={10} />
+            </button>
+          </div>
           <UpdateControl />
           <div className="hidden items-center gap-0.5 lg:flex">
             <TitleAction
@@ -311,13 +341,13 @@ export function TitleBar({ setup = false }: { setup?: boolean }) {
           data-tauri-drag-region="false"
           role="menu"
           aria-label={t("titleBar.closeOptions")}
-          className="fixed z-50 w-52 rounded-lg border border-line bg-raised p-1 text-zinc-200 shadow-xl shadow-black/40"
+          className="fixed z-50 w-52 rounded-xl border border-white/10 bg-[#14161b]/95 p-1.5 text-zinc-200 shadow-2xl shadow-black/60 backdrop-blur-2xl"
           style={{ right: menuPos.right, top: menuPos.top }}
         >
           <button
             type="button"
             role="menuitem"
-            className="flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-left text-[10px] transition hover:bg-white/5"
+            className="flex w-full items-center gap-2 rounded-lg px-2.5 py-1.5 text-left text-[10px] transition hover:bg-white/6"
             onClick={() => {
               setCloseMenuOpen(false);
               void window?.hide();
@@ -331,7 +361,7 @@ export function TitleBar({ setup = false }: { setup?: boolean }) {
           <button
             type="button"
             role="menuitem"
-            className="flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-left text-[10px] transition hover:bg-red-400/10"
+            className="flex w-full items-center gap-2 rounded-lg px-2.5 py-1.5 text-left text-[10px] transition hover:bg-red-400/10"
             onClick={() => {
               setCloseMenuOpen(false);
               if (isTauri()) void invoke("app_quit");

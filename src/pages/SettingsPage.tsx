@@ -271,21 +271,12 @@ function SettingsNav({ smooth }: { smooth: boolean }) {
     <nav
       ref={navRef}
       aria-label={t("settings.categories")}
-      style={{
-        marginLeft: -bleed.x,
-        marginRight: -bleed.x,
-        marginTop: -bleed.y,
-        paddingLeft: bleed.x + 3,
-        paddingRight: bleed.x + 3,
-        paddingTop: 8,
-        paddingBottom: 8,
-      }}
-      className="no-scrollbar sticky top-0 z-20 mb-4 flex gap-1 overflow-x-auto rounded-xl border border-line bg-panel/90 p-1.5 shadow-lg shadow-black/10 backdrop-blur-md"
+      className="no-scrollbar sticky top-2 z-20 mb-5 flex gap-1 overflow-x-auto rounded-2xl border border-white/[0.08] bg-[#121418]/85 p-1.5 shadow-[0_10px_30px_rgba(0,0,0,0.45),inset_0_1px_0_rgba(255,255,255,0.07)] backdrop-blur-xl"
     >
       <span
         aria-hidden="true"
         ref={indicatorRef}
-        className="nav-indicator pointer-events-none absolute left-0 rounded-lg bg-accent-soft"
+        className="nav-indicator pointer-events-none absolute left-0 rounded-xl bg-accent-soft"
       />
       {settingsSections.map(({ id, label, icon: Icon }) => {
         const current = active === id;

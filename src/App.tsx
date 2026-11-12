@@ -321,6 +321,11 @@ export default function App() {
               className={`app-main min-w-0 flex-1 ${isViewportPage ? "overflow-hidden" : "overflow-y-auto"}`}
             >
               <div
+                style={
+                  page === "dashboard"
+                    ? undefined
+                    : { zoom: Math.max(50, Math.min(150, settings.dashboardZoom || 100)) / 100 }
+                }
                 className={`app-content mx-auto w-full ${isFullWidthPage ? "max-w-none" : widths[settings.contentWidth]} ${isViewportPage ? "flex h-full min-h-0 flex-col" : ""} ${settings.uiDensity === "compact" ? "p-3 lg:p-4" : "p-3 sm:p-4 xl:p-5"}`}
               >
                 <Suspense fallback={loading}>
