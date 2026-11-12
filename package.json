@@ -14,7 +14,8 @@
     "msix": "powershell -NoProfile -ExecutionPolicy Bypass -File scripts/build-msix.ps1",
     "release": "node scripts/release.mjs",
     "check": "tsc -b --pretty false && oxlint src",
-    "start": "tauri dev"
+    "start": "tauri dev",
+    "start2": "node scripts/start-temp.mjs"
   },
   "dependencies": {
     "@clack/prompts": "^1.8.1",

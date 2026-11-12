@@ -1665,10 +1665,22 @@ pub fn run() {
             None,
         ))
         .setup(|app| {
-            let data_directory = app.path().app_data_dir()?;
+            let custom_data_dir = std::env::var_os("STREAMDASH_DATA_DIR")
+                .filter(|v| !v.is_empty())
+                .map(PathBuf::from);
+            let is_temp_profile = custom_data_dir.is_some();
+            let data_directory = match custom_data_dir {
+                Some(dir) => {
+                    std::fs::create_dir_all(&dir)?;
+                    dir
+                }
+                None => app.path().app_data_dir()?,
+            };
             let db_path = data_directory.join("streamdash.db");
             let history_path = data_directory.join("history.db");
-            migrate_legacy_data(&data_directory).map_err(std::io::Error::other)?;
+            if !is_temp_profile {
+                migrate_legacy_data(&data_directory).map_err(std::io::Error::other)?;
+            }
             let db = init_database(db_path).map_err(std::io::Error::other)?;
             let history = init_history_database(history_path).map_err(std::io::Error::other)?;
             let _ = migrate_legacy_activity(&db, &history);
