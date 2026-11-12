@@ -5,7 +5,9 @@
     "installedVersion": "Version {{version}}",
     "reset": "Réinitialiser",
     "showAll": "Tout afficher",
-    "starting": "Démarrage de StreamDash"
+    "starting": "Démarrage de StreamDash",
+    "cancel": "Annuler",
+    "delete": "Supprimer"
   },
   "chat": {
     "clear": "Effacer",
@@ -932,7 +934,9 @@
     "violet": "Violet",
     "wide": "Large",
     "windowsNotifications": "Notifications Windows",
-    "windowsNotificationsDetail": "Afficher les événements sélectionnés sous forme de notifications natives."
+    "windowsNotificationsDetail": "Afficher les événements sélectionnés sous forme de notifications natives.",
+    "profiles": "Profils & sauvegarde",
+    "profilesAutoSwitch": "Changer de profil automatiquement par compte Twitch"
   },
   "statistics": {
     "activityOverTime": "Activité au fil du temps",
@@ -1231,5 +1235,115 @@
       "test": "Tester"
     },
     "testHint": "Testez ici un modèle avec des variables pour voir le rendu."
+  },
+  "profiles": {
+    "defaultName": "Par défaut",
+    "copySuffix": "Copie",
+    "active": "Actif",
+    "switch": "Basculer",
+    "switched": "Basculé sur le profil « {{name}} »",
+    "switchedForAccount": "Profil « {{name}} » chargé pour @{{account}}",
+    "created": "Profil « {{name}} » créé",
+    "createdForAccount": "Nouveau profil créé pour @{{account}}",
+    "duplicated": "Profil « {{name}} » dupliqué",
+    "deleted": "Profil supprimé",
+    "newProfile": "Nouveau profil",
+    "newProfileTitle": "Créer un profil",
+    "import": "Importer",
+    "export": "Exporter",
+    "exportProfile": "Exporter le profil",
+    "profileName": "Nom du profil",
+    "profileNamePlaceholder": "ex. Stream principal, Just Chatting, Événement…",
+    "rename": "Renommer",
+    "duplicate": "Dupliquer",
+    "linkTwitch": "Lier",
+    "unlink": "Délier",
+    "linkHint": "Charger automatiquement ce profil lors de la connexion à @{{account}}",
+    "unlinkHint": "Détacher du basculement automatique Twitch",
+    "openInSettings": "Gérer les profils dans les Paramètres",
+    "autoSwitchDetail": "Enregistre et charge automatiquement la configuration de chaque compte Twitch",
+    "autoSwitchDetailConnected": "Lié à @{{account}} · Le changement manuel reste toujours possible",
+    "summaryCounts": "{{commands}} commandes · {{variables}} variables · {{widgets}} widgets",
+    "browserSourcesCount": "{{count}} sources navigateur",
+    "baseSetup": "Configuration de départ",
+    "template": {
+      "copy": {
+        "title": "Copier la configuration actuelle",
+        "detail": "Conserver disposition, commandes, alertes et préférences"
+      },
+      "clean": {
+        "title": "Paramètres par défaut",
+        "detail": "Repartir à zéro tout en gardant langue et zone de notification"
+      }
+    },
+    "linkTwitchAccount": "Lier à @{{account}}",
+    "linkTwitchAccountHint": "Activé automatiquement lors de la connexion à cette chaîne Twitch",
+    "createAction": "Créer le profil",
+    "exportTitle": "Exporter un profil / sauvegarde",
+    "scopeSingle": "Profil unique",
+    "scopeSingleDetail": "Exporter la configuration d'un profil",
+    "scopeAll": "Tous les profils ({{count}})",
+    "scopeAllDetail": "Sauvegarde complète de tous les comptes",
+    "selectProfile": "Profil à exporter",
+    "includedContent": "Éléments inclus",
+    "sections": {
+      "appearance": "Apparence & application",
+      "appearanceDetail": "Langue, thème, densité, notifications et filtres",
+      "dashboard": "Disposition du tableau de bord",
+      "dashboardDetail": "Widgets, tailles, zoom et sources navigateur",
+      "chatAndObs": "Chat & OBS",
+      "chatAndObsDetail": "Polices, emotes, surbrillances, notes et adresse OBS",
+      "automation": "Commandes, alertes, variables & objectifs",
+      "automationDetail": "Commandes, alertes chat, compteurs, objectifs, récompenses & tirage",
+      "history": "Historique d'activité & chat",
+      "historyDetail": "{{events}} événements · {{chat}} messages chat"
+    },
+    "securityNote": "Les connexions Twitch, jetons OAuth et mots de passe API restent locaux dans Windows Credential Manager et ne sont jamais exportés.",
+    "copyJson": "Copier le JSON",
+    "copiedToClipboard": "JSON de sauvegarde copié",
+    "exportFile": "Exporter .json",
+    "exportSuccess": "Sauvegarde exportée",
+    "exportError": "Impossible d'exporter la sauvegarde",
+    "importTitle": "Importer un profil / sauvegarde",
+    "dropzoneTitle": "Déposez un fichier .json StreamDash ici",
+    "dropzoneHint": "Ou sélectionnez un fichier / collez le contenu JSON",
+    "chooseFile": "Choisir un fichier",
+    "pasteJson": "Coller du JSON",
+    "pasteJsonPlaceholder": "Collez ici le JSON de sauvegarde StreamDash…",
+    "loadJson": "Analyser la sauvegarde",
+    "chooseAnother": "Choisir un autre fichier",
+    "importModeLabel": "Mode d'importation",
+    "importMode": {
+      "new": {
+        "title": "Créer un nouveau profil",
+        "detail": "Ajouter sans écraser votre profil actuel"
+      },
+      "overwrite": {
+        "title": "Appliquer au profil actif",
+        "detail": "Mettre à jour le profil actif avec les éléments choisis"
+      },
+      "merge": {
+        "title": "Fusionner et mettre à jour",
+        "detail": "Mettre à jour les profils correspondants et ajouter les nouveaux"
+      },
+      "replace_all": {
+        "title": "Tout restaurer",
+        "detail": "Remplacer les profils locaux par cette sauvegarde"
+      }
+    },
+    "activateAfterImport": "Activer le profil juste après l'importation",
+    "mergeCollections": "Conserver commandes & variables existantes",
+    "mergeCollectionsDetail": "Ajouter uniquement les nouveaux éléments au lieu de remplacer",
+    "sectionsToApply": "Sections à importer",
+    "importApply": "Importer la configuration",
+    "importSuccess": "{{count}} profil(s) importé(s) avec succès",
+    "importError": "Impossible d'importer la sauvegarde",
+    "importErrors": {
+      "invalidJson": "Syntaxe JSON invalide.",
+      "unsupportedFormat": "Fichier de sauvegarde StreamDash non valide.",
+      "emptyProfiles": "Le fichier ne contient aucun profil."
+    },
+    "deleteTitle": "Supprimer « {{name}} » ?",
+    "deleteConfirm": "Tous les paramètres, commandes, variables et dispositions enregistrés dans « {{name}} » seront définitivement supprimés."
   }
 }

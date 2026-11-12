@@ -3,6 +3,7 @@ use rusqlite::{params, Connection};
 use serde::{Deserialize, Serialize};
 use serde_json::{json, Value};
 use std::{
+    collections::HashMap,
     path::{Path, PathBuf},
     process::Command,
     sync::{
@@ -526,6 +527,89 @@ fn chat_messages_clear(state: tauri::State<'_, AppState>) -> Result<(), String> 
 }
 
 #[tauri::command]
+fn history_import(
+    state: tauri::State<'_, AppState>,
+    events: Vec<ActivityRecord>,
+    chat_messages: Vec<ChatRecord>,
+    max_events: u32,
+    max_chat_messages: u32,
+) -> Result<(), String> {
+    let conn = state.history.lock().map_err(|_| "Database lock failed")?;
+    let tx = conn.unchecked_transaction().map_err(|e| e.to_string())?;
+    {
+        let mut insert_event = tx
+            .prepare(
+                "INSERT OR IGNORE INTO activity_events
+                 (id,source,event_type,username,display_name,timestamp,amount,currency,message,tier,gift_count,bits,viewer_count,metadata,created_at)
+                 VALUES (?1,?2,?3,?4,?5,?6,?7,?8,?9,?10,?11,?12,?13,?14,?15)",
+            )
+            .map_err(|e| e.to_string())?;
+        let now = now_epoch();
+        for event in events {
+            insert_event
+                .execute(params![
+                    event.id,
+                    event.source,
+                    event.event_type,
+                    event.username,
+                    event.display_name,
+                    event.timestamp,
+                    event.amount,
+                    event.currency,
+                    event.message,
+                    event.tier,
+                    event.gift_count,
+                    event.bits,
+                    event.viewer_count,
+                    event.metadata.to_string(),
+                    now,
+                ])
+                .map_err(|e| e.to_string())?;
+        }
+
+        let mut insert_chat = tx
+            .prepare(
+                "INSERT OR IGNORE INTO chat_messages
+                 (id,login,display_name,color,badges,timestamp,text,parts,first_message,action,reply,deleted)
+                 VALUES (?1,?2,?3,?4,?5,?6,?7,?8,?9,?10,?11,?12)",
+            )
+            .map_err(|e| e.to_string())?;
+        for message in chat_messages {
+            insert_chat
+                .execute(params![
+                    message.id,
+                    message.login,
+                    message.display_name,
+                    message.color,
+                    message.badges.to_string(),
+                    message.timestamp,
+                    message.text,
+                    message.parts.to_string(),
+                    if message.first_message { 1 } else { 0 },
+                    if message.action { 1 } else { 0 },
+                    message.reply.map(|r| r.to_string()),
+                    if message.deleted { 1 } else { 0 },
+                ])
+                .map_err(|e| e.to_string())?;
+        }
+    }
+    let keep_events = max_events.clamp(100, 50_000);
+    tx.execute(
+        "DELETE FROM activity_events WHERE id IN (SELECT id FROM activity_events ORDER BY timestamp DESC LIMIT -1 OFFSET ?1)",
+        [keep_events],
+    )
+    .map_err(|e| e.to_string())?;
+    let keep_chat = max_chat_messages.clamp(100, 50_000);
+    tx.execute(
+        "DELETE FROM chat_messages WHERE id IN (SELECT id FROM chat_messages ORDER BY timestamp DESC LIMIT -1 OFFSET ?1)",
+        [keep_chat],
+    )
+    .map_err(|e| e.to_string())?;
+    tx.commit().map_err(|e| e.to_string())?;
+    Ok(())
+}
+
+#[tauri::command]
 fn settings_load(state: tauri::State<'_, AppState>) -> Result<Value, String> {
     let conn = state.db.lock().map_err(|_| "Database lock failed")?;
     let mut stmt = conn
@@ -557,6 +641,32 @@ fn setting_save(
     ).map_err(|e| e.to_string())?;
     if key == "keepUserData" {
         set_keep_user_data_preference(value.as_bool().unwrap_or(true))?;
+    }
+    Ok(())
+}
+
+#[tauri::command]
+fn settings_save_batch(
+    state: tauri::State<'_, AppState>,
+    entries: HashMap<String, Value>,
+) -> Result<(), String> {
+    let keep_pref = entries.get("keepUserData").and_then(Value::as_bool);
+    let conn = state.db.lock().map_err(|_| "Database lock failed")?;
+    let tx = conn.unchecked_transaction().map_err(|e| e.to_string())?;
+    {
+        let mut stmt = tx
+            .prepare(
+                "INSERT INTO settings(key,value) VALUES(?1,?2) ON CONFLICT(key) DO UPDATE SET value=excluded.value",
+            )
+            .map_err(|e| e.to_string())?;
+        for (key, value) in entries {
+            stmt.execute(params![key, value.to_string()])
+                .map_err(|e| e.to_string())?;
+        }
+    }
+    tx.commit().map_err(|e| e.to_string())?;
+    if let Some(keep) = keep_pref {
+        set_keep_user_data_preference(keep)?;
     }
     Ok(())
 }
@@ -1420,8 +1530,10 @@ pub fn run() {
             chat_message_insert,
             chat_message_update,
             chat_messages_clear,
+            history_import,
             settings_load,
             setting_save,
+            settings_save_batch,
             secret_set,
             secret_get,
             secret_delete,

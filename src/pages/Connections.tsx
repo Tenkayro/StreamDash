@@ -2,6 +2,7 @@ import {
   CheckCircle2,
   Copy,
   ExternalLink,
+  Layers,
   Link2,
   LoaderCircle,
   Plus,
@@ -288,6 +289,9 @@ export function Connections() {
   const obs = useAppStore((state) => state.obs);
   const obsSnapshot = useAppStore((state) => state.obsSnapshot);
   const settings = useAppStore((state) => state.settings);
+  const profiles = useAppStore((state) => state.profiles);
+  const activeProfileId = useAppStore((state) => state.activeProfileId);
+  const activeProfile = profiles.find((p) => p.id === activeProfileId);
   const runtime = useRuntime();
   const [token, setToken] = useState("");
   const [tipeeeStreamKey, setTipeeeStreamKey] = useState("");
@@ -351,6 +355,23 @@ export function Connections() {
           error={twitch.detail}
           action={
             <>
+              {activeProfile && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    useAppStore.getState().setSearchTarget({
+                      page: "settings",
+                      label: activeProfile.name,
+                    });
+                    useAppStore.getState().setPage("settings");
+                  }}
+                  title={t("profiles.openInSettings")}
+                  className="inline-flex shrink-0 items-center gap-1.5 rounded-lg border border-line bg-black/20 px-2.5 py-1.5 text-[11px] text-zinc-300 transition hover:border-accent/40 hover:text-white"
+                >
+                  <Layers size={12} className="text-accent" />
+                  <span className="max-w-28 truncate">{activeProfile.name}</span>
+                </button>
+              )}
               {missingModeration && (
                 <Button
                   variant="primary"

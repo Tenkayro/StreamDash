@@ -5,7 +5,9 @@
     "installedVersion": "Versão {{version}}",
     "reset": "Redefinir",
     "showAll": "Mostrar todos",
-    "starting": "O StreamDash está iniciando"
+    "starting": "O StreamDash está iniciando",
+    "cancel": "Cancelar",
+    "delete": "Excluir"
   },
   "chat": {
     "clear": "Limpar",
@@ -932,7 +934,9 @@
     "violet": "Violeta",
     "wide": "Ampla",
     "windowsNotifications": "Notificações do Windows",
-    "windowsNotificationsDetail": "Mostrar eventos selecionados como notificações nativas."
+    "windowsNotificationsDetail": "Mostrar eventos selecionados como notificações nativas.",
+    "profiles": "Perfis e backup",
+    "profilesAutoSwitch": "Alternar perfil automaticamente por conta da Twitch"
   },
   "statistics": {
     "activityOverTime": "Atividade ao longo do tempo",
@@ -1231,5 +1235,115 @@
       "test": "Testar"
     },
     "testHint": "Teste aqui qualquer modelo com variáveis para ver o resultado."
+  },
+  "profiles": {
+    "defaultName": "Padrão",
+    "copySuffix": "Cópia",
+    "active": "Ativo",
+    "switch": "Alternar",
+    "switched": "Perfil alterado para \"{{name}}\"",
+    "switchedForAccount": "Perfil \"{{name}}\" carregado para @{{account}}",
+    "created": "Perfil \"{{name}}\" criado",
+    "createdForAccount": "Novo perfil criado para @{{account}}",
+    "duplicated": "Perfil \"{{name}}\" duplicado",
+    "deleted": "Perfil excluído",
+    "newProfile": "Novo perfil",
+    "newProfileTitle": "Criar perfil",
+    "import": "Importar",
+    "export": "Exportar",
+    "exportProfile": "Exportar perfil",
+    "profileName": "Nome do perfil",
+    "profileNamePlaceholder": "ex. Stream principal, Just Chatting, Evento…",
+    "rename": "Renomear",
+    "duplicate": "Duplicar",
+    "linkTwitch": "Vincular",
+    "unlink": "Desvincular",
+    "linkHint": "Carregar este perfil automaticamente ao entrar com @{{account}}",
+    "unlinkHint": "Desvincular da troca automática da Twitch",
+    "openInSettings": "Gerenciar perfis nas Configurações",
+    "autoSwitchDetail": "Salva e carrega automaticamente as configurações de cada conta da Twitch",
+    "autoSwitchDetailConnected": "Conectado a @{{account}} · A troca manual continua sempre disponível",
+    "summaryCounts": "{{commands}} comandos · {{variables}} variáveis · {{widgets}} widgets",
+    "browserSourcesCount": "{{count}} fontes de navegador",
+    "baseSetup": "Configuração inicial",
+    "template": {
+      "copy": {
+        "title": "Copiar configuração atual",
+        "detail": "Manter layout, comandos, alertas e preferências"
+      },
+      "clean": {
+        "title": "Padrões limpos",
+        "detail": "Começar do zero mantendo idioma e bandeja"
+      }
+    },
+    "linkTwitchAccount": "Vincular a @{{account}}",
+    "linkTwitchAccountHint": "Ativa automaticamente ao conectar este canal da Twitch",
+    "createAction": "Criar perfil",
+    "exportTitle": "Exportar perfil / backup",
+    "scopeSingle": "Perfil único",
+    "scopeSingleDetail": "Exportar a configuração de um perfil",
+    "scopeAll": "Todos os perfis ({{count}})",
+    "scopeAllDetail": "Backup completo de todas as contas",
+    "selectProfile": "Perfil para exportar",
+    "includedContent": "Conteúdo incluído",
+    "sections": {
+      "appearance": "App e aparência",
+      "appearanceDetail": "Idioma, tema, densidade, notificações e filtros",
+      "dashboard": "Layout do painel",
+      "dashboardDetail": "Widgets, tamanhos, zoom e fontes de navegador",
+      "chatAndObs": "Chat e OBS",
+      "chatAndObsDetail": "Fontes, emotes, destaques, notas e endereço OBS",
+      "automation": "Comandos, alertas, variáveis e metas",
+      "automationDetail": "Comandos, alertas do chat, contadores, metas, recompensas e sorteio",
+      "history": "Histórico de atividade e chat",
+      "historyDetail": "{{events}} eventos · {{chat}} mensagens de chat"
+    },
+    "securityNote": "Logins da Twitch, tokens OAuth e senhas de API permanecem locais no Windows Credential Manager e nunca são exportados.",
+    "copyJson": "Copiar JSON",
+    "copiedToClipboard": "JSON de backup copiado",
+    "exportFile": "Exportar .json",
+    "exportSuccess": "Backup exportado",
+    "exportError": "Não foi possível exportar o backup",
+    "importTitle": "Importar perfil / backup",
+    "dropzoneTitle": "Arraste um arquivo .json do StreamDash aqui",
+    "dropzoneHint": "Ou escolha um arquivo do computador / cole o JSON",
+    "chooseFile": "Escolher arquivo",
+    "pasteJson": "Colar JSON",
+    "pasteJsonPlaceholder": "Cole aqui o JSON de backup do StreamDash…",
+    "loadJson": "Analisar backup",
+    "chooseAnother": "Escolher outro arquivo",
+    "importModeLabel": "Modo de importação",
+    "importMode": {
+      "new": {
+        "title": "Criar novo perfil",
+        "detail": "Adicionar com segurança sem sobrescrever o perfil atual"
+      },
+      "overwrite": {
+        "title": "Aplicar ao perfil ativo",
+        "detail": "Atualizar o perfil atual com os dados selecionados"
+      },
+      "merge": {
+        "title": "Mesclar e atualizar",
+        "detail": "Atualizar perfis correspondentes e adicionar os novos"
+      },
+      "replace_all": {
+        "title": "Restauração completa",
+        "detail": "Substituir os perfis locais por este backup"
+      }
+    },
+    "activateAfterImport": "Ativar perfil imediatamente após importar",
+    "mergeCollections": "Manter comandos e variáveis existentes",
+    "mergeCollectionsDetail": "Adicionar apenas itens novos em vez de substituir",
+    "sectionsToApply": "Seções para importar",
+    "importApply": "Importar configuração",
+    "importSuccess": "{{count}} perfil(is) importado(s) com sucesso",
+    "importError": "Não foi possível importar o backup",
+    "importErrors": {
+      "invalidJson": "Sintaxe JSON inválida.",
+      "unsupportedFormat": "Não é um arquivo de backup válido do StreamDash.",
+      "emptyProfiles": "O arquivo de backup não contém perfis."
+    },
+    "deleteTitle": "Excluir \"{{name}}\"?",
+    "deleteConfirm": "Todas as configurações, comandos, variáveis e layouts salvos em \"{{name}}\" serão removidos permanentemente."
   }
 }

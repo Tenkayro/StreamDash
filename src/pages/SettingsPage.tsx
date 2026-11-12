@@ -16,6 +16,7 @@ import {
   Highlighter,
   Heart,
   Languages,
+  Layers,
   LayoutDashboard,
   ListFilter,
   Maximize2,
@@ -41,6 +42,7 @@ import {
 import { useEffect, useLayoutEffect, useRef, useState, type ReactNode } from "react";
 import { toast } from "sonner";
 import { Button, Card, Toggle } from "../components/ui";
+import { ProfilesSection } from "../components/settings/ProfilesSection";
 import { defaultDashboardWidgets, useAppStore } from "../stores/app-store";
 import { saveSetting } from "../services/native";
 import { errorMessage, isTauri } from "../lib/utils";
@@ -62,6 +64,7 @@ const eventOptions: Array<{ id: ActivityType; label: string; icon: LucideIcon }>
 ];
 
 const settingsSections: Array<{ id: string; label: string; icon: LucideIcon }> = [
+  { id: "profiles", label: "profiles", icon: Layers },
   { id: "general", label: "general", icon: Settings2 },
   { id: "appearance", label: "appearance", icon: Palette },
   { id: "notifications", label: "notifications", icon: Bell },
@@ -471,6 +474,7 @@ export function SettingsPage() {
     <>
       <SettingsNav smooth={settings.animations} />
       <div className="space-y-4">
+        <ProfilesSection />
         <section id="general" className="scroll-mt-16">
           <SectionTitle icon={Settings2}>{t("settings.general")}</SectionTitle>
           <Card className="px-5">

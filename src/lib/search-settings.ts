@@ -1,6 +1,14 @@
 // Settings labels also identify their destination rows.
 export const searchableSettings = [
   {
+    "key": "settings.profiles",
+    "section": "profiles"
+  },
+  {
+    "key": "settings.profilesAutoSwitch",
+    "section": "profiles"
+  },
+  {
     "key": "settings.language",
     "section": "general"
   },

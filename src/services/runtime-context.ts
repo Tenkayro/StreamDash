@@ -1,10 +1,33 @@
 import { createContext, useContext } from "react";
-import type { ChatUserProfile } from "../types";
+import type {
+  ChatUserProfile,
+  ProfileExportBundle,
+  ProfileExportSections,
+} from "../types";
 
 export interface DeviceAuth {
   code: string;
   url: string;
   expiresAt: number;
+}
+export interface CreateProfileOptions {
+  name: string;
+  template: "copy" | "clean";
+  linkCurrentTwitch?: boolean;
+}
+export interface ExportProfileOptions {
+  scope: "profile" | "all";
+  targetProfileId?: string;
+  included: ProfileExportSections;
+  mode: "file" | "clipboard";
+}
+export interface ImportProfileOptions {
+  mode: "new" | "overwrite" | "merge" | "replace_all";
+  profileName?: string;
+  activateAfterImport?: boolean;
+  linkCurrentTwitch?: boolean;
+  mergeCollections?: boolean;
+  sections: ProfileExportSections;
 }
 export interface RuntimeValue {
   deviceAuth?: DeviceAuth;
@@ -47,6 +70,20 @@ export interface RuntimeValue {
     userId: string,
     role: "moderator" | "vip",
     enabled: boolean,
+  ) => Promise<void>;
+  switchProfile: (profileId: string) => Promise<void>;
+  createProfile: (options: CreateProfileOptions) => Promise<string>;
+  renameProfile: (profileId: string, name: string) => Promise<void>;
+  duplicateProfile: (profileId: string) => Promise<string>;
+  deleteProfile: (profileId: string) => Promise<void>;
+  linkProfileToTwitch: (profileId: string, link: boolean) => Promise<void>;
+  setProfilesAutoSwitch: (enabled: boolean) => Promise<void>;
+  exportProfiles: (
+    options: ExportProfileOptions,
+  ) => Promise<"saved" | "copied" | "cancelled">;
+  importProfiles: (
+    bundle: ProfileExportBundle,
+    options: ImportProfileOptions,
   ) => Promise<void>;
   reconnect: () => Promise<void>;
   shutdown: () => Promise<void>;

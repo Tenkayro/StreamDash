@@ -6,6 +6,11 @@ import {
   type ReactNode,
 } from "react";
 import { listen } from "@tauri-apps/api/event";
+import { getVersion } from "@tauri-apps/api/app";
+import {
+  disable as disableAutostart,
+  enable as enableAutostart,
+} from "@tauri-apps/plugin-autostart";
 import { openUrl } from "@tauri-apps/plugin-opener";
 import {
   isPermissionGranted,
@@ -16,11 +21,27 @@ import { toast } from "sonner";
 import { useAppStore } from "../stores/app-store";
 import { errorMessage, isTauri, money } from "../lib/utils";
 import {
+  bootstrapProfiles,
+  buildPersistenceBatch,
+  cloneJson,
+  createCleanSnapshot,
+  createExportBundle,
+  createProfileId,
+  extractSnapshotFromState,
+  mergeSnapshotSections,
+  normalizeProfileSnapshot,
+  resolveProfileForTwitchAccount,
+  saveJsonFile,
+} from "../lib/profiles";
+import {
+  importHistoryBatch,
   loadChatMessages,
   loadEvents,
   loadSettings,
   saveChatMessage,
   saveEvent,
+  saveLocalState,
+  saveLocalStateBatch,
   saveSetting,
   secretDelete,
   secretGet,
@@ -54,8 +75,18 @@ import type {
   DashboardStats,
   GiveawayState,
   GoalMetric,
+  ProfileConfigSnapshot,
+  ProfileExportBundle,
+  TwitchSession,
+  UserProfile,
 } from "../types";
-import { RuntimeContext, type DeviceAuth } from "./runtime-context";
+import {
+  RuntimeContext,
+  type CreateProfileOptions,
+  type DeviceAuth,
+  type ExportProfileOptions,
+  type ImportProfileOptions,
+} from "./runtime-context";
 import i18n, { resolveLanguage } from "../i18n";
 import { resolveVariables } from "../lib/variables";
 
@@ -67,6 +98,10 @@ type Bootstrap = {
   channelRewards?: ChannelPointReward[];
   chatAlerts?: Partial<ChatAlertsConfig>;
   customVariables?: CustomVariable[];
+  rawProfiles?: unknown;
+  rawActiveProfileId?: unknown;
+  rawLastTwitchUserId?: unknown;
+  rawProfilesAutoSwitch?: unknown;
   events: ActivityEvent[];
   chatMessages: ChatMessage[];
 };
@@ -83,6 +118,10 @@ function loadBootstrap() {
       channelRewards,
       chatAlerts,
       customVariables,
+      profiles: rawProfiles,
+      activeProfileId: rawActiveProfileId,
+      lastTwitchUserId: rawLastTwitchUserId,
+      profilesAutoSwitch: rawProfilesAutoSwitch,
       ...restSettings
     } = raw as Partial<AppSettings> & {
       giveaway?: Partial<GiveawayState>;
@@ -91,6 +130,10 @@ function loadBootstrap() {
       channelRewards?: ChannelPointReward[];
       chatAlerts?: Partial<ChatAlertsConfig>;
       customVariables?: CustomVariable[];
+      profiles?: unknown;
+      activeProfileId?: unknown;
+      lastTwitchUserId?: unknown;
+      profilesAutoSwitch?: unknown;
     };
     const settings: Partial<AppSettings> = { ...restSettings };
     if (typeof settings.onboardingCompleted !== "boolean") {
@@ -122,6 +165,10 @@ function loadBootstrap() {
       channelRewards,
       chatAlerts,
       customVariables,
+      rawProfiles,
+      rawActiveProfileId,
+      rawLastTwitchUserId,
+      rawProfilesAutoSwitch,
       events,
       chatMessages,
     };
@@ -169,15 +216,69 @@ export function RuntimeProvider({ children }: { children: ReactNode }) {
   const commandUserCooldownsRef = useRef(new Map<string, number>());
   const twitchAuthAttemptRef = useRef(0);
   const botAuthAttemptRef = useRef(0);
+  const applyingProfileRef = useRef(false);
   const [deviceAuth, setDeviceAuth] = useState<DeviceAuth>();
   const [botDeviceAuth, setBotDeviceAuth] = useState<DeviceAuth>();
   const ready = useAppStore((s) => s.ready);
   const stats = useAppStore((s) => s.stats);
   const events = useAppStore((s) => s.events);
+  const settings = useAppStore((s) => s.settings);
+  const commands = useAppStore((s) => s.commands);
+  const chatAlerts = useAppStore((s) => s.chatAlerts);
+  const customVariables = useAppStore((s) => s.customVariables);
+  const channelRewards = useAppStore((s) => s.channelRewards);
+  const giveaway = useAppStore((s) => s.giveaway);
+  const activeProfileId = useAppStore((s) => s.activeProfileId);
   const goals = useAppStore((s) => s.settings.goals);
   const goalAutomation = useAppStore((s) => s.settings.goalAutomation);
   const giveawayRunning = useAppStore((s) => s.giveaway.running);
   const giveawayTimeout = useAppStore((s) => s.giveaway.inactivityTimeout);
+
+  const buildSyncedProfiles = useCallback(() => {
+    const current = state();
+    const snapshot = extractSnapshotFromState(current);
+    const now = Date.now();
+    const exists = current.profiles.some((p) => p.id === current.activeProfileId);
+    const nextProfiles = exists
+      ? current.profiles.map((p) =>
+          p.id === current.activeProfileId
+            ? { ...p, data: cloneJson(snapshot), updatedAt: now }
+            : p,
+        )
+      : [
+          {
+            id: current.activeProfileId || "default",
+            name: i18n.t("profiles.defaultName"),
+            createdAt: now,
+            updatedAt: now,
+            data: cloneJson(snapshot),
+          },
+          ...current.profiles,
+        ];
+    return { nextProfiles, snapshot };
+  }, [state]);
+
+  useEffect(() => {
+    if (!ready || applyingProfileRef.current) return;
+    const timer = window.setTimeout(() => {
+      if (applyingProfileRef.current) return;
+      const { nextProfiles } = buildSyncedProfiles();
+      state().setProfiles(nextProfiles);
+      void saveLocalState("profiles", nextProfiles).catch(() => undefined);
+    }, 400);
+    return () => window.clearTimeout(timer);
+  }, [
+    ready,
+    settings,
+    commands,
+    chatAlerts,
+    customVariables,
+    channelRewards,
+    giveaway,
+    activeProfileId,
+    buildSyncedProfiles,
+    state,
+  ]);
 
   useEffect(() => {
     if (!giveawayRunning || giveawayTimeout <= 0) return;
@@ -525,6 +626,145 @@ export function RuntimeProvider({ children }: { children: ReactNode }) {
     [state],
   );
 
+  const startObs = useCallback(async () => {
+    if (!isTauri()) return;
+    const current = state();
+    if (!current.settings.obsEnabled) {
+      current.setObs({ phase: "disconnected" });
+      current.setObsSnapshot(undefined);
+      return;
+    }
+    try {
+      const password = await secretGet("obs-password").catch(() => null);
+      if (!state().settings.obsEnabled) return;
+      obsRef.current?.stop();
+      current.setObs({ phase: "connecting" });
+      const client = new ObsClient({
+        address: state().settings.obsAddress || DEFAULT_OBS_ADDRESS,
+        password: password ?? undefined,
+        translate: (key) => i18n.t(key),
+        onSnapshot: (snapshot) => state().setObsSnapshot(snapshot),
+        onState: (phase, detail) => state().setObs({ phase, detail }),
+      });
+      obsRef.current = client;
+      client.start();
+    } catch (error) {
+      current.setObs({ phase: "error", detail: errorMessage(error) });
+    }
+  }, [state]);
+
+  const applySnapshotAndPersist = useCallback(
+    async (
+      rawSnapshot: ProfileConfigSnapshot,
+      meta: {
+        profiles: UserProfile[];
+        activeProfileId: string;
+        lastTwitchUserId?: string;
+        profilesAutoSwitch?: boolean;
+      },
+      options?: { preserveLiveStats?: boolean },
+    ) => {
+      const current = state();
+      const prevSettings = current.settings;
+      const snapshot = normalizeProfileSnapshot(rawSnapshot);
+      applyingProfileRef.current = true;
+      try {
+        current.setProfiles(meta.profiles);
+        current.setActiveProfileId(meta.activeProfileId);
+        if (meta.lastTwitchUserId !== undefined) {
+          current.setLastTwitchUserId(meta.lastTwitchUserId);
+        }
+        if (meta.profilesAutoSwitch !== undefined) {
+          current.setProfilesAutoSwitch(meta.profilesAutoSwitch);
+        }
+        current.setSettings(snapshot.settings);
+        current.setCommands(snapshot.commands);
+        current.setChatAlerts(snapshot.chatAlerts);
+        current.setCustomVariables(snapshot.customVariables);
+        current.setChannelRewards(snapshot.channelRewards);
+        current.setGiveaway(snapshot.giveaway);
+        if (!options?.preserveLiveStats && current.twitch.phase !== "connected") {
+          current.setStats({
+            ...snapshot.cachedStats,
+            live: false,
+          });
+        }
+        if (
+          isTauri() &&
+          snapshot.settings.launchAtStartup !== prevSettings.launchAtStartup
+        ) {
+          await (snapshot.settings.launchAtStartup
+            ? enableAutostart()
+            : disableAutostart()
+          ).catch(() => undefined);
+        }
+        await saveLocalStateBatch(buildPersistenceBatch(snapshot, meta));
+      } finally {
+        window.setTimeout(() => {
+          applyingProfileRef.current = false;
+        }, 0);
+      }
+      if (
+        snapshot.settings.obsEnabled !== prevSettings.obsEnabled ||
+        snapshot.settings.obsAddress !== prevSettings.obsAddress
+      ) {
+        void startObs();
+      }
+    },
+    [startObs, state],
+  );
+
+  const applyTwitchAccountProfile = useCallback(
+    async (session: TwitchSession) => {
+      const current = state();
+      if (!current.profiles.length) return;
+      const currentSnapshot = extractSnapshotFromState(current);
+      const resolved = resolveProfileForTwitchAccount({
+        session,
+        profiles: current.profiles,
+        activeProfileId: current.activeProfileId,
+        lastTwitchUserId: current.lastTwitchUserId,
+        profilesAutoSwitch: current.profilesAutoSwitch,
+        currentSnapshot,
+      });
+      if (resolved.appliedProfile) {
+        await applySnapshotAndPersist(
+          resolved.appliedProfile.data,
+          {
+            profiles: resolved.profiles,
+            activeProfileId: resolved.activeProfileId,
+            lastTwitchUserId: resolved.lastTwitchUserId,
+          },
+          { preserveLiveStats: true },
+        );
+        if (resolved.reason === "switched") {
+          toast.info(
+            i18n.t("profiles.switchedForAccount", {
+              name: resolved.appliedProfile.name,
+              account: session.login,
+            }),
+          );
+        } else if (resolved.reason === "created") {
+          toast.info(
+            i18n.t("profiles.createdForAccount", {
+              account: session.login,
+            }),
+          );
+        }
+        return;
+      }
+      current.setProfiles(resolved.profiles);
+      current.setActiveProfileId(resolved.activeProfileId);
+      current.setLastTwitchUserId(resolved.lastTwitchUserId);
+      await saveLocalStateBatch({
+        profiles: resolved.profiles,
+        activeProfileId: resolved.activeProfileId,
+        lastTwitchUserId: resolved.lastTwitchUserId,
+      }).catch(() => undefined);
+    },
+    [applySnapshotAndPersist, state],
+  );
+
   const startTwitch = useCallback(async () => {
     if (!isTauri()) {
       state().setStatsLoading(false);
@@ -543,6 +783,7 @@ export function RuntimeProvider({ children }: { children: ReactNode }) {
         state().setTwitch({ phase: "disconnected" });
         return;
       }
+      await applyTwitchAccountProfile(session);
       if (needsTwitchPermissionUpdate(session.scopes))
         toast.warning(i18n.t("runtime.permissionsAttention"), {
           id: "twitch-permissions",
@@ -782,7 +1023,7 @@ export function RuntimeProvider({ children }: { children: ReactNode }) {
       state().setChat({ phase: "error", detail: errorMessage(error) });
       state().setTwitch({ phase: "expired", detail: errorMessage(error) });
     }
-  }, [ingest, sendCommandReply, state]);
+  }, [applyTwitchAccountProfile, ingest, sendCommandReply, state]);
 
   const startTwitchBot = useCallback(async () => {
     if (!isTauri()) {
@@ -853,33 +1094,6 @@ export function RuntimeProvider({ children }: { children: ReactNode }) {
     }
   }, [ingest, state]);
 
-  const startObs = useCallback(async () => {
-    if (!isTauri()) return;
-    const current = state();
-    if (!current.settings.obsEnabled) {
-      current.setObs({ phase: "disconnected" });
-      current.setObsSnapshot(undefined);
-      return;
-    }
-    try {
-      const password = await secretGet("obs-password").catch(() => null);
-      if (!state().settings.obsEnabled) return;
-      obsRef.current?.stop();
-      current.setObs({ phase: "connecting" });
-      const client = new ObsClient({
-        address: state().settings.obsAddress || DEFAULT_OBS_ADDRESS,
-        password: password ?? undefined,
-        translate: (key) => i18n.t(key),
-        onSnapshot: (snapshot) => state().setObsSnapshot(snapshot),
-        onState: (phase, detail) => state().setObs({ phase, detail }),
-      });
-      obsRef.current = client;
-      client.start();
-    } catch (error) {
-      current.setObs({ phase: "error", detail: errorMessage(error) });
-    }
-  }, [state]);
-
   const reconnect = useCallback(async () => {
     await Promise.all([
       startTwitch(),
@@ -891,6 +1105,12 @@ export function RuntimeProvider({ children }: { children: ReactNode }) {
   }, [startTwitch, startTwitchBot, startStreamElements, startTipeeeStream, startObs]);
 
   const shutdown = useCallback(async () => {
+    const current = state();
+    if (current.ready) {
+      const { nextProfiles } = buildSyncedProfiles();
+      current.setProfiles(nextProfiles);
+      await saveLocalState("profiles", nextProfiles).catch(() => undefined);
+    }
     twitchRef.current?.stop();
     twitchRef.current = undefined;
     seRef.current?.stop();
@@ -902,7 +1122,7 @@ export function RuntimeProvider({ children }: { children: ReactNode }) {
     chatRef.current?.stop();
     chatRef.current = undefined;
     if (isTauri()) await twitchNative.chatStop().catch(() => undefined);
-  }, []);
+  }, [buildSyncedProfiles, state]);
 
   useEffect(() => {
     let disposed = false;
@@ -917,6 +1137,10 @@ export function RuntimeProvider({ children }: { children: ReactNode }) {
           channelRewards,
           chatAlerts,
           customVariables,
+          rawProfiles,
+          rawActiveProfileId,
+          rawLastTwitchUserId,
+          rawProfilesAutoSwitch,
           events,
           chatMessages,
         } = await loadBootstrap();
@@ -955,6 +1179,26 @@ export function RuntimeProvider({ children }: { children: ReactNode }) {
             events.find((e) => e.currency)?.currency ??
             cachedStats?.donationCurrency,
         });
+        const currentSnapshot = extractSnapshotFromState(state());
+        const profileInit = bootstrapProfiles({
+          rawProfiles,
+          rawActiveProfileId,
+          rawLastTwitchUserId,
+          rawProfilesAutoSwitch,
+          currentSnapshot,
+          defaultName: i18n.t("profiles.defaultName"),
+        });
+        state().setProfiles(profileInit.profiles);
+        state().setActiveProfileId(profileInit.activeProfileId);
+        state().setLastTwitchUserId(profileInit.lastTwitchUserId);
+        state().setProfilesAutoSwitch(profileInit.profilesAutoSwitch);
+        if (!Array.isArray(rawProfiles) || !rawProfiles.length) {
+          void saveLocalStateBatch({
+            profiles: profileInit.profiles,
+            activeProfileId: profileInit.activeProfileId,
+            profilesAutoSwitch: profileInit.profilesAutoSwitch,
+          }).catch(() => undefined);
+        }
         setReady(true);
         await reconnect();
       } catch (error) {
@@ -1334,6 +1578,372 @@ export function RuntimeProvider({ children }: { children: ReactNode }) {
     else await twitchNative.helixDelete(clientId, path, query);
   };
 
+  const switchProfile = async (profileId: string) => {
+    const current = state();
+    const { nextProfiles } = buildSyncedProfiles();
+    const target = nextProfiles.find((p) => p.id === profileId);
+    if (!target || target.id === current.activeProfileId) return;
+    await applySnapshotAndPersist(
+      target.data,
+      { profiles: nextProfiles, activeProfileId: target.id },
+      { preserveLiveStats: true },
+    );
+    toast.success(i18n.t("profiles.switched", { name: target.name }));
+  };
+
+  const createProfile = async (options: CreateProfileOptions) => {
+    const current = state();
+    const { nextProfiles, snapshot } = buildSyncedProfiles();
+    const now = Date.now();
+    const name = options.name.trim() || i18n.t("profiles.defaultName");
+    const twitchId =
+      options.linkCurrentTwitch && current.twitch.userId
+        ? current.twitch.userId
+        : undefined;
+    const twitchLogin =
+      options.linkCurrentTwitch && current.twitch.account
+        ? current.twitch.account
+        : undefined;
+    const newId = createProfileId("profile");
+    const newSnapshot =
+      options.template === "copy"
+        ? cloneJson(snapshot)
+        : createCleanSnapshot(snapshot.settings);
+    const updatedList = twitchId
+      ? nextProfiles.map((p) =>
+          p.twitchUserId === twitchId
+            ? { ...p, twitchUserId: undefined, twitchLogin: undefined }
+            : p,
+        )
+      : nextProfiles;
+    const created: UserProfile = {
+      id: newId,
+      name,
+      twitchUserId: twitchId,
+      twitchLogin,
+      createdAt: now,
+      updatedAt: now,
+      data: newSnapshot,
+    };
+    const finalProfiles = [...updatedList, created];
+    await applySnapshotAndPersist(
+      created.data,
+      { profiles: finalProfiles, activeProfileId: created.id },
+      { preserveLiveStats: true },
+    );
+    toast.success(i18n.t("profiles.created", { name: created.name }));
+    return created.id;
+  };
+
+  const renameProfile = async (profileId: string, name: string) => {
+    const trimmed = name.trim();
+    if (!trimmed) return;
+    const { nextProfiles } = buildSyncedProfiles();
+    const updated = nextProfiles.map((p) =>
+      p.id === profileId ? { ...p, name: trimmed, updatedAt: Date.now() } : p,
+    );
+    state().setProfiles(updated);
+    await saveLocalState("profiles", updated);
+  };
+
+  const duplicateProfile = async (profileId: string) => {
+    const { nextProfiles } = buildSyncedProfiles();
+    const source = nextProfiles.find((p) => p.id === profileId);
+    if (!source) return "";
+    const now = Date.now();
+    const copy: UserProfile = {
+      ...cloneJson(source),
+      id: createProfileId("profile"),
+      name: `${source.name} (${i18n.t("profiles.copySuffix")})`,
+      twitchUserId: undefined,
+      twitchLogin: undefined,
+      createdAt: now,
+      updatedAt: now,
+    };
+    const finalProfiles = [...nextProfiles, copy];
+    state().setProfiles(finalProfiles);
+    await saveLocalState("profiles", finalProfiles);
+    toast.success(i18n.t("profiles.duplicated", { name: copy.name }));
+    return copy.id;
+  };
+
+  const deleteProfile = async (profileId: string) => {
+    const current = state();
+    const { nextProfiles } = buildSyncedProfiles();
+    if (nextProfiles.length <= 1) return;
+    const remaining = nextProfiles.filter((p) => p.id !== profileId);
+    if (profileId === current.activeProfileId) {
+      const nextActive = remaining[0];
+      await applySnapshotAndPersist(
+        nextActive.data,
+        { profiles: remaining, activeProfileId: nextActive.id },
+        { preserveLiveStats: true },
+      );
+    } else {
+      current.setProfiles(remaining);
+      await saveLocalState("profiles", remaining);
+    }
+    toast.success(i18n.t("profiles.deleted"));
+  };
+
+  const linkProfileToTwitch = async (profileId: string, link: boolean) => {
+    const current = state();
+    const { nextProfiles } = buildSyncedProfiles();
+    const userId = current.twitch.userId;
+    const login = current.twitch.account;
+    if (link && (!userId || !login)) return;
+    const now = Date.now();
+    const updated = nextProfiles.map((p) => {
+      if (p.id === profileId) {
+        return {
+          ...p,
+          twitchUserId: link ? userId : undefined,
+          twitchLogin: link ? login : undefined,
+          updatedAt: now,
+        };
+      }
+      if (link && userId && p.twitchUserId === userId) {
+        return {
+          ...p,
+          twitchUserId: undefined,
+          twitchLogin: undefined,
+          updatedAt: now,
+        };
+      }
+      return p;
+    });
+    current.setProfiles(updated);
+    await saveLocalState("profiles", updated);
+  };
+
+  const setProfilesAutoSwitchPref = async (enabled: boolean) => {
+    state().setProfilesAutoSwitch(enabled);
+    await saveLocalState("profilesAutoSwitch", enabled);
+  };
+
+  const exportProfiles = async (options: ExportProfileOptions) => {
+    const { nextProfiles } = buildSyncedProfiles();
+    state().setProfiles(nextProfiles);
+    await saveLocalState("profiles", nextProfiles).catch(() => undefined);
+
+    const appVersion = isTauri()
+      ? await getVersion().catch(() => undefined)
+      : undefined;
+    const current = state();
+    const bundle = createExportBundle({
+      scope: options.scope,
+      profiles: nextProfiles,
+      activeProfileId: current.activeProfileId,
+      targetProfileId: options.targetProfileId,
+      included: options.included,
+      appVersion,
+      events: options.included.history ? current.events : undefined,
+      chatMessages: options.included.history ? current.chatMessages : undefined,
+    });
+    const json = JSON.stringify(bundle, null, 2);
+    if (options.mode === "clipboard") {
+      await navigator.clipboard.writeText(json);
+      toast.success(i18n.t("profiles.copiedToClipboard"));
+      return "copied" as const;
+    }
+    const targetName =
+      options.scope === "all"
+        ? "all"
+        : (
+            nextProfiles.find(
+              (p) => p.id === (options.targetProfileId ?? current.activeProfileId),
+            )?.name ?? "profile"
+          )
+            .toLowerCase()
+            .replace(/[^a-z0-9_-]+/g, "-")
+            .replace(/^-+|-+$/g, "") || "profile";
+    const dateStamp = new Date().toISOString().slice(0, 10);
+    const filename = `streamdash-${targetName}-${dateStamp}.json`;
+    const result = await saveJsonFile(filename, json);
+    if (result === "saved") {
+      toast.success(i18n.t("profiles.exportSuccess"));
+    }
+    return result;
+  };
+
+  const importProfiles = async (
+    bundle: ProfileExportBundle,
+    options: ImportProfileOptions,
+  ) => {
+    const current = state();
+    const { nextProfiles, snapshot: activeSnapshot } = buildSyncedProfiles();
+    const now = Date.now();
+    let finalProfiles = [...nextProfiles];
+    let nextActiveId = current.activeProfileId;
+
+    if (options.mode === "replace_all") {
+      finalProfiles = bundle.profiles.map((incoming) => ({
+        ...cloneJson(incoming),
+        data: mergeSnapshotSections(
+          createCleanSnapshot(activeSnapshot.settings),
+          incoming.data,
+          options.sections,
+        ),
+        updatedAt: now,
+      }));
+      const preferred =
+        bundle.activeProfileId &&
+        finalProfiles.some((p) => p.id === bundle.activeProfileId)
+          ? bundle.activeProfileId
+          : finalProfiles[0].id;
+      nextActiveId = preferred;
+    } else if (options.mode === "merge") {
+      const byId = new Map(finalProfiles.map((p) => [p.id, p]));
+      const byTwitch = new Map(
+        finalProfiles
+          .filter((p) => p.twitchUserId)
+          .map((p) => [p.twitchUserId as string, p]),
+      );
+      for (const incoming of bundle.profiles) {
+        const match =
+          byId.get(incoming.id) ??
+          (incoming.twitchUserId ? byTwitch.get(incoming.twitchUserId) : undefined);
+        if (match) {
+          const mergedData = mergeSnapshotSections(
+            match.data,
+            incoming.data,
+            options.sections,
+            { mergeCollections: options.mergeCollections },
+          );
+          const updatedProfile: UserProfile = {
+            ...match,
+            twitchLogin: incoming.twitchLogin ?? match.twitchLogin,
+            updatedAt: now,
+            data: mergedData,
+          };
+          finalProfiles = finalProfiles.map((p) =>
+            p.id === match.id ? updatedProfile : p,
+          );
+          if (
+            options.activateAfterImport &&
+            incoming.id === (bundle.activeProfileId ?? bundle.profiles[0]?.id)
+          ) {
+            nextActiveId = match.id;
+          }
+        } else {
+          const newId = byId.has(incoming.id)
+            ? createProfileId("profile")
+            : incoming.id;
+          const cleanBase = createCleanSnapshot(activeSnapshot.settings);
+          const added: UserProfile = {
+            ...cloneJson(incoming),
+            id: newId,
+            createdAt: now,
+            updatedAt: now,
+            data: mergeSnapshotSections(cleanBase, incoming.data, options.sections),
+          };
+          finalProfiles.push(added);
+          byId.set(added.id, added);
+          if (
+            options.activateAfterImport &&
+            incoming.id === (bundle.activeProfileId ?? bundle.profiles[0]?.id)
+          ) {
+            nextActiveId = added.id;
+          }
+        }
+      }
+    } else {
+      const sourceProfile = bundle.profiles[0];
+      if (!sourceProfile) return;
+
+      if (options.mode === "overwrite") {
+        const target =
+          finalProfiles.find((p) => p.id === current.activeProfileId) ??
+          finalProfiles[0];
+        const merged = mergeSnapshotSections(
+          target.data,
+          sourceProfile.data,
+          options.sections,
+          { mergeCollections: options.mergeCollections },
+        );
+        finalProfiles = finalProfiles.map((p) =>
+          p.id === target.id ? { ...p, data: merged, updatedAt: now } : p,
+        );
+        nextActiveId = target.id;
+      } else {
+        const cleanBase = createCleanSnapshot(activeSnapshot.settings);
+        const merged = mergeSnapshotSections(
+          cleanBase,
+          sourceProfile.data,
+          options.sections,
+        );
+        const linkTwitchId =
+          options.linkCurrentTwitch && current.twitch.userId
+            ? current.twitch.userId
+            : sourceProfile.twitchUserId;
+        const linkTwitchLogin =
+          options.linkCurrentTwitch && current.twitch.account
+            ? current.twitch.account
+            : sourceProfile.twitchLogin;
+        if (linkTwitchId) {
+          finalProfiles = finalProfiles.map((p) =>
+            p.twitchUserId === linkTwitchId
+              ? { ...p, twitchUserId: undefined, twitchLogin: undefined }
+              : p,
+          );
+        }
+        const created: UserProfile = {
+          id: createProfileId("profile"),
+          name: options.profileName?.trim() || sourceProfile.name,
+          twitchUserId: linkTwitchId,
+          twitchLogin: linkTwitchLogin,
+          createdAt: now,
+          updatedAt: now,
+          data: merged,
+        };
+        finalProfiles.push(created);
+        if (options.activateAfterImport !== false) {
+          nextActiveId = created.id;
+        }
+      }
+    }
+
+    const activeTarget =
+      finalProfiles.find((p) => p.id === nextActiveId) ?? finalProfiles[0];
+    if (activeTarget.id === current.activeProfileId || options.mode === "overwrite" || options.activateAfterImport !== false) {
+      await applySnapshotAndPersist(
+        activeTarget.data,
+        { profiles: finalProfiles, activeProfileId: activeTarget.id },
+        { preserveLiveStats: true },
+      );
+    } else {
+      current.setProfiles(finalProfiles);
+      await saveLocalState("profiles", finalProfiles);
+    }
+
+    if (options.sections.history && (bundle.events?.length || bundle.chatMessages?.length)) {
+      const incomingEvents = bundle.events ?? [];
+      const incomingChat = bundle.chatMessages ?? [];
+      const maxEvents = activeTarget.data.settings.maximumEvents ?? 5000;
+      const maxChat = activeTarget.data.settings.maximumChatMessages ?? 1000;
+      await importHistoryBatch(incomingEvents, incomingChat, maxEvents, maxChat);
+      const [events, chatMessages] = await Promise.all([
+        loadEvents(maxEvents),
+        loadChatMessages(maxChat),
+      ]);
+      if (isTauri()) {
+        current.setEvents(events);
+        current.setChatMessages(chatMessages);
+      } else {
+        current.setEvents(
+          [...incomingEvents, ...current.events].slice(0, maxEvents),
+        );
+        current.setChatMessages(
+          [...current.chatMessages, ...incomingChat].slice(-maxChat),
+        );
+      }
+    }
+
+    toast.success(
+      i18n.t("profiles.importSuccess", { count: bundle.profiles.length }),
+    );
+  };
+
   return (
     <RuntimeContext.Provider
       value={{
@@ -1370,6 +1980,15 @@ export function RuntimeProvider({ children }: { children: ReactNode }) {
         unbanChatUser,
         deleteChatMessage,
         setChatUserRole,
+        switchProfile,
+        createProfile,
+        renameProfile,
+        duplicateProfile,
+        deleteProfile,
+        linkProfileToTwitch,
+        setProfilesAutoSwitch: setProfilesAutoSwitchPref,
+        exportProfiles,
+        importProfiles,
         reconnect,
         shutdown,
       }}

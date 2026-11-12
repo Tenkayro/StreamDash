@@ -5,7 +5,9 @@
     "installedVersion": "Versión {{version}}",
     "reset": "Restablecer",
     "showAll": "Mostrar todos",
-    "starting": "StreamDash se está iniciando"
+    "starting": "StreamDash se está iniciando",
+    "cancel": "Cancelar",
+    "delete": "Eliminar"
   },
   "chat": {
     "clear": "Borrar",
@@ -932,7 +934,9 @@
     "violet": "Violeta",
     "wide": "Amplia",
     "windowsNotifications": "Notificaciones de Windows",
-    "windowsNotificationsDetail": "Mostrar eventos seleccionados como notificaciones nativas."
+    "windowsNotificationsDetail": "Mostrar eventos seleccionados como notificaciones nativas.",
+    "profiles": "Perfiles y respaldo",
+    "profilesAutoSwitch": "Cambiar perfil automáticamente según la cuenta de Twitch"
   },
   "statistics": {
     "activityOverTime": "Actividad a lo largo del tiempo",
@@ -1231,5 +1235,115 @@
       "test": "Probar"
     },
     "testHint": "Prueba aquí cualquier plantilla con variables para ver el resultado."
+  },
+  "profiles": {
+    "defaultName": "Predeterminado",
+    "copySuffix": "Copia",
+    "active": "Activo",
+    "switch": "Cambiar",
+    "switched": "Cambiado al perfil \"{{name}}\"",
+    "switchedForAccount": "Perfil \"{{name}}\" cargado para @{{account}}",
+    "created": "Perfil \"{{name}}\" creado",
+    "createdForAccount": "Perfil nuevo creado para @{{account}}",
+    "duplicated": "Perfil \"{{name}}\" duplicado",
+    "deleted": "Perfil eliminado",
+    "newProfile": "Nuevo perfil",
+    "newProfileTitle": "Crear perfil",
+    "import": "Importar",
+    "export": "Exportar",
+    "exportProfile": "Exportar perfil",
+    "profileName": "Nombre del perfil",
+    "profileNamePlaceholder": "ej. Stream principal, Just Chatting, Evento…",
+    "rename": "Renombrar",
+    "duplicate": "Duplicar",
+    "linkTwitch": "Vincular",
+    "unlink": "Desvincular",
+    "linkHint": "Cargar este perfil automáticamente al iniciar sesión con @{{account}}",
+    "unlinkHint": "Desvincular del cambio automático de Twitch",
+    "openInSettings": "Gestionar perfiles en Ajustes",
+    "autoSwitchDetail": "Guarda y carga automáticamente la configuración de cada cuenta de Twitch",
+    "autoSwitchDetailConnected": "Conectado a @{{account}} · El cambio manual siempre sigue disponible",
+    "summaryCounts": "{{commands}} comandos · {{variables}} variables · {{widgets}} widgets",
+    "browserSourcesCount": "{{count}} fuentes de navegador",
+    "baseSetup": "Configuración inicial",
+    "template": {
+      "copy": {
+        "title": "Copiar configuración actual",
+        "detail": "Conservar diseño, comandos, alertas y ajustes"
+      },
+      "clean": {
+        "title": "Valores predeterminados",
+        "detail": "Empezar limpio manteniendo idioma y bandeja"
+      }
+    },
+    "linkTwitchAccount": "Vincular con @{{account}}",
+    "linkTwitchAccountHint": "Se activa automáticamente al conectar este canal de Twitch",
+    "createAction": "Crear perfil",
+    "exportTitle": "Exportar perfil / respaldo",
+    "scopeSingle": "Un solo perfil",
+    "scopeSingleDetail": "Exportar la configuración de un perfil",
+    "scopeAll": "Todos los perfiles ({{count}})",
+    "scopeAllDetail": "Respaldo completo de todas las cuentas",
+    "selectProfile": "Perfil a exportar",
+    "includedContent": "Configuración incluida",
+    "sections": {
+      "appearance": "App y apariencia",
+      "appearanceDetail": "Idioma, tema, densidad, notificaciones y filtros",
+      "dashboard": "Diseño del panel",
+      "dashboardDetail": "Widgets, tamaños, zoom y fuentes de navegador",
+      "chatAndObs": "Chat y OBS",
+      "chatAndObsDetail": "Fuentes, emotes, resaltados, notas y dirección OBS",
+      "automation": "Comandos, alertas, variables y metas",
+      "automationDetail": "Comandos, alertas de chat, contadores, metas, recompensas y sorteo",
+      "history": "Historial de actividad y chat",
+      "historyDetail": "{{events}} eventos · {{chat}} mensajes de chat"
+    },
+    "securityNote": "Los inicios de sesión, tokens OAuth y contraseñas de API se mantienen locales en Windows Credential Manager y nunca se exportan.",
+    "copyJson": "Copiar JSON",
+    "copiedToClipboard": "JSON copiado al portapapeles",
+    "exportFile": "Exportar .json",
+    "exportSuccess": "Respaldo exportado",
+    "exportError": "No se pudo exportar el respaldo",
+    "importTitle": "Importar perfil / respaldo",
+    "dropzoneTitle": "Arrastra aquí un archivo .json de StreamDash",
+    "dropzoneHint": "O elige un archivo de tu equipo / pega el texto JSON",
+    "chooseFile": "Elegir archivo",
+    "pasteJson": "Pegar JSON",
+    "pasteJsonPlaceholder": "Pega aquí el JSON exportado de StreamDash…",
+    "loadJson": "Analizar respaldo",
+    "chooseAnother": "Elegir otro archivo",
+    "importModeLabel": "Modo de importación",
+    "importMode": {
+      "new": {
+        "title": "Crear nuevo perfil",
+        "detail": "Añadir sin sobrescribir tu perfil actual"
+      },
+      "overwrite": {
+        "title": "Aplicar al perfil activo",
+        "detail": "Actualizar el perfil activo con los datos seleccionados"
+      },
+      "merge": {
+        "title": "Combinar y actualizar",
+        "detail": "Actualizar perfiles coincidentes y añadir nuevos"
+      },
+      "replace_all": {
+        "title": "Restaurar todo",
+        "detail": "Reemplazar los perfiles locales con este respaldo"
+      }
+    },
+    "activateAfterImport": "Activar perfil inmediatamente tras importar",
+    "mergeCollections": "Conservar comandos y variables existentes",
+    "mergeCollectionsDetail": "Añadir solo elementos nuevos en lugar de reemplazar",
+    "sectionsToApply": "Secciones a importar",
+    "importApply": "Importar configuración",
+    "importSuccess": "{{count}} perfil(es) importado(s) correctamente",
+    "importError": "No se pudo importar el respaldo",
+    "importErrors": {
+      "invalidJson": "Sintaxis JSON no válida.",
+      "unsupportedFormat": "No es un archivo de respaldo válido de StreamDash.",
+      "emptyProfiles": "El archivo no contiene ningún perfil."
+    },
+    "deleteTitle": "¿Eliminar \"{{name}}\"?",
+    "deleteConfirm": "Todos los ajustes, comandos, variables y diseños guardados en \"{{name}}\" se eliminarán permanentemente."
   }
 }

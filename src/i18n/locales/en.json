@@ -5,7 +5,9 @@
     "installedVersion": "Version {{version}}",
     "reset": "Reset",
     "showAll": "Show all",
-    "starting": "StreamDash is starting"
+    "starting": "StreamDash is starting",
+    "cancel": "Cancel",
+    "delete": "Delete"
   },
   "chat": {
     "clear": "Clear",
@@ -932,7 +934,9 @@
     "violet": "Violet",
     "wide": "Wide",
     "windowsNotifications": "Windows notifications",
-    "windowsNotificationsDetail": "Show selected stream events as native notifications."
+    "windowsNotificationsDetail": "Show selected stream events as native notifications.",
+    "profiles": "Profiles & Backup",
+    "profilesAutoSwitch": "Auto-switch profile per Twitch account"
   },
   "statistics": {
     "activityOverTime": "Activity over time",
@@ -1231,5 +1235,115 @@
       "test": "Test"
     },
     "testHint": "Try any template with variables here to see how it looks in chat."
+  },
+  "profiles": {
+    "defaultName": "Default",
+    "copySuffix": "Copy",
+    "active": "Active",
+    "switch": "Switch",
+    "switched": "Switched to profile \"{{name}}\"",
+    "switchedForAccount": "Loaded profile \"{{name}}\" for @{{account}}",
+    "created": "Created profile \"{{name}}\"",
+    "createdForAccount": "Created a fresh profile for @{{account}}",
+    "duplicated": "Duplicated profile \"{{name}}\"",
+    "deleted": "Profile deleted",
+    "newProfile": "New profile",
+    "newProfileTitle": "Create profile",
+    "import": "Import",
+    "export": "Export",
+    "exportProfile": "Export profile",
+    "profileName": "Profile name",
+    "profileNamePlaceholder": "e.g. Main Stream, Just Chatting, Event…",
+    "rename": "Rename",
+    "duplicate": "Duplicate",
+    "linkTwitch": "Link",
+    "unlink": "Unlink",
+    "linkHint": "Auto-load this profile when signing in as @{{account}}",
+    "unlinkHint": "Detach from automatic Twitch account switching",
+    "openInSettings": "Manage profiles in Settings",
+    "autoSwitchDetail": "Automatically saves & loads each Twitch account's own configuration",
+    "autoSwitchDetailConnected": "Linked to @{{account}} · Manual switching always remains available",
+    "summaryCounts": "{{commands}} commands · {{variables}} variables · {{widgets}} widgets",
+    "browserSourcesCount": "{{count}} browser sources",
+    "baseSetup": "Starting configuration",
+    "template": {
+      "copy": {
+        "title": "Copy current setup",
+        "detail": "Keep your layout, commands, alerts & preferences"
+      },
+      "clean": {
+        "title": "Clean defaults",
+        "detail": "Start fresh while keeping language & tray settings"
+      }
+    },
+    "linkTwitchAccount": "Link to @{{account}}",
+    "linkTwitchAccountHint": "Automatically activates when connecting this Twitch channel",
+    "createAction": "Create profile",
+    "exportTitle": "Export profile / backup",
+    "scopeSingle": "Single profile",
+    "scopeSingleDetail": "Export one profile configuration",
+    "scopeAll": "All profiles ({{count}})",
+    "scopeAllDetail": "Complete backup across all accounts",
+    "selectProfile": "Profile to export",
+    "includedContent": "Included configuration",
+    "sections": {
+      "appearance": "App & appearance",
+      "appearanceDetail": "Language, theme, density, notifications & event filters",
+      "dashboard": "Dashboard layout",
+      "dashboardDetail": "Widgets, sizes, zoom level & custom browser sources",
+      "chatAndObs": "Chat & OBS",
+      "chatAndObsDetail": "Fonts, emotes, highlights, viewer notes & OBS address",
+      "automation": "Commands, alerts, variables & goals",
+      "automationDetail": "Bot commands, chat alerts, counters, goals, rewards & giveaway",
+      "history": "Activity & chat history",
+      "historyDetail": "{{events}} events · {{chat}} chat messages"
+    },
+    "securityNote": "Twitch logins, OAuth tokens and API passwords stay local in Windows Credential Manager and are never exported.",
+    "copyJson": "Copy JSON",
+    "copiedToClipboard": "Backup JSON copied to clipboard",
+    "exportFile": "Export .json",
+    "exportSuccess": "Backup exported",
+    "exportError": "Could not export backup",
+    "importTitle": "Import profile / backup",
+    "dropzoneTitle": "Drop a StreamDash .json backup file here",
+    "dropzoneHint": "Or choose a file from your computer / paste JSON text",
+    "chooseFile": "Choose file",
+    "pasteJson": "Paste JSON",
+    "pasteJsonPlaceholder": "Paste exported StreamDash backup JSON here…",
+    "loadJson": "Inspect backup",
+    "chooseAnother": "Choose another file",
+    "importModeLabel": "Import mode",
+    "importMode": {
+      "new": {
+        "title": "Create new profile",
+        "detail": "Safely add without overwriting current profile"
+      },
+      "overwrite": {
+        "title": "Apply to active profile",
+        "detail": "Update the currently active profile with selected data"
+      },
+      "merge": {
+        "title": "Merge & update profiles",
+        "detail": "Update matching profiles and add missing ones"
+      },
+      "replace_all": {
+        "title": "Full restore (replace all)",
+        "detail": "Replace local profile list with this backup"
+      }
+    },
+    "activateAfterImport": "Activate profile immediately after import",
+    "mergeCollections": "Keep existing commands & variables",
+    "mergeCollectionsDetail": "Only add new commands, variables and rewards instead of replacing",
+    "sectionsToApply": "Sections to import",
+    "importApply": "Import configuration",
+    "importSuccess": "Imported {{count}} profile(s) successfully",
+    "importError": "Could not import backup",
+    "importErrors": {
+      "invalidJson": "Invalid JSON syntax.",
+      "unsupportedFormat": "Not a valid StreamDash backup file.",
+      "emptyProfiles": "The backup file contains no profiles."
+    },
+    "deleteTitle": "Delete \"{{name}}\"?",
+    "deleteConfirm": "All settings, commands, variables and dashboard layouts stored inside \"{{name}}\" will be permanently removed."
   }
 }

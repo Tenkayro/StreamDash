@@ -50,6 +50,48 @@ export async function saveLocalState(key: string, value: unknown) {
     );
   }
 }
+export async function saveLocalStateBatch(entries: Record<string, unknown>) {
+  if (!Object.keys(entries).length) return;
+  if (isTauri()) {
+    try {
+      await invoke("settings_save_batch", { entries });
+      return;
+    } catch {
+      for (const [key, value] of Object.entries(entries)) {
+        await saveLocalState(key, value);
+      }
+      return;
+    }
+  }
+  const existing = await loadSettings();
+  localStorage.setItem(
+    "streamdash-settings",
+    JSON.stringify({ ...existing, ...entries }),
+  );
+}
+export async function importHistoryBatch(
+  events: ActivityEvent[],
+  chatMessages: ChatMessage[],
+  maxEvents = 5000,
+  maxChatMessages = 1000,
+) {
+  if (!isTauri() || (!events.length && !chatMessages.length)) return;
+  try {
+    await invoke("history_import", {
+      events,
+      chatMessages,
+      maxEvents,
+      maxChatMessages,
+    });
+  } catch {
+    for (const event of events.slice(0, maxEvents)) {
+      await saveEvent(event, maxEvents);
+    }
+    for (const message of chatMessages.slice(-maxChatMessages)) {
+      await saveChatMessage(message, maxChatMessages);
+    }
+  }
+}
 export interface SpotifyOverlayInfo { url: string; width: number; height: number }
 export interface SpotifyNowPlaying {
   available: boolean;

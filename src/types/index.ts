@@ -296,3 +296,44 @@ export interface ChatAlertsConfig {
   gameChange: ChatAlertItem
   titleChange: ChatAlertItem
 }
+
+export interface ProfileConfigSnapshot {
+  settings: AppSettings
+  commands: ChatCommand[]
+  chatAlerts: ChatAlertsConfig
+  customVariables: CustomVariable[]
+  channelRewards: ChannelPointReward[]
+  giveaway: GiveawayState
+  cachedStats: Partial<DashboardStats>
+}
+
+export interface UserProfile {
+  id: string
+  name: string
+  twitchUserId?: string
+  twitchLogin?: string
+  createdAt: number
+  updatedAt: number
+  data: ProfileConfigSnapshot
+}
+
+export interface ProfileExportSections {
+  appearance: boolean
+  dashboard: boolean
+  chatAndObs: boolean
+  automation: boolean
+  history: boolean
+}
+
+export interface ProfileExportBundle {
+  format: 'streamdash-backup'
+  version: 1
+  exportedAt: string
+  appVersion?: string
+  scope: 'profile' | 'all'
+  included: ProfileExportSections
+  activeProfileId?: string
+  profiles: UserProfile[]
+  events?: ActivityEvent[]
+  chatMessages?: ChatMessage[]
+}

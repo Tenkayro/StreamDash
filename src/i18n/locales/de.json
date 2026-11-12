@@ -5,7 +5,9 @@
     "installedVersion": "Version {{version}}",
     "reset": "Zurücksetzen",
     "showAll": "Alle anzeigen",
-    "starting": "StreamDash wird gestartet"
+    "starting": "StreamDash wird gestartet",
+    "cancel": "Abbrechen",
+    "delete": "Löschen"
   },
   "chat": {
     "clear": "Leeren",
@@ -932,7 +934,9 @@
     "violet": "Violett",
     "wide": "Breit",
     "windowsNotifications": "Windows-Benachrichtigungen",
-    "windowsNotificationsDetail": "Ausgewählte Stream-Ereignisse als native Benachrichtigungen anzeigen."
+    "windowsNotificationsDetail": "Ausgewählte Stream-Ereignisse als native Benachrichtigungen anzeigen.",
+    "profiles": "Profile & Backup",
+    "profilesAutoSwitch": "Profil automatisch nach Twitch-Account wechseln"
   },
   "statistics": {
     "activityOverTime": "Aktivität im Zeitverlauf",
@@ -1231,5 +1235,115 @@
       "test": "Testen"
     },
     "testHint": "Teste hier eine Nachricht mit Variablen und sieh direkt das Ergebnis."
+  },
+  "profiles": {
+    "defaultName": "Standard",
+    "copySuffix": "Kopie",
+    "active": "Aktiv",
+    "switch": "Wechseln",
+    "switched": "Zu Profil „{{name}}“ gewechselt",
+    "switchedForAccount": "Profil „{{name}}“ für @{{account}} geladen",
+    "created": "Profil „{{name}}“ erstellt",
+    "createdForAccount": "Neues Profil für @{{account}} erstellt",
+    "duplicated": "Profil „{{name}}“ dupliziert",
+    "deleted": "Profil gelöscht",
+    "newProfile": "Neues Profil",
+    "newProfileTitle": "Profil erstellen",
+    "import": "Importieren",
+    "export": "Exportieren",
+    "exportProfile": "Profil exportieren",
+    "profileName": "Profilname",
+    "profileNamePlaceholder": "z. B. Haupt-Stream, Just Chatting, Event…",
+    "rename": "Umbenennen",
+    "duplicate": "Duplizieren",
+    "linkTwitch": "Verknüpfen",
+    "unlink": "Lösen",
+    "linkHint": "Dieses Profil automatisch beim Login mit @{{account}} laden",
+    "unlinkHint": "Automatische Twitch-Account-Verknüpfung entfernen",
+    "openInSettings": "Profile in den Einstellungen verwalten",
+    "autoSwitchDetail": "Speichert und lädt automatisch alle Einstellungen pro Twitch-Account",
+    "autoSwitchDetailConnected": "Verbunden mit @{{account}} · Manuelles Wechseln bleibt jederzeit möglich",
+    "summaryCounts": "{{commands}} Commands · {{variables}} Variablen · {{widgets}} Widgets",
+    "browserSourcesCount": "{{count}} Browser-Quellen",
+    "baseSetup": "Ausgangsbasis",
+    "template": {
+      "copy": {
+        "title": "Aktuelles Setup kopieren",
+        "detail": "Layout, Commands, Alerts & Einstellungen übernehmen"
+      },
+      "clean": {
+        "title": "Saubere Standards",
+        "detail": "Neu starten (Sprache & Tray-Optionen bleiben erhalten)"
+      }
+    },
+    "linkTwitchAccount": "Mit @{{account}} verknüpfen",
+    "linkTwitchAccountHint": "Wird automatisch aktiviert, wenn dieser Twitch-Kanal verbunden wird",
+    "createAction": "Profil erstellen",
+    "exportTitle": "Profil / Backup exportieren",
+    "scopeSingle": "Einzelnes Profil",
+    "scopeSingleDetail": "Konfiguration eines Profils sichern",
+    "scopeAll": "Alle Profile ({{count}})",
+    "scopeAllDetail": "Komplett-Backup aller gespeicherten Profile",
+    "selectProfile": "Zu exportierendes Profil",
+    "includedContent": "Enthaltene Konfigurationen",
+    "sections": {
+      "appearance": "App & Darstellung",
+      "appearanceDetail": "Sprache, Design, Dichte, Benachrichtigungen & Event-Filter",
+      "dashboard": "Dashboard-Layout",
+      "dashboardDetail": "Widgets, Größen, Zoomstufe & eigene Browser-Quellen",
+      "chatAndObs": "Chat & OBS",
+      "chatAndObsDetail": "Schrift, Emotes, Highlights, Notizen & OBS-Adresse",
+      "automation": "Commands, Alerts, Variablen & Ziele",
+      "automationDetail": "Befehle, Chat Alerts, Zähler, Ziele, Kanalpunkte & Giveaway",
+      "history": "Aktivitäts- & Chat-Verlauf",
+      "historyDetail": "{{events}} Events · {{chat}} Chat-Nachrichten"
+    },
+    "securityNote": "Twitch-Logins, OAuth-Tokens und API-Passwörter bleiben sicher im Windows Credential Manager und werden nie exportiert.",
+    "copyJson": "JSON kopieren",
+    "copiedToClipboard": "Backup-JSON in Zwischenablage kopiert",
+    "exportFile": "Als .json speichern",
+    "exportSuccess": "Backup exportiert",
+    "exportError": "Backup konnte nicht exportiert werden",
+    "importTitle": "Profil / Backup importieren",
+    "dropzoneTitle": "StreamDash-.json-Backup hierher ziehen",
+    "dropzoneHint": "Oder Datei vom Computer wählen / JSON direkt einfügen",
+    "chooseFile": "Datei wählen",
+    "pasteJson": "JSON einfügen",
+    "pasteJsonPlaceholder": "Exportiertes StreamDash-Backup-JSON hier einfügen…",
+    "loadJson": "Backup prüfen",
+    "chooseAnother": "Andere Datei wählen",
+    "importModeLabel": "Import-Modus",
+    "importMode": {
+      "new": {
+        "title": "Als neues Profil anlegen",
+        "detail": "Sicher hinzufügen, ohne dein aktuelles Profil zu überschreiben"
+      },
+      "overwrite": {
+        "title": "Auf aktives Profil anwenden",
+        "detail": "Ausgewählte Bereiche in das aktuelle Profil übernehmen"
+      },
+      "merge": {
+        "title": "Zusammenführen & ergänzen",
+        "detail": "Passende Profile aktualisieren und fehlende hinzufügen"
+      },
+      "replace_all": {
+        "title": "Komplett wiederherstellen",
+        "detail": "Alle lokalen Profile durch dieses Backup ersetzen"
+      }
+    },
+    "activateAfterImport": "Profil nach dem Import direkt aktivieren",
+    "mergeCollections": "Bestehende Commands & Variablen behalten",
+    "mergeCollectionsDetail": "Nur neue Commands, Variablen & Belohnungen hinzufügen statt ersetzen",
+    "sectionsToApply": "Zu übernehmende Bereiche",
+    "importApply": "Konfiguration übernehmen",
+    "importSuccess": "{{count}} Profil(e) erfolgreich importiert",
+    "importError": "Backup konnte nicht importiert werden",
+    "importErrors": {
+      "invalidJson": "Ungültige JSON-Syntax.",
+      "unsupportedFormat": "Keine gültige StreamDash-Backup-Datei.",
+      "emptyProfiles": "Die Backup-Datei enthält keine Profile."
+    },
+    "deleteTitle": "„{{name}}“ löschen?",
+    "deleteConfirm": "Alle in „{{name}}“ gespeicherten Einstellungen, Commands, Variablen und Dashboard-Layouts werden dauerhaft entfernt."
   }
 }
