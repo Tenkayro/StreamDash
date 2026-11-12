@@ -1,4 +1,4 @@
-import { AlertTriangle, PanelLeftClose, PanelLeftOpen, Search } from "lucide-react";
+import { AlertTriangle, Menu, PanelLeftClose, PanelLeftOpen, Search } from "lucide-react";
 import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import { useAppStore } from "../stores/app-store";
 import { saveSetting } from "../services/native";
@@ -60,7 +60,14 @@ export function Sidebar() {
     useAppStore();
   const collapsed = settings.sidebarCollapsed;
   const [narrow, setNarrow] = useState(() => window.matchMedia("(max-width: 900px)").matches);
-  const compact = collapsed || narrow;
+  const [mobileOpen, setMobileOpen] = useState(false);
+  const compact = mobileOpen ? false : collapsed || narrow;
+
+  useEffect(() => {
+    const onToggle = () => setMobileOpen((prev) => !prev);
+    window.addEventListener("streamdash:toggle-mobile-nav", onToggle);
+    return () => window.removeEventListener("streamdash:toggle-mobile-nav", onToggle);
+  }, []);
   const navRef = useRef<HTMLElement>(null);
   const indicatorRef = useRef<HTMLSpanElement>(null);
   const indicatorAnimation = useRef<Animation | null>(null);
@@ -136,13 +143,28 @@ export function Sidebar() {
       setSettings({ sidebarCollapsed: collapsed }),
     );
   };
+  const mobileQuickItems = navigationItems.filter((item) =>
+    ["dashboard", "chat", "activitys", "obs"].includes(item.id),
+  );
+
   return (
-    <aside
-      className={cn(
-        "app-sidebar flex min-h-0 shrink-0 flex-col overflow-hidden transition-[width]",
-        compact ? "w-14.5" : "w-52",
+    <>
+      {mobileOpen && (
+        <div
+          aria-hidden="true"
+          onClick={() => setMobileOpen(false)}
+          className="fixed inset-0 z-40 bg-black/60 backdrop-blur-sm md:hidden"
+        />
       )}
-    >
+      <aside
+        className={cn(
+          "app-sidebar min-h-0 shrink-0 flex-col overflow-hidden transition-[width]",
+          mobileOpen
+            ? "fixed inset-y-0 left-0 z-50 flex w-60 shadow-2xl md:static md:z-auto md:shadow-none"
+            : "hidden md:flex",
+          !mobileOpen && (compact ? "w-14.5" : "w-52"),
+        )}
+      >
       <button
         type="button"
         title={t("navigation.quickSwitch")}
@@ -200,6 +222,7 @@ export function Sidebar() {
                 key={id}
                 onClick={() => {
                   setPage(id);
+                  setMobileOpen(false);
                 }}
                 className={cn(
                   "relative flex h-9 w-full items-center rounded-xl text-sm text-zinc-500 transition-colors hover:bg-white/4 hover:text-zinc-200",
@@ -292,5 +315,42 @@ export function Sidebar() {
         )}
       </div>
     </aside>
+    <nav
+      aria-label="Mobile navigation"
+      className="fixed inset-x-0 bottom-0 z-30 grid grid-cols-5 border-t border-line bg-[#0e1015]/95 px-1 pt-1 pb-[max(0.35rem,env(safe-area-inset-bottom))] backdrop-blur-md md:hidden"
+    >
+      {mobileQuickItems.map(({ id, label, icon: Icon }) => {
+        const active = page === id;
+        return (
+          <button
+            key={id}
+            type="button"
+            onClick={() => {
+              setPage(id);
+              setMobileOpen(false);
+            }}
+            className={cn(
+              "flex flex-col items-center justify-center gap-0.5 rounded-xl py-1.5 text-[10px] font-medium transition",
+              active ? "bg-accent-soft text-accent" : "text-zinc-400 hover:text-zinc-200",
+            )}
+          >
+            <Icon size={17} />
+            <span className="max-w-full truncate px-1">{t(`nav.${label}`)}</span>
+          </button>
+        );
+      })}
+      <button
+        type="button"
+        onClick={() => setMobileOpen((prev) => !prev)}
+        className={cn(
+          "flex flex-col items-center justify-center gap-0.5 rounded-xl py-1.5 text-[10px] font-medium transition",
+          mobileOpen ? "bg-accent-soft text-accent" : "text-zinc-400 hover:text-zinc-200",
+        )}
+      >
+        <Menu size={17} />
+        <span className="max-w-full truncate px-1">{t("nav.host")}</span>
+      </button>
+    </nav>
+    </>
   );
 }

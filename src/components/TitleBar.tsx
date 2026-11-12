@@ -8,6 +8,7 @@ import {
   Download,
   GitFork,
   LoaderCircle,
+  Menu,
   Minus,
   PanelBottomClose,
   Plus,
@@ -211,6 +212,16 @@ export function TitleBar({ setup = false }: { setup?: boolean }) {
         data-tauri-drag-region
         className="flex shrink-0 items-center gap-2.5"
       >
+        {!setup && (
+          <button
+            type="button"
+            aria-label="Menu"
+            onClick={() => globalThis.dispatchEvent(new Event("streamdash:toggle-mobile-nav"))}
+            className="grid size-7 place-items-center rounded-lg text-zinc-300 hover:bg-white/10 md:hidden"
+          >
+            <Menu size={16} />
+          </button>
+        )}
         <img
           src={titlebarLogo}
           alt="StreamDash"
@@ -239,7 +250,7 @@ export function TitleBar({ setup = false }: { setup?: boolean }) {
       </div>
       <div data-tauri-drag-region className="h-full min-w-8 flex-1" />
       <div data-tauri-drag-region="false" className="no-drag flex h-full shrink-0 items-center">
-        {!setup && <div className="flex items-center gap-1 px-1.5">
+        {!setup && <div className="hidden items-center gap-1 px-1.5 sm:flex">
           <div
             role="group"
             aria-label={t("titleBar.zoomLabel", { zoom })}
@@ -303,39 +314,43 @@ export function TitleBar({ setup = false }: { setup?: boolean }) {
             />
           </div>
         </div>}
-        <span className="h-4 w-px bg-line" />
-        <button
-          aria-label={t("titleBar.minimize")}
-          className="grid h-full w-11 place-items-center hover:bg-white/5"
-          onClick={() => window?.minimize()}
-        >
-          <Minus size={13} />
-        </button>
-        <button
-          aria-label={t("titleBar.maximize")}
-          className="grid h-full w-11 place-items-center hover:bg-white/5"
-          onClick={() => window?.toggleMaximize()}
-        >
-          <Square size={11} />
-        </button>
-        <button
-          ref={closeButtonRef}
-          aria-label={t("titleBar.close")}
-          className="grid h-full w-11 place-items-center hover:bg-red-600 hover:text-white"
-          onClick={() => {
-            setCloseMenuOpen(false);
-            void window?.close();
-          }}
-          onContextMenu={(event) => {
-            event.preventDefault();
-            event.stopPropagation();
-            setCloseMenuOpen(true);
-          }}
-          onMouseDown={(event) => event.stopPropagation()}
-          onMouseUp={(event) => event.stopPropagation()}
-        >
-          <X size={14} />
-        </button>
+        {isTauri() && (
+          <>
+            <span className="h-4 w-px bg-line" />
+            <button
+              aria-label={t("titleBar.minimize")}
+              className="grid h-full w-11 place-items-center hover:bg-white/5"
+              onClick={() => window?.minimize()}
+            >
+              <Minus size={13} />
+            </button>
+            <button
+              aria-label={t("titleBar.maximize")}
+              className="grid h-full w-11 place-items-center hover:bg-white/5"
+              onClick={() => window?.toggleMaximize()}
+            >
+              <Square size={11} />
+            </button>
+            <button
+              ref={closeButtonRef}
+              aria-label={t("titleBar.close")}
+              className="grid h-full w-11 place-items-center hover:bg-red-600 hover:text-white"
+              onClick={() => {
+                setCloseMenuOpen(false);
+                void window?.close();
+              }}
+              onContextMenu={(event) => {
+                event.preventDefault();
+                event.stopPropagation();
+                setCloseMenuOpen(true);
+              }}
+              onMouseDown={(event) => event.stopPropagation()}
+              onMouseUp={(event) => event.stopPropagation()}
+            >
+              <X size={14} />
+            </button>
+          </>
+        )}
       </div>
       {closeMenuOpen && createPortal(
         <div

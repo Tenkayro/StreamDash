@@ -313,7 +313,7 @@ export default function App() {
           : "**:transition-none! [&_.event-enter]:animate-none!"
       }
     >
-      <div className="app-shell flex h-screen flex-col">
+      <div className="app-shell flex h-dvh flex-col">
         <TitleBar />
         <AppContextMenu />
         <Suspense fallback={null}>
@@ -332,7 +332,7 @@ export default function App() {
                     ? undefined
                     : { zoom: Math.max(50, Math.min(150, settings.dashboardZoom || 100)) / 100 }
                 }
-                className={`app-content mx-auto w-full ${isFullWidthPage ? "max-w-none" : widths[settings.contentWidth]} ${isViewportPage ? "flex h-full min-h-0 flex-col" : ""} ${settings.uiDensity === "compact" ? "p-3 lg:p-4" : "p-3 sm:p-4 xl:p-5"}`}
+                className={`app-content mx-auto w-full ${isFullWidthPage ? "max-w-none" : widths[settings.contentWidth]} ${isViewportPage ? "flex h-full min-h-0 flex-col" : ""} pb-16 md:pb-0 ${settings.uiDensity === "compact" ? "p-3 lg:p-4" : "p-3 sm:p-4 xl:p-5"}`}
               >
                 <Suspense fallback={loading}>
                   <Page />
