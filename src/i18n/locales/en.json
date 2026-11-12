@@ -6,6 +6,7 @@
     "reset": "Reset",
     "showAll": "Show all",
     "starting": "StreamDash is starting",
+    "shuttingDown": "Shutting down StreamDash…",
     "cancel": "Cancel",
     "delete": "Delete",
     "done": "Done"

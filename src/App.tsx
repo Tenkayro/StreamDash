@@ -115,19 +115,38 @@ const pages: Record<string, React.ComponentType> = {
   settings: SettingsPage,
 };
 
+function getBootLogoSrc() {
+  return (
+    document.getElementById("boot-splash-logo")?.getAttribute("src") ||
+    "/streamdash-logo-boot.webp"
+  );
+}
+
 function LifecycleScreen({ version, starting = false }: { version?: string; starting?: boolean }) {
   const { t } = useTranslation();
   const settings = useAppStore((state) => state.settings);
+  const logoSrc = getBootLogoSrc();
   return (
     <div data-tauri-drag-region data-accent={settings.accentColor} data-animations={settings.animations ? "on" : "off"} className="boot-splash lifecycle-screen">
       <div className="boot-splash-content">
-        <img
-          src="/streamdash-logo-boot.webp"
-          alt={starting ? t("common.starting") : ""}
-          aria-hidden={starting ? undefined : true}
-          className="h-auto object-contain"
-        />
-        <div className="boot-loader" aria-hidden="true" />
+        <div className="boot-logo-stage">
+          <img
+            src={logoSrc}
+            decoding="sync"
+            alt={starting ? t("common.starting") : t("common.shuttingDown")}
+            className="boot-logo-base"
+          />
+          <img
+            src={logoSrc}
+            decoding="sync"
+            alt=""
+            aria-hidden="true"
+            className="boot-logo-fill"
+          />
+        </div>
+        <div className="boot-status">
+          {starting ? t("common.starting") : t("common.shuttingDown")}
+        </div>
         <div className="boot-meta">
           <span>{t("titleBar.author")}</span>
           <span aria-hidden="true">·</span>
@@ -206,7 +225,7 @@ export default function App() {
       const startedAt = performance.now();
       setShuttingDown(true);
       const logo = new Image();
-      logo.src = "/streamdash-logo-boot.webp";
+      logo.src = getBootLogoSrc();
       await logo.decode().catch(() => undefined);
       await new Promise<void>((resolve) => requestAnimationFrame(() => resolve()));
       await new Promise<void>((resolve) => requestAnimationFrame(() => resolve()));

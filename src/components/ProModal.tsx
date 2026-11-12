@@ -86,9 +86,9 @@ function ProModalContent({ onClose }: { onClose: () => void }) {
       }}
     >
       <Card className="w-full max-w-lg overflow-hidden border-line bg-surface p-0 shadow-2xl">
-        <div className="flex items-center justify-between border-b border-line bg-gradient-to-r from-[#9146ff]/12 via-accent/10 to-transparent px-5 py-4">
+        <div className="flex items-center justify-between border-b border-line bg-linear-to-r from-[#9146ff]/12 via-accent/10 to-transparent px-5 py-4">
           <div className="flex items-center gap-2.5">
-            <span className="grid size-8 place-items-center rounded-xl border border-amber-400/30 bg-amber-400/15 text-amber-300">
+            <span className="grid size-8 place-items-center rounded-xl border border-white/10 bg-white/5 text-zinc-300">
               <Crown size={16} />
             </span>
             <div>

@@ -207,8 +207,8 @@ export function TitleBar({ setup = false }: { setup?: boolean }) {
           className="h-5 w-auto object-contain"
         />
         {proActive && (
-          <span className="inline-flex items-center gap-1 rounded border border-amber-400/30 bg-amber-400/12 px-1.5 py-0.5 text-[9px] font-bold tracking-wider text-amber-300">
-            <Crown size={9} aria-hidden="true" />
+          <span className="inline-flex items-center gap-1 rounded border border-white/10 bg-white/[0.04] px-1.5 py-px text-[9px] font-semibold tracking-wider text-zinc-400">
+            <Crown size={8} className="text-amber-300/65" aria-hidden="true" />
             PRO
           </span>
         )}
