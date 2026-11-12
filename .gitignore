@@ -12,3 +12,4 @@ todo
 AGENTS.md
 
 .manim/
+.env

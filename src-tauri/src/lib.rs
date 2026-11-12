@@ -1093,6 +1093,190 @@ async fn twitch_eventsub_create(client_id: String, body: Value) -> Result<(), St
         .to_string())
 }
 
+const CLOUD_SYNC_BASE_URL: &str = "https://streamdash-api.tenkayro.de";
+
+async fn cloud_sync_send(
+    client_id: &str,
+    method: reqwest::Method,
+    path: &str,
+    payload: Option<&Value>,
+) -> Result<(u16, Value), String> {
+    let mut tokens = valid_tokens(client_id).await?;
+    let url = format!("{CLOUD_SYNC_BASE_URL}{path}");
+
+    for attempt in 0..2 {
+        let mut req = http()
+            .request(method.clone(), &url)
+            .bearer_auth(&tokens.access_token)
+            .timeout(std::time::Duration::from_secs(12));
+        if let Some(body) = payload {
+            req = req.json(body);
+        }
+        let response = req.send().await.map_err(|e| e.to_string())?;
+        let status = response.status().as_u16();
+        if status == 401 && attempt == 0 {
+            tokens = refresh_twitch_for(client_id, tokens, false).await?;
+            continue;
+        }
+        let value: Value = response.json().await.unwrap_or(json!({}));
+        return Ok((status, value));
+    }
+
+    Err("Cloud sync authentication failed".into())
+}
+
+fn cloud_sync_error(status: u16, body: &Value) -> String {
+    body["error"]
+        .as_str()
+        .or_else(|| body["message"].as_str())
+        .map(str::to_string)
+        .unwrap_or_else(|| format!("Cloud sync error ({status})"))
+}
+
+#[tauri::command]
+async fn cloud_sync_meta(client_id: String) -> Result<Value, String> {
+    let (status, body) = cloud_sync_send(
+        &client_id,
+        reqwest::Method::GET,
+        "/v1/profile/meta",
+        None,
+    )
+    .await?;
+    if status == 402 {
+        return Ok(json!({ "exists": false, "proRequired": true }));
+    }
+    if !(200..300).contains(&status) {
+        return Err(cloud_sync_error(status, &body));
+    }
+    Ok(body)
+}
+
+#[tauri::command]
+async fn cloud_sync_pull(client_id: String) -> Result<Value, String> {
+    let (status, body) = cloud_sync_send(
+        &client_id,
+        reqwest::Method::GET,
+        "/v1/profile",
+        None,
+    )
+    .await?;
+    if status == 402 {
+        return Ok(json!({ "exists": false, "proRequired": true }));
+    }
+    if status == 404 {
+        return Ok(json!({ "exists": false }));
+    }
+    if !(200..300).contains(&status) {
+        return Err(cloud_sync_error(status, &body));
+    }
+    Ok(body)
+}
+
+#[tauri::command]
+async fn cloud_sync_push(
+    client_id: String,
+    bundle: Value,
+    updated_at: Option<i64>,
+    expected_revision: Option<i64>,
+    force: Option<bool>,
+) -> Result<Value, String> {
+    let mut payload = serde_json::Map::new();
+    payload.insert("bundle".into(), bundle);
+    if let Some(ts) = updated_at {
+        payload.insert("updatedAt".into(), json!(ts));
+    }
+    if let Some(rev) = expected_revision {
+        payload.insert("expectedRevision".into(), json!(rev));
+    }
+    if force.unwrap_or(false) {
+        payload.insert("force".into(), json!(true));
+    }
+    let body_value = Value::Object(payload);
+    let (status, body) = cloud_sync_send(
+        &client_id,
+        reqwest::Method::PUT,
+        "/v1/profile",
+        Some(&body_value),
+    )
+    .await?;
+    if status == 402 {
+        return Ok(json!({ "ok": false, "proRequired": true }));
+    }
+    if status == 409 {
+        return Ok(json!({
+            "ok": false,
+            "conflict": true,
+            "meta": body.get("meta").cloned().unwrap_or(Value::Null),
+            "bundle": body.get("bundle").cloned().unwrap_or(Value::Null),
+        }));
+    }
+    if !(200..300).contains(&status) {
+        return Err(cloud_sync_error(status, &body));
+    }
+    Ok(body)
+}
+
+#[tauri::command]
+async fn cloud_sync_delete(client_id: String) -> Result<Value, String> {
+    let (status, body) = cloud_sync_send(
+        &client_id,
+        reqwest::Method::DELETE,
+        "/v1/profile",
+        None,
+    )
+    .await?;
+    if !(200..300).contains(&status) {
+        return Err(cloud_sync_error(status, &body));
+    }
+    Ok(body)
+}
+
+#[tauri::command]
+async fn pro_entitlements(client_id: String) -> Result<Value, String> {
+    let (status, body) = cloud_sync_send(
+        &client_id,
+        reqwest::Method::GET,
+        "/v1/entitlements",
+        None,
+    )
+    .await?;
+    if !(200..300).contains(&status) {
+        return Err(cloud_sync_error(status, &body));
+    }
+    Ok(body)
+}
+
+#[tauri::command]
+async fn pro_activate_license(client_id: String, license_key: String) -> Result<Value, String> {
+    let payload = json!({ "licenseKey": license_key });
+    let (status, body) = cloud_sync_send(
+        &client_id,
+        reqwest::Method::POST,
+        "/v1/pro/activate",
+        Some(&payload),
+    )
+    .await?;
+    if !(200..300).contains(&status) {
+        return Err(cloud_sync_error(status, &body));
+    }
+    Ok(body)
+}
+
+#[tauri::command]
+async fn pro_deactivate_license(client_id: String) -> Result<Value, String> {
+    let (status, body) = cloud_sync_send(
+        &client_id,
+        reqwest::Method::DELETE,
+        "/v1/pro/license",
+        None,
+    )
+    .await?;
+    if !(200..300).contains(&status) {
+        return Err(cloud_sync_error(status, &body));
+    }
+    Ok(body)
+}
+
 #[derive(Default)]
 struct ChatIrc {
     sender: Mutex<Option<mpsc::UnboundedSender<String>>>,
@@ -1546,6 +1730,13 @@ pub fn run() {
             twitch_helix_put,
             twitch_helix_delete,
             twitch_eventsub_create,
+            cloud_sync_meta,
+            cloud_sync_pull,
+            cloud_sync_push,
+            cloud_sync_delete,
+            pro_entitlements,
+            pro_activate_license,
+            pro_deactivate_license,
             twitch_chat_start,
             twitch_chat_send,
             twitch_chat_stop,

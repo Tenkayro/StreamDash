@@ -698,3 +698,142 @@ export async function saveJsonFile(
   window.setTimeout(() => URL.revokeObjectURL(url), 1000);
   return "saved";
 }
+
+const CLOUD_FORBIDDEN_KEYS = new Set([
+  "access_token",
+  "refresh_token",
+  "oauth",
+  "password",
+  "obspassword",
+  "obs_password",
+  "token",
+  "secret",
+  "apikey",
+  "api_key",
+  "credentials",
+  "events",
+  "chatmessages",
+  "chat_messages",
+]);
+
+function stripCloudSecretsValue(value: unknown): unknown {
+  if (Array.isArray(value)) {
+    return value.map(stripCloudSecretsValue);
+  }
+  if (isRecord(value)) {
+    const clean: Record<string, unknown> = {};
+    for (const key of Object.keys(value)) {
+      if (CLOUD_FORBIDDEN_KEYS.has(key.toLowerCase())) continue;
+      clean[key] = stripCloudSecretsValue(value[key]);
+    }
+    return clean;
+  }
+  return value;
+}
+
+function stableJsonStringify(value: unknown): string {
+  if (Array.isArray(value)) {
+    return `[${value.map((item) => stableJsonStringify(item)).join(",")}]`;
+  }
+  if (isRecord(value)) {
+    const keys = Object.keys(value).sort();
+    const parts: string[] = [];
+    for (const key of keys) {
+      const entry = value[key];
+      if (entry === undefined) continue;
+      parts.push(`${JSON.stringify(key)}:${stableJsonStringify(entry)}`);
+    }
+    return `{${parts.join(",")}}`;
+  }
+  return JSON.stringify(value);
+}
+
+export async function sha256Hex(text: string): Promise<string> {
+  const bytes = new TextEncoder().encode(text);
+  const digest = await crypto.subtle.digest("SHA-256", bytes);
+  return Array.from(new Uint8Array(digest))
+    .map((b) => b.toString(16).padStart(2, "0"))
+    .join("");
+}
+
+export function createCloudSyncBundle(params: {
+  profiles: UserProfile[];
+  activeProfileId: string;
+  appVersion?: string;
+}): ProfileExportBundle {
+  const rawBundle = createExportBundle({
+    scope: "all",
+    profiles: params.profiles,
+    activeProfileId: params.activeProfileId,
+    included: {
+      appearance: true,
+      dashboard: true,
+      chatAndObs: true,
+      automation: true,
+      history: false,
+    },
+    appVersion: params.appVersion,
+  });
+  return stripCloudSecretsValue(rawBundle) as ProfileExportBundle;
+}
+
+export async function computeCloudBundleHash(
+  bundle: ProfileExportBundle,
+): Promise<string> {
+  // Exclude volatile metadata like exportedAt/appVersion and per-profile updatedAt timestamps
+  // so hash comparisons strictly reflect actual configuration state.
+  const normalizedProfiles = bundle.profiles.map((profile) => ({
+    id: profile.id,
+    name: profile.name,
+    twitchUserId: profile.twitchUserId ?? null,
+    twitchLogin: profile.twitchLogin ?? null,
+    data: profile.data,
+  }));
+  return sha256Hex(
+    stableJsonStringify({
+      activeProfileId: bundle.activeProfileId ?? null,
+      profiles: normalizedProfiles,
+    }),
+  );
+}
+
+export function normalizeCloudBundle(
+  rawBundle: unknown,
+): ProfileExportBundle | undefined {
+  if (!isRecord(rawBundle)) return undefined;
+  const parsed = parseImportBundle(JSON.stringify(rawBundle));
+  return parsed.bundle;
+}
+
+export function isFreshDefaultProfileSetup(
+  profiles: UserProfile[],
+): boolean {
+  if (profiles.length > 1) return false;
+  const only = profiles[0];
+  if (!only) return true;
+  const snap = normalizeProfileSnapshot(only.data);
+  const hasCustomCommands = snap.commands.some((cmd) => !cmd.builtIn);
+  const hasCustomVars = snap.customVariables.length > 0;
+  const hasRewards = snap.channelRewards.length > 0;
+  const hasBrowserSources = snap.settings.dashboardBrowserSources.length > 0;
+  const hasHighlights = snap.settings.chatHighlightWords.length > 0;
+  const hasAlertsEnabled = Object.values(snap.chatAlerts).some((a) => a.enabled);
+  const hasGoals = Object.values(snap.settings.goals).some(
+    (v) => typeof v === "number" && v > 0,
+  );
+  const widgetsChanged =
+    JSON.stringify(snap.settings.dashboardWidgets) !==
+    JSON.stringify(defaultSettings.dashboardWidgets);
+
+  return !(
+    hasCustomCommands ||
+    hasCustomVars ||
+    hasRewards ||
+    hasBrowserSources ||
+    hasHighlights ||
+    hasAlertsEnabled ||
+    hasGoals ||
+    widgetsChanged ||
+    snap.settings.obsEnabled
+  );
+}

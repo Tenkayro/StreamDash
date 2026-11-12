@@ -1,6 +1,7 @@
 import { createContext, useContext } from "react";
 import type {
   ChatUserProfile,
+  ProEntitlements,
   ProfileExportBundle,
   ProfileExportSections,
 } from "../types";
@@ -85,6 +86,15 @@ export interface RuntimeValue {
     bundle: ProfileExportBundle,
     options: ImportProfileOptions,
   ) => Promise<void>;
+  setCloudSyncEnabled: (enabled: boolean) => Promise<void>;
+  syncCloudNow: (
+    mode?: "smart" | "push" | "pull",
+    options?: { force?: boolean; merge?: boolean },
+  ) => Promise<void>;
+  deleteCloudBackup: () => Promise<void>;
+  refreshProEntitlements: () => Promise<ProEntitlements>;
+  activateProLicense: (licenseKey: string) => Promise<ProEntitlements>;
+  deactivateProLicense: () => Promise<void>;
   reconnect: () => Promise<void>;
   shutdown: () => Promise<void>;
 }

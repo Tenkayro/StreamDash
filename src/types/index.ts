@@ -337,3 +337,58 @@ export interface ProfileExportBundle {
   events?: ActivityEvent[]
   chatMessages?: ChatMessage[]
 }
+
+export interface ProLicenseInfo {
+  maskedKey: string
+  variantName?: string
+  activatedAt: number
+  lastCheckedAt?: number
+}
+
+export interface ProEntitlements {
+  tier: 'free' | 'pro'
+  pro: boolean
+  twitchUserId?: string
+  twitchLogin?: string
+  features: string[]
+  license?: ProLicenseInfo
+  loading?: boolean
+  error?: string
+}
+
+export interface CloudSyncRemoteMeta {
+  exists: boolean
+  proRequired?: boolean
+  twitchUserId?: string
+  twitchLogin?: string
+  schemaVersion?: number
+  revision?: number
+  updatedAt?: number
+  serverUpdatedAt?: number
+  payloadSha256?: string
+  rawBytes?: number
+  profileCount?: number
+}
+
+export interface CloudSyncUserCheckpoint {
+  revision: number
+  localSha256: string
+  serverSha256?: string
+  syncedAt: number
+  serverUpdatedAt?: number
+  rawBytes?: number
+  profileCount?: number
+}
+
+export interface CloudSyncConflict {
+  remoteMeta: CloudSyncRemoteMeta
+  remoteBundle?: ProfileExportBundle
+}
+
+export interface CloudSyncState {
+  phase: 'idle' | 'syncing' | 'synced' | 'conflict' | 'error'
+  lastSyncedAt?: number
+  remoteMeta?: CloudSyncRemoteMeta
+  conflict?: CloudSyncConflict
+  error?: string
+}

@@ -1,5 +1,13 @@
 import { invoke } from "@tauri-apps/api/core";
-import type { ActivityEvent, AppSettings, ChatMessage, TwitchSession } from "../types";
+import type {
+  ActivityEvent,
+  AppSettings,
+  ChatMessage,
+  CloudSyncRemoteMeta,
+  ProEntitlements,
+  ProfileExportBundle,
+  TwitchSession,
+} from "../types";
 import { isTauri } from "../lib/utils";
 
 export async function loadEvents(limit = 5000): Promise<ActivityEvent[]> {
@@ -179,4 +187,77 @@ export const twitchNative = {
   chatStop: () => invoke("twitch_chat_stop"),
   subscribe: (clientId: string, body: unknown) =>
     invoke("twitch_eventsub_create", { clientId, body }),
+};
+
+export type CloudSyncPullResult =
+  | { exists: false; proRequired?: boolean }
+  | { meta: CloudSyncRemoteMeta; bundle: ProfileExportBundle };
+
+export type CloudSyncPushResult =
+  | { ok: true; unchanged?: boolean; meta: CloudSyncRemoteMeta }
+  | { ok: false; proRequired: true }
+  | {
+      ok: false;
+      conflict: true;
+      meta: CloudSyncRemoteMeta;
+      bundle?: ProfileExportBundle;
+    };
+
+export const cloudSyncNative = {
+  meta: (clientId: string): Promise<CloudSyncRemoteMeta> =>
+    isTauri()
+      ? invoke<CloudSyncRemoteMeta>("cloud_sync_meta", { clientId })
+      : Promise.resolve({ exists: false }),
+  pull: (clientId: string): Promise<CloudSyncPullResult> =>
+    isTauri()
+      ? invoke<CloudSyncPullResult>("cloud_sync_pull", { clientId })
+      : Promise.resolve({ exists: false }),
+  push: (
+    clientId: string,
+    params: {
+      bundle: ProfileExportBundle;
+      updatedAt?: number;
+      expectedRevision?: number;
+      force?: boolean;
+    },
+  ): Promise<CloudSyncPushResult> =>
+    isTauri()
+      ? invoke<CloudSyncPushResult>("cloud_sync_push", {
+          clientId,
+          bundle: params.bundle,
+          updatedAt: params.updatedAt,
+          expectedRevision: params.expectedRevision,
+          force: params.force,
+        })
+      : Promise.reject(new Error("Cloud sync requires the desktop app")),
+  remove: (clientId: string): Promise<{ ok: boolean; deleted: boolean }> =>
+    isTauri()
+      ? invoke<{ ok: boolean; deleted: boolean }>("cloud_sync_delete", { clientId })
+      : Promise.resolve({ ok: true, deleted: false }),
+};
+
+export const proNative = {
+  entitlements: (clientId: string): Promise<ProEntitlements> =>
+    isTauri()
+      ? invoke<ProEntitlements>("pro_entitlements", { clientId })
+      : Promise.resolve({ tier: "free", pro: false, features: [] }),
+  activate: (
+    clientId: string,
+    licenseKey: string,
+  ): Promise<{ ok: boolean; alreadyActivated?: boolean; entitlements: ProEntitlements }> =>
+    isTauri()
+      ? invoke<{ ok: boolean; alreadyActivated?: boolean; entitlements: ProEntitlements }>(
+          "pro_activate_license",
+          { clientId, licenseKey },
+        )
+      : Promise.reject(new Error("Pro activation requires the desktop app")),
+  deactivate: (
+    clientId: string,
+  ): Promise<{ ok: boolean; unlinked: boolean; entitlements: ProEntitlements }> =>
+    isTauri()
+      ? invoke<{ ok: boolean; unlinked: boolean; entitlements: ProEntitlements }>(
+          "pro_deactivate_license",
+          { clientId },
+        )
+      : Promise.reject(new Error("Pro license management requires the desktop app")),
 };

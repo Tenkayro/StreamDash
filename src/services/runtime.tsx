@@ -24,20 +24,26 @@ import {
   bootstrapProfiles,
   buildPersistenceBatch,
   cloneJson,
+  computeCloudBundleHash,
   createCleanSnapshot,
+  createCloudSyncBundle,
   createExportBundle,
   createProfileId,
   extractSnapshotFromState,
+  isFreshDefaultProfileSetup,
   mergeSnapshotSections,
+  normalizeCloudBundle,
   normalizeProfileSnapshot,
   resolveProfileForTwitchAccount,
   saveJsonFile,
 } from "../lib/profiles";
 import {
+  cloudSyncNative,
   importHistoryBatch,
   loadChatMessages,
   loadEvents,
   loadSettings,
+  proNative,
   saveChatMessage,
   saveEvent,
   saveLocalState,
@@ -70,6 +76,8 @@ import type {
   ChatCommand,
   ChatMessage,
   ChatUserProfile,
+  CloudSyncRemoteMeta,
+  CloudSyncUserCheckpoint,
   CommandRole,
   CustomVariable,
   DashboardStats,
@@ -102,6 +110,8 @@ type Bootstrap = {
   rawActiveProfileId?: unknown;
   rawLastTwitchUserId?: unknown;
   rawProfilesAutoSwitch?: unknown;
+  rawCloudSyncEnabled?: unknown;
+  rawCloudSyncCheckpoints?: unknown;
   events: ActivityEvent[];
   chatMessages: ChatMessage[];
 };
@@ -122,6 +132,8 @@ function loadBootstrap() {
       activeProfileId: rawActiveProfileId,
       lastTwitchUserId: rawLastTwitchUserId,
       profilesAutoSwitch: rawProfilesAutoSwitch,
+      cloudSyncEnabled: rawCloudSyncEnabled,
+      cloudSyncCheckpoints: rawCloudSyncCheckpoints,
       ...restSettings
     } = raw as Partial<AppSettings> & {
       giveaway?: Partial<GiveawayState>;
@@ -134,6 +146,8 @@ function loadBootstrap() {
       activeProfileId?: unknown;
       lastTwitchUserId?: unknown;
       profilesAutoSwitch?: unknown;
+      cloudSyncEnabled?: unknown;
+      cloudSyncCheckpoints?: unknown;
     };
     const settings: Partial<AppSettings> = { ...restSettings };
     if (typeof settings.onboardingCompleted !== "boolean") {
@@ -169,6 +183,8 @@ function loadBootstrap() {
       rawActiveProfileId,
       rawLastTwitchUserId,
       rawProfilesAutoSwitch,
+      rawCloudSyncEnabled,
+      rawCloudSyncCheckpoints,
       events,
       chatMessages,
     };
@@ -217,6 +233,12 @@ export function RuntimeProvider({ children }: { children: ReactNode }) {
   const twitchAuthAttemptRef = useRef(0);
   const botAuthAttemptRef = useRef(0);
   const applyingProfileRef = useRef(false);
+  const cloudSyncInFlightRef = useRef(false);
+  const cloudPushTimerRef = useRef<number | undefined>(undefined);
+  const cloudSyncPhase = useAppStore((s) => s.cloudSync.phase);
+  const cloudSyncEnabled = useAppStore((s) => s.cloudSyncEnabled);
+  const proActive = useAppStore((s) => s.entitlements.pro);
+  const profilesList = useAppStore((s) => s.profiles);
   const [deviceAuth, setDeviceAuth] = useState<DeviceAuth>();
   const [botDeviceAuth, setBotDeviceAuth] = useState<DeviceAuth>();
   const ready = useAppStore((s) => s.ready);
@@ -765,6 +787,354 @@ export function RuntimeProvider({ children }: { children: ReactNode }) {
     [applySnapshotAndPersist, state],
   );
 
+  const setCloudSyncCheckpoint = useCallback(
+    async (userId: string, checkpoint: CloudSyncUserCheckpoint | undefined) => {
+      const current = state();
+      const next = { ...current.cloudSyncCheckpoints };
+      if (checkpoint) next[userId] = checkpoint;
+      else delete next[userId];
+      current.setCloudSyncCheckpoints(next);
+      await saveLocalState("cloudSyncCheckpoints", next).catch(() => undefined);
+    },
+    [state],
+  );
+
+  const buildLocalCloudPayload = useCallback(async () => {
+    const current = state();
+    const { nextProfiles } = buildSyncedProfiles();
+    const appVersion = isTauri()
+      ? await getVersion().catch(() => undefined)
+      : undefined;
+    const bundle = createCloudSyncBundle({
+      profiles: nextProfiles,
+      activeProfileId: current.activeProfileId,
+      appVersion,
+    });
+    const localSha256 = await computeCloudBundleHash(bundle);
+    return { nextProfiles, bundle, localSha256 };
+  }, [buildSyncedProfiles, state]);
+
+  const applyPulledCloudBundle = useCallback(
+    async (
+      userId: string,
+      rawBundle: unknown,
+      remoteMeta: CloudSyncRemoteMeta,
+      mergeMode = false,
+    ) => {
+      const parsed = normalizeCloudBundle(rawBundle);
+      if (!parsed || !parsed.profiles.length) {
+        throw new Error(i18n.t("profiles.cloud.invalidRemoteBundle"));
+      }
+      const current = state();
+      const { nextProfiles, snapshot: activeSnapshot } = buildSyncedProfiles();
+      const now = Date.now();
+      let finalProfiles = cloneJson(parsed.profiles);
+      let nextActiveId =
+        parsed.activeProfileId &&
+        finalProfiles.some((p) => p.id === parsed.activeProfileId)
+          ? parsed.activeProfileId
+          : finalProfiles[0].id;
+
+      if (mergeMode) {
+        const mergedList = [...nextProfiles];
+        const byId = new Map(mergedList.map((p) => [p.id, p]));
+        const byTwitch = new Map(
+          mergedList
+            .filter((p) => p.twitchUserId)
+            .map((p) => [p.twitchUserId as string, p]),
+        );
+        for (const incoming of finalProfiles) {
+          const match =
+            byId.get(incoming.id) ??
+            (incoming.twitchUserId ? byTwitch.get(incoming.twitchUserId) : undefined);
+          if (match) {
+            const updated: UserProfile = {
+              ...match,
+              name: incoming.name || match.name,
+              twitchUserId: incoming.twitchUserId ?? match.twitchUserId,
+              twitchLogin: incoming.twitchLogin ?? match.twitchLogin,
+              updatedAt: now,
+              data: mergeSnapshotSections(match.data, incoming.data, {
+                appearance: true,
+                dashboard: true,
+                chatAndObs: true,
+                automation: true,
+              }),
+            };
+            const idx = mergedList.findIndex((p) => p.id === match.id);
+            if (idx >= 0) mergedList[idx] = updated;
+          } else {
+            mergedList.push({ ...incoming, updatedAt: now });
+          }
+        }
+        finalProfiles = mergedList;
+        if (!finalProfiles.some((p) => p.id === current.activeProfileId)) {
+          nextActiveId = finalProfiles[0].id;
+        } else {
+          nextActiveId = current.activeProfileId;
+        }
+      } else {
+        const cleanBase = createCleanSnapshot(activeSnapshot.settings);
+        finalProfiles = finalProfiles.map((incoming) => ({
+          ...incoming,
+          data: mergeSnapshotSections(cleanBase, incoming.data, {
+            appearance: true,
+            dashboard: true,
+            chatAndObs: true,
+            automation: true,
+          }),
+        }));
+      }
+
+      const activeTarget =
+        finalProfiles.find((p) => p.id === nextActiveId) ?? finalProfiles[0];
+      await applySnapshotAndPersist(
+        activeTarget.data,
+        { profiles: finalProfiles, activeProfileId: activeTarget.id },
+        { preserveLiveStats: true },
+      );
+
+      const appliedBundle = createCloudSyncBundle({
+        profiles: finalProfiles,
+        activeProfileId: activeTarget.id,
+      });
+      const localSha256 = await computeCloudBundleHash(appliedBundle);
+      const syncedAt = Date.now();
+      await setCloudSyncCheckpoint(userId, {
+        revision: remoteMeta.revision ?? 1,
+        localSha256,
+        serverSha256: remoteMeta.payloadSha256,
+        syncedAt,
+        serverUpdatedAt: remoteMeta.serverUpdatedAt,
+        rawBytes: remoteMeta.rawBytes,
+        profileCount: remoteMeta.profileCount ?? finalProfiles.length,
+      });
+      state().setCloudSync({
+        phase: "synced",
+        lastSyncedAt: syncedAt,
+        remoteMeta,
+        conflict: undefined,
+        error: undefined,
+      });
+    },
+    [applySnapshotAndPersist, buildSyncedProfiles, setCloudSyncCheckpoint, state],
+  );
+
+  const pushLocalToCloud = useCallback(
+    async (
+      userId: string,
+      options?: { expectedRevision?: number; force?: boolean; notifyConflict?: boolean },
+    ) => {
+      const { bundle, localSha256 } = await buildLocalCloudPayload();
+      const result = await cloudSyncNative.push(TWITCH_CLIENT_ID, {
+        bundle,
+        updatedAt: Date.now(),
+        expectedRevision: options?.expectedRevision,
+        force: options?.force,
+      });
+      if (!result.ok) {
+        if ("conflict" in result) {
+          const remoteBundle = normalizeCloudBundle(result.bundle);
+          state().setCloudSync({
+            phase: "conflict",
+            remoteMeta: result.meta,
+            conflict: { remoteMeta: result.meta, remoteBundle },
+            error: undefined,
+          });
+          if (options?.notifyConflict) {
+            toast.warning(i18n.t("profiles.cloud.conflictToast"));
+          }
+          return "conflict" as const;
+        }
+        state().setEntitlements({ tier: "free", pro: false, features: [], license: undefined });
+        state().setCloudSync({ phase: "idle", error: undefined });
+        return "pro_required" as const;
+      }
+
+      const syncedAt = Date.now();
+      await setCloudSyncCheckpoint(userId, {
+        revision: result.meta.revision ?? 1,
+        localSha256,
+        serverSha256: result.meta.payloadSha256,
+        syncedAt,
+        serverUpdatedAt: result.meta.serverUpdatedAt,
+        rawBytes: result.meta.rawBytes,
+        profileCount: result.meta.profileCount ?? bundle.profiles.length,
+      });
+      state().setCloudSync({
+        phase: "synced",
+        lastSyncedAt: syncedAt,
+        remoteMeta: result.meta,
+        conflict: undefined,
+        error: undefined,
+      });
+      return "synced" as const;
+    },
+    [buildLocalCloudPayload, setCloudSyncCheckpoint, state],
+  );
+
+  const reconcileCloudOnConnect = useCallback(
+    async (userId: string, accountLogin: string) => {
+      if (
+        !isTauri() ||
+        !state().cloudSyncEnabled ||
+        !state().entitlements.pro ||
+        cloudSyncInFlightRef.current
+      ) {
+        return;
+      }
+      cloudSyncInFlightRef.current = true;
+      state().setCloudSync({ phase: "syncing", error: undefined });
+      try {
+        const remoteMeta = await cloudSyncNative.meta(TWITCH_CLIENT_ID);
+        if (state().twitch.userId !== userId) return;
+        if (remoteMeta.proRequired) {
+          state().setEntitlements({ tier: "free", pro: false, features: [], license: undefined });
+          state().setCloudSync({ phase: "idle", error: undefined });
+          return;
+        }
+
+        const checkpoint = state().cloudSyncCheckpoints[userId];
+        const { nextProfiles, localSha256 } = await buildLocalCloudPayload();
+
+        if (!remoteMeta.exists) {
+          await pushLocalToCloud(userId, { expectedRevision: 0 });
+          return;
+        }
+
+        if (!checkpoint) {
+          const pulled = await cloudSyncNative.pull(TWITCH_CLIENT_ID);
+          if (!("bundle" in pulled)) {
+            await pushLocalToCloud(userId, { expectedRevision: 0 });
+            return;
+          }
+          const remoteNormalized = normalizeCloudBundle(pulled.bundle);
+          const remoteLocalSha = remoteNormalized
+            ? await computeCloudBundleHash(remoteNormalized)
+            : undefined;
+          if (remoteLocalSha && remoteLocalSha === localSha256) {
+            const syncedAt = Date.now();
+            await setCloudSyncCheckpoint(userId, {
+              revision: pulled.meta.revision ?? 1,
+              localSha256,
+              serverSha256: pulled.meta.payloadSha256,
+              syncedAt,
+              serverUpdatedAt: pulled.meta.serverUpdatedAt,
+              rawBytes: pulled.meta.rawBytes,
+              profileCount: pulled.meta.profileCount,
+            });
+            state().setCloudSync({
+              phase: "synced",
+              lastSyncedAt: syncedAt,
+              remoteMeta: pulled.meta,
+              conflict: undefined,
+              error: undefined,
+            });
+            return;
+          }
+
+          if (isFreshDefaultProfileSetup(nextProfiles)) {
+            await applyPulledCloudBundle(userId, pulled.bundle, pulled.meta, false);
+            toast.success(
+              i18n.t("profiles.cloud.restoredToast", { account: accountLogin }),
+            );
+            return;
+          }
+
+          state().setCloudSync({
+            phase: "conflict",
+            remoteMeta: pulled.meta,
+            conflict: { remoteMeta: pulled.meta, remoteBundle: remoteNormalized },
+            error: undefined,
+          });
+          toast.warning(i18n.t("profiles.cloud.conflictToast"));
+          return;
+        }
+
+        const localDirty = localSha256 !== checkpoint.localSha256;
+        const remoteChanged =
+          typeof remoteMeta.revision === "number" &&
+          remoteMeta.revision !== checkpoint.revision;
+
+        if (!localDirty && !remoteChanged) {
+          state().setCloudSync({
+            phase: "synced",
+            lastSyncedAt: checkpoint.syncedAt,
+            remoteMeta,
+            conflict: undefined,
+            error: undefined,
+          });
+          return;
+        }
+
+        if (localDirty && !remoteChanged) {
+          await pushLocalToCloud(userId, {
+            expectedRevision: checkpoint.revision,
+            notifyConflict: true,
+          });
+          return;
+        }
+
+        const pulled = await cloudSyncNative.pull(TWITCH_CLIENT_ID);
+        if (!("bundle" in pulled)) {
+          await pushLocalToCloud(userId, { expectedRevision: 0 });
+          return;
+        }
+
+        if (!localDirty) {
+          await applyPulledCloudBundle(userId, pulled.bundle, pulled.meta, false);
+          toast.info(i18n.t("profiles.cloud.updatedFromCloudToast"));
+          return;
+        }
+
+        const remoteNormalized = normalizeCloudBundle(pulled.bundle);
+        state().setCloudSync({
+          phase: "conflict",
+          remoteMeta: pulled.meta,
+          conflict: { remoteMeta: pulled.meta, remoteBundle: remoteNormalized },
+          error: undefined,
+        });
+        toast.warning(i18n.t("profiles.cloud.conflictToast"));
+      } catch (error) {
+        state().setCloudSync({
+          phase: "error",
+          error: errorMessage(error),
+        });
+      } finally {
+        cloudSyncInFlightRef.current = false;
+      }
+    },
+    [
+      applyPulledCloudBundle,
+      buildLocalCloudPayload,
+      pushLocalToCloud,
+      setCloudSyncCheckpoint,
+      state,
+    ],
+  );
+
+  const refreshProAndSync = useCallback(
+    async (userId: string, accountLogin: string) => {
+      if (!isTauri()) return;
+      state().setEntitlements({ loading: true, error: undefined });
+      try {
+        const entitlements = await proNative.entitlements(TWITCH_CLIENT_ID);
+        if (state().twitch.userId !== userId) return;
+        state().setEntitlements({ ...entitlements, loading: false, error: undefined });
+        if (entitlements.pro) {
+          await reconcileCloudOnConnect(userId, accountLogin);
+        }
+      } catch (error) {
+        if (state().twitch.userId !== userId) return;
+        state().setEntitlements({
+          loading: false,
+          error: errorMessage(error),
+        });
+      }
+    },
+    [reconcileCloudOnConnect, state],
+  );
+
   const startTwitch = useCallback(async () => {
     if (!isTauri()) {
       state().setStatsLoading(false);
@@ -784,6 +1154,7 @@ export function RuntimeProvider({ children }: { children: ReactNode }) {
         return;
       }
       await applyTwitchAccountProfile(session);
+      void refreshProAndSync(session.userId, session.login);
       if (needsTwitchPermissionUpdate(session.scopes))
         toast.warning(i18n.t("runtime.permissionsAttention"), {
           id: "twitch-permissions",
@@ -1023,7 +1394,7 @@ export function RuntimeProvider({ children }: { children: ReactNode }) {
       state().setChat({ phase: "error", detail: errorMessage(error) });
       state().setTwitch({ phase: "expired", detail: errorMessage(error) });
     }
-  }, [applyTwitchAccountProfile, ingest, sendCommandReply, state]);
+  }, [applyTwitchAccountProfile, ingest, refreshProAndSync, sendCommandReply, state]);
 
   const startTwitchBot = useCallback(async () => {
     if (!isTauri()) {
@@ -1104,12 +1475,102 @@ export function RuntimeProvider({ children }: { children: ReactNode }) {
     ]);
   }, [startTwitch, startTwitchBot, startStreamElements, startTipeeeStream, startObs]);
 
+  useEffect(() => {
+    if (
+      !isTauri() ||
+      !ready ||
+      !cloudSyncEnabled ||
+      !proActive ||
+      !twitchUserId ||
+      applyingProfileRef.current ||
+      cloudSyncPhase === "conflict"
+    ) {
+      return;
+    }
+    const checkpoint = state().cloudSyncCheckpoints[twitchUserId];
+    if (!checkpoint) return;
+
+    window.clearTimeout(cloudPushTimerRef.current);
+    cloudPushTimerRef.current = window.setTimeout(() => {
+      cloudPushTimerRef.current = undefined;
+      if (cloudSyncInFlightRef.current || applyingProfileRef.current) return;
+      void (async () => {
+        const current = state();
+        if (
+          !current.cloudSyncEnabled ||
+          !current.entitlements.pro ||
+          current.twitch.userId !== twitchUserId ||
+          current.cloudSync.phase === "conflict"
+        ) {
+          return;
+        }
+        const { localSha256 } = await buildLocalCloudPayload();
+        const latestCheckpoint = current.cloudSyncCheckpoints[twitchUserId];
+        if (!latestCheckpoint || localSha256 === latestCheckpoint.localSha256) {
+          return;
+        }
+        cloudSyncInFlightRef.current = true;
+        current.setCloudSync({ phase: "syncing", error: undefined });
+        try {
+          await pushLocalToCloud(twitchUserId, {
+            expectedRevision: latestCheckpoint.revision,
+            notifyConflict: true,
+          });
+        } catch (error) {
+          state().setCloudSync({
+            phase: "error",
+            error: errorMessage(error),
+          });
+        } finally {
+          cloudSyncInFlightRef.current = false;
+        }
+      })();
+    }, 2500);
+
+    return () => {
+      window.clearTimeout(cloudPushTimerRef.current);
+    };
+  }, [
+    ready,
+    cloudSyncEnabled,
+    proActive,
+    twitchUserId,
+    profilesList,
+    activeProfileId,
+    cloudSyncPhase,
+    buildLocalCloudPayload,
+    pushLocalToCloud,
+    state,
+  ]);
+
   const shutdown = useCallback(async () => {
+    window.clearTimeout(cloudPushTimerRef.current);
+    cloudPushTimerRef.current = undefined;
     const current = state();
     if (current.ready) {
       const { nextProfiles } = buildSyncedProfiles();
       current.setProfiles(nextProfiles);
       await saveLocalState("profiles", nextProfiles).catch(() => undefined);
+      if (
+        isTauri() &&
+        current.cloudSyncEnabled &&
+        current.entitlements.pro &&
+        current.twitch.userId &&
+        current.cloudSync.phase !== "conflict"
+      ) {
+        const userId = current.twitch.userId;
+        const checkpoint = current.cloudSyncCheckpoints[userId];
+        if (checkpoint) {
+          const { localSha256 } = await buildLocalCloudPayload().catch(() => ({
+            localSha256: undefined,
+          }));
+          if (localSha256 && localSha256 !== checkpoint.localSha256) {
+            await pushLocalToCloud(userId, {
+              expectedRevision: checkpoint.revision,
+            }).catch(() => undefined);
+          }
+        }
+      }
     }
     twitchRef.current?.stop();
     twitchRef.current = undefined;
@@ -1122,7 +1583,7 @@ export function RuntimeProvider({ children }: { children: ReactNode }) {
     chatRef.current?.stop();
     chatRef.current = undefined;
     if (isTauri()) await twitchNative.chatStop().catch(() => undefined);
-  }, [buildSyncedProfiles, state]);
+  }, [buildLocalCloudPayload, buildSyncedProfiles, pushLocalToCloud, state]);
 
   useEffect(() => {
     let disposed = false;
@@ -1141,10 +1602,20 @@ export function RuntimeProvider({ children }: { children: ReactNode }) {
           rawActiveProfileId,
           rawLastTwitchUserId,
           rawProfilesAutoSwitch,
+          rawCloudSyncEnabled,
+          rawCloudSyncCheckpoints,
           events,
           chatMessages,
         } = await loadBootstrap();
         if (disposed) return;
+        state().setCloudSyncEnabled(
+          typeof rawCloudSyncEnabled === "boolean" ? rawCloudSyncEnabled : true,
+        );
+        if (rawCloudSyncCheckpoints && typeof rawCloudSyncCheckpoints === "object") {
+          state().setCloudSyncCheckpoints(
+            rawCloudSyncCheckpoints as Record<string, CloudSyncUserCheckpoint>,
+          );
+        }
         setSettings(settings);
         setEvents(events);
         setChatMessages(chatMessages);
@@ -1283,6 +1754,14 @@ export function RuntimeProvider({ children }: { children: ReactNode }) {
     state().setChatEmotes([]);
     await secretDelete("twitch-oauth");
     state().setTwitch({ phase: "disconnected" });
+    state().setCloudSync({
+      phase: "idle",
+      remoteMeta: undefined,
+      conflict: undefined,
+      error: undefined,
+      lastSyncedAt: undefined,
+    });
+    state().setEntitlements({ tier: "free", pro: false, features: [] });
     state().setStatsLoading(false);
     state().setStats({
       followers: undefined,
@@ -1944,6 +2423,168 @@ export function RuntimeProvider({ children }: { children: ReactNode }) {
     );
   };
 
+  const setCloudSyncEnabledPref = async (enabled: boolean) => {
+    const current = state();
+    current.setCloudSyncEnabled(enabled);
+    await saveLocalState("cloudSyncEnabled", enabled);
+    if (!enabled) {
+      window.clearTimeout(cloudPushTimerRef.current);
+      cloudPushTimerRef.current = undefined;
+      return;
+    }
+    if (current.twitch.userId && current.twitch.account) {
+      await reconcileCloudOnConnect(current.twitch.userId, current.twitch.account);
+    }
+  };
+
+  const syncCloudNow = async (
+    mode: "smart" | "push" | "pull" = "smart",
+    options?: { force?: boolean; merge?: boolean },
+  ) => {
+    const current = state();
+    const userId = current.twitch.userId;
+    const account = current.twitch.account ?? "";
+    if (!isTauri() || !userId) {
+      throw new Error(i18n.t("stream.notConnected"));
+    }
+    if (cloudSyncInFlightRef.current) return;
+    cloudSyncInFlightRef.current = true;
+    current.setCloudSync({ phase: "syncing", error: undefined });
+    try {
+      if (mode === "smart") {
+        cloudSyncInFlightRef.current = false;
+        await reconcileCloudOnConnect(userId, account);
+        if (state().cloudSync.phase === "synced") {
+          toast.success(i18n.t("profiles.cloud.syncSuccess"));
+        }
+        return;
+      }
+
+      if (mode === "push") {
+        const checkpoint = state().cloudSyncCheckpoints[userId];
+        const status = await pushLocalToCloud(userId, {
+          expectedRevision: options?.force ? undefined : checkpoint?.revision,
+          force: options?.force,
+          notifyConflict: true,
+        });
+        if (status === "synced") {
+          toast.success(i18n.t("profiles.cloud.uploadSuccess"));
+        }
+        return;
+      }
+
+      const pulled = await cloudSyncNative.pull(TWITCH_CLIENT_ID);
+      if ("proRequired" in pulled && pulled.proRequired) {
+        state().setEntitlements({ tier: "free", pro: false, features: [], license: undefined });
+        state().setCloudSync({ phase: "idle", error: undefined });
+        toast.info(i18n.t("pro.requiredToast"));
+        return;
+      }
+      if (!("bundle" in pulled)) {
+        state().setCloudSync({
+          phase: "idle",
+          remoteMeta: { exists: false },
+          conflict: undefined,
+          error: undefined,
+        });
+        toast.info(i18n.t("profiles.cloud.noRemoteBackup"));
+        return;
+      }
+      await applyPulledCloudBundle(
+        userId,
+        pulled.bundle,
+        pulled.meta,
+        Boolean(options?.merge),
+      );
+      toast.success(i18n.t("profiles.cloud.downloadSuccess"));
+    } catch (error) {
+      const msg = errorMessage(error);
+      state().setCloudSync({ phase: "error", error: msg });
+      toast.error(i18n.t("profiles.cloud.syncError"), { description: msg });
+      throw error;
+    } finally {
+      cloudSyncInFlightRef.current = false;
+    }
+  };
+
+  const deleteCloudBackup = async () => {
+    const current = state();
+    const userId = current.twitch.userId;
+    if (!isTauri() || !userId) {
+      throw new Error(i18n.t("stream.notConnected"));
+    }
+    if (cloudSyncInFlightRef.current) return;
+    cloudSyncInFlightRef.current = true;
+    current.setCloudSync({ phase: "syncing", error: undefined });
+    try {
+      await cloudSyncNative.remove(TWITCH_CLIENT_ID);
+      await setCloudSyncCheckpoint(userId, undefined);
+      current.setCloudSync({
+        phase: "idle",
+        lastSyncedAt: undefined,
+        remoteMeta: { exists: false },
+        conflict: undefined,
+        error: undefined,
+      });
+      toast.success(i18n.t("profiles.cloud.deleteSuccess"));
+    } catch (error) {
+      const msg = errorMessage(error);
+      current.setCloudSync({ phase: "error", error: msg });
+      toast.error(i18n.t("profiles.cloud.syncError"), { description: msg });
+      throw error;
+    } finally {
+      cloudSyncInFlightRef.current = false;
+    }
+  };
+
+  const refreshProEntitlements = async () => {
+    const current = state();
+    if (!isTauri() || !current.twitch.userId) {
+      const freeState = { tier: "free" as const, pro: false, features: [] };
+      current.setEntitlements(freeState);
+      return freeState;
+    }
+    current.setEntitlements({ loading: true, error: undefined });
+    try {
+      const entitlements = await proNative.entitlements(TWITCH_CLIENT_ID);
+      state().setEntitlements({ ...entitlements, loading: false, error: undefined });
+      return entitlements;
+    } catch (error) {
+      const msg = errorMessage(error);
+      state().setEntitlements({ loading: false, error: msg });
+      throw error;
+    }
+  };
+
+  const activateProLicense = async (licenseKey: string) => {
+    const current = state();
+    const userId = current.twitch.userId;
+    const account = current.twitch.account ?? "";
+    if (!isTauri() || !userId) {
+      throw new Error(i18n.t("stream.notConnected"));
+    }
+    const result = await proNative.activate(TWITCH_CLIENT_ID, licenseKey.trim());
+    state().setEntitlements({ ...result.entitlements, loading: false, error: undefined });
+    toast.success(
+      i18n.t("pro.activatedToast", { account }),
+    );
+    if (result.entitlements.pro && state().cloudSyncEnabled) {
+      void reconcileCloudOnConnect(userId, account);
+    }
+    return result.entitlements;
+  };
+
+  const deactivateProLicense = async () => {
+    const current = state();
+    if (!isTauri() || !current.twitch.userId) {
+      throw new Error(i18n.t("stream.notConnected"));
+    }
+    const result = await proNative.deactivate(TWITCH_CLIENT_ID);
+    state().setEntitlements({ ...result.entitlements, loading: false, error: undefined });
+    state().setCloudSync({ phase: "idle", error: undefined });
+    toast.success(i18n.t("pro.unlinkedToast"));
+  };
+
   return (
     <RuntimeContext.Provider
       value={{
@@ -1989,6 +2630,12 @@ export function RuntimeProvider({ children }: { children: ReactNode }) {
         setProfilesAutoSwitch: setProfilesAutoSwitchPref,
         exportProfiles,
         importProfiles,
+        setCloudSyncEnabled: setCloudSyncEnabledPref,
+        syncCloudNow,
+        deleteCloudBackup,
+        refreshProEntitlements,
+        activateProLicense,
+        deactivateProLicense,
         reconnect,
         shutdown,
       }}
