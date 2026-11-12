@@ -1340,12 +1340,28 @@ async fn pro_activate_license(client_id: String, license_key: String) -> Result<
 }
 
 #[tauri::command]
-async fn pro_deactivate_license(client_id: String) -> Result<Value, String> {
+async fn support_ticket_status(client_id: String) -> Result<Value, String> {
     let (status, body) = cloud_sync_send(
         &client_id,
-        reqwest::Method::DELETE,
-        "/v1/pro/license",
+        reqwest::Method::GET,
+        "/v1/support/ticket",
         None,
+    )
+    .await?;
+    if !(200..300).contains(&status) {
+        return Err(cloud_sync_error(status, &body));
+    }
+    Ok(body)
+}
+
+#[tauri::command]
+async fn support_submit_key_reset(client_id: String, message: String) -> Result<Value, String> {
+    let payload = json!({ "message": message });
+    let (status, body) = cloud_sync_send(
+        &client_id,
+        reqwest::Method::POST,
+        "/v1/support/key-reset",
+        Some(&payload),
     )
     .await?;
     if !(200..300).contains(&status) {
@@ -1813,7 +1829,8 @@ pub fn run() {
             cloud_sync_delete,
             pro_entitlements,
             pro_activate_license,
-            pro_deactivate_license,
+            support_ticket_status,
+            support_submit_key_reset,
             twitch_chat_start,
             twitch_chat_send,
             twitch_chat_stop,

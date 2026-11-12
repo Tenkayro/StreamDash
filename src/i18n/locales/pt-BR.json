@@ -937,7 +937,45 @@
     "windowsNotifications": "Notificações do Windows",
     "windowsNotificationsDetail": "Mostrar eventos selecionados como notificações nativas.",
     "profiles": "Perfis e backup",
-    "profilesAutoSwitch": "Alternar perfil automaticamente por conta da Twitch"
+    "profilesAutoSwitch": "Alternar perfil automaticamente por conta da Twitch",
+    "supportSection": "Suporte e Licença",
+    "support": {
+      "sectionTitle": "Suporte e Redefinição de Licença",
+      "title": "Redefinir chave de licença Pro",
+      "description": "Ativou sua chave Payhip na conta da Twitch errada? Envie um ticket para analisar e liberar sua chave uma vez.",
+      "resetsCounter": "Redefinições usadas: {{used}} / {{max}}",
+      "refresh": "Atualizar status",
+      "connectTwitchHint": "Conecte sua conta da Twitch para ver o status da licença ou abrir um ticket.",
+      "ticketHeader": "Ticket #{{id}} · Chave {{key}}",
+      "yourReason": "Sua mensagem",
+      "adminReply": "Resposta do suporte",
+      "pendingInfo": "Sua solicitação está em análise. Assim que for processada, a decisão aparecerá aqui.",
+      "approvedInfo": "Aprovado! A vinculação foi removida e agora você pode ativar sua chave uma vez na conta certa.",
+      "rejectedInfo": "Esta solicitação foi recusada. Confira a resposta do suporte acima.",
+      "noActiveProInfo": "Nenhuma licença Pro ativa está vinculada a esta conta da Twitch.",
+      "cooldownUntil": "Espera ativa até {{time}}.",
+      "boundToAccount": "Atualmente vinculada a @{{account}} ({{key}})",
+      "reasonPlaceholder": "Explique por que precisa redefinir a chave (ex.: conta da Twitch errada)…",
+      "oneTimeWarning": "Cada chave de licença Pro só pode ser redefinida uma única vez.",
+      "submitting": "Enviando…",
+      "submitButton": "Enviar ticket",
+      "loadError": "Não foi possível carregar o status do ticket.",
+      "refreshRateLimited": "Aguarde {{seconds}}s antes de atualizar novamente.",
+      "submitSuccess": "Ticket enviado! Vamos analisá-lo em breve.",
+      "approvedToast": "Sua redefinição foi aprovada! Agora você pode vincular sua chave a outra conta da Twitch.",
+      "status": {
+        "pending": "Em análise",
+        "approved": "Aprovado",
+        "rejected": "Recusado"
+      },
+      "errors": {
+        "messageTooShort": "Escreva pelo menos 10 caracteres explicando seu pedido.",
+        "noActiveLicense": "Nenhuma licença Pro ativa está vinculada a esta conta.",
+        "resetLimitReached": "Esta chave de licença já usou sua única redefinição.",
+        "alreadyPending": "Você já tem um ticket pendente para esta chave.",
+        "rateLimited": "Espera ativa. Aguarde {{seconds}}s antes de enviar outro ticket."
+      }
+    }
   },
   "statistics": {
     "activityOverTime": "Atividade ao longo do tempo",
@@ -1414,12 +1452,9 @@
     "licenseKeyPlaceholder": "XXXX-XXXX-XXXX-XXXX",
     "activateButton": "Ativar",
     "activating": "Verificando…",
-    "unlinkAction": "Desvincular licença",
-    "unlinkConfirm": "Desvincular sua licença Pro desta conta da Twitch? Você poderá ativá-la em outra conta depois.",
-    "unlinkConfirmButton": "Confirmar",
+    "requestResetButton": "Conta errada? Pedir redefinição",
     "requiredToast": "O StreamDash Pro é necessário para a sincronização na nuvem",
     "activatedToast": "StreamDash Pro ativado para @{{account}}!",
-    "unlinkedToast": "Licença Pro desvinculada desta conta da Twitch",
     "errors": {
       "invalidKey": "Chave de licença inválida ou não encontrada.",
       "disabledKey": "Esta chave de licença foi desativada.",

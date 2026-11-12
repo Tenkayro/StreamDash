@@ -46,6 +46,7 @@ import {
   loadSettings,
   proNative,
   saveChatMessage,
+  supportNative,
   saveEvent,
   saveLocalState,
   saveLocalStateBatch,
@@ -1874,6 +1875,7 @@ export function RuntimeProvider({ children }: { children: ReactNode }) {
       hasLocalChanges: undefined,
     });
     state().setEntitlements({ tier: "free", pro: false, features: [] });
+    state().setSupportTicket(undefined);
     state().setStatsLoading(false);
     state().setStats({
       followers: undefined,
@@ -2862,21 +2864,77 @@ export function RuntimeProvider({ children }: { children: ReactNode }) {
     }
   };
 
-  const deactivateProLicense = async () => {
+  const refreshSupportTicket = async (force = false) => {
     const current = state();
-    if (!isTauri() || !current.twitch.userId) {
+    const userId = current.twitch.userId;
+    if (!isTauri() || !userId) {
+      current.setSupportTicket(undefined);
+      return undefined;
+    }
+    const gate = cloudSyncLimiter.canFetchSupportTicket(userId, force);
+    if (!gate.allowed) {
+      if (force && gate.waitSeconds > 0) {
+        toast.info(i18n.t("settings.support.refreshRateLimited", { seconds: gate.waitSeconds }));
+      }
+      return current.supportTicket;
+    }
+    current.setSupportTicket({ loading: true, error: undefined });
+    try {
+      const next = await supportNative.ticketStatus(TWITCH_CLIENT_ID);
+      if (state().twitch.userId !== userId) return undefined;
+      cloudSyncLimiter.markSupportTicketFetched(userId, force);
+      state().setSupportTicket({ ...next, loading: false, error: undefined });
+
+      // If admin approved a reset while app was open, immediately sync entitlements + clear cloud lock!
+      const wasPro = state().entitlements.pro;
+      if (wasPro && !next.hasActiveLicense) {
+        cloudSyncLimiter.invalidateEntitlements(userId);
+        state().setEntitlements({
+          tier: "free",
+          pro: false,
+          twitchUserId: userId,
+          twitchLogin: state().twitch.account,
+          features: [],
+          license: undefined,
+          loading: false,
+          error: undefined,
+        });
+        state().setCloudSync({
+          phase: "idle",
+          error: undefined,
+          hasLocalChanges: undefined,
+        });
+        if (next.latestTicket?.status === "approved") {
+          toast.success(i18n.t("settings.support.approvedToast"));
+        }
+      }
+      return next;
+    } catch (error) {
+      const msg = errorMessage(error);
+      cloudSyncLimiter.applyServerRateLimit(msg);
+      state().setSupportTicket({ loading: false, error: msg });
+      if (force) {
+        toast.error(i18n.t("settings.support.loadError"), { description: msg });
+      }
+      return undefined;
+    }
+  };
+
+  const submitKeyResetTicket = async (message: string) => {
+    const current = state();
+    const userId = current.twitch.userId;
+    if (!isTauri() || !userId) {
       throw new Error(i18n.t("stream.notConnected"));
     }
-    const result = await proNative.deactivate(TWITCH_CLIENT_ID);
-    cloudSyncLimiter.invalidateEntitlements(current.twitch.userId);
-    state().setEntitlements({ ...result.entitlements, loading: false, error: undefined });
-    state().setCloudSync({
-      phase: "idle",
-      error: undefined,
-      hasLocalChanges: undefined,
-      cooldownUntil: undefined,
-    });
-    toast.success(i18n.t("pro.unlinkedToast"));
+    const trimmed = message.trim();
+    if (trimmed.length < 10) {
+      throw new Error("message_too_short");
+    }
+    await supportNative.submitKeyReset(TWITCH_CLIENT_ID, trimmed);
+    cloudSyncLimiter.markSupportTicketFetched(userId, true);
+    const updated = await supportNative.ticketStatus(TWITCH_CLIENT_ID);
+    state().setSupportTicket({ ...updated, loading: false, error: undefined });
+    toast.success(i18n.t("settings.support.submitSuccess"));
   };
 
   return (
@@ -2929,7 +2987,8 @@ export function RuntimeProvider({ children }: { children: ReactNode }) {
         deleteCloudBackup,
         refreshProEntitlements,
         activateProLicense,
-        deactivateProLicense,
+        refreshSupportTicket,
+        submitKeyResetTicket,
         reconnect,
         shutdown,
       }}

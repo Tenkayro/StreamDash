@@ -396,3 +396,35 @@ export interface CloudSyncState {
   conflict?: CloudSyncConflict
   error?: string
 }
+
+export interface SupportResetTicket {
+  id: number
+  twitchUserId: string
+  twitchLogin: string
+  licenseMasked: string
+  userMessage: string
+  status: 'pending' | 'approved' | 'rejected'
+  adminNote?: string
+  decidedBy?: string
+  createdAt: number
+  decidedAt?: number
+  updatedAt: number
+}
+
+export interface SupportTicketState {
+  hasActiveLicense: boolean
+  licenseMasked?: string
+  resetsUsed: number
+  maxResets: number
+  resetsRemaining: number
+  canSubmit: boolean
+  blockedReason?:
+    | 'no_active_license'
+    | 'key_reset_limit_reached'
+    | 'ticket_already_pending'
+    | 'support_cooldown'
+  cooldownUntil?: number
+  latestTicket?: SupportResetTicket | null
+  loading?: boolean
+  error?: string
+}

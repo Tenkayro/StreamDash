@@ -937,7 +937,45 @@
     "windowsNotifications": "Notificaciones de Windows",
     "windowsNotificationsDetail": "Mostrar eventos seleccionados como notificaciones nativas.",
     "profiles": "Perfiles y respaldo",
-    "profilesAutoSwitch": "Cambiar perfil automáticamente según la cuenta de Twitch"
+    "profilesAutoSwitch": "Cambiar perfil automáticamente según la cuenta de Twitch",
+    "supportSection": "Soporte y licencia",
+    "support": {
+      "sectionTitle": "Soporte y restablecimiento de licencia",
+      "title": "Restablecer clave de licencia Pro",
+      "description": "¿Activaste tu clave de Payhip en la cuenta de Twitch equivocada? Envía un ticket para revisar y liberar tu clave una vez.",
+      "resetsCounter": "Restablecimientos usados: {{used}} / {{max}}",
+      "refresh": "Actualizar estado",
+      "connectTwitchHint": "Conecta tu cuenta de Twitch para ver el estado de tu licencia o abrir un ticket.",
+      "ticketHeader": "Ticket #{{id}} · Clave {{key}}",
+      "yourReason": "Tu mensaje",
+      "adminReply": "Respuesta de soporte",
+      "pendingInfo": "Tu solicitud está en revisión. Cuando se procese, la decisión aparecerá aquí.",
+      "approvedInfo": "¡Aprobado! Se eliminó el vínculo para que puedas activar tu clave una vez en la cuenta correcta.",
+      "rejectedInfo": "Esta solicitud fue rechazada. Revisa la respuesta de soporte arriba.",
+      "noActiveProInfo": "Esta cuenta de Twitch no tiene ninguna licencia Pro activa vinculada.",
+      "cooldownUntil": "Espera activa hasta {{time}}.",
+      "boundToAccount": "Vinculada actualmente a @{{account}} ({{key}})",
+      "reasonPlaceholder": "Explica por qué necesitas restablecer la clave (p. ej., cuenta de Twitch equivocada)…",
+      "oneTimeWarning": "Cada clave de licencia Pro solo puede restablecerse una vez.",
+      "submitting": "Enviando…",
+      "submitButton": "Enviar ticket",
+      "loadError": "No se pudo cargar el estado del ticket.",
+      "refreshRateLimited": "Espera {{seconds}}s antes de actualizar de nuevo.",
+      "submitSuccess": "¡Ticket enviado! Lo revisaremos pronto.",
+      "approvedToast": "¡Tu restablecimiento fue aprobado! Ya puedes vincular tu clave en otra cuenta de Twitch.",
+      "status": {
+        "pending": "Pendiente",
+        "approved": "Aprobado",
+        "rejected": "Rechazado"
+      },
+      "errors": {
+        "messageTooShort": "Escribe al menos 10 caracteres explicando tu solicitud.",
+        "noActiveLicense": "No hay ninguna licencia Pro activa vinculada a esta cuenta.",
+        "resetLimitReached": "Esta clave de licencia ya utilizó su único restablecimiento.",
+        "alreadyPending": "Ya tienes un ticket pendiente para esta clave.",
+        "rateLimited": "Espera activa. Espera {{seconds}}s antes de enviar otro ticket."
+      }
+    }
   },
   "statistics": {
     "activityOverTime": "Actividad a lo largo del tiempo",
@@ -1414,12 +1452,9 @@
     "licenseKeyPlaceholder": "XXXX-XXXX-XXXX-XXXX",
     "activateButton": "Activar",
     "activating": "Verificando…",
-    "unlinkAction": "Desvincular licencia",
-    "unlinkConfirm": "¿Desvincular tu licencia Pro de esta cuenta de Twitch? Podrás activarla después en otra cuenta.",
-    "unlinkConfirmButton": "Confirmar desvinculación",
+    "requestResetButton": "¿Cuenta equivocada? Solicitar reset",
     "requiredToast": "Se requiere StreamDash Pro para sincronizar en la nube",
     "activatedToast": "¡StreamDash Pro activado para @{{account}}!",
-    "unlinkedToast": "Licencia Pro desvinculada de esta cuenta de Twitch",
     "errors": {
       "invalidKey": "Clave de licencia no válida o no encontrada.",
       "disabledKey": "Esta clave de licencia ha sido desactivada.",

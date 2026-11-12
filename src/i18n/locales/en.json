@@ -937,7 +937,45 @@
     "windowsNotifications": "Windows notifications",
     "windowsNotificationsDetail": "Show selected stream events as native notifications.",
     "profiles": "Profiles & Backup",
-    "profilesAutoSwitch": "Auto-switch profile per Twitch account"
+    "profilesAutoSwitch": "Auto-switch profile per Twitch account",
+    "supportSection": "Support & License",
+    "support": {
+      "sectionTitle": "Support & License Reset",
+      "title": "Pro License Key Reset",
+      "description": "Activated your Payhip key on the wrong Twitch account? Submit a reset ticket to review and unlock your key once.",
+      "resetsCounter": "Resets used: {{used}} / {{max}}",
+      "refresh": "Refresh status",
+      "connectTwitchHint": "Connect your Twitch account to check license status or open a key reset ticket.",
+      "ticketHeader": "Ticket #{{id}} · Key {{key}}",
+      "yourReason": "Your message",
+      "adminReply": "Support reply",
+      "pendingInfo": "Your request is queued for review. Once processed, the decision will appear right here.",
+      "approvedInfo": "Approved! Your license binding was removed so you can activate your key once on the intended Twitch account.",
+      "rejectedInfo": "This reset request was declined. Please check the support reply above.",
+      "noActiveProInfo": "This Twitch account currently has no active Pro license bound to it.",
+      "cooldownUntil": "Cooldown active until {{time}}.",
+      "boundToAccount": "Currently bound to @{{account}} ({{key}})",
+      "reasonPlaceholder": "Explain why you need a key reset (e.g. wrong Twitch account connected)...",
+      "oneTimeWarning": "Each Pro license key can only be reset once in its lifetime.",
+      "submitting": "Submitting…",
+      "submitButton": "Submit Reset Ticket",
+      "loadError": "Could not load support ticket status.",
+      "refreshRateLimited": "Please wait {{seconds}}s before refreshing again.",
+      "submitSuccess": "Support ticket submitted! We will review it shortly.",
+      "approvedToast": "Your Pro key reset was approved! You can now bind your key to another Twitch account.",
+      "status": {
+        "pending": "Pending review",
+        "approved": "Approved",
+        "rejected": "Declined"
+      },
+      "errors": {
+        "messageTooShort": "Please write at least 10 characters explaining your request.",
+        "noActiveLicense": "No active Pro license is bound to this Twitch account.",
+        "resetLimitReached": "This license key has already used its 1 lifetime reset.",
+        "alreadyPending": "You already have a pending support ticket for this key.",
+        "rateLimited": "Cooldown active. Please wait {{seconds}}s before submitting another ticket."
+      }
+    }
   },
   "statistics": {
     "activityOverTime": "Activity over time",
@@ -1414,12 +1452,9 @@
     "licenseKeyPlaceholder": "XXXX-XXXX-XXXX-XXXX",
     "activateButton": "Activate",
     "activating": "Checking…",
-    "unlinkAction": "Unlink license",
-    "unlinkConfirm": "Unlink your Pro license from this Twitch account? You can re-activate it on another Twitch account afterwards.",
-    "unlinkConfirmButton": "Confirm unlink",
+    "requestResetButton": "Wrong account? Request key reset",
     "requiredToast": "StreamDash Pro is required for Cloud Sync",
     "activatedToast": "StreamDash Pro unlocked for @{{account}}!",
-    "unlinkedToast": "Pro license unlinked from this Twitch account",
     "errors": {
       "invalidKey": "License key not found or invalid.",
       "disabledKey": "This license key has been disabled.",

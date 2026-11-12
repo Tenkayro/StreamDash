@@ -4,6 +4,7 @@ import type {
   ProEntitlements,
   ProfileExportBundle,
   ProfileExportSections,
+  SupportTicketState,
 } from "../types";
 
 export interface DeviceAuth {
@@ -94,7 +95,8 @@ export interface RuntimeValue {
   deleteCloudBackup: () => Promise<void>;
   refreshProEntitlements: () => Promise<ProEntitlements>;
   activateProLicense: (licenseKey: string) => Promise<ProEntitlements>;
-  deactivateProLicense: () => Promise<void>;
+  refreshSupportTicket: (force?: boolean) => Promise<SupportTicketState | undefined>;
+  submitKeyResetTicket: (message: string) => Promise<void>;
   reconnect: () => Promise<void>;
   shutdown: () => Promise<void>;
 }

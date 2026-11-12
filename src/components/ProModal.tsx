@@ -5,10 +5,10 @@ import {
   Crown,
   ExternalLink,
   KeyRound,
+  LifeBuoy,
   Link2,
   ShieldCheck,
   Sparkles,
-  Unlink,
   X,
 } from "lucide-react";
 import { useEffect, useState } from "react";
@@ -61,7 +61,6 @@ function ProModalContent({ onClose }: { onClose: () => void }) {
   const [licenseKey, setLicenseKey] = useState("");
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string>();
-  const [confirmUnlink, setConfirmUnlink] = useState(false);
 
   const twitchConnected = twitch.phase === "connected" && Boolean(twitch.userId);
 
@@ -90,18 +89,12 @@ function ProModalContent({ onClose }: { onClose: () => void }) {
     }
   };
 
-  const handleUnlink = async () => {
-    if (busy) return;
-    setBusy(true);
-    setError(undefined);
-    try {
-      await runtime.deactivateProLicense();
-      setConfirmUnlink(false);
-    } catch (err) {
-      setError(mapProError(errorMessage(err), t));
-    } finally {
-      setBusy(false);
-    }
+  const openSupportReset = () => {
+    onClose();
+    setPage("settings");
+    window.setTimeout(() => {
+      document.getElementById("support")?.scrollIntoView({ behavior: "smooth", block: "start" });
+    }, 120);
   };
 
   return (
@@ -202,39 +195,19 @@ function ProModalContent({ onClose }: { onClose: () => void }) {
                 </div>
               )}
 
-              {!confirmUnlink ? (
-                <div className="flex items-center justify-between gap-2 pt-1">
-                  <Button
-                    type="button"
-                    disabled={busy}
-                    onClick={() => setConfirmUnlink(true)}
-                    className="hover:border-red-500/30 hover:text-red-300"
-                  >
-                    <Unlink size={13} />
-                    {t("pro.unlinkAction")}
-                  </Button>
-                  <Button variant="primary" onClick={onClose}>
-                    {t("common.done")}
-                  </Button>
-                </div>
-              ) : (
-                <div className="space-y-2.5 rounded-xl border border-amber-500/30 bg-amber-500/10 p-3 text-xs">
-                  <p className="text-amber-100">{t("pro.unlinkConfirm")}</p>
-                  <div className="flex justify-end gap-2">
-                    <Button type="button" onClick={() => setConfirmUnlink(false)}>
-                      {t("common.cancel")}
-                    </Button>
-                    <Button
-                      variant="danger"
-                      disabled={busy}
-                      onClick={() => void handleUnlink()}
-                    >
-                      <Unlink size={13} />
-                      {t("pro.unlinkConfirmButton")}
-                    </Button>
-                  </div>
-                </div>
-              )}
+              <div className="flex flex-wrap items-center justify-between gap-2 pt-1">
+                <Button
+                  type="button"
+                  onClick={openSupportReset}
+                  className="hover:border-amber-500/30 hover:text-amber-200"
+                >
+                  <LifeBuoy size={13} />
+                  {t("pro.requestResetButton")}
+                </Button>
+                <Button variant="primary" onClick={onClose}>
+                  {t("common.done")}
+                </Button>
+              </div>
             </div>
           ) : (
             <div className="space-y-4">

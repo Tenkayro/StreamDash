@@ -18,6 +18,7 @@ import {
   Languages,
   Layers,
   LayoutDashboard,
+  LifeBuoy,
   ListFilter,
   Maximize2,
   MessageSquare,
@@ -43,6 +44,7 @@ import { useEffect, useLayoutEffect, useRef, useState, type ReactNode } from "re
 import { toast } from "sonner";
 import { Button, Card, Toggle } from "../components/ui";
 import { ProfilesSection } from "../components/settings/ProfilesSection";
+import { SupportSection } from "../components/settings/SupportSection";
 import { defaultDashboardWidgets, useAppStore } from "../stores/app-store";
 import { saveSetting } from "../services/native";
 import { errorMessage, isTauri } from "../lib/utils";
@@ -71,6 +73,7 @@ const settingsSections: Array<{ id: string; label: string; icon: LucideIcon }> =
   { id: "chat", label: "chat", icon: MessageSquare },
   { id: "events", label: "events", icon: ListFilter },
   { id: "data", label: "data", icon: Database },
+  { id: "support", label: "supportSection", icon: LifeBuoy },
 ];
 
 function currentTranslateX(element: HTMLElement) {
@@ -865,6 +868,8 @@ export function SettingsPage() {
             </Row>
           </Card>
         </section>
+
+        <SupportSection />
       </div>
     </>
   );

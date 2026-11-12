@@ -27,6 +27,7 @@ import type {
   GiveawayState,
   ObsSnapshot,
   ProEntitlements,
+  SupportTicketState,
   UserProfile,
 } from "../types";
 import {
@@ -130,6 +131,8 @@ interface AppStore {
   setCloudSync: (patch: Partial<CloudSyncState>) => void;
   entitlements: ProEntitlements;
   setEntitlements: (patch: Partial<ProEntitlements> | ProEntitlements) => void;
+  supportTicket?: SupportTicketState;
+  setSupportTicket: (patch?: Partial<SupportTicketState> | SupportTicketState) => void;
 }
 export const useAppStore = create<AppStore>((set) => ({
   searchTarget: undefined,
@@ -595,4 +598,20 @@ export const useAppStore = create<AppStore>((set) => ({
           ? { ...(patch as ProEntitlements) }
           : { ...s.entitlements, ...patch },
     })),
+  supportTicket: undefined,
+  setSupportTicket: (patch) =>
+    set((s) => {
+      if (!patch) return { supportTicket: undefined };
+      if ("hasActiveLicense" in patch && typeof patch.hasActiveLicense === "boolean") {
+        return { supportTicket: { ...(patch as SupportTicketState) } };
+      }
+      const prev: SupportTicketState = s.supportTicket ?? {
+        hasActiveLicense: false,
+        resetsUsed: 0,
+        maxResets: 1,
+        resetsRemaining: 0,
+        canSubmit: false,
+      };
+      return { supportTicket: { ...prev, ...patch } };
+    }),
 }));

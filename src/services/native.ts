@@ -6,6 +6,8 @@ import type {
   CloudSyncRemoteMeta,
   ProEntitlements,
   ProfileExportBundle,
+  SupportResetTicket,
+  SupportTicketState,
   TwitchSession,
 } from "../types";
 import { isTauri } from "../lib/utils";
@@ -251,13 +253,28 @@ export const proNative = {
           { clientId, licenseKey },
         )
       : Promise.reject(new Error("Pro activation requires the desktop app")),
-  deactivate: (
-    clientId: string,
-  ): Promise<{ ok: boolean; unlinked: boolean; entitlements: ProEntitlements }> =>
+};
+
+export const supportNative = {
+  ticketStatus: (clientId: string): Promise<SupportTicketState> =>
     isTauri()
-      ? invoke<{ ok: boolean; unlinked: boolean; entitlements: ProEntitlements }>(
-          "pro_deactivate_license",
-          { clientId },
-        )
-      : Promise.reject(new Error("Pro license management requires the desktop app")),
+      ? invoke<SupportTicketState>("support_ticket_status", { clientId })
+      : Promise.resolve({
+          hasActiveLicense: false,
+          resetsUsed: 0,
+          maxResets: 1,
+          resetsRemaining: 0,
+          canSubmit: false,
+          blockedReason: "no_active_license",
+        }),
+  submitKeyReset: (
+    clientId: string,
+    message: string,
+  ): Promise<{ ok: boolean; ticket: SupportResetTicket }> =>
+    isTauri()
+      ? invoke<{ ok: boolean; ticket: SupportResetTicket }>("support_submit_key_reset", {
+          clientId,
+          message,
+        })
+      : Promise.reject(new Error("Support tickets require the desktop app")),
 };

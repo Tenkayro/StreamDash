@@ -24,6 +24,8 @@ class CloudSyncClientLimiter {
   private entitlementsCache = new Map<string, { value: ProEntitlements; fetchedAt: number }>()
   private activateTimestamps: number[] = []
   private activateCooldownUntil = 0
+  private lastSupportFetchByUser = new Map<string, number>()
+  private supportRefreshCooldownUntil = 0
 
   private pruneWindow(list: number[], windowMs: number, now: number): number[] {
     return list.filter((ts) => now - ts < windowMs)
@@ -125,6 +127,30 @@ class CloudSyncClientLimiter {
     this.activateTimestamps = this.pruneWindow(this.activateTimestamps, ACTIVATE_WINDOW_MS, now)
     this.activateTimestamps.push(now)
     this.activateCooldownUntil = now + ACTIVATE_COOLDOWN_MS
+  }
+
+  canFetchSupportTicket(userId: string, force = false, now = Date.now()): { allowed: boolean; waitSeconds: number } {
+    if (force) {
+      if (this.supportRefreshCooldownUntil > now) {
+        return {
+          allowed: false,
+          waitSeconds: Math.ceil((this.supportRefreshCooldownUntil - now) / 1000),
+        }
+      }
+      return { allowed: true, waitSeconds: 0 }
+    }
+    const last = this.lastSupportFetchByUser.get(userId) ?? 0
+    if (now - last < 20_000) {
+      return { allowed: false, waitSeconds: 0 }
+    }
+    return { allowed: true, waitSeconds: 0 }
+  }
+
+  markSupportTicketFetched(userId: string, manual: boolean, now = Date.now()): void {
+    this.lastSupportFetchByUser.set(userId, now)
+    if (manual) {
+      this.supportRefreshCooldownUntil = now + 4_000
+    }
   }
 }
 

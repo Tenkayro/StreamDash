@@ -937,7 +937,45 @@
     "windowsNotifications": "Notifications Windows",
     "windowsNotificationsDetail": "Afficher les événements sélectionnés sous forme de notifications natives.",
     "profiles": "Profils & sauvegarde",
-    "profilesAutoSwitch": "Changer de profil automatiquement par compte Twitch"
+    "profilesAutoSwitch": "Changer de profil automatiquement par compte Twitch",
+    "supportSection": "Support & Licence",
+    "support": {
+      "sectionTitle": "Support & Réinitialisation de licence",
+      "title": "Réinitialiser la clé de licence Pro",
+      "description": "Vous avez activé votre clé Payhip sur le mauvais compte Twitch ? Ouvrez un ticket pour la libérer une fois.",
+      "resetsCounter": "Réinitialisations utilisées : {{used}} / {{max}}",
+      "refresh": "Actualiser le statut",
+      "connectTwitchHint": "Connectez votre compte Twitch pour vérifier votre licence ou ouvrir un ticket.",
+      "ticketHeader": "Ticket #{{id}} · Clé {{key}}",
+      "yourReason": "Votre message",
+      "adminReply": "Réponse du support",
+      "pendingInfo": "Votre demande est en cours d’examen. La décision apparaîtra ici dès son traitement.",
+      "approvedInfo": "Approuvé ! La liaison a été supprimée : vous pouvez réactiver votre clé une fois sur le bon compte.",
+      "rejectedInfo": "Cette demande a été refusée. Consultez la réponse du support ci-dessus.",
+      "noActiveProInfo": "Aucune licence Pro active n’est liée à ce compte Twitch.",
+      "cooldownUntil": "Délai actif jusqu’à {{time}}.",
+      "boundToAccount": "Actuellement liée à @{{account}} ({{key}})",
+      "reasonPlaceholder": "Expliquez pourquoi vous demandez une réinitialisation (ex. mauvais compte Twitch)…",
+      "oneTimeWarning": "Chaque clé Pro ne peut être réinitialisée qu’une seule fois.",
+      "submitting": "Envoi…",
+      "submitButton": "Envoyer le ticket",
+      "loadError": "Impossible de charger le statut du ticket.",
+      "refreshRateLimited": "Veuillez patienter {{seconds}}s avant d’actualiser.",
+      "submitSuccess": "Ticket envoyé ! Nous l’examinerons rapidement.",
+      "approvedToast": "Réinitialisation approuvée ! Vous pouvez maintenant lier votre clé à un autre compte Twitch.",
+      "status": {
+        "pending": "En attente",
+        "approved": "Approuvé",
+        "rejected": "Refusé"
+      },
+      "errors": {
+        "messageTooShort": "Veuillez saisir au moins 10 caractères pour expliquer votre demande.",
+        "noActiveLicense": "Aucune licence Pro active n’est liée à ce compte.",
+        "resetLimitReached": "Cette clé de licence a déjà utilisé son unique réinitialisation.",
+        "alreadyPending": "Vous avez déjà un ticket en attente pour cette clé.",
+        "rateLimited": "Délai actif. Patientez {{seconds}}s avant de soumettre un autre ticket."
+      }
+    }
   },
   "statistics": {
     "activityOverTime": "Activité au fil du temps",
@@ -1414,12 +1452,9 @@
     "licenseKeyPlaceholder": "XXXX-XXXX-XXXX-XXXX",
     "activateButton": "Activer",
     "activating": "Vérification…",
-    "unlinkAction": "Dissocier la licence",
-    "unlinkConfirm": "Dissocier votre licence Pro de ce compte Twitch ? Vous pourrez ensuite l’activer sur un autre compte.",
-    "unlinkConfirmButton": "Confirmer",
+    "requestResetButton": "Mauvais compte ? Demander un reset",
     "requiredToast": "StreamDash Pro est requis pour la synchronisation Cloud",
     "activatedToast": "StreamDash Pro activé pour @{{account}} !",
-    "unlinkedToast": "Licence Pro dissociée de ce compte Twitch",
     "errors": {
       "invalidKey": "Clé de licence introuvable ou invalide.",
       "disabledKey": "Cette clé de licence a été désactivée.",
