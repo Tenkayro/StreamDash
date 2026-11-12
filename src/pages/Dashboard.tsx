@@ -466,7 +466,6 @@ function CustomizeToolbar({
   widgets,
   zoom,
   onShow,
-  onShowAll,
   onApplyPreset,
   onZoomChange,
   onAddBrowser,
@@ -476,7 +475,6 @@ function CustomizeToolbar({
   widgets: WidgetCatalogEntry[];
   zoom: number;
   onShow: (id: DashboardItemId) => void;
-  onShowAll: () => void;
   onApplyPreset: (preset: "standard" | "cockpit" | "metrics") => void;
   onZoomChange: (nextZoom: number) => void;
   onAddBrowser: () => void;
@@ -530,17 +528,6 @@ function CustomizeToolbar({
               <ZoomIn size={12} />
             </button>
           </div>
-
-          {widgets.length > 0 && (
-            <button
-              type="button"
-              onClick={onShowAll}
-              className="inline-flex h-7 items-center gap-1.5 rounded-md border border-line bg-black/15 px-2 text-[10px] text-zinc-400 transition hover:border-white/25 hover:text-zinc-200"
-            >
-              <Eye size={11} />
-              {t("dashboard.showAll")}
-            </button>
-          )}
 
           <button
             type="button"
@@ -836,8 +823,6 @@ export function Dashboard() {
   const hideWidget = (id: DashboardItemId) =>
     updateWidgets(widgets.filter((widget) => widget !== id));
   const showWidget = (id: DashboardItemId) => updateWidgets([...widgets, id]);
-  const showAllWidgets = () =>
-    updateWidgets(availableWidgets.map((w) => w.id));
 
   const applyPreset = (preset: "standard" | "cockpit" | "metrics") => {
     const next =
@@ -2173,7 +2158,6 @@ export function Dashboard() {
           widgets={hiddenWidgets}
           zoom={zoom}
           onShow={showWidget}
-          onShowAll={showAllWidgets}
           onApplyPreset={applyPreset}
           onZoomChange={setZoomLevel}
           onAddBrowser={() => setAddingBrowserSource(true)}

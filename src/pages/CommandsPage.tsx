@@ -1,7 +1,5 @@
 import {
   ArrowUpDown,
-  Braces,
-  Info,
   Pencil,
   Plus,
   Search,
@@ -315,16 +313,10 @@ export function CommandsPage() {
         title={t("commands.title")}
         description={t("pageDescriptions.commands")}
         actions={
-          <div className="flex items-center gap-2">
-            <Button onClick={() => setPage("variables")}>
-              <Braces size={14} />
-              {t("nav.variables")}
-            </Button>
-            <Button variant="primary" onClick={openCreate}>
-              <Plus size={15} />
-              {t("commands.create")}
-            </Button>
-          </div>
+          <Button variant="primary" onClick={openCreate}>
+            <Plus size={15} />
+            {t("commands.create")}
+          </Button>
         }
       />
 
@@ -471,32 +463,34 @@ export function CommandsPage() {
                       </p>
                     </div>
 
-                    <div className="flex shrink-0 items-center justify-end gap-2">
+                    <div className="flex shrink-0 items-center justify-end gap-1.5">
                       <Toggle
                         value={cmd.enabled}
                         onChange={(enabled) => toggleCommand(cmd.id, enabled)}
                         label={triggerLabel}
                       />
-                      <Button
-                        variant="default"
+                      <button
+                        type="button"
                         onClick={() => openEdit(cmd)}
-                        className="h-8 px-2.5 text-xs"
+                        title={t("commands.edit")}
+                        aria-label={t("commands.edit")}
+                        className="grid size-8 place-items-center rounded-lg border border-line bg-white/3 text-zinc-400 transition hover:border-accent/35 hover:text-accent"
                       >
-                        <Pencil size={13} className="text-accent" />
-                        {t("commands.edit")}
-                      </Button>
+                        <Pencil size={13} />
+                      </button>
                       {!cmd.builtIn && (
-                        <Button
-                          variant="danger"
+                        <button
+                          type="button"
                           onClick={() => {
                             deleteCommand(cmd.id);
                             toast.success(t("commands.deletedSuccess"));
                           }}
-                          className="h-8 px-2.5 text-xs"
+                          title={t("commands.delete")}
+                          aria-label={t("commands.delete")}
+                          className="grid size-8 place-items-center rounded-lg border border-line bg-white/3 text-zinc-400 transition hover:border-red-400/35 hover:bg-red-500/10 hover:text-red-300"
                         >
                           <Trash2 size={13} />
-                          {t("commands.delete")}
-                        </Button>
+                        </button>
                       )}
                     </div>
                   </div>
@@ -646,7 +640,16 @@ export function CommandsPage() {
                                 max: 500,
                               })}
                             </span>
-                            <span>{t("commands.variablesHint")}</span>
+                            <button
+                              type="button"
+                              onClick={() => {
+                                setEditing(null);
+                                setPage("variables");
+                              }}
+                              className="text-accent hover:underline"
+                            >
+                              {t("commands.variablesHint")}
+                            </button>
                           </div>
                         </>
                       )}
@@ -817,18 +820,6 @@ export function CommandsPage() {
                       )}
                     </div>
 
-                    <div className="flex items-start gap-2.5 rounded-xl border border-accent/25 bg-accent/10 p-3 text-xs text-zinc-200">
-                      <Info size={15} className="mt-0.5 shrink-0 text-accent" />
-                      <div>
-                        <div className="font-semibold text-accent">
-                          {t("commands.keywordInfoTitle")}
-                        </div>
-                        <p className="mt-0.5 text-[11px] text-zinc-300">
-                          {t("commands.keywordInfoBody")}
-                        </p>
-                      </div>
-                    </div>
-
                     <div>
                       <label
                         htmlFor="cmd-keyword-input"
@@ -891,8 +882,11 @@ export function CommandsPage() {
 
                 {section === "conditions" && (
                   <div className="space-y-4">
-                    <div className="space-y-2.5">
-                      <div className="flex items-center gap-3">
+                    <div className="grid grid-cols-1 gap-2.5 sm:grid-cols-2">
+                      <label className="flex cursor-pointer items-center justify-between gap-2 rounded-xl border border-line bg-black/20 px-3 py-2">
+                        <span className="text-xs font-medium text-zinc-200">
+                          {t("commands.enabledWhenOffline")}
+                        </span>
                         <Toggle
                           value={editing.enabledWhenOffline}
                           onChange={(enabledWhenOffline) =>
@@ -900,12 +894,12 @@ export function CommandsPage() {
                           }
                           label={t("commands.enabledWhenOffline")}
                         />
-                        <span className="text-xs font-semibold text-zinc-200">
-                          {t("commands.enabledWhenOffline")}
-                        </span>
-                      </div>
+                      </label>
 
-                      <div className="flex items-center gap-3">
+                      <label className="flex cursor-pointer items-center justify-between gap-2 rounded-xl border border-line bg-black/20 px-3 py-2">
+                        <span className="text-xs font-medium text-zinc-200">
+                          {t("commands.enabledWhenOnline")}
+                        </span>
                         <Toggle
                           value={editing.enabledWhenOnline}
                           onChange={(enabledWhenOnline) =>
@@ -913,12 +907,12 @@ export function CommandsPage() {
                           }
                           label={t("commands.enabledWhenOnline")}
                         />
-                        <span className="text-xs font-semibold text-zinc-200">
-                          {t("commands.enabledWhenOnline")}
-                        </span>
-                      </div>
+                      </label>
 
-                      <div className="flex items-center gap-3">
+                      <label className="flex cursor-pointer items-center justify-between gap-2 rounded-xl border border-line bg-black/20 px-3 py-2">
+                        <span className="text-xs font-medium text-zinc-200">
+                          {t("commands.hiddenFromPublic")}
+                        </span>
                         <Toggle
                           value={editing.hiddenFromPublic}
                           onChange={(hiddenFromPublic) =>
@@ -926,12 +920,12 @@ export function CommandsPage() {
                           }
                           label={t("commands.hiddenFromPublic")}
                         />
-                        <span className="text-xs font-semibold text-zinc-200">
-                          {t("commands.hiddenFromPublic")}
-                        </span>
-                      </div>
+                      </label>
 
-                      <div className="flex items-center gap-3">
+                      <label className="flex cursor-pointer items-center justify-between gap-2 rounded-xl border border-line bg-black/20 px-3 py-2">
+                        <span className="text-xs font-medium text-zinc-200">
+                          {t("commands.whisperOnCooldown")}
+                        </span>
                         <Toggle
                           value={editing.whisperOnCooldown}
                           onChange={(whisperOnCooldown) =>
@@ -939,10 +933,7 @@ export function CommandsPage() {
                           }
                           label={t("commands.whisperOnCooldown")}
                         />
-                        <span className="text-xs font-semibold text-zinc-200">
-                          {t("commands.whisperOnCooldown")}
-                        </span>
-                      </div>
+                      </label>
                     </div>
 
                     <div>

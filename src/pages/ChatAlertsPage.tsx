@@ -1,4 +1,4 @@
-import { BellRing, Braces, Info, RotateCcw } from "lucide-react";
+import { BellRing, RotateCcw } from "lucide-react";
 import { useState } from "react";
 import { toast } from "sonner";
 import { useTranslation } from "react-i18next";
@@ -28,32 +28,27 @@ function AlertItemEditor({
   return (
     <div className="space-y-1.5">
       <div className="flex items-center justify-between gap-3">
-        <span className="text-xs font-semibold text-zinc-100">{title}</span>
-        <Toggle
-          value={item.enabled}
-          onChange={(enabled) => onChange({ ...item, enabled })}
-          label={title}
-        />
-      </div>
-      <div>
-        <div className="mb-1 text-[11px] font-medium text-zinc-400">
-          {t("chatAlerts.alertMessage")}
-        </div>
-        <input
-          className="input w-full text-xs"
-          maxLength={500}
-          value={item.message}
-          onChange={(event) =>
-            onChange({ ...item, message: event.target.value })
-          }
-        />
-        <div className="mt-1 text-[10.5px] tabular-nums text-muted">
-          {t("commands.charactersUsed", {
-            count: item.message.length,
-            max: 500,
-          })}
+        <span className="text-xs font-medium text-zinc-200">{title}</span>
+        <div className="flex items-center gap-2.5">
+          <span className="text-[10px] tabular-nums text-zinc-500">
+            {item.message.length}/500
+          </span>
+          <Toggle
+            value={item.enabled}
+            onChange={(enabled) => onChange({ ...item, enabled })}
+            label={title}
+          />
         </div>
       </div>
+      <input
+        className="input w-full text-xs"
+        maxLength={500}
+        aria-label={`${title} — ${t("chatAlerts.alertMessage")}`}
+        value={item.message}
+        onChange={(event) =>
+          onChange({ ...item, message: event.target.value })
+        }
+      />
     </div>
   );
 }
@@ -62,7 +57,6 @@ export function ChatAlertsPage() {
   const { t } = useTranslation();
   const chatAlerts = useAppStore((s) => s.chatAlerts);
   const setChatAlerts = useAppStore((s) => s.setChatAlerts);
-  const setPage = useAppStore((s) => s.setPage);
   const [tab, setTab] = useState<AlertTab>("subscriptions");
 
   const updateAlert = <K extends keyof ChatAlertsConfig>(
@@ -133,22 +127,16 @@ export function ChatAlertsPage() {
           </Badge>
         }
         actions={
-          <div className="flex items-center gap-2">
-            <Button onClick={() => setPage("variables")}>
-              <Braces size={14} />
-              {t("nav.variables")}
-            </Button>
-            <Button
-              variant="default"
-              onClick={() => {
-                setChatAlerts(defaultChatAlerts);
-                toast.success(t("chatAlerts.resetSuccess"));
-              }}
-            >
-              <RotateCcw size={14} />
-              {t("common.reset")}
-            </Button>
-          </div>
+          <Button
+            variant="default"
+            onClick={() => {
+              setChatAlerts(defaultChatAlerts);
+              toast.success(t("chatAlerts.resetSuccess"));
+            }}
+          >
+            <RotateCcw size={14} />
+            {t("common.reset")}
+          </Button>
         }
       />
 
@@ -245,13 +233,12 @@ export function ChatAlertsPage() {
         {tab === "gifted" && (
           <div className="grid grid-cols-1 gap-3 lg:grid-cols-2">
             <Card className="p-4">
-              <div className="mb-3 border-b border-line pb-2 text-xs font-semibold tracking-tight text-zinc-200">
+              <div className="mb-2 border-b border-line pb-2 text-xs font-semibold tracking-tight text-zinc-200">
                 {t("chatAlerts.giftedSubAlerts")}
               </div>
-              <div className="mb-3 flex items-center gap-2 rounded-xl border border-line bg-white/2 px-3 py-2 text-xs text-zinc-300">
-                <Info size={14} className="shrink-0 text-zinc-400" />
-                <span>{t("chatAlerts.giftedSubHint")}</span>
-              </div>
+              <p className="mb-3 text-[11px] text-muted">
+                {t("chatAlerts.giftedSubHint")}
+              </p>
               <div className="space-y-3">
                 <AlertItemEditor
                   title={t("chatAlerts.tier1")}
@@ -272,13 +259,12 @@ export function ChatAlertsPage() {
             </Card>
 
             <Card className="p-4">
-              <div className="mb-3 border-b border-line pb-2 text-xs font-semibold tracking-tight text-zinc-200">
+              <div className="mb-2 border-b border-line pb-2 text-xs font-semibold tracking-tight text-zinc-200">
                 {t("chatAlerts.massGiftSubAlerts")}
               </div>
-              <div className="mb-3 flex items-center gap-2 rounded-xl border border-line bg-white/2 px-3 py-2 text-xs text-zinc-300">
-                <Info size={14} className="shrink-0 text-zinc-400" />
-                <span>{t("chatAlerts.massGiftSubHint")}</span>
-              </div>
+              <p className="mb-3 text-[11px] text-muted">
+                {t("chatAlerts.massGiftSubHint")}
+              </p>
               <div className="space-y-3">
                 <AlertItemEditor
                   title={t("chatAlerts.tier1")}
