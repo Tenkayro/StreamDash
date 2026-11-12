@@ -974,7 +974,10 @@
         "resetLimitReached": "This license key has reached its reset limit.",
         "alreadyPending": "You already have a pending support ticket for this key.",
         "rateLimited": "Cooldown active. Please wait {{seconds}}s before submitting another ticket."
-      }
+      },
+      "dismiss": "Dismiss",
+      "hidePanel": "Hide",
+      "cooldownFooter": "You can submit a new request after {{time}}."
     }
   },
   "statistics": {

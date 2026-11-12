@@ -4,6 +4,7 @@ import { getCurrentWindow } from "@tauri-apps/api/window";
 import { openUrl } from "@tauri-apps/plugin-opener";
 import {
   Bug,
+  Crown,
   Download,
   GitFork,
   LoaderCircle,
@@ -155,7 +156,8 @@ export function TitleBar({ setup = false }: { setup?: boolean }) {
   const [menuPos, setMenuPos] = useState({ right: 0, top: 0 });
   const closeMenuRef = useRef<HTMLDivElement>(null);
   const closeButtonRef = useRef<HTMLButtonElement>(null);
-  const { page, settings, setSettings } = useAppStore();
+  const { page, settings, setSettings, entitlements } = useAppStore();
+  const proActive = entitlements.pro;
   const channel = import.meta.env.DEV
     ? "DEV"
     : updater.channel === "store"
@@ -204,6 +206,12 @@ export function TitleBar({ setup = false }: { setup?: boolean }) {
           alt="StreamDash"
           className="h-5 w-auto object-contain"
         />
+        {proActive && (
+          <span className="inline-flex items-center gap-1 rounded border border-amber-400/30 bg-amber-400/12 px-1.5 py-0.5 text-[9px] font-bold tracking-wider text-amber-300">
+            <Crown size={9} aria-hidden="true" />
+            PRO
+          </span>
+        )}
         <span
           aria-label={t("titleBar.version", { version: version || t("titleBar.loading"), channel })}
           className="flex items-center gap-1 text-[9px] tabular-nums text-zinc-600"

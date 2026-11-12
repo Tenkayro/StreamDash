@@ -974,7 +974,10 @@
         "resetLimitReached": "Cette clé de licence a atteint sa limite de réinitialisations.",
         "alreadyPending": "Vous avez déjà un ticket en attente pour cette clé.",
         "rateLimited": "Délai actif. Patientez {{seconds}}s avant de soumettre un autre ticket."
-      }
+      },
+      "dismiss": "Masquer",
+      "hidePanel": "Masquer",
+      "cooldownFooter": "Nouvelle demande possible à partir de {{time}}."
     }
   },
   "statistics": {

@@ -974,7 +974,10 @@
         "resetLimitReached": "Esta chave de licença atingiu seu limite de redefinições.",
         "alreadyPending": "Você já tem um ticket pendente para esta chave.",
         "rateLimited": "Espera ativa. Aguarde {{seconds}}s antes de enviar outro ticket."
-      }
+      },
+      "dismiss": "Dispensar",
+      "hidePanel": "Ocultar",
+      "cooldownFooter": "Você poderá enviar uma nova solicitação após {{time}}."
     }
   },
   "statistics": {

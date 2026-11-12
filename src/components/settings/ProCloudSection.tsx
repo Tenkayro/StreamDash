@@ -82,11 +82,33 @@ export function ProCloudSection() {
   const [resetSubmitting, setResetSubmitting] = useState(false);
   const [resetRefreshing, setResetRefreshing] = useState(false);
   const [resetError, setResetError] = useState<string>();
+  const [dismissedTickets, setDismissedTickets] = useState<Record<string, string>>({});
 
   const twitchConnected = twitch.phase === "connected" && Boolean(twitch.userId);
   const latest = supportTicket?.latestTicket ?? undefined;
   const hasPending = latest?.status === "pending";
-  const showResetPanel = resetExpanded || Boolean(latest);
+  const ticketFingerprint = latest
+    ? `${latest.id}:${latest.status}:${latest.decidedAt ?? latest.updatedAt}`
+    : undefined;
+  const dismissedTicketKey = (() => {
+    if (!twitch.userId) return undefined;
+    if (dismissedTickets[twitch.userId] !== undefined) {
+      return dismissedTickets[twitch.userId];
+    }
+    try {
+      return localStorage.getItem(`streamdash:dismissed-support-ticket:${twitch.userId}`) ?? undefined;
+    } catch {
+      return undefined;
+    }
+  })();
+  const isStaleApproved = latest?.status === "approved" && entitlements.pro;
+  const isTicketDismissed = Boolean(
+    ticketFingerprint && dismissedTicketKey === ticketFingerprint,
+  );
+  const showTicketCard = Boolean(
+    latest && !isStaleApproved && (hasPending || !isTicketDismissed),
+  );
+  const showResetPanel = resetExpanded || showTicketCard;
 
   const currentCheckpoint = twitch.userId ? cloudSyncCheckpoints[twitch.userId] : undefined;
   const activeCloudMeta = cloudSync.remoteMeta;
@@ -102,6 +124,18 @@ export function ProCloudSection() {
       ? Math.max(1, Math.ceil((cloudSync.cooldownUntil - nowMs) / 1000))
       : 0;
   const syncButtonsDisabled = syncBusy || cloudSync.phase === "syncing" || cooldownSeconds > 0;
+
+  const handleDismissTicket = () => {
+    if (!ticketFingerprint || hasPending || !twitch.userId) return;
+    const uid = twitch.userId;
+    setDismissedTickets((prev) => ({ ...prev, [uid]: ticketFingerprint }));
+    setResetExpanded(false);
+    try {
+      localStorage.setItem(`streamdash:dismissed-support-ticket:${uid}`, ticketFingerprint);
+    } catch {
+      // Ignore storage errors
+    }
+  };
 
   useEffect(() => {
     if (!twitchConnected) return;
@@ -562,7 +596,7 @@ export function ProCloudSection() {
               <div className="min-w-0 flex-1">
                 <div className="flex flex-wrap items-center gap-2">
                   <span className="text-sm font-medium">{t("settings.support.title")}</span>
-                  {supportTicket?.hasActiveLicense ? (
+                  {showResetPanel && supportTicket?.hasActiveLicense ? (
                     <Badge tone={supportTicket.resetsRemaining > 0 ? "green" : "amber"}>
                       {t("settings.support.resetsCounter", {
                         used: supportTicket.resetsUsed,
@@ -570,18 +604,8 @@ export function ProCloudSection() {
                       })}
                     </Badge>
                   ) : null}
-                  {latest && (
-                    <Badge
-                      tone={
-                        latest.status === "approved"
-                          ? "green"
-                          : latest.status === "rejected"
-                            ? "red"
-                            : "amber"
-                      }
-                    >
-                      {t(`settings.support.status.${latest.status}`)}
-                    </Badge>
+                  {hasPending && (
+                    <Badge tone="amber">{t("settings.support.status.pending")}</Badge>
                   )}
                 </div>
                 <p className="text-xs text-muted">{t("settings.support.description")}</p>
@@ -601,13 +625,25 @@ export function ProCloudSection() {
                   {t("settings.support.refresh")}
                 </Button>
               )}
-              {!latest && (
+              {!hasPending && (
                 <Button
                   type="button"
-                  onClick={() => setResetExpanded((prev) => !prev)}
+                  onClick={() => {
+                    if (showResetPanel) {
+                      if (showTicketCard) {
+                        handleDismissTicket();
+                      } else {
+                        setResetExpanded(false);
+                      }
+                    } else {
+                      setResetExpanded(true);
+                    }
+                  }}
                 >
-                  {resetExpanded ? <ChevronUp size={13} /> : <ChevronDown size={13} />}
-                  {t("settings.support.manageReset")}
+                  {showResetPanel ? <ChevronUp size={13} /> : <ChevronDown size={13} />}
+                  {showResetPanel
+                    ? t("settings.support.hidePanel")
+                    : t("settings.support.manageReset")}
                 </Button>
               )}
             </div>
@@ -619,7 +655,7 @@ export function ProCloudSection() {
                 <div className="text-xs text-muted">{t("settings.support.connectTwitchHint")}</div>
               ) : (
                 <>
-                  {latest && (
+                  {showTicketCard && latest && (
                     <div
                       className={`rounded-xl border p-3.5 text-xs ${
                         latest.status === "approved"
@@ -641,23 +677,35 @@ export function ProCloudSection() {
                           <span>
                             {t("settings.support.ticketHeader", {
                               id: latest.id,
-                              key: latest.keyId
-                                ? `${latest.keyId} · ${latest.licenseMasked}`
-                                : latest.licenseMasked,
+                              key: latest.licenseMasked,
                             })}
                           </span>
                         </div>
-                        <Badge
-                          tone={
-                            latest.status === "approved"
-                              ? "green"
-                              : latest.status === "rejected"
-                                ? "red"
-                                : "amber"
-                          }
-                        >
-                          {t(`settings.support.status.${latest.status}`)}
-                        </Badge>
+                        <div className="flex items-center gap-2">
+                          <Badge
+                            tone={
+                              latest.status === "approved"
+                                ? "green"
+                                : latest.status === "rejected"
+                                  ? "red"
+                                  : "amber"
+                            }
+                          >
+                            {t(`settings.support.status.${latest.status}`)}
+                          </Badge>
+                          {!hasPending && (
+                            <button
+                              type="button"
+                              onClick={handleDismissTicket}
+                              title={t("settings.support.dismiss")}
+                              aria-label={t("settings.support.dismiss")}
+                              className="inline-flex items-center gap-1 rounded-md px-1.5 py-0.5 text-[11px] text-zinc-400 transition hover:bg-white/10 hover:text-zinc-200"
+                            >
+                              <X size={12} />
+                              {t("settings.support.dismiss")}
+                            </button>
+                          )}
+                        </div>
                       </div>
 
                       <div className="mt-2 space-y-1.5 text-zinc-300">
@@ -678,13 +726,23 @@ export function ProCloudSection() {
                             ? t("settings.support.pendingInfo")
                             : latest.status === "approved"
                               ? t("settings.support.approvedInfo")
-                              : t("settings.support.rejectedInfo")}
+                              : supportTicket?.blockedReason === "support_cooldown" &&
+                                  supportTicket.cooldownUntil
+                                ? `${t("settings.support.rejectedInfo")} ${t("settings.support.cooldownFooter", {
+                                    time: new Date(supportTicket.cooldownUntil).toLocaleTimeString([], {
+                                      hour: "2-digit",
+                                      minute: "2-digit",
+                                    }),
+                                  })}`
+                                : t("settings.support.rejectedInfo")}
                         </div>
                       </div>
                     </div>
                   )}
 
-                  {!hasPending && (
+                  {!hasPending &&
+                    !(showTicketCard && latest?.status === "approved") &&
+                    (
                     !supportTicket?.hasActiveLicense && !entitlements.pro ? (
                       <div className="rounded-xl border border-line bg-black/20 p-3 text-xs text-muted">
                         {t("settings.support.noActiveProInfo")}
@@ -696,17 +754,19 @@ export function ProCloudSection() {
                       </div>
                     ) : supportTicket?.blockedReason === "support_cooldown" &&
                       supportTicket.cooldownUntil ? (
-                      <div className="flex items-start gap-2.5 rounded-xl border border-line bg-black/20 p-3 text-xs text-muted">
-                        <Clock3 size={14} className="mt-0.5 shrink-0 text-zinc-400" />
-                        <span>
-                          {t("settings.support.cooldownUntil", {
-                            time: new Date(supportTicket.cooldownUntil).toLocaleTimeString([], {
-                              hour: "2-digit",
-                              minute: "2-digit",
-                            }),
-                          })}
-                        </span>
-                      </div>
+                      showTicketCard && latest?.status === "rejected" ? null : (
+                        <div className="flex items-start gap-2.5 rounded-xl border border-line bg-black/20 p-3 text-xs text-muted">
+                          <Clock3 size={14} className="mt-0.5 shrink-0 text-zinc-400" />
+                          <span>
+                            {t("settings.support.cooldownUntil", {
+                              time: new Date(supportTicket.cooldownUntil).toLocaleTimeString([], {
+                                hour: "2-digit",
+                                minute: "2-digit",
+                              }),
+                            })}
+                          </span>
+                        </div>
+                      )
                     ) : (
                       <form onSubmit={(e) => void handleResetSubmit(e)} className="space-y-3">
                         <div className="flex flex-wrap items-center justify-between gap-2 text-xs text-muted">

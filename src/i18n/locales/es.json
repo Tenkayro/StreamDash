@@ -974,7 +974,10 @@
         "resetLimitReached": "Esta clave de licencia ha alcanzado su límite de restablecimientos.",
         "alreadyPending": "Ya tienes un ticket pendiente para esta clave.",
         "rateLimited": "Espera activa. Espera {{seconds}}s antes de enviar otro ticket."
-      }
+      },
+      "dismiss": "Ocultar",
+      "hidePanel": "Ocultar",
+      "cooldownFooter": "Podrás enviar una nueva solicitud a partir de las {{time}}."
     }
   },
   "statistics": {

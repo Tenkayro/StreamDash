@@ -974,7 +974,10 @@
         "resetLimitReached": "Dieser Lizenzschlüssel hat sein Reset-Limit erreicht.",
         "alreadyPending": "Für diesen Key läuft bereits ein offenes Support-Ticket.",
         "rateLimited": "Cooldown aktiv. Bitte warte noch {{seconds}}s vor einer neuen Anfrage."
-      }
+      },
+      "dismiss": "Ausblenden",
+      "hidePanel": "Einklappen",
+      "cooldownFooter": "Neue Anfrage möglich ab {{time}}."
     }
   },
   "statistics": {
