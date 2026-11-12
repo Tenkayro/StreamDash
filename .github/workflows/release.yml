@@ -14,9 +14,14 @@ on:
 permissions:
   contents: write
 
+concurrency:
+  group: release
+  cancel-in-progress: false
+
 jobs:
   create-release:
     runs-on: ubuntu-latest
+    timeout-minutes: 10
     outputs:
       tag: ${{ steps.meta.outputs.tag }}
       version: ${{ steps.meta.outputs.version }}
@@ -51,6 +56,7 @@ jobs:
   build-windows:
     needs: create-release
     runs-on: windows-latest
+    timeout-minutes: 35
     steps:
       - name: Checkout tag
         uses: actions/checkout@v4
@@ -70,9 +76,11 @@ jobs:
         uses: swatinem/rust-cache@v2
         with:
           workspaces: src-tauri
+          shared-key: windows
+          cache-on-failure: true
 
       - name: Install frontend dependencies
-        run: npm ci
+        run: npm ci --prefer-offline --no-audit --no-fund
 
       - name: Build signed Windows MSI
         env:
@@ -90,40 +98,39 @@ jobs:
           path: src-tauri/target/release/bundle/msix/StreamDash-Store.msix
           retention-days: 30
 
-      - name: Generate updater manifest (latest.json)
+      - name: Save Windows updater metadata
         shell: pwsh
         run: |
-          $tag = "${{ needs.create-release.outputs.tag }}"
-          $version = "${{ needs.create-release.outputs.version }}"
-          $repo = "${{ github.repository }}"
           $bundleDir = "src-tauri/target/release/bundle/msi"
           $sig = (Get-Content -Raw -LiteralPath "$bundleDir/StreamDash-Setup.msi.sig").Trim()
-          $manifest = @{
-            version = $version
-            notes = "StreamDash $version"
-            pub_date = (Get-Date).ToUniversalTime().ToString("yyyy-MM-ddTHH:mm:ssZ")
-            platforms = @{
-              "windows-x86_64" = @{
-                signature = $sig
-                url = "https://github.com/$repo/releases/download/$tag/StreamDash-Setup.msi"
-              }
+          $meta = @{
+            "windows-x86_64" = @{
+              filename = "StreamDash-Setup.msi"
+              signature = $sig
             }
           } | ConvertTo-Json -Depth 4
-          Set-Content -LiteralPath "$bundleDir/latest.json" -Value "$manifest`n" -Encoding UTF8
+          Set-Content -LiteralPath "updater-meta-windows.json" -Value $meta -Encoding UTF8
 
-      - name: Upload Windows installer & updater manifest
+      - name: Upload Windows updater metadata artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: updater-meta-windows
+          path: updater-meta-windows.json
+          retention-days: 1
+
+      - name: Upload Windows installer to release
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
           gh release upload "${{ needs.create-release.outputs.tag }}" `
             "src-tauri/target/release/bundle/msi/StreamDash-Setup.msi" `
             "src-tauri/target/release/bundle/msi/StreamDash-Setup.msi.sig" `
-            "src-tauri/target/release/bundle/msi/latest.json" `
             --clobber --repo "${{ github.repository }}"
 
   build-linux:
     needs: create-release
     runs-on: ubuntu-22.04
+    timeout-minutes: 35
     steps:
       - name: Checkout tag
         uses: actions/checkout@v4
@@ -133,7 +140,7 @@ jobs:
       - name: Install Tauri Linux dependencies
         run: |
           sudo apt-get update
-          sudo apt-get install -y \
+          sudo apt-get install -y --no-install-recommends \
             libwebkit2gtk-4.1-dev \
             libappindicator3-dev \
             librsvg2-dev \
@@ -141,10 +148,6 @@ jobs:
             rpm \
             libssl-dev \
             libdbus-1-dev \
-            build-essential \
-            curl \
-            wget \
-            file \
             libxdo-dev
 
       - name: Setup Node.js
@@ -160,14 +163,37 @@ jobs:
         uses: swatinem/rust-cache@v2
         with:
           workspaces: src-tauri
+          shared-key: linux
+          cache-on-failure: true
 
       - name: Install frontend dependencies
-        run: npm ci
+        run: npm ci --prefer-offline --no-audit --no-fund
 
       - name: Build Linux packages (.AppImage, .deb, .rpm)
         env:
           TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
         run: npx tauri build --bundles deb,rpm,appimage
+
+      - name: Save Linux updater metadata
+        shell: bash
+        run: |
+          shopt -s nullglob
+          APPIMAGES=(src-tauri/target/release/bundle/appimage/*.AppImage)
+          SIGS=(src-tauri/target/release/bundle/appimage/*.AppImage.sig)
+          if [ ${#APPIMAGES[@]} -gt 0 ] && [ ${#SIGS[@]} -gt 0 ]; then
+            FILENAME="$(basename "${APPIMAGES[0]}")"
+            SIG="$(cat "${SIGS[0]}" | tr -d '\r\n')"
+            python3 -c 'import json, sys; print(json.dumps({"linux-x86_64": {"filename": sys.argv[1], "signature": sys.argv[2]}}))' "$FILENAME" "$SIG" > updater-meta-linux.json
+          else
+            echo '{}' > updater-meta-linux.json
+          fi
+
+      - name: Upload Linux updater metadata artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: updater-meta-linux
+          path: updater-meta-linux.json
+          retention-days: 1
 
       - name: Upload Linux packages to release
         env:
@@ -189,6 +215,7 @@ jobs:
   build-macos:
     needs: create-release
     runs-on: macos-latest
+    timeout-minutes: 35
     steps:
       - name: Checkout tag
         uses: actions/checkout@v4
@@ -210,14 +237,37 @@ jobs:
         uses: swatinem/rust-cache@v2
         with:
           workspaces: src-tauri
+          shared-key: macos-universal
+          cache-on-failure: true
 
       - name: Install frontend dependencies
-        run: npm ci
+        run: npm ci --prefer-offline --no-audit --no-fund
 
       - name: Build macOS Universal (.dmg & .app.tar.gz)
         env:
           TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
         run: npx tauri build --target universal-apple-darwin --bundles dmg,app
+
+      - name: Save macOS updater metadata
+        shell: bash
+        run: |
+          shopt -s nullglob
+          TARS=(src-tauri/target/universal-apple-darwin/release/bundle/macos/*.app.tar.gz)
+          SIGS=(src-tauri/target/universal-apple-darwin/release/bundle/macos/*.app.tar.gz.sig)
+          if [ ${#TARS[@]} -gt 0 ] && [ ${#SIGS[@]} -gt 0 ]; then
+            FILENAME="$(basename "${TARS[0]}")"
+            SIG="$(cat "${SIGS[0]}" | tr -d '\r\n')"
+            python3 -c 'import json, sys; entry={"filename": sys.argv[1], "signature": sys.argv[2]}; print(json.dumps({"darwin-aarch64": entry, "darwin-x86_64": entry}))' "$FILENAME" "$SIG" > updater-meta-macos.json
+          else
+            echo '{}' > updater-meta-macos.json
+          fi
+
+      - name: Upload macOS updater metadata artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: updater-meta-macos
+          path: updater-meta-macos.json
+          retention-days: 1
 
       - name: Upload macOS packages to release
         env:
@@ -238,12 +288,50 @@ jobs:
   publish-release:
     needs: [create-release, build-windows, build-linux, build-macos]
     runs-on: ubuntu-latest
+    timeout-minutes: 10
     steps:
-      - name: Publish GitHub Release
+      - name: Download updater metadata artifacts
+        uses: actions/download-artifact@v4
+        with:
+          pattern: updater-meta-*
+          merge-multiple: true
+
+      - name: Build unified multi-platform latest.json
+        shell: bash
+        run: |
+          python3 - <<'PY'
+          from datetime import datetime, timezone
+          import glob, json
+
+          tag = "${{ needs.create-release.outputs.tag }}"
+          version = "${{ needs.create-release.outputs.version }}"
+          repo = "${{ github.repository }}"
+
+          platforms = {}
+          for path in sorted(glob.glob("updater-meta-*.json")):
+              with open(path, "r", encoding="utf-8") as f:
+                  data = json.load(f)
+              for key, info in data.items():
+                  platforms[key] = {
+                      "signature": info["signature"],
+                      "url": f"https://github.com/{repo}/releases/download/{tag}/{info['filename']}",
+                  }
+
+          manifest = {
+              "version": version,
+              "notes": f"StreamDash {version}",
+              "pub_date": datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ"),
+              "platforms": platforms,
+          }
+          with open("latest.json", "w", encoding="utf-8") as f:
+              json.dump(manifest, f, indent=2)
+              f.write("\n")
+          PY
+
+      - name: Upload latest.json & publish GitHub Release
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          gh release edit "${{ needs.create-release.outputs.tag }}" \
-            --draft=false \
-            --latest \
-            --repo "${{ github.repository }}"
+          TAG="${{ needs.create-release.outputs.tag }}"
+          gh release upload "$TAG" latest.json --clobber --repo "${{ github.repository }}"
+          gh release edit "$TAG" --draft=false --latest --repo "${{ github.repository }}"

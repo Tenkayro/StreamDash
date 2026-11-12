@@ -8,6 +8,8 @@ A fast, lightweight **Windows 10 & 11** desktop app for managing, automating, an
 
 **Available in 5 languages:** English · Deutsch · Español · Français · Português (Brasil)
 
+[![Release All Platforms](https://github.com/Tenkayro/StreamDash/actions/workflows/release.yml/badge.svg)](https://github.com/Tenkayro/StreamDash/actions/workflows/release.yml)
+
 </div>
 
 ---
