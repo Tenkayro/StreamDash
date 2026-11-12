@@ -359,36 +359,35 @@ export function StreamPage() {
         </Card>
       )}
       <div className="grid gap-3 xl:grid-cols-[minmax(0,1fr)_300px]">
-        <Card className="p-4">
-          <label className="label" htmlFor="stream-title">
-            {t("stream.streamTitle")}
-          </label>
-          <p className="mt-0.5 text-xs leading-4 text-muted">
-            {t("stream.streamTitleDetail")}
-          </p>
-          <div className="relative mt-2">
-            {busyLoading ? (
-              <LoadingIndicator className="h-8.5 w-full" />
-            ) : (
-              <>
-                <input
-                  id="stream-title"
-                  className="input input-trailing-wide"
-                  maxLength={140}
-                  autoComplete="off"
-                  placeholder={t("stream.titlePlaceholder")}
-                  value={title}
-                  disabled={missingScope}
-                  onChange={(event) => setTitle(event.target.value)}
-                />
-                <span className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-[11px] tabular-nums text-zinc-600">
-                  {title.length}/140
-                </span>
-              </>
-            )}
+        <Card className="space-y-4 p-4">
+          <div>
+            <label className="label" htmlFor="stream-title">
+              {t("stream.streamTitle")}
+            </label>
+            <div className="relative mt-1.5">
+              {busyLoading ? (
+                <LoadingIndicator className="h-8.5 w-full" />
+              ) : (
+                <>
+                  <input
+                    id="stream-title"
+                    className="input input-trailing-wide"
+                    maxLength={140}
+                    autoComplete="off"
+                    placeholder={t("stream.titlePlaceholder")}
+                    value={title}
+                    disabled={missingScope}
+                    onChange={(event) => setTitle(event.target.value)}
+                  />
+                  <span className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-[11px] tabular-nums text-zinc-500">
+                    {title.length}/140
+                  </span>
+                </>
+              )}
+            </div>
           </div>
 
-          <div className="mt-4">
+          <div>
             <label
               className="label inline-flex items-center gap-1.5"
               htmlFor="stream-category"
@@ -396,11 +395,8 @@ export function StreamPage() {
               <Gamepad2 size={13} />
               {t("stream.category")}
             </label>
-            <p className="mt-0.5 text-xs leading-4 text-muted">
-              {t("stream.categoryDetail")}
-            </p>
             {busyLoading ? (
-              <div className="mt-2 flex items-center gap-3 rounded-xl border border-line bg-[#101116] p-2">
+              <div className="mt-1.5 flex items-center gap-3 rounded-xl border border-line bg-white/2 p-2">
                 <LoadingIndicator className="h-11 w-8 shrink-0" />
                 <div className="flex-1">
                   <LoadingIndicator className="h-3.5 w-32" />
@@ -408,11 +404,11 @@ export function StreamPage() {
                 </div>
               </div>
             ) : category && (
-              <div className="mt-2 flex items-center gap-3 rounded-xl border border-line bg-[#101116] p-2">
+              <div className="mt-1.5 flex items-center gap-3 rounded-xl border border-line bg-white/2 p-2">
                 <BoxArt category={category} className="h-11 w-8" />
                 <div className="min-w-0 flex-1">
                   <div className="truncate text-sm">{category.name}</div>
-                  <div className="mt-0.5 text-[11px] text-zinc-600">
+                  <div className="mt-0.5 text-[11px] text-muted">
                     {t("stream.currentCategory")}
                   </div>
                 </div>
@@ -425,7 +421,7 @@ export function StreamPage() {
                 <>
               <Search
                 size={14}
-                className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-zinc-600"
+                className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-zinc-500"
               />
               <input
                 id="stream-category"
@@ -438,7 +434,7 @@ export function StreamPage() {
                 onChange={(event) => setQuery(event.target.value)}
               />
               {showResults && (
-                <ScrollFade className="absolute z-10 mt-1 w-full overflow-hidden rounded-xl border border-line bg-[#14151b] shadow-2xl shadow-black/40" color="#14151b" size={28}>
+                <ScrollFade className="absolute z-10 mt-1 w-full overflow-hidden rounded-xl border border-line bg-panel shadow-2xl shadow-black/40" color="#242526" size={28}>
                   <div className="max-h-72 overflow-y-auto p-1">
                     {searching && (
                       <div className="space-y-2 px-2 py-2">
@@ -480,7 +476,7 @@ export function StreamPage() {
             </div>
           </div>
 
-          <div className="mt-4">
+          <div>
             <label
               className="label inline-flex items-center gap-1.5"
               htmlFor="stream-language"
@@ -488,15 +484,12 @@ export function StreamPage() {
               <Languages size={13} />
               {t("stream.language")}
             </label>
-            <p className="mt-0.5 text-xs leading-4 text-muted">
-              {t("stream.languageDetail")}
-            </p>
             {busyLoading ? (
-              <LoadingIndicator className="mt-2 h-8.5 w-full max-w-xs" />
+              <LoadingIndicator className="mt-1.5 h-8.5 w-full max-w-xs" />
             ) : (
             <Select
               id="stream-language"
-              className="input mt-2 max-w-xs"
+              className="input mt-1.5 max-w-xs"
               value={language}
               disabled={missingScope}
               onChange={(event) => setLanguage(event.target.value)}
@@ -513,10 +506,7 @@ export function StreamPage() {
             )}
           </div>
 
-          <div className="mt-4 flex flex-wrap items-center justify-between gap-4 border-t border-line pt-4">
-            <p className="text-[11px] leading-4 text-zinc-600">
-              {t("stream.changesImmediate")}
-            </p>
+          <div className="flex items-center justify-end border-t border-line pt-3">
             <Button
               variant="primary"
               disabled={saving || busyLoading || missingScope || !title.trim()}

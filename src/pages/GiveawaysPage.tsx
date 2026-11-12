@@ -573,7 +573,7 @@ export function GiveawaysPage() {
             <div className="flex min-h-0 flex-1 flex-col justify-between p-2.5">
               <div className="space-y-1.5">
                 {/* Status + Chat Announcements row */}
-                <div className="flex items-center justify-between gap-2 rounded-xl border border-line bg-white/[.02] px-2.5 py-1.5">
+                <div className="flex items-center justify-between gap-2 rounded-xl border border-line bg-white/2 px-2.5 py-1.5">
                   <label className="inline-flex cursor-pointer items-center gap-2 text-xs font-medium text-zinc-100">
                     <Toggle
                       value={giveaway.chatAnnouncements}
@@ -605,7 +605,7 @@ export function GiveawaysPage() {
                 </div>
 
                 {/* Mode + Keyword Phrase combined block */}
-                <div className="rounded-xl border border-line bg-white/[.02] px-2.5 py-2">
+                <div className="rounded-xl border border-line bg-white/2 px-2.5 py-2">
                   <div className="grid grid-cols-1 gap-2 sm:grid-cols-[auto_minmax(0,1fr)] sm:items-center">
                     <div>
                       <div className="mb-1 text-[10px] font-medium text-muted">
@@ -654,13 +654,10 @@ export function GiveawaysPage() {
                       />
                     </div>
                   </div>
-                  <p className="mt-1 text-[10px] leading-3.5 text-muted">
-                    {t("giveaways.keywordHint")}
-                  </p>
                 </div>
 
                 {/* Anti-spam slider */}
-                <div className="rounded-xl border border-line bg-white/[.02] px-2.5 py-1.5">
+                <div className="rounded-xl border border-line bg-white/2 px-2.5 py-1.5">
                   <div className="flex items-center justify-between gap-2">
                     <label
                       htmlFor="giveaway-antispam"
@@ -727,7 +724,7 @@ export function GiveawaysPage() {
                 </div>
 
                 {/* Inactivity timeout */}
-                <div className="rounded-xl border border-line bg-white/[.02] px-2.5 py-1.5">
+                <div className="rounded-xl border border-line bg-white/2 px-2.5 py-1.5">
                   <div className="flex items-center justify-between gap-2">
                     <label
                       htmlFor="giveaway-timeout"
@@ -784,7 +781,7 @@ export function GiveawaysPage() {
                 </div>
 
                 {/* Subscriber luck multiplier */}
-                <div className="rounded-xl border border-line bg-white/[.02] px-2.5 py-1.5">
+                <div className="rounded-xl border border-line bg-white/2 px-2.5 py-1.5">
                   <div className="flex items-center justify-between gap-2">
                     <label
                       htmlFor="giveaway-luck"

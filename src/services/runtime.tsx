@@ -132,6 +132,26 @@ function loadBootstrap() {
   return bootstrapPromise;
 }
 
+const SONG_VARIABLE_PATTERN = /\$\((?:spotify\.)?song\)|\{song\}/i;
+
+async function resolveTemplateWithSong(
+  rawTemplate: string,
+  ctx: Omit<Parameters<typeof resolveVariables>[1], "songText">,
+): Promise<string> {
+  let songText: string | undefined;
+  if (SONG_VARIABLE_PATTERN.test(rawTemplate)) {
+    try {
+      const song = await spotifyOverlayNative.status();
+      if (song.available && song.title) {
+        songText = song.artist ? `${song.artist} — ${song.title}` : song.title;
+      }
+    } catch {
+      /* ignore spotify error */
+    }
+  }
+  return resolveVariables(rawTemplate, { ...ctx, songText });
+}
+
 export function RuntimeProvider({ children }: { children: ReactNode }) {
   const setSettings = useAppStore((s) => s.setSettings);
   const setEvents = useAppStore((s) => s.setEvents);
@@ -688,27 +708,15 @@ export function RuntimeProvider({ children }: { children: ReactNode }) {
 
             const dispatchResponse = async (rawResponse: string) => {
               const user = message.displayName || message.login;
-              let songText: string | undefined;
-              if (/\$\((?:spotify\.)?song\)|\{song\}/i.test(rawResponse)) {
-                try {
-                  const song = await spotifyOverlayNative.status();
-                  if (song.available && song.title) {
-                    songText = song.artist
-                      ? `${song.artist} — ${song.title}`
-                      : song.title;
-                  }
-                } catch {
-                  /* ignore spotify error */
-                }
-              }
-              const interpolated = resolveVariables(rawResponse, {
-                state: state(),
-                user,
-                userLogin: message.login,
-                rawMessageText: rawText,
-                commandCount: usageCount,
-                songText,
-              }).trim();
+              const interpolated = (
+                await resolveTemplateWithSong(rawResponse, {
+                  state: state(),
+                  user,
+                  userLogin: message.login,
+                  rawMessageText: rawText,
+                  commandCount: usageCount,
+                })
+              ).trim();
               if (!interpolated) return;
               if (cmd.responseType === "mention") {
                 const text = interpolated.startsWith(`@${user}`)
@@ -1169,7 +1177,18 @@ export function RuntimeProvider({ children }: { children: ReactNode }) {
     obsAction((client) => client.saveReplayBuffer());
   const setObsVirtualCam = (active: boolean) =>
     obsAction((client) => client.setVirtualCam(active));
-  const sendChatMessage = (text: string) => sendChat(text);
+  const sendChatMessage = async (text: string) => {
+    const current = state();
+    const resolved = (
+      await resolveTemplateWithSong(text, {
+        state: current,
+        user: current.twitch.account,
+        userLogin: current.twitch.account,
+      })
+    ).trim();
+    if (!resolved) return;
+    await sendChat(resolved.slice(0, 500));
+  };
 
   const moderationContext = (scope: string) => {
     const current = state();

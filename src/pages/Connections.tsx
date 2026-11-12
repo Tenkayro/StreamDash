@@ -387,7 +387,7 @@ export function Connections() {
             </p>
           )}
           {runtime.deviceAuth && (
-            <div className="mx-4 mb-3 flex flex-wrap items-center gap-3 rounded-lg border border-violet-500/30 bg-violet-500/6 px-3 py-2 sm:ml-16">
+            <div className="mx-4 mb-3 flex flex-wrap items-center gap-3 rounded-lg border border-accent/30 bg-accent-soft px-3 py-2 sm:ml-16">
               <span className="font-mono text-lg font-semibold tracking-[.16em]">
                 {runtime.deviceAuth.code}
               </span>
@@ -454,7 +454,7 @@ export function Connections() {
             </p>
           )}
           {runtime.botDeviceAuth && (
-            <div className="mx-4 mb-3 flex flex-wrap items-center gap-3 rounded-lg border border-violet-500/30 bg-violet-500/6 px-3 py-2 sm:ml-16">
+            <div className="mx-4 mb-3 flex flex-wrap items-center gap-3 rounded-lg border border-accent/30 bg-accent-soft px-3 py-2 sm:ml-16">
               <span className="font-mono text-lg font-semibold tracking-[.16em]">
                 {runtime.botDeviceAuth.code}
               </span>

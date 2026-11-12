@@ -72,9 +72,9 @@ export function Statistics() {
       ) : (
         <>
       <Card className="p-4">
-        <div className="mb-3">
-          <h2 className="text-sm font-semibold">{t("statistics.activityOverTime")}</h2>
-          <p className="mt-0.5 text-xs text-muted">{t("statistics.lastDays", { count: 14 })}</p>
+        <div className="mb-3 flex items-center justify-between gap-2 border-b border-line pb-2">
+          <h2 className="text-xs font-semibold text-zinc-200">{t("statistics.activityOverTime")}</h2>
+          <span className="text-[11px] text-muted">{t("statistics.lastDays", { count: 14 })}</span>
         </div>
         <div className="h-52">
           <ResponsiveContainer width="100%" height="100%">

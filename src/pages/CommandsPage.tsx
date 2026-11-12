@@ -1,13 +1,18 @@
 import {
   ArrowUpDown,
+  Clock3,
+  Gamepad2,
   Pencil,
   Plus,
   Search,
+  Shield,
+  Tag,
   Terminal,
   Trash2,
   X,
+  type LucideIcon,
 } from "lucide-react";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
 import { useTranslation } from "react-i18next";
 import {
@@ -17,7 +22,6 @@ import {
   EmptyState,
   PageHeader,
   ScrollFade,
-  Select,
   Toggle,
 } from "../components/ui";
 import { useAppStore } from "../stores/app-store";
@@ -56,6 +60,16 @@ const RESPONSE_TYPES: CommandResponseType[] = [
 ];
 
 const EXPIRY_ACTIONS: CommandExpiryAction[] = ["none", "disable", "delete"];
+const QUICK_VARIABLES = [
+  "$(user)",
+  "$(touser)",
+  "$(channel)",
+  "$(game)",
+  "$(title)",
+  "$(uptime)",
+  "$(count)",
+  "$(followcount)",
+];
 
 function createNewCommand(): ChatCommand {
   return {
@@ -104,8 +118,18 @@ export function CommandsPage() {
   const [gameQuery, setGameQuery] = useState("");
   const [gameSuggestions, setGameSuggestions] = useState<string[]>([]);
   const [titleKeywordDraft, setTitleKeywordDraft] = useState("");
+  const responseRef = useRef<HTMLTextAreaElement>(null);
 
   const connected = twitch.phase === "connected" && Boolean(twitch.userId);
+
+  useEffect(() => {
+    if (!editing) return;
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.key === "Escape") setEditing(null);
+    };
+    window.addEventListener("keydown", onKeyDown);
+    return () => window.removeEventListener("keydown", onKeyDown);
+  }, [editing]);
 
   useEffect(() => {
     const term = gameQuery.trim();
@@ -298,12 +322,55 @@ export function CommandsPage() {
     setEditing(null);
   };
 
-  const modalSections: Array<{ id: ModalSection; label: string }> = [
-    { id: "general", label: t("commands.sections.general") },
-    { id: "aliases", label: t("commands.sections.aliases") },
-    { id: "conditions", label: t("commands.sections.conditions") },
-    { id: "titleGame", label: t("commands.sections.titleGame") },
-    { id: "expiry", label: t("commands.sections.expiry") },
+  const insertVariable = (token: string) => {
+    if (!editing) return;
+    const textarea = responseRef.current;
+    const current = editing.response;
+    const start = textarea?.selectionStart ?? current.length;
+    const end = textarea?.selectionEnd ?? current.length;
+    const next = (current.slice(0, start) + token + current.slice(end)).slice(
+      0,
+      500,
+    );
+    setEditing({ ...editing, response: next });
+    const caret = Math.min(next.length, start + token.length);
+    requestAnimationFrame(() => {
+      textarea?.focus();
+      textarea?.setSelectionRange(caret, caret);
+    });
+  };
+
+  const modalSections: Array<{
+    id: ModalSection;
+    label: string;
+    icon: LucideIcon;
+    badge?: number | boolean;
+  }> = [
+    { id: "general", label: t("commands.sections.general"), icon: Terminal },
+    {
+      id: "aliases",
+      label: t("commands.sections.aliases"),
+      icon: Tag,
+      badge: editing ? editing.aliases.length + editing.keywords.length : 0,
+    },
+    {
+      id: "conditions",
+      label: t("commands.sections.conditions"),
+      icon: Shield,
+      badge: editing ? editing.roles.length : 0,
+    },
+    {
+      id: "titleGame",
+      label: t("commands.sections.titleGame"),
+      icon: Gamepad2,
+      badge: editing ? editing.games.length + editing.titleKeywords.length : 0,
+    },
+    {
+      id: "expiry",
+      label: t("commands.sections.expiry"),
+      icon: Clock3,
+      badge: editing ? editing.expiryAction !== "none" : false,
+    },
   ];
 
   return (
@@ -515,50 +582,80 @@ export function CommandsPage() {
             aria-label={
               isNew ? t("commands.createTitle") : t("commands.editTitle")
             }
-            className="flex max-h-[min(560px,calc(100vh-2rem))] w-full max-w-2xl flex-col overflow-hidden rounded-2xl border border-line bg-[#1e1f21] shadow-2xl shadow-black/70"
+            className="flex max-h-[min(580px,calc(100vh-2rem))] w-full max-w-2xl flex-col overflow-hidden rounded-2xl border border-line bg-panel shadow-2xl shadow-black/70"
           >
-            <div className="flex shrink-0 items-center justify-between border-b border-line px-5 py-3.5">
-              <h2 className="text-base font-semibold text-zinc-100">
-                {isNew ? t("commands.createTitle") : t("commands.editTitle")}
-              </h2>
+            <div className="flex shrink-0 items-center justify-between gap-3 border-b border-line bg-white/2 px-5 py-3">
+              <div className="flex min-w-0 items-center gap-2.5">
+                <span className="grid size-7 shrink-0 place-items-center rounded-lg bg-accent-soft text-accent">
+                  <Terminal size={14} />
+                </span>
+                <h2 className="truncate text-sm font-semibold text-zinc-100">
+                  {isNew ? t("commands.createTitle") : t("commands.editTitle")}
+                </h2>
+                <span
+                  className={cn(
+                    "truncate rounded-md border border-line bg-black/25 px-2 py-0.5 font-mono text-[11px]",
+                    editing.name.trim() ? "text-accent" : "text-zinc-500",
+                  )}
+                >
+                  {editing.usePrefix ? "!" : ""}
+                  {editing.name.trim() || t("commands.namePlaceholder")}
+                </span>
+              </div>
               <button
                 type="button"
                 onClick={() => setEditing(null)}
                 aria-label={t("titleBar.close")}
-                className="grid size-7 place-items-center rounded-lg border border-line text-zinc-400 transition hover:bg-white/5 hover:text-zinc-100"
+                className="grid size-7 shrink-0 place-items-center rounded-lg border border-line text-zinc-400 transition hover:bg-white/5 hover:text-zinc-100"
               >
                 <X size={14} />
               </button>
             </div>
 
-            <div className="grid min-h-0 flex-1 grid-cols-1 overflow-hidden sm:grid-cols-[195px_1fr]">
-              <div className="flex shrink-0 gap-1 overflow-x-auto border-b border-line bg-black/20 p-2.5 sm:flex-col sm:border-b-0 sm:border-r">
-                {modalSections.map((item) => (
-                  <button
-                    key={item.id}
-                    type="button"
-                    onClick={() => setSection(item.id)}
-                    className={cn(
-                      "shrink-0 rounded-lg px-3 py-2 text-left text-xs font-medium transition",
-                      section === item.id
-                        ? "border border-accent/35 bg-accent/15 text-accent"
-                        : "border border-transparent text-zinc-300 hover:bg-white/4 hover:text-zinc-100",
-                    )}
-                  >
-                    {item.label}
-                  </button>
-                ))}
+            <div className="grid min-h-0 flex-1 grid-cols-1 overflow-hidden sm:grid-cols-[190px_1fr]">
+              <div className="flex shrink-0 gap-1 overflow-x-auto border-b border-line bg-black/15 p-2 sm:flex-col sm:border-b-0 sm:border-r">
+                {modalSections.map((item) => {
+                  const Icon = item.icon;
+                  const active = section === item.id;
+                  return (
+                    <button
+                      key={item.id}
+                      type="button"
+                      onClick={() => setSection(item.id)}
+                      className={cn(
+                        "flex shrink-0 items-center justify-between gap-2 rounded-lg px-2.5 py-2 text-left text-xs font-medium transition",
+                        active
+                          ? "border border-accent/35 bg-accent-soft text-accent"
+                          : "border border-transparent text-zinc-400 hover:bg-white/4 hover:text-zinc-200",
+                      )}
+                    >
+                      <span className="flex min-w-0 items-center gap-2">
+                        <Icon size={13} className="shrink-0" />
+                        <span className="truncate">{item.label}</span>
+                      </span>
+                      {typeof item.badge === "number" && item.badge > 0 && (
+                        <span className="rounded bg-white/8 px-1.5 py-0.5 text-[10px] tabular-nums text-zinc-300">
+                          {item.badge}
+                        </span>
+                      )}
+                      {item.badge === true && (
+                        <span className="size-1.5 shrink-0 rounded-full bg-accent" />
+                      )}
+                    </button>
+                  );
+                })}
               </div>
 
               <div className="min-h-0 flex-1 overflow-y-auto p-4">
                 {section === "general" && (
                   <div className="space-y-3.5">
-                    <div className="flex flex-wrap items-center gap-3">
+                    <div className="flex flex-wrap items-center gap-2.5">
                       <div className="flex min-w-0 flex-1 items-center overflow-hidden rounded-lg border border-line bg-black/25 focus-within:border-accent/45">
                         <button
                           type="button"
                           disabled={editing.builtIn}
                           title={t("commands.prefixToggleHint")}
+                          aria-label={t("commands.prefixToggleHint")}
                           aria-pressed={editing.usePrefix}
                           onClick={() =>
                             setEditing({
@@ -569,14 +666,14 @@ export function CommandsPage() {
                           className={cn(
                             "flex h-9 shrink-0 items-center border-r border-line px-3 font-mono text-xs font-bold transition",
                             editing.usePrefix
-                              ? "bg-accent/20 text-accent"
-                              : "bg-white/3 text-zinc-600 line-through hover:text-zinc-300",
+                              ? "bg-accent-soft text-accent"
+                              : "bg-white/2 text-zinc-600 line-through hover:text-zinc-300",
                           )}
                         >
                           !
                         </button>
                         <input
-                          className="h-9 min-w-0 flex-1 bg-transparent px-3 text-xs text-zinc-100 outline-none placeholder:text-zinc-600 disabled:opacity-60"
+                          className="h-9 min-w-0 flex-1 bg-transparent px-3 font-mono text-xs text-zinc-100 outline-none placeholder:text-zinc-600 disabled:opacity-60"
                           disabled={editing.builtIn}
                           placeholder={t("commands.namePlaceholder")}
                           value={editing.name}
@@ -589,7 +686,7 @@ export function CommandsPage() {
                         />
                       </div>
 
-                      <div className="flex items-center gap-2">
+                      <label className="flex cursor-pointer items-center gap-2 rounded-lg border border-line bg-white/2 px-2.5 py-1.5">
                         <Toggle
                           value={editing.enabled}
                           onChange={(enabled) =>
@@ -597,29 +694,34 @@ export function CommandsPage() {
                           }
                           label={t("commands.enabled")}
                         />
-                        <span className="text-xs font-semibold text-zinc-200">
+                        <span className="text-xs font-medium text-zinc-200">
                           {t("commands.enabled")}
                         </span>
-                      </div>
+                      </label>
                     </div>
-                    <p className="text-[11px] text-muted">
-                      {t("commands.prefixToggleHint")}
-                    </p>
 
                     <div>
-                      <label
-                        htmlFor="cmd-response"
-                        className="mb-1.5 block text-xs font-semibold text-zinc-200"
-                      >
-                        {t("commands.response")}
-                      </label>
+                      <div className="mb-1.5 flex items-center justify-between gap-2">
+                        <label
+                          htmlFor="cmd-response"
+                          className="text-xs font-semibold text-zinc-200"
+                        >
+                          {t("commands.response")}
+                        </label>
+                        {!(editing.builtIn && editing.id === "builtin-song") && (
+                          <span className="text-[11px] tabular-nums text-muted">
+                            {editing.response.length}/500
+                          </span>
+                        )}
+                      </div>
                       {editing.builtIn && editing.id === "builtin-song" ? (
-                        <div className="rounded-lg border border-line bg-black/25 px-3 py-2.5 text-xs text-zinc-400">
+                        <div className="rounded-lg border border-line bg-white/2 px-3 py-2.5 text-xs text-zinc-400">
                           {t("commands.builtInSongDescription")}
                         </div>
                       ) : (
                         <>
                           <textarea
+                            ref={responseRef}
                             id="cmd-response"
                             rows={3}
                             maxLength={500}
@@ -631,24 +733,28 @@ export function CommandsPage() {
                                 response: event.target.value,
                               })
                             }
-                            className="w-full resize-none rounded-lg border border-line bg-black/25 px-3 py-2 text-xs leading-5 text-zinc-100 outline-none transition focus:border-accent/45"
+                            className="w-full resize-none rounded-lg border border-line bg-black/25 px-3 py-2 text-xs leading-5 text-zinc-100 outline-none transition placeholder:text-zinc-600 focus:border-accent/45"
                           />
-                          <div className="mt-1 flex flex-wrap items-center justify-between gap-2 text-[11px] text-muted">
-                            <span>
-                              {t("commands.charactersUsed", {
-                                count: editing.response.length,
-                                max: 500,
-                              })}
-                            </span>
+                          <div className="mt-1.5 flex flex-wrap items-center gap-1">
+                            {QUICK_VARIABLES.map((token) => (
+                              <button
+                                key={token}
+                                type="button"
+                                onClick={() => insertVariable(token)}
+                                className="rounded border border-line bg-white/2 px-1.5 py-0.5 font-mono text-[10px] text-zinc-300 transition hover:border-accent/35 hover:bg-accent-soft hover:text-accent"
+                              >
+                                {token}
+                              </button>
+                            ))}
                             <button
                               type="button"
                               onClick={() => {
                                 setEditing(null);
                                 setPage("variables");
                               }}
-                              className="text-accent hover:underline"
+                              className="ml-auto text-[11px] text-accent hover:brightness-125"
                             >
-                              {t("commands.variablesHint")}
+                              {t("nav.variables")} →
                             </button>
                           </div>
                         </>
@@ -720,31 +826,33 @@ export function CommandsPage() {
                     </div>
 
                     <div>
-                      <label
-                        htmlFor="cmd-response-type"
-                        className="mb-1 block text-xs font-semibold text-zinc-200"
-                      >
+                      <div className="mb-1.5 text-xs font-semibold text-zinc-200">
                         {t("commands.responseType")}
-                      </label>
-                      <Select
-                        id="cmd-response-type"
-                        className="input w-full"
-                        value={editing.responseType}
-                        onChange={(event) =>
-                          setEditing({
-                            ...editing,
-                            responseType: event.target
-                              .value as CommandResponseType,
-                          })
-                        }
-                      >
-                        {RESPONSE_TYPES.map((rt) => (
-                          <option key={rt} value={rt}>
-                            {t(`commands.responseTypes.${rt}.label`)}
-                          </option>
-                        ))}
-                      </Select>
-                      <p className="mt-1 text-[11px] text-muted">
+                      </div>
+                      <div className="grid grid-cols-2 gap-1.5 sm:grid-cols-4">
+                        {RESPONSE_TYPES.map((rt) => {
+                          const active = editing.responseType === rt;
+                          return (
+                            <button
+                              key={rt}
+                              type="button"
+                              aria-pressed={active}
+                              onClick={() =>
+                                setEditing({ ...editing, responseType: rt })
+                              }
+                              className={cn(
+                                "rounded-lg border px-2.5 py-1.5 text-xs font-medium transition",
+                                active
+                                  ? "border-accent/40 bg-accent-soft text-accent"
+                                  : "border-line bg-white/2 text-zinc-400 hover:bg-white/4 hover:text-zinc-200",
+                              )}
+                            >
+                              {t(`commands.responseTypes.${rt}.label`)}
+                            </button>
+                          );
+                        })}
+                      </div>
+                      <p className="mt-1.5 text-[11px] text-muted">
                         {t(
                           `commands.responseTypes.${editing.responseType}.description`,
                         )}
@@ -758,7 +866,7 @@ export function CommandsPage() {
                     <div>
                       <label
                         htmlFor="cmd-alias-input"
-                        className="mb-1 block text-xs font-semibold text-zinc-200"
+                        className="mb-1.5 block text-xs font-semibold text-zinc-200"
                       >
                         {t("commands.aliases")}
                       </label>
@@ -786,18 +894,16 @@ export function CommandsPage() {
                           />
                         </div>
                         <Button variant="default" onClick={addAlias}>
-                          {t("commands.create")}
+                          <Plus size={14} />
+                          {t("dashboard.add")}
                         </Button>
                       </div>
-                      <p className="mt-1 text-[11px] text-muted">
-                        {t("commands.aliasesHint")}
-                      </p>
                       {editing.aliases.length > 0 && (
-                        <div className="mt-2 flex flex-wrap gap-1.5">
+                        <div className="mt-2.5 flex flex-wrap gap-1.5">
                           {editing.aliases.map((alias) => (
                             <span
                               key={alias}
-                              className="inline-flex items-center gap-1 rounded-lg border border-line bg-white/4 px-2 py-1 font-mono text-xs text-zinc-200"
+                              className="inline-flex items-center gap-1 rounded-lg border border-accent/25 bg-accent-soft px-2 py-1 font-mono text-xs text-accent"
                             >
                               {editing.usePrefix ? `!${alias}` : alias}
                               <button
@@ -810,7 +916,7 @@ export function CommandsPage() {
                                     ),
                                   })
                                 }
-                                className="text-zinc-500 hover:text-zinc-200"
+                                className="opacity-70 hover:opacity-100"
                               >
                                 <X size={12} />
                               </button>
@@ -820,10 +926,10 @@ export function CommandsPage() {
                       )}
                     </div>
 
-                    <div>
+                    <div className="border-t border-line pt-4">
                       <label
                         htmlFor="cmd-keyword-input"
-                        className="mb-1 block text-xs font-semibold text-zinc-200"
+                        className="mb-1.5 block text-xs font-semibold text-zinc-200"
                       >
                         {t("commands.keywords")}
                       </label>
@@ -844,14 +950,12 @@ export function CommandsPage() {
                           }}
                         />
                         <Button variant="default" onClick={addKeyword}>
-                          {t("commands.create")}
+                          <Plus size={14} />
+                          {t("dashboard.add")}
                         </Button>
                       </div>
-                      <p className="mt-1 text-[11px] text-muted">
-                        {t("commands.keywordsHint")}
-                      </p>
                       {editing.keywords.length > 0 && (
-                        <div className="mt-2 flex flex-wrap gap-1.5">
+                        <div className="mt-2.5 flex flex-wrap gap-1.5">
                           {editing.keywords.map((kw) => (
                             <span
                               key={kw}
@@ -882,8 +986,8 @@ export function CommandsPage() {
 
                 {section === "conditions" && (
                   <div className="space-y-4">
-                    <div className="grid grid-cols-1 gap-2.5 sm:grid-cols-2">
-                      <label className="flex cursor-pointer items-center justify-between gap-2 rounded-xl border border-line bg-black/20 px-3 py-2">
+                    <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
+                      <label className="flex cursor-pointer items-center justify-between gap-2 rounded-xl border border-line bg-white/2 px-3 py-2">
                         <span className="text-xs font-medium text-zinc-200">
                           {t("commands.enabledWhenOffline")}
                         </span>
@@ -896,7 +1000,7 @@ export function CommandsPage() {
                         />
                       </label>
 
-                      <label className="flex cursor-pointer items-center justify-between gap-2 rounded-xl border border-line bg-black/20 px-3 py-2">
+                      <label className="flex cursor-pointer items-center justify-between gap-2 rounded-xl border border-line bg-white/2 px-3 py-2">
                         <span className="text-xs font-medium text-zinc-200">
                           {t("commands.enabledWhenOnline")}
                         </span>
@@ -909,7 +1013,7 @@ export function CommandsPage() {
                         />
                       </label>
 
-                      <label className="flex cursor-pointer items-center justify-between gap-2 rounded-xl border border-line bg-black/20 px-3 py-2">
+                      <label className="flex cursor-pointer items-center justify-between gap-2 rounded-xl border border-line bg-white/2 px-3 py-2">
                         <span className="text-xs font-medium text-zinc-200">
                           {t("commands.hiddenFromPublic")}
                         </span>
@@ -922,7 +1026,7 @@ export function CommandsPage() {
                         />
                       </label>
 
-                      <label className="flex cursor-pointer items-center justify-between gap-2 rounded-xl border border-line bg-black/20 px-3 py-2">
+                      <label className="flex cursor-pointer items-center justify-between gap-2 rounded-xl border border-line bg-white/2 px-3 py-2">
                         <span className="text-xs font-medium text-zinc-200">
                           {t("commands.whisperOnCooldown")}
                         </span>
@@ -937,10 +1041,15 @@ export function CommandsPage() {
                     </div>
 
                     <div>
-                      <div className="mb-1.5 text-xs font-semibold text-zinc-200">
-                        {t("commands.rolesLabel")}
+                      <div className="mb-1.5 flex items-center justify-between gap-2">
+                        <span className="text-xs font-semibold text-zinc-200">
+                          {t("commands.rolesLabel")}
+                        </span>
+                        <span className="text-[11px] text-muted">
+                          {t("commands.rolesHint")}
+                        </span>
                       </div>
-                      <div className="flex flex-wrap gap-1.5 rounded-xl border border-line bg-black/20 p-2.5">
+                      <div className="flex flex-wrap gap-1.5 rounded-xl border border-line bg-white/2 p-2.5">
                         {ALL_ROLES.map((role) => {
                           const active = editing.roles.includes(role);
                           return (
@@ -952,7 +1061,7 @@ export function CommandsPage() {
                               className={cn(
                                 "rounded-lg border px-2.5 py-1 text-xs font-medium transition",
                                 active
-                                  ? "border-accent/40 bg-accent/20 text-accent"
+                                  ? "border-accent/40 bg-accent-soft text-accent"
                                   : "border-line bg-white/3 text-zinc-400 hover:bg-white/6 hover:text-zinc-200",
                               )}
                             >
@@ -961,9 +1070,6 @@ export function CommandsPage() {
                           );
                         })}
                       </div>
-                      <p className="mt-1 text-[11px] text-muted">
-                        {t("commands.rolesHint")}
-                      </p>
                     </div>
                   </div>
                 )}
@@ -973,7 +1079,7 @@ export function CommandsPage() {
                     <div>
                       <label
                         htmlFor="cmd-game-input"
-                        className="mb-1 block text-xs font-semibold text-zinc-200"
+                        className="mb-1.5 block text-xs font-semibold text-zinc-200"
                       >
                         {t("commands.games")}
                       </label>
@@ -995,6 +1101,7 @@ export function CommandsPage() {
                           variant="default"
                           onClick={() => addGame(gameQuery)}
                         >
+                          <Plus size={14} />
                           {t("dashboard.add")}
                         </Button>
                       </div>
@@ -1005,18 +1112,15 @@ export function CommandsPage() {
                               key={suggestion}
                               type="button"
                               onClick={() => addGame(suggestion)}
-                              className="rounded-md border border-accent/25 bg-accent/10 px-2 py-0.5 text-[11px] text-accent transition hover:bg-accent/20"
+                              className="rounded-md border border-accent/25 bg-accent-soft px-2 py-0.5 text-[11px] text-accent transition hover:brightness-115"
                             >
                               + {suggestion}
                             </button>
                           ))}
                         </div>
                       )}
-                      <p className="mt-1 text-[11px] text-muted">
-                        {t("commands.gamesHint")}
-                      </p>
                       {editing.games.length > 0 && (
-                        <div className="mt-2 flex flex-wrap gap-1.5">
+                        <div className="mt-2.5 flex flex-wrap gap-1.5">
                           {editing.games.map((game) => (
                             <span
                               key={game}
@@ -1043,10 +1147,10 @@ export function CommandsPage() {
                       )}
                     </div>
 
-                    <div>
+                    <div className="border-t border-line pt-4">
                       <label
                         htmlFor="cmd-title-kw"
-                        className="mb-1 block text-xs font-semibold text-zinc-200"
+                        className="mb-1.5 block text-xs font-semibold text-zinc-200"
                       >
                         {t("commands.titleKeywords")}
                       </label>
@@ -1067,14 +1171,12 @@ export function CommandsPage() {
                           }}
                         />
                         <Button variant="default" onClick={addTitleKeyword}>
+                          <Plus size={14} />
                           {t("dashboard.add")}
                         </Button>
                       </div>
-                      <p className="mt-1 text-[11px] text-muted">
-                        {t("commands.titleKeywordsHint")}
-                      </p>
                       {editing.titleKeywords.length > 0 && (
-                        <div className="mt-2 flex flex-wrap gap-1.5">
+                        <div className="mt-2.5 flex flex-wrap gap-1.5">
                           {editing.titleKeywords.map((kw) => (
                             <span
                               key={kw}
@@ -1106,73 +1208,88 @@ export function CommandsPage() {
 
                 {section === "expiry" && (
                   <div className="space-y-4">
-                    <div className="flex items-center gap-3">
-                      <Toggle
-                        value={editing.useRelativeTime}
-                        onChange={(useRelativeTime) =>
-                          setEditing({ ...editing, useRelativeTime })
-                        }
-                        label={t("commands.useRelativeTime")}
-                      />
-                      <span className="text-xs font-semibold text-zinc-200">
-                        {t("commands.useRelativeTime")}
-                      </span>
-                    </div>
-
                     <div>
-                      <Select
-                        className="input w-full"
-                        aria-label={t("commands.sections.expiry")}
-                        value={editing.expiryAction}
-                        onChange={(event) =>
-                          setEditing({
-                            ...editing,
-                            expiryAction: event.target
-                              .value as CommandExpiryAction,
-                          })
-                        }
-                      >
-                        {EXPIRY_ACTIONS.map((action) => (
-                          <option key={action} value={action}>
-                            {t(`commands.expiryActions.${action}.label`)}
-                          </option>
-                        ))}
-                      </Select>
-                      <p className="mt-1 text-[11px] text-muted">
+                      <div className="mb-1.5 text-xs font-semibold text-zinc-200">
+                        {t("commands.sections.expiry")}
+                      </div>
+                      <div className="grid grid-cols-3 gap-1.5">
+                        {EXPIRY_ACTIONS.map((action) => {
+                          const active = editing.expiryAction === action;
+                          return (
+                            <button
+                              key={action}
+                              type="button"
+                              aria-pressed={active}
+                              onClick={() =>
+                                setEditing({
+                                  ...editing,
+                                  expiryAction: action,
+                                })
+                              }
+                              className={cn(
+                                "rounded-lg border px-2.5 py-1.5 text-xs font-medium transition",
+                                active
+                                  ? "border-accent/40 bg-accent-soft text-accent"
+                                  : "border-line bg-white/2 text-zinc-400 hover:bg-white/4 hover:text-zinc-200",
+                              )}
+                            >
+                              {t(`commands.expiryActions.${action}.label`)}
+                            </button>
+                          );
+                        })}
+                      </div>
+                      <p className="mt-1.5 text-[11px] text-muted">
                         {t(
                           `commands.expiryActions.${editing.expiryAction}.description`,
                         )}
                       </p>
                     </div>
 
-                    <div>
-                      <label
-                        htmlFor="cmd-expires-in"
-                        className="mb-1 block text-xs font-semibold text-zinc-200"
-                      >
-                        {t("commands.expiresIn")}
-                      </label>
-                      <div className="relative">
-                        <input
-                          id="cmd-expires-in"
-                          type="number"
-                          min={1}
-                          disabled={editing.expiryAction === "none"}
-                          className="input w-full pr-20 tabular-nums disabled:opacity-45"
-                          value={editing.expiresInSeconds}
-                          onChange={(event) =>
-                            setEditing({
-                              ...editing,
-                              expiresInSeconds: Math.max(
-                                1,
-                                Number(event.target.value) || 600,
-                              ),
-                            })
-                          }
-                        />
-                        <span className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-xs text-muted">
-                          {t("channelPoints.secondsUnit")}
-                        </span>
+                    <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+                      <div>
+                        <label
+                          htmlFor="cmd-expires-in"
+                          className="mb-1 block text-xs font-semibold text-zinc-200"
+                        >
+                          {t("commands.expiresIn")}
+                        </label>
+                        <div className="relative">
+                          <input
+                            id="cmd-expires-in"
+                            type="number"
+                            min={1}
+                            disabled={editing.expiryAction === "none"}
+                            className="input w-full pr-20 tabular-nums disabled:opacity-45"
+                            value={editing.expiresInSeconds}
+                            onChange={(event) =>
+                              setEditing({
+                                ...editing,
+                                expiresInSeconds: Math.max(
+                                  1,
+                                  Number(event.target.value) || 600,
+                                ),
+                              })
+                            }
+                          />
+                          <span className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-xs text-muted">
+                            {t("channelPoints.secondsUnit")}
+                          </span>
+                        </div>
+                      </div>
+
+                      <div className="flex items-end">
+                        <label className="flex h-8.5 w-full cursor-pointer items-center justify-between gap-2 rounded-lg border border-line bg-white/2 px-3">
+                          <span className="text-xs font-medium text-zinc-200">
+                            {t("commands.useRelativeTime")}
+                          </span>
+                          <Toggle
+                            value={editing.useRelativeTime}
+                            onChange={(useRelativeTime) =>
+                              setEditing({ ...editing, useRelativeTime })
+                            }
+                            label={t("commands.useRelativeTime")}
+                          />
+                        </label>
                       </div>
                     </div>
                   </div>
@@ -1180,7 +1297,7 @@ export function CommandsPage() {
               </div>
             </div>
 
-            <div className="flex shrink-0 items-center justify-end gap-2 border-t border-line bg-black/25 px-5 py-3">
+            <div className="flex shrink-0 items-center justify-end gap-2 border-t border-line bg-white/2 px-5 py-3">
               <Button variant="default" onClick={() => setEditing(null)}>
                 {t("dashboard.cancel")}
               </Button>

@@ -14,8 +14,9 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
 import { Badge, Button, Card, EmptyState, PageHeader, ScrollFade } from "../components/ui";
 import { UserCard } from "../components/chat/UserCard";
+import { resolveVariables, VARIABLE_DEFINITIONS } from "../lib/variables";
 import { errorMessage, isTauri } from "../lib/utils";
-import { twitchNative } from "../services/native";
+import { spotifyOverlayNative, twitchNative } from "../services/native";
 import { TWITCH_CLIENT_ID } from "../services/twitch/config";
 import { useRuntime } from "../services/runtime-context";
 import { useAppStore } from "../stores/app-store";
@@ -115,7 +116,7 @@ function ChatRow({
   const highlighted = isHighlighted(message, account, settings);
   return (
     <div
-      className={`group relative flex gap-2 border-l-2 px-3 py-1 leading-6 transition-colors ${message.deleted ? "border-transparent opacity-40" : highlighted ? "border-amber-400 bg-amber-400/8 hover:bg-amber-400/12" : message.firstMessage ? "border-sky-500 bg-sky-400/[.035] hover:bg-sky-400/[.07]" : "border-transparent hover:bg-white/[.035]"}`}
+      className={`group relative flex gap-2 border-l-2 px-3 py-1 leading-6 transition-colors ${message.deleted ? "border-transparent opacity-40" : highlighted ? "border-amber-400 bg-amber-400/8 hover:bg-amber-400/12" : message.firstMessage ? "border-sky-500 bg-sky-400/4 hover:bg-sky-400/8" : "border-transparent hover:bg-white/4"}`}
     >
       {settings.chatTimestamps && (
         <span className="w-10 shrink-0 pt-0.5 text-right text-[10px] tabular-nums text-zinc-600">
@@ -176,63 +177,180 @@ function ChatRow({
 type CompletionItem = {
   name: string;
   url?: string;
-  source: "7tv" | "twitch" | "user";
+  source: "7tv" | "twitch" | "user" | "variable" | "custom";
+  syntax?: "dollar" | "brace";
+  preview?: string;
 };
 interface Completion {
-  kind: "emote" | "user";
+  kind: "emote" | "user" | "variable";
   start: number;
   end: number;
   items: CompletionItem[];
 }
+
+const CHAT_PRIORITY_VARIABLES = new Set([
+  "channel",
+  "game",
+  "title",
+  "uptime",
+  "viewers",
+  "followers",
+  "subscribers",
+  "song",
+  "obs.scene",
+  "last.follower",
+  "giveaway.status",
+  "time",
+]);
+
 function getCompletion(
   value: string,
   cursor: number,
   emotes: ChatEmote[],
   users: string[],
+  storeState: ReturnType<typeof useAppStore.getState>,
+  songPreview?: string,
 ): Completion | undefined {
   const before = value.slice(0, cursor);
   const start = Math.max(before.lastIndexOf(" "), before.lastIndexOf("\n")) + 1;
   const token = before.slice(start);
-  let kind: Completion["kind"];
-  let query: string;
-  if (token.startsWith(":")) {
-    kind = "emote";
-    query = token.slice(1).replace(/:$/, "");
-  } else if (token.startsWith("@")) {
-    kind = "user";
+
+  if (token.startsWith(":") || token.startsWith("@")) {
+    const kind: Completion["kind"] = token.startsWith(":") ? "emote" : "user";
+    const query =
+      kind === "emote" ? token.slice(1).replace(/:$/, "") : token.slice(1);
+    if (!query) return undefined;
+    const lower = query.toLocaleLowerCase();
+    const candidates: CompletionItem[] =
+      kind === "emote"
+        ? emotes.map((emote) => ({
+            name: emote.name,
+            url: emote.url,
+            source: emote.source,
+          }))
+        : users.map((name) => ({ name, source: "user" as const }));
+    const items = candidates
+      .filter((item) => item.name.toLocaleLowerCase().includes(lower))
+      .sort((left, right) => {
+        const leftPrefix = left.name.toLocaleLowerCase().startsWith(lower)
+          ? 0
+          : 1;
+        const rightPrefix = right.name.toLocaleLowerCase().startsWith(lower)
+          ? 0
+          : 1;
+        return (
+          leftPrefix - rightPrefix ||
+          left.name.length - right.name.length ||
+          left.name.localeCompare(right.name)
+        );
+      })
+      .slice(0, 8);
+    return items.length ? { kind, start, end: cursor, items } : undefined;
+  }
+
+  let varStart = -1;
+  let syntax: "dollar" | "brace" | undefined;
+  let query = "";
+
+  const lastDollarParen = token.lastIndexOf("$(");
+  const lastOpenBrace = token.lastIndexOf("{");
+
+  if (lastDollarParen >= 0 && !token.slice(lastDollarParen).includes(")")) {
+    varStart = start + lastDollarParen;
+    syntax = "dollar";
+    query = token.slice(lastDollarParen + 2);
+  } else if (
+    token.startsWith("$") &&
+    !token.startsWith("$$") &&
+    !/^\$\d/.test(token) &&
+    !token.includes("(") &&
+    !token.includes(")")
+  ) {
+    varStart = start;
+    syntax = "dollar";
     query = token.slice(1);
-  } else return undefined;
-  if (!query) return undefined;
-  const lower = query.toLocaleLowerCase();
-  const candidates: CompletionItem[] =
-    kind === "emote"
-      ? emotes.map((emote) => ({
-          name: emote.name,
-          url: emote.url,
-          source: emote.source,
-        }))
-      : users.map((name) => ({ name, source: "user" as const }));
-  const items = candidates
-    .filter((item) => item.name.toLocaleLowerCase().includes(lower))
+  } else if (lastOpenBrace >= 0 && !token.slice(lastOpenBrace).includes("}")) {
+    varStart = start + lastOpenBrace;
+    syntax = "brace";
+    query = token.slice(lastOpenBrace + 1);
+  }
+
+  if (!syntax || varStart < 0) return undefined;
+
+  const lower = query.trim().toLocaleLowerCase();
+  const varCtx = {
+    state: storeState,
+    user: storeState.twitch.account,
+    userLogin: storeState.twitch.account,
+    songText: songPreview,
+    deterministicPreview: true,
+  };
+  const formatName = (key: string) =>
+    syntax === "brace" ? `{${key}}` : `$(${key})`;
+
+  const customCandidates = storeState.customVariables.map((custom) => {
+    const tokenName = formatName(custom.name);
+    return {
+      key: custom.name,
+      searchTerms: [custom.name.toLowerCase(), `custom.${custom.name.toLowerCase()}`],
+      priority: 0,
+      item: {
+        name: tokenName,
+        source: "custom" as const,
+        syntax,
+        preview: custom.value || "0",
+      },
+    };
+  });
+
+  const builtinCandidates = VARIABLE_DEFINITIONS.map((def) => {
+    const tokenName = formatName(def.key);
+    const preview = resolveVariables(def.token, varCtx);
+    return {
+      key: def.key,
+      searchTerms: [
+        def.key.toLowerCase(),
+        ...(def.aliases?.map((alias) => alias.toLowerCase()) ?? []),
+      ],
+      priority: CHAT_PRIORITY_VARIABLES.has(def.key) ? 1 : 2,
+      item: {
+        name: tokenName,
+        source: "variable" as const,
+        syntax,
+        preview: preview !== def.token ? preview : undefined,
+      },
+    };
+  });
+
+  const allCandidates = [...customCandidates, ...builtinCandidates];
+  const matched = (
+    lower
+      ? allCandidates.filter((entry) =>
+          entry.searchTerms.some((term) => term.includes(lower)),
+        )
+      : allCandidates
+  )
     .sort((left, right) => {
-      const leftPrefix = left.name.toLocaleLowerCase().startsWith(lower)
-        ? 0
-        : 1;
-      const rightPrefix = right.name.toLocaleLowerCase().startsWith(lower)
-        ? 0
-        : 1;
-      return (
-        leftPrefix - rightPrefix ||
-        left.name.length - right.name.length ||
-        left.name.localeCompare(right.name)
-      );
+      if (lower) {
+        const leftPrefix = left.key.toLowerCase().startsWith(lower) ? 0 : 1;
+        const rightPrefix = right.key.toLowerCase().startsWith(lower) ? 0 : 1;
+        if (leftPrefix !== rightPrefix) return leftPrefix - rightPrefix;
+      }
+      if (left.priority !== right.priority) return left.priority - right.priority;
+      return left.key.length - right.key.length || left.key.localeCompare(right.key);
     })
-    .slice(0, 8);
-  return items.length ? { kind, start, end: cursor, items } : undefined;
+    .slice(0, 10)
+    .map((entry) => entry.item);
+
+  if (!matched.length) return undefined;
+  const closingChar = syntax === "dollar" ? ")" : "}";
+  const end = value[cursor] === closingChar ? cursor + 1 : cursor;
+  return { kind: "variable", start: varStart, end, items: matched };
 }
 
 export function ChatPage() {
   const { t } = useTranslation();
+  const storeState = useAppStore();
   const {
     chat,
     chatEmotes,
@@ -241,7 +359,7 @@ export function ChatPage() {
     setPage,
     settings,
     twitch,
-  } = useAppStore();
+  } = storeState;
   const runtime = useRuntime();
   const listRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
@@ -256,6 +374,7 @@ export function ChatPage() {
   const [searchOpen, setSearchOpen] = useState(false);
   const [selected, setSelected] = useState(0);
   const [dismissedDraft, setDismissedDraft] = useState<string>();
+  const [songPreview, setSongPreview] = useState<string>();
   const [history, setHistory] = useState<string[]>([]);
   const [historyIndex, setHistoryIndex] = useState(-1);
   const [selectedUser, setSelectedUser] = useState<string>();
@@ -289,9 +408,33 @@ export function ChatPage() {
     () =>
       dismissedDraft === draft
         ? undefined
-        : getCompletion(draft, cursor, chatEmotes, users),
-    [chatEmotes, cursor, dismissedDraft, draft, users],
+        : getCompletion(
+            draft,
+            cursor,
+            chatEmotes,
+            users,
+            storeState,
+            songPreview,
+          ),
+    [chatEmotes, cursor, dismissedDraft, draft, songPreview, storeState, users],
   );
+  const activeSelected = completion
+    ? Math.min(selected, completion.items.length - 1)
+    : 0;
+  const needsSongPreview =
+    completion?.kind === "variable" ||
+    /\$\((?:spotify\.)?song\)|\{song\}/i.test(draft);
+  const resolvedDraft = useMemo(() => {
+    if (!/\$\([^)]+\)|\{[^}]+\}/.test(draft)) return undefined;
+    const resolved = resolveVariables(draft, {
+      state: storeState,
+      user: twitch.account,
+      userLogin: twitch.account,
+      songText: songPreview,
+      deterministicPreview: true,
+    });
+    return resolved !== draft ? resolved : undefined;
+  }, [draft, songPreview, storeState, twitch.account]);
   const visibleMessages = useMemo(
     () =>
       chatMessages.filter(
@@ -309,6 +452,26 @@ export function ChatPage() {
   useEffect(() => {
     inputRef.current?.focus();
   }, []);
+  useEffect(() => {
+    if (!needsSongPreview) return;
+    let active = true;
+    void spotifyOverlayNative
+      .status()
+      .then((song) => {
+        if (!active) return;
+        setSongPreview(
+          song.available && song.title
+            ? song.artist
+              ? `${song.artist} — ${song.title}`
+              : song.title
+            : undefined,
+        );
+      })
+      .catch(() => undefined);
+    return () => {
+      active = false;
+    };
+  }, [needsSongPreview]);
   useEffect(() => {
     if (
       twitch.phase !== "connected" ||
@@ -432,7 +595,7 @@ export function ChatPage() {
             (index - 1 + completion.items.length) % completion.items.length,
         );
       else if (event.key === "Escape") setDismissedDraft(draft);
-      else chooseCompletion(completion.items[selected] ?? completion.items[0]);
+      else chooseCompletion(completion.items[activeSelected] ?? completion.items[0]);
       return;
     }
     if (event.key === "ArrowUp" && history.length) {
@@ -657,7 +820,7 @@ export function ChatPage() {
                       event.preventDefault();
                       chooseCompletion(item);
                     }}
-                    className={`flex h-9 w-full items-center gap-2 rounded-md px-2 text-left text-xs ${index === selected ? "bg-accent-soft text-white" : "text-zinc-400 hover:bg-white/5"}`}
+                    className={`flex h-9 w-full items-center gap-2 rounded-md px-2 text-left text-xs ${index === activeSelected ? "bg-accent-soft text-white" : "text-zinc-400 hover:bg-white/5"}`}
                   >
                     {item.url ? (
                       <img
@@ -665,21 +828,56 @@ export function ChatPage() {
                         alt=""
                         className="size-7 object-contain"
                       />
+                    ) : item.source === "variable" || item.source === "custom" ? (
+                      <span
+                        className={`grid size-7 shrink-0 place-items-center rounded-md border font-mono text-[10px] ${
+                          item.source === "custom"
+                            ? "border-emerald-400/30 bg-emerald-400/10 text-emerald-300"
+                            : "border-accent/30 bg-accent/10 text-accent"
+                        }`}
+                      >
+                        {item.syntax === "brace" ? "{ }" : "$()"}
+                      </span>
                     ) : (
                       <span className="grid size-7 place-items-center">
                         <AtSign size={15} />
                       </span>
                     )}
-                    <span className="min-w-0 flex-1 truncate font-medium">
+                    <span
+                      className={`truncate font-medium ${
+                        item.source === "variable" || item.source === "custom"
+                          ? "shrink-0 font-mono"
+                          : "min-w-0 flex-1"
+                      }`}
+                    >
                       {item.name}
                     </span>
-                    <span className="text-[9px] uppercase text-zinc-600">
-                      {item.source}
+                    {item.preview && (
+                      <span className="min-w-0 flex-1 truncate text-[11px] text-zinc-500">
+                        → {item.preview}
+                      </span>
+                    )}
+                    <span className="shrink-0 text-[9px] uppercase text-zinc-600">
+                      {item.source === "custom"
+                        ? t("chat.variableCustom")
+                        : item.source === "variable"
+                          ? t("chat.variableSource")
+                          : item.source}
                     </span>
                   </button>
                 ))}
               </div>
             </ScrollFade>
+          )}
+          {resolvedDraft && (
+            <div className="mb-2 flex items-center gap-2 rounded-lg border border-line/70 bg-black/25 px-2.5 py-1.5 text-xs">
+              <span className="shrink-0 text-[10px] font-medium uppercase tracking-wider text-accent">
+                {t("chat.variablePreview")}
+              </span>
+              <span className="min-w-0 flex-1 truncate text-zinc-200" title={resolvedDraft}>
+                {resolvedDraft}
+              </span>
+            </div>
           )}
           <form className="flex gap-2" onSubmit={submit}>
             <input
@@ -702,6 +900,11 @@ export function ChatPage() {
               onClick={(event) =>
                 setCursor(event.currentTarget.selectionStart ?? draft.length)
               }
+              onKeyUp={(event) => {
+                if (["ArrowLeft", "ArrowRight", "Home", "End"].includes(event.key)) {
+                  setCursor(event.currentTarget.selectionStart ?? draft.length);
+                }
+              }}
               onKeyDown={onInputKeyDown}
             />
             <Button
@@ -721,7 +924,7 @@ export function ChatPage() {
             <span>
               {t("chat.inputHint")}
             </span>
-            <span>{draft.length}/500</span>
+            <span>{(resolvedDraft ?? draft).length}/500</span>
           </div>
         </div>
       </Card>

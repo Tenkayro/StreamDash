@@ -89,19 +89,19 @@ function ControlButton({
       disabled={busy}
       onClick={() => void onClick()}
       className={cn(
-        "flex min-h-20 items-center gap-3 rounded-xl border p-3 text-left transition disabled:cursor-wait disabled:opacity-60",
+        "flex min-h-14 items-center gap-3 rounded-xl border p-2.5 text-left transition disabled:cursor-wait disabled:opacity-60",
         active
           ? danger
             ? "border-red-400/30 bg-red-400/10"
             : "border-accent/30 bg-accent-soft"
-          : "border-line bg-black/15 hover:border-accent/30 hover:bg-white/3",
+          : "border-line bg-white/2 hover:border-accent/30 hover:bg-white/4",
       )}
     >
       <span className={cn(
-        "grid size-9 shrink-0 place-items-center rounded-lg",
+        "grid size-8 shrink-0 place-items-center rounded-lg",
         active ? (danger ? "bg-red-400/15 text-red-300" : "bg-accent/15 text-accent") : "bg-white/5 text-zinc-400",
       )}>
-        {busy ? <RefreshCw size={17} className="animate-spin" /> : <Icon size={17} />}
+        {busy ? <RefreshCw size={16} className="animate-spin" /> : <Icon size={16} />}
       </span>
       <span className="min-w-0">
         <span className="block text-xs font-semibold text-zinc-200">{label}</span>
@@ -111,14 +111,11 @@ function ControlButton({
   );
 }
 
-function SectionTitle({ icon: Icon, title, description }: { icon: LucideIcon; title: string; description: string }) {
+function SectionTitle({ icon: Icon, title }: { icon: LucideIcon; title: string }) {
   return (
-    <div className="mb-3 flex items-start gap-2">
-      <Icon size={15} className="mt-0.5 shrink-0 text-accent" />
-      <div>
-        <h2 className="text-sm font-semibold">{title}</h2>
-        <p className="mt-0.5 text-[11px] text-muted">{description}</p>
-      </div>
+    <div className="mb-3 flex items-center gap-2 border-b border-line pb-2">
+      <Icon size={14} className="shrink-0 text-accent" />
+      <h2 className="text-xs font-semibold text-zinc-200">{title}</h2>
     </div>
   );
 }
@@ -143,7 +140,7 @@ function SpotifyOverlayCard() {
   };
   return (
     <Card className="mt-3 p-4">
-      <SectionTitle icon={Music2} title={t("obs.spotifyOverlay.title")} description={t("obs.spotifyOverlay.description")} />
+      <SectionTitle icon={Music2} title={t("obs.spotifyOverlay.title")} />
       <div className="grid items-center gap-4 xl:grid-cols-[minmax(360px,1.1fr)_minmax(300px,.9fr)]">
         <div className="relative aspect-35/8 min-h-28 overflow-hidden rounded-2xl border border-white/10 bg-[#211e27] shadow-xl">
           {coverUrl && <div className="absolute -inset-8 scale-110 bg-cover bg-center opacity-30 blur-2xl" style={{ backgroundImage: `url(${JSON.stringify(coverUrl)})` }} />}
@@ -164,7 +161,6 @@ function SpotifyOverlayCard() {
             <Badge tone={status?.available ? status.playing ? "green" : "amber" : "neutral"}>{t(status?.available ? status.playing ? "obs.spotifyOverlay.playing" : "obs.spotifyOverlay.paused" : "obs.spotifyOverlay.waiting")}</Badge>
           </div>
           <div className="flex flex-col gap-2 sm:flex-row"><input readOnly aria-label={t("obs.spotifyOverlay.urlLabel")} value={info?.url ?? ""} placeholder={t("obs.spotifyOverlay.desktopOnly")} className="input min-w-0 flex-1 font-mono text-[11px]" /><Button className="shrink-0" onClick={() => void copyUrl()} disabled={!info}><Copy size={14} />{t("obs.spotifyOverlay.copy")}</Button></div>
-          <p className="mt-2 text-[10px] leading-4 text-muted">{t("obs.spotifyOverlay.hint")}</p>
         </div>
       </div>
     </Card>
@@ -181,7 +177,7 @@ function AudioChannel({ input, busy, run }: {
   const Icon = input.kind === "mic" ? Mic : Monitor;
   const volume = Math.round(input.volume * 100);
   return (
-    <div className="rounded-xl border border-line bg-black/15 p-3">
+    <div className="rounded-xl border border-line bg-white/2 p-3">
       <div className="flex min-w-0 items-center gap-2">
         <span className="grid size-8 shrink-0 place-items-center rounded-lg bg-white/5 text-zinc-400"><Icon size={15} /></span>
         <div className="min-w-0 flex-1">
@@ -244,7 +240,7 @@ function ObsWorkspace({ snapshot }: { snapshot: ObsSnapshot }) {
       </div>
 
       <Card className="mt-3 p-4">
-        <SectionTitle icon={Settings2} title={t("obs.page.outputControls")} description={t("obs.page.outputControlsDescription")} />
+        <SectionTitle icon={Settings2} title={t("obs.page.outputControls")} />
         <div className="grid gap-2 sm:grid-cols-2 xl:grid-cols-4">
           <ControlButton icon={Radio} label={t(snapshot.streaming ? "obs.stopStream" : "obs.startStream")} description={outputDescription(snapshot.streaming)} active={snapshot.streaming} danger busy={busy.includes("stream")} onClick={() => run("stream", () => runtime.setObsStreaming(!snapshot.streaming))} />
           <ControlButton icon={Circle} label={t(snapshot.recording ? "obs.stopRecording" : "obs.startRecording")} description={outputDescription(snapshot.recording)} active={snapshot.recording} danger busy={busy.includes("recording")} onClick={() => run("recording", () => runtime.setObsRecording(!snapshot.recording))} />
@@ -257,13 +253,13 @@ function ObsWorkspace({ snapshot }: { snapshot: ObsSnapshot }) {
 
       <div className="mt-3 grid items-start gap-3 xl:grid-cols-[minmax(260px,.8fr)_minmax(360px,1.2fr)]">
         <Card className="p-4">
-          <SectionTitle icon={Clapperboard} title={t("obs.page.scenes")} description={t("obs.page.scenesDescription")} />
+          <SectionTitle icon={Clapperboard} title={t("obs.page.scenes")} />
           {snapshot.scenes.length ? (
             <ScrollFade color="#242526" size={28}>
               <div className="grid max-h-96 gap-1.5 overflow-y-auto pr-1 sm:grid-cols-2 xl:grid-cols-1 2xl:grid-cols-2">
                 {snapshot.scenes.map((scene) => {
                   const active = scene === snapshot.scene;
-                  return <button key={scene} type="button" aria-pressed={active} onClick={() => void run(`scene:${scene}`, () => runtime.setObsScene(scene))} className={cn("flex min-w-0 items-center gap-2 rounded-lg border px-3 py-2 text-left text-xs transition", active ? "border-accent/40 bg-accent-soft text-accent" : "border-line bg-black/15 text-zinc-400 hover:border-accent/30 hover:text-zinc-100")}><span className={cn("size-1.5 shrink-0 rounded-full", active ? "bg-accent" : "bg-zinc-700")} /><span className="truncate">{scene}</span>{active && <Badge tone="purple">{t("obs.page.program")}</Badge>}</button>;
+                  return <button key={scene} type="button" aria-pressed={active} onClick={() => void run(`scene:${scene}`, () => runtime.setObsScene(scene))} className={cn("flex min-w-0 items-center gap-2 rounded-lg border px-3 py-2 text-left text-xs transition", active ? "border-accent/40 bg-accent-soft text-accent" : "border-line bg-white/2 text-zinc-400 hover:border-accent/30 hover:text-zinc-100")}><span className={cn("size-1.5 shrink-0 rounded-full", active ? "bg-accent" : "bg-zinc-700")} /><span className="truncate">{scene}</span>{active && <Badge tone="purple">{t("obs.page.program")}</Badge>}</button>;
                 })}
               </div>
             </ScrollFade>
@@ -271,13 +267,13 @@ function ObsWorkspace({ snapshot }: { snapshot: ObsSnapshot }) {
         </Card>
 
         <Card className="p-4">
-          <SectionTitle icon={AudioLines} title={t("obs.page.audioMixer")} description={t("obs.page.audioMixerDescription")} />
+          <SectionTitle icon={AudioLines} title={t("obs.page.audioMixer")} />
           {snapshot.audio.length ? <div className="grid gap-2">{snapshot.audio.map((input) => <AudioChannel key={input.name} input={input} busy={busy.includes(`mute:${input.name}`)} run={run} />)}</div> : <p className="text-xs text-muted">{t("obs.page.noAudio")}</p>}
         </Card>
       </div>
 
       <Card className="mt-3 p-4">
-        <SectionTitle icon={Cpu} title={t("obs.page.details")} description={t("obs.page.detailsDescription")} />
+        <SectionTitle icon={Cpu} title={t("obs.page.details")} />
         <dl className="grid gap-x-8 gap-y-3 sm:grid-cols-2 xl:grid-cols-4">
           {[
             [t("obs.page.version"), snapshot.version ? `OBS ${snapshot.version}` : "—"],

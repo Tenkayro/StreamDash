@@ -110,7 +110,7 @@ function GoalCard({
       </div>
 
       <label className="block pt-3">
-        <span className="mb-1 block text-[10px] font-medium uppercase tracking-widest text-zinc-600">
+        <span className="mb-1 block text-[10px] font-medium uppercase tracking-widest text-muted">
           {t("goals.target")}
         </span>
         <input

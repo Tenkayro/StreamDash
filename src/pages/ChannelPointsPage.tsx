@@ -592,9 +592,6 @@ export function ChannelPointsPage() {
                       setEditing({ ...editing, title: event.target.value })
                     }
                   />
-                  <p className="mt-1 text-[11px] text-muted">
-                    {t("channelPoints.titleHint")}
-                  </p>
                 </div>
 
                 <div>
@@ -620,9 +617,6 @@ export function ChannelPointsPage() {
                     }
                     className="w-full resize-none rounded-lg border border-line bg-black/25 px-3 py-2 text-xs leading-5 text-zinc-100 outline-none transition focus:border-accent/45"
                   />
-                  <p className="mt-1 text-[11px] text-muted">
-                    {t("channelPoints.descriptionHint")}
-                  </p>
                 </div>
               </div>
             </Card>
@@ -631,7 +625,7 @@ export function ChannelPointsPage() {
               <div className="mb-2.5 border-b border-line pb-2 text-xs font-semibold tracking-tight text-zinc-200">
                 {t("channelPoints.preview")}
               </div>
-              <div className="flex flex-wrap items-center gap-3.5 rounded-xl border border-line bg-black/20 p-3">
+              <div className="flex flex-wrap items-center gap-3.5 rounded-xl border border-line bg-white/2 p-3">
                 <ChannelPointIcon
                   color={editing.backgroundColor}
                   imageUrl={editing.imageUrl}
@@ -692,8 +686,7 @@ export function ChannelPointsPage() {
                 </span>
               </div>
 
-              <div className="mt-2.5 flex flex-wrap items-center justify-between gap-2 border-t border-line pt-2 text-[11px] text-muted">
-                <span>{t("channelPoints.imageHint")}</span>
+              <div className="mt-2.5 flex items-center justify-end border-t border-line pt-2 text-[11px]">
                 <button
                   type="button"
                   onClick={() => void openUrl(TWITCH_REWARDS_DASHBOARD_URL)}
@@ -804,12 +797,9 @@ export function ChannelPointsPage() {
                       {t("channelPoints.pointsUnit")}
                     </span>
                   </div>
-                  <p className="mt-1 text-[11px] text-muted">
-                    {t("channelPoints.costHint")}
-                  </p>
                 </div>
 
-                <div className="rounded-xl border border-line bg-black/15 p-2.5">
+                <div className="rounded-xl border border-line bg-white/2 p-2.5">
                   <div className="mb-1.5 flex items-center justify-between gap-2">
                     <label
                       htmlFor="reward-max-stream"
@@ -842,12 +832,9 @@ export function ChannelPointsPage() {
                       })
                     }
                   />
-                  <p className="mt-1 text-[10.5px] leading-4 text-muted">
-                    {t("channelPoints.maxPerStreamHint")}
-                  </p>
                 </div>
 
-                <div className="rounded-xl border border-line bg-black/15 p-2.5">
+                <div className="rounded-xl border border-line bg-white/2 p-2.5">
                   <div className="mb-1.5 flex items-center justify-between gap-2">
                     <label
                       htmlFor="reward-max-user"
@@ -880,12 +867,9 @@ export function ChannelPointsPage() {
                       })
                     }
                   />
-                  <p className="mt-1 text-[10.5px] leading-4 text-muted">
-                    {t("channelPoints.maxPerUserHint")}
-                  </p>
                 </div>
 
-                <div className="rounded-xl border border-line bg-black/15 p-2.5 sm:col-span-2">
+                <div className="rounded-xl border border-line bg-white/2 p-2.5 sm:col-span-2">
                   <div className="mb-1.5 flex items-center justify-between gap-2">
                     <label
                       htmlFor="reward-cooldown"
@@ -923,9 +907,6 @@ export function ChannelPointsPage() {
                       {t("channelPoints.secondsUnit")}
                     </span>
                   </div>
-                  <p className="mt-1 text-[10.5px] leading-4 text-muted">
-                    {t("channelPoints.cooldownHint")}
-                  </p>
                 </div>
               </div>
             </Card>
@@ -980,7 +961,7 @@ export function ChannelPointsPage() {
       )}
 
       <Card className="flex min-h-0 flex-1 flex-col overflow-hidden">
-        <div className="flex shrink-0 items-center justify-between gap-2 border-b border-line bg-white/[.012] px-4 py-2.5">
+        <div className="flex shrink-0 items-center justify-between gap-2 border-b border-line bg-white/2 px-4 py-2.5">
           <div className="flex items-center gap-2">
             <span className="text-xs font-semibold text-zinc-200">
               {t("channelPoints.rewardsList")}
@@ -1030,7 +1011,7 @@ export function ChannelPointsPage() {
                       openEdit(reward);
                     }
                   }}
-                  className="group flex cursor-pointer items-center gap-3.5 rounded-xl border border-line bg-white/[.018] px-3.5 py-2.5 transition hover:border-accent/35 hover:bg-white/4"
+                  className="group flex cursor-pointer items-center gap-3.5 rounded-xl border border-line bg-white/2 px-3.5 py-2.5 transition hover:border-accent/35 hover:bg-white/4"
                 >
                   <ChannelPointIcon
                     color={reward.backgroundColor}

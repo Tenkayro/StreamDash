@@ -328,7 +328,7 @@ function Row({
   return (
     <div data-search-label={label} className={`flex flex-col items-stretch gap-3 border-b border-line last:border-0 lg:flex-row lg:items-center lg:justify-between lg:gap-6 ${detail ? "py-4" : "py-3"}`}>
       <div className={`flex min-w-0 gap-3 ${detail ? "items-start" : "items-center"}`}>
-        <span className={`grid size-8 shrink-0 place-items-center rounded-lg bg-white/[.035] text-zinc-500 ${detail ? "mt-0.5" : ""}`}>
+        <span className={`grid size-8 shrink-0 place-items-center rounded-lg bg-white/4 text-zinc-500 ${detail ? "mt-0.5" : ""}`}>
           <Icon size={15} aria-hidden="true" />
         </span>
         <div className="min-w-0">
@@ -503,7 +503,6 @@ export function SettingsPage() {
             <Row
               icon={PanelBottom}
               label={t("settings.minimizeToTray")}
-              detail={t("settings.minimizeToTrayDetail")}
             >
               <Toggle label={t("settings.minimizeToTray")}
                 value={settings.minimizeToTray}
@@ -513,7 +512,6 @@ export function SettingsPage() {
             <Row
               icon={AppWindow}
               label={t("settings.trayStyle")}
-              detail={t("settings.trayStyleDetail")}
             >
               <Select aria-label={t("settings.trayStyle")}
                 className="input w-52! max-w-full"
@@ -715,7 +713,6 @@ export function SettingsPage() {
             <Row
               icon={Highlighter}
               label={t("settings.highlightWords")}
-              detail={t("settings.highlightWordsDetail")}
             >
               <HighlightWords
                 value={settings.chatHighlightWords}
@@ -756,7 +753,6 @@ export function SettingsPage() {
             <Row
               icon={MessagesSquare}
               label={t("settings.messageBuffer")}
-              detail={t("settings.messageBufferDetail")}
             >
               <Select aria-label={t("settings.messageBuffer")}
                 className="input w-52! max-w-full"
@@ -800,9 +796,6 @@ export function SettingsPage() {
         <section id="events" className="scroll-mt-16">
           <SectionTitle icon={ListFilter}>{t("settings.events")}</SectionTitle>
           <Card className="p-4">
-            <p className="mb-3 text-xs text-muted">
-              {t("settings.eventsDetail")}
-            </p>
             <div className="grid grid-cols-2 gap-2 md:grid-cols-3 xl:grid-cols-4">
               {eventOptions.map((option) => {
                 const Icon = option.icon;
@@ -843,7 +836,6 @@ export function SettingsPage() {
             <Row
               icon={DatabaseBackup}
               label={t("settings.keepData")}
-              detail={t("settings.keepDataDetail")}
             >
               <Toggle label={t("settings.keepData")}
                 value={settings.keepUserData}
@@ -853,7 +845,6 @@ export function SettingsPage() {
             <Row
               icon={Archive}
               label={t("settings.maximumEvents")}
-              detail={t("settings.maximumEventsDetail")}
             >
               <Select aria-label={t("settings.maximumEvents")}
                 className="input w-52! max-w-full"
