@@ -1095,6 +1095,57 @@ async fn twitch_eventsub_create(client_id: String, body: Value) -> Result<(), St
 
 const CLOUD_SYNC_BASE_URL: &str = "https://streamdash-api.tenkayro.de";
 
+const APP_SIGNING_MASK: [u8; 32] = [
+    207, 97, 88, 223, 48, 41, 149, 52, 54, 93, 130, 183, 114, 34, 104, 132, 142, 250, 253, 188, 38,
+    230, 146, 33, 182, 165, 120, 217, 213, 251, 222, 25,
+];
+const APP_SIGNING_ENC: [u8; 32] = [
+    219, 225, 18, 12, 224, 144, 173, 156, 177, 252, 16, 141, 106, 27, 199, 16, 16, 206, 198, 224,
+    131, 73, 98, 147, 115, 157, 117, 74, 83, 141, 157, 164,
+];
+
+fn sign_cloud_request(
+    method: &reqwest::Method,
+    path: &str,
+    body_bytes: &[u8],
+) -> Result<(String, String, String), String> {
+    use ring::{
+        digest, hmac,
+        rand::{SecureRandom, SystemRandom},
+    };
+
+    let mut key_bytes = [0u8; 32];
+    for i in 0..32 {
+        key_bytes[i] = APP_SIGNING_MASK[i] ^ APP_SIGNING_ENC[i];
+    }
+    let hmac_key = hmac::Key::new(hmac::HMAC_SHA256, &key_bytes);
+    key_bytes.fill(0);
+
+    let mut nonce_bytes = [0u8; 16];
+    SystemRandom::new()
+        .fill(&mut nonce_bytes)
+        .map_err(|_| "Failed to generate request nonce".to_string())?;
+    let nonce = hex::encode(nonce_bytes);
+    let timestamp = SystemTime::now()
+        .duration_since(UNIX_EPOCH)
+        .map_err(|e| e.to_string())?
+        .as_secs()
+        .to_string();
+
+    let body_sha256 = hex::encode(digest::digest(&digest::SHA256, body_bytes).as_ref());
+    let canonical_path = path.split('?').next().unwrap_or(path);
+    let canonical = format!(
+        "{}\n{}\n{}\n{}\n{}",
+        method.as_str(),
+        canonical_path,
+        timestamp,
+        nonce,
+        body_sha256
+    );
+    let sig = hex::encode(hmac::sign(&hmac_key, canonical.as_bytes()).as_ref());
+    Ok((timestamp, nonce, sig))
+}
+
 async fn cloud_sync_send(
     client_id: &str,
     method: reqwest::Method,
@@ -1103,14 +1154,24 @@ async fn cloud_sync_send(
 ) -> Result<(u16, Value), String> {
     let mut tokens = valid_tokens(client_id).await?;
     let url = format!("{CLOUD_SYNC_BASE_URL}{path}");
+    let body_bytes = match payload {
+        Some(body) => serde_json::to_vec(body).map_err(|e| e.to_string())?,
+        None => Vec::new(),
+    };
 
     for attempt in 0..2 {
+        let (ts, nonce, sig) = sign_cloud_request(&method, path, &body_bytes)?;
         let mut req = http()
             .request(method.clone(), &url)
             .bearer_auth(&tokens.access_token)
+            .header("X-SD-Timestamp", &ts)
+            .header("X-SD-Nonce", &nonce)
+            .header("X-SD-Signature", &sig)
             .timeout(std::time::Duration::from_secs(12));
-        if let Some(body) = payload {
-            req = req.json(body);
+        if payload.is_some() {
+            req = req
+                .header("Content-Type", "application/json")
+                .body(body_bytes.clone());
         }
         let response = req.send().await.map_err(|e| e.to_string())?;
         let status = response.status().as_u16();
