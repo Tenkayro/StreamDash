@@ -424,7 +424,7 @@ export function CommandsPage() {
                 return (
                   <div
                     key={cmd.id}
-                    className="grid grid-cols-1 items-center gap-2.5 px-4 py-2.5 transition hover:bg-white/[.02] sm:grid-cols-[minmax(120px,190px)_1fr_auto]"
+                    className="grid grid-cols-1 items-center gap-2.5 px-4 py-2.5 transition hover:bg-white/2 sm:grid-cols-[minmax(120px,190px)_1fr_auto]"
                   >
                     <div className="min-w-0">
                       <div className="flex flex-wrap items-center gap-1.5">

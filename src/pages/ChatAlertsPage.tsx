@@ -241,7 +241,7 @@ export function ChatAlertsPage() {
               <div className="mb-3 border-b border-line pb-2 text-xs font-semibold tracking-tight text-zinc-200">
                 {t("chatAlerts.giftedSubAlerts")}
               </div>
-              <div className="mb-3 flex items-center gap-2 rounded-xl border border-line bg-white/[.02] px-3 py-2 text-xs text-zinc-300">
+              <div className="mb-3 flex items-center gap-2 rounded-xl border border-line bg-white/2 px-3 py-2 text-xs text-zinc-300">
                 <Info size={14} className="shrink-0 text-zinc-400" />
                 <span>{t("chatAlerts.giftedSubHint")}</span>
               </div>
@@ -268,7 +268,7 @@ export function ChatAlertsPage() {
               <div className="mb-3 border-b border-line pb-2 text-xs font-semibold tracking-tight text-zinc-200">
                 {t("chatAlerts.massGiftSubAlerts")}
               </div>
-              <div className="mb-3 flex items-center gap-2 rounded-xl border border-line bg-white/[.02] px-3 py-2 text-xs text-zinc-300">
+              <div className="mb-3 flex items-center gap-2 rounded-xl border border-line bg-white/2 px-3 py-2 text-xs text-zinc-300">
                 <Info size={14} className="shrink-0 text-zinc-400" />
                 <span>{t("chatAlerts.massGiftSubHint")}</span>
               </div>
