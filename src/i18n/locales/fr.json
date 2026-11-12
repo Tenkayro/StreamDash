@@ -390,7 +390,8 @@
     "openHint": "Entrée Ouvrir",
     "quickSwitch": "Tout rechercher",
     "searchPlaceholder": "Rechercher pages, paramètres, personnes, messages…",
-    "system": "Système"
+    "system": "Système",
+    "tools": "Outils"
   },
   "obs": {
     "title": "OBS Studio",
@@ -487,6 +488,8 @@
     }
   },
   "pageDescriptions": {
+    "channelPoints": "Créez des expériences interactives avec votre audience grâce aux points de chaîne Twitch.",
+    "commands": "Automatisez les messages répétitifs et les commandes personnalisées du chat.",
     "donations": "Examinez, filtrez et modérez les dons et les événements du stream dans une seule boîte de réception.",
     "connections": "Connectez vos comptes et vérifiez l’état des services.",
     "dashboard": "Votre stream, votre audience et votre activité en un coup d’œil.",
@@ -500,9 +503,11 @@
   },
   "nav": {
     "activity": "Activité",
+    "channelPoints": "Points de chaîne",
     "chat": "Chat",
     "collapse": "Réduire",
     "collapseNavigation": "Réduire la navigation",
+    "commands": "Commandes",
     "connections": "Connexions",
     "dashboard": "Tableau de bord",
     "donations": "Dons",
@@ -517,6 +522,173 @@
     "statistics": "Statistiques",
     "stream": "Stream",
     "activitys": "Activitys"
+  },
+  "channelPoints": {
+    "backgroundColor": "Couleur d’arrière-plan",
+    "conditions": "Conditions",
+    "cooldownHint": "Nombre minimal de secondes entre chaque utilisation",
+    "cost": "Coût",
+    "costHint": "Le coût de la récompense en points de chaîne.",
+    "create": "Créer",
+    "createdSuccess": "Récompense de points de chaîne créée",
+    "createReward": "Créer la récompense",
+    "delete": "Supprimer",
+    "deletedSuccess": "Récompense de points de chaîne supprimée",
+    "deleteError": "Impossible de supprimer la récompense",
+    "description": "Description",
+    "descriptionHint": "Une courte description affichée aux spectateurs avant l’échange.",
+    "descriptionPlaceholder": "Expliquez ce qui se passe lorsque cette récompense est échangée…",
+    "disabledBadge": "Désactivé",
+    "editReward": "Modifier la récompense",
+    "emptyBody": "Créez des récompenses de points de chaîne personnalisées pour interagir avec vos spectateurs depuis StreamDash.",
+    "emptyTitle": "Aucune récompense personnalisée",
+    "enabled": "Activé",
+    "enabledWhenOffline": "Activé lorsque le stream est hors ligne",
+    "enabledWhenOnline": "Activé lorsque le stream est en ligne",
+    "enterTitle": "Veuillez saisir un titre pour la récompense",
+    "general": "Général",
+    "globalCooldown": "Délai de récupération global",
+    "imageHint": "Les icônes personnalisées peuvent être modifiées depuis le tableau de bord Twitch.",
+    "inputBadge": "Saisie requise",
+    "loadError": "Impossible de charger les récompenses de points de chaîne",
+    "maxPerStream": "Max. par stream",
+    "maxPerStreamHint": "Nombre maximal d’échanges par stream",
+    "maxPerUser": "Max. d’échanges par utilisateur par stream",
+    "maxPerUserHint": "Nombre maximal d’utilisations par spectateur et par stream",
+    "newReward": "Nouvelle récompense",
+    "openTwitchDashboard": "Tableau de bord Twitch",
+    "pausedBadge": "En pause",
+    "permissionNotice": "Reconnectez Twitch une fois pour autoriser la création et la gestion des points de chaîne.",
+    "pointsCost": "{{points}} points",
+    "pointsUnit": "points",
+    "preview": "Aperçu",
+    "redemptionLimits": "Limites d’échange",
+    "rewardCount_one": "{{count}} récompense",
+    "rewardCount_other": "{{count}} récompenses",
+    "rewardsList": "Récompenses personnalisées",
+    "rewardTitle": "Titre",
+    "saveError": "Impossible d’enregistrer la récompense",
+    "saveReward": "Enregistrer les modifications",
+    "secondsUnit": "secondes",
+    "selectColor": "Choisir une couleur…",
+    "skipQueue": "Désactiver la file d’attente des récompenses Twitch",
+    "sync": "Synchroniser",
+    "titleHint": "Le nom de la récompense sur Twitch.",
+    "titlePlaceholder": "Mettre mon message en avant",
+    "updatedSuccess": "Récompense de points de chaîne mise à jour",
+    "userInputRequired": "Saisie utilisateur requise"
+  },
+  "commands": {
+    "aliases": "Alias",
+    "aliasesHint": "Noms alternatifs pour déclencher cette commande. Appuyez sur Entrée pour valider.",
+    "aliasPlaceholder": "reseaux",
+    "builtInSongDescription": "Répond avec le titre actuellement joué sur l’application Spotify pour ordinateur.",
+    "charactersUsed": "{{count}} sur {{max}} caractères utilisés.",
+    "cooldownNotice": "@{{user}} {{command}} est en récupération ({{seconds}}s restantes).",
+    "create": "Créer",
+    "createdSuccess": "Commande créée",
+    "createTitle": "Créer une commande",
+    "delete": "Supprimer",
+    "deletedSuccess": "Commande supprimée",
+    "duplicateError": "Une commande portant ce nom existe déjà",
+    "edit": "Modifier",
+    "editTitle": "Modifier la commande",
+    "emptyBody": "Créez des commandes de chat personnalisées pour automatiser vos réponses, liens et informations de stream.",
+    "emptyTitle": "Aucune commande personnalisée",
+    "enabled": "Activé",
+    "enabledWhenOffline": "Activé lorsque le stream est hors ligne",
+    "enabledWhenOnline": "Activé lorsque le stream est en ligne",
+    "enterNameError": "Veuillez saisir un nom de commande",
+    "enterResponseError": "Veuillez saisir une réponse",
+    "expiresIn": "Expire dans",
+    "expiryActions": {
+      "delete": {
+        "description": "Supprime automatiquement la commande à son expiration.",
+        "label": "Supprimer la commande"
+      },
+      "disable": {
+        "description": "Désactive automatiquement la commande à son expiration.",
+        "label": "Désactiver la commande"
+      },
+      "none": {
+        "description": "L’expiration est désactivée.",
+        "label": "Aucune"
+      }
+    },
+    "gamePlaceholder": "Rechercher un jeu",
+    "games": "Jeux",
+    "gamesHint": "Limiter l’utilisation de la commande à certaines catégories. Laisser vide pour toutes.",
+    "globalCooldown": "Délai global",
+    "hiddenFromPublic": "Masqué sur la page publique des commandes",
+    "keywordInfoBody": "Les mots-clés sont détectés sans distinction de casse n’importe où dans le message.",
+    "keywordInfoTitle": "Détection flexible de mots-clés",
+    "keywordPlaceholder": "quel est ton setup ?",
+    "keywords": "Mots-clés",
+    "keywordsHint": "Peut se trouver n’importe où dans le message. Appuyez sur Entrée pour valider.",
+    "namePlaceholder": "commande",
+    "noMatches": "Aucune commande correspondante",
+    "noMatchesDetail": "Essayez un autre terme ou basculez entre Personnalisées et Par défaut.",
+    "noPrefixBadge": "Sans !",
+    "perUserCooldown": "Délai par utilisateur",
+    "prefixToggleHint": "Cliquez sur le bouton '!' pour activer ou désactiver le préfixe.",
+    "response": "Réponse",
+    "responsePlaceholder": "Saisissez le message que le bot doit envoyer…",
+    "responseType": "Type de réponse",
+    "responseTypes": {
+      "mention": {
+        "description": "Mentionne l’utilisateur au début du message.",
+        "label": "Mention"
+      },
+      "reply": {
+        "description": "Répond directement au fil du message de l’utilisateur.",
+        "label": "Réponse"
+      },
+      "say": {
+        "description": "Envoie le message normalement dans le chat.",
+        "label": "Dire"
+      },
+      "whisper": {
+        "description": "Envoie une réponse directe à l’utilisateur.",
+        "label": "Chuchoter"
+      }
+    },
+    "roles": {
+      "broadcaster": "Broadcaster",
+      "founder": "Fondateur",
+      "moderator": "Modérateur",
+      "non_subscriber": "Non-abonné",
+      "subscriber": "Abonné",
+      "vip": "VIP"
+    },
+    "rolesHint": "N’importe lequel de ces rôles peut déclencher la commande. Laisser vide pour tous.",
+    "rolesLabel": "Rôles",
+    "save": "Enregistrer",
+    "searchPlaceholder": "Rechercher des commandes...",
+    "secs": "s",
+    "sections": {
+      "aliases": "Alias et mots-clés",
+      "conditions": "Conditions",
+      "expiry": "Expiration",
+      "general": "Général",
+      "titleGame": "Conditions de titre et de jeu"
+    },
+    "table": {
+      "actions": "Actions",
+      "name": "Nom",
+      "response": "Réponse"
+    },
+    "tabs": {
+      "custom": "Personnalisées",
+      "default": "Par défaut"
+    },
+    "title": "Commandes du chat",
+    "titleKeywordPlaceholder": "Mot-clé du titre",
+    "titleKeywords": "Mots-clés du titre",
+    "titleKeywordsHint": "Se déclenche uniquement si le titre du stream contient ces mots. Laisser vide pour tous.",
+    "updatedSuccess": "Commande enregistrée",
+    "useRelativeTime": "Utiliser le temps relatif",
+    "variablesHint": "Variables : {user}, {channel}, {game}, {title}",
+    "whisperOnCooldown": "Répondre en chuchotement pendant le délai"
   },
   "onboarding": {
     "back": "Retour",

@@ -177,3 +177,55 @@ export interface GiveawayState {
   disqualifiedUsers: string[]
   winner?: GiveawayEntry
 }
+
+export type CommandResponseType = 'say' | 'mention' | 'reply' | 'whisper'
+export type CommandRole = 'broadcaster' | 'moderator' | 'vip' | 'founder' | 'subscriber' | 'non_subscriber'
+export type CommandExpiryAction = 'none' | 'disable' | 'delete'
+
+export interface ChatCommand {
+  id: string
+  name: string
+  usePrefix: boolean
+  enabled: boolean
+  builtIn?: boolean
+  response: string
+  globalCooldown: number
+  perUserCooldown: number
+  responseType: CommandResponseType
+  aliases: string[]
+  keywords: string[]
+  enabledWhenOffline: boolean
+  enabledWhenOnline: boolean
+  hiddenFromPublic: boolean
+  whisperOnCooldown: boolean
+  roles: CommandRole[]
+  games: string[]
+  titleKeywords: string[]
+  useRelativeTime: boolean
+  expiryAction: CommandExpiryAction
+  expiresInSeconds: number
+  expiresAt?: number
+  createdAt: number
+}
+
+export interface ChannelPointReward {
+  id: string
+  title: string
+  prompt: string
+  cost: number
+  backgroundColor: string
+  enabled: boolean
+  paused: boolean
+  enabledWhenOffline: boolean
+  enabledWhenOnline: boolean
+  userInputRequired: boolean
+  skipRequestQueue: boolean
+  maxPerStreamEnabled: boolean
+  maxPerStream: number
+  maxPerUserPerStreamEnabled: boolean
+  maxPerUserPerStream: number
+  globalCooldownEnabled: boolean
+  globalCooldownSeconds: number
+  imageUrl?: string
+  manageable?: boolean
+}

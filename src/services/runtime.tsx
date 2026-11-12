@@ -44,7 +44,11 @@ import { DEFAULT_OBS_ADDRESS, ObsClient } from "./obs/client";
 import type {
   ActivityEvent,
   AppSettings,
+  ChannelPointReward,
+  ChatCommand,
+  ChatMessage,
   ChatUserProfile,
+  CommandRole,
   DashboardStats,
   GiveawayState,
   GoalMetric,
@@ -56,8 +60,10 @@ type Bootstrap = {
   settings: Partial<AppSettings>;
   giveaway?: Partial<GiveawayState>;
   cachedStats?: Partial<DashboardStats>;
+  commands?: ChatCommand[];
+  channelRewards?: ChannelPointReward[];
   events: ActivityEvent[];
-  chatMessages: import("../types").ChatMessage[];
+  chatMessages: ChatMessage[];
 };
 
 let bootstrapPromise: Promise<Bootstrap> | undefined;
@@ -68,10 +74,14 @@ function loadBootstrap() {
     const {
       giveaway,
       cachedStats,
+      commands,
+      channelRewards,
       ...restSettings
     } = raw as Partial<AppSettings> & {
       giveaway?: Partial<GiveawayState>;
       cachedStats?: Partial<DashboardStats>;
+      commands?: ChatCommand[];
+      channelRewards?: ChannelPointReward[];
     };
     const settings: Partial<AppSettings> = { ...restSettings };
     if (typeof settings.onboardingCompleted !== "boolean") {
@@ -95,7 +105,15 @@ function loadBootstrap() {
       loadEvents(settings.maximumEvents ?? 5000),
       loadChatMessages(settings.maximumChatMessages ?? 1000),
     ]);
-    return { settings, giveaway, cachedStats, events, chatMessages };
+    return {
+      settings,
+      giveaway,
+      cachedStats,
+      commands,
+      channelRewards,
+      events,
+      chatMessages,
+    };
   })().catch((error) => {
     bootstrapPromise = undefined;
     throw error;
@@ -116,7 +134,8 @@ export function RuntimeProvider({ children }: { children: ReactNode }) {
   const tipeeStreamRef = useRef<TipeeeStreamClient | undefined>(undefined);
   const obsRef = useRef<ObsClient | undefined>(undefined);
   const chatRef = useRef<TwitchChatClient | undefined>(undefined);
-  const songCommandCooldownsRef = useRef(new Map<string, number>());
+  const commandGlobalCooldownsRef = useRef(new Map<string, number>());
+  const commandUserCooldownsRef = useRef(new Map<string, number>());
   const twitchAuthAttemptRef = useRef(0);
   const botAuthAttemptRef = useRef(0);
   const [deviceAuth, setDeviceAuth] = useState<DeviceAuth>();
@@ -179,6 +198,35 @@ export function RuntimeProvider({ children }: { children: ReactNode }) {
       toast.error(i18n.t("goals.saveError"));
     });
   }, [events, goalAutomation, goals, ready, setSettings, state, stats.bits, stats.donations, stats.followers, stats.subscribers]);
+
+  useEffect(() => {
+    if (twitchPhase !== "connected" || !twitchUserId) return;
+    const scopes = state().twitch.scopes ?? [];
+    if (!scopes.includes("channel:manage:redemptions")) return;
+    const rewards = state().channelRewards;
+    for (const reward of rewards) {
+      if (!reward.manageable || !reward.enabled) continue;
+      const shouldBeActive = stats.live
+        ? reward.enabledWhenOnline
+        : reward.enabledWhenOffline;
+      const shouldPause = !shouldBeActive;
+      if (reward.paused === shouldPause) continue;
+      void twitchNative
+        .helixPatch(
+          TWITCH_CLIENT_ID,
+          "channel_points/custom_rewards",
+          [
+            ["broadcaster_id", twitchUserId],
+            ["id", reward.id],
+          ],
+          { is_paused: shouldPause },
+        )
+        .then(() => {
+          state().upsertChannelReward({ ...reward, paused: shouldPause });
+        })
+        .catch(() => undefined);
+    }
+  }, [ state, stats.live, twitchPhase, twitchUserId ]);
 
   useEffect(() => {
     if (twitchPhase !== "connected" || !twitchUserId) return;
@@ -392,38 +440,175 @@ export function RuntimeProvider({ children }: { children: ReactNode }) {
           void saveChatMessage(message, state().settings.maximumChatMessages).catch(() => undefined);
           state().pushChatMessage(message);
           state().ingestGiveawayChatMessage(message, state().twitchBot.account);
-          if (message.text.trim().toLowerCase() !== "!song") return;
+          if (message.deleted) return;
+          const current = state();
+          const botAccount = current.twitchBot.account?.toLowerCase();
+          if (botAccount && message.login.toLowerCase() === botAccount) return;
+          const rawText = message.text.trim();
+          if (!rawText) return;
+          const lowerText = rawText.toLowerCase();
+          const firstToken = lowerText.split(/\s+/)[0] ?? "";
           const now = Date.now();
-          const previous = songCommandCooldownsRef.current.get(message.login) ?? 0;
-          if (now - previous < 10_000) return;
-          songCommandCooldownsRef.current.set(message.login, now);
-          void spotifyOverlayNative
-            .status()
-            .then(
-              (song) => {
-                const lng = resolveLanguage(state().settings.language);
-                const user = message.displayName || message.login;
-                return song.available && song.title
-                  ? i18n.t("runtime.songCommandCurrent", {
-                      lng,
-                      user,
-                      artist: song.artist || song.album,
-                      title: song.title,
-                    })
-                  : i18n.t("runtime.songCommandUnavailable", { lng, user });
-              },
-              () =>
-                i18n.t("runtime.songCommandUnavailable", {
-                  lng: resolveLanguage(state().settings.language),
-                  user: message.displayName || message.login,
-                }),
-            )
-            .then((response) => sendCommandReply(response.slice(0, 480), message.id))
-            .catch((error) => {
-              toast.error(i18n.t("chat.sendError"), {
-                description: errorMessage(error),
-              });
+          const isLive = current.stats.live;
+          const currentCategory = (current.stats.category ?? "").toLowerCase();
+          const currentTitle = (current.stats.title ?? "").toLowerCase();
+          const userRoles = new Set<CommandRole>();
+          const badgeIds = new Set(message.badges.map((b) => b.id.toLowerCase()));
+          if (
+            badgeIds.has("broadcaster") ||
+            (current.twitch.account &&
+              message.login.toLowerCase() === current.twitch.account.toLowerCase())
+          ) {
+            userRoles.add("broadcaster");
+            userRoles.add("moderator");
+          }
+          if (badgeIds.has("moderator")) userRoles.add("moderator");
+          if (badgeIds.has("vip")) userRoles.add("vip");
+          if (badgeIds.has("founder")) {
+            userRoles.add("founder");
+            userRoles.add("subscriber");
+          }
+          if (badgeIds.has("subscriber")) userRoles.add("subscriber");
+          if (!userRoles.has("subscriber") && !userRoles.has("founder")) {
+            userRoles.add("non_subscriber");
+          }
+
+          for (const cmd of current.commands) {
+            if (!cmd.enabled) continue;
+            if (cmd.expiryAction !== "none" && cmd.expiresAt && now >= cmd.expiresAt) {
+              if (cmd.expiryAction === "delete" && !cmd.builtIn) {
+                current.deleteCommand(cmd.id);
+              } else {
+                current.toggleCommand(cmd.id, false);
+              }
+              continue;
+            }
+            if (isLive ? !cmd.enabledWhenOnline : !cmd.enabledWhenOffline) continue;
+            if (
+              cmd.games.length > 0 &&
+              !cmd.games.some((g) => g.trim().toLowerCase() === currentCategory)
+            ) {
+              continue;
+            }
+            if (
+              cmd.titleKeywords.length > 0 &&
+              !cmd.titleKeywords.some((kw) =>
+                currentTitle.includes(kw.trim().toLowerCase()),
+              )
+            ) {
+              continue;
+            }
+            if (
+              cmd.roles.length > 0 &&
+              !cmd.roles.some((role) => userRoles.has(role))
+            ) {
+              continue;
+            }
+
+            const cleanName = cmd.name.trim().replace(/^!+/, "").toLowerCase();
+            if (!cleanName) continue;
+            const primaryTrigger = cmd.usePrefix ? `!${cleanName}` : cleanName;
+            const matchesTrigger = firstToken === primaryTrigger;
+            const matchesAlias = cmd.aliases.some((alias) => {
+              const cleanAlias = alias.trim().replace(/^!+/, "").toLowerCase();
+              if (!cleanAlias) return false;
+              const aliasTrigger = cmd.usePrefix ? `!${cleanAlias}` : cleanAlias;
+              return firstToken === aliasTrigger || firstToken === alias.trim().toLowerCase();
             });
+            const matchesKeyword = cmd.keywords.some((kw) => {
+              const cleanKw = kw.trim().toLowerCase();
+              return Boolean(cleanKw) && lowerText.includes(cleanKw);
+            });
+
+            if (!matchesTrigger && !matchesAlias && !matchesKeyword) continue;
+
+            const lastGlobal = commandGlobalCooldownsRef.current.get(cmd.id) ?? 0;
+            const userKey = `${cmd.id}:${message.login.toLowerCase()}`;
+            const lastUser = commandUserCooldownsRef.current.get(userKey) ?? 0;
+            const globalWait = cmd.globalCooldown * 1000 - (now - lastGlobal);
+            const userWait = cmd.perUserCooldown * 1000 - (now - lastUser);
+            if (globalWait > 0 || userWait > 0) {
+              if (cmd.whisperOnCooldown) {
+                const remaining = Math.max(
+                  1,
+                  Math.ceil(Math.max(globalWait, userWait) / 1000),
+                );
+                const lng = resolveLanguage(current.settings.language);
+                const user = message.displayName || message.login;
+                const notice = i18n.t("commands.cooldownNotice", {
+                  lng,
+                  user,
+                  command: primaryTrigger,
+                  seconds: remaining,
+                });
+                void sendCommandReply(notice.slice(0, 480), message.id).catch(
+                  () => undefined,
+                );
+              }
+              continue;
+            }
+
+            commandGlobalCooldownsRef.current.set(cmd.id, now);
+            commandUserCooldownsRef.current.set(userKey, now);
+
+            const dispatchResponse = (rawResponse: string) => {
+              const user = message.displayName || message.login;
+              const interpolated = rawResponse
+                .replace(/\{user\}|\$\(user\)/gi, user)
+                .replace(/\{channel\}|\$\(channel\)/gi, current.twitch.account ?? "")
+                .replace(/\{game\}|\$\(game\)/gi, current.stats.category ?? "")
+                .replace(/\{title\}|\$\(title\)/gi, current.stats.title ?? "")
+                .trim();
+              if (!interpolated) return Promise.resolve();
+              if (cmd.responseType === "mention") {
+                const text = interpolated.startsWith(`@${user}`)
+                  ? interpolated
+                  : `@${user} ${interpolated}`;
+                return sendCommandReply(text.slice(0, 480));
+              }
+              if (cmd.responseType === "reply" || cmd.responseType === "whisper") {
+                return sendCommandReply(interpolated.slice(0, 480), message.id);
+              }
+              return sendCommandReply(interpolated.slice(0, 480));
+            };
+
+            if (cmd.builtIn && cmd.id === "builtin-song") {
+              void spotifyOverlayNative
+                .status()
+                .then(
+                  (song) => {
+                    const lng = resolveLanguage(state().settings.language);
+                    const user = message.displayName || message.login;
+                    return song.available && song.title
+                      ? i18n.t("runtime.songCommandCurrent", {
+                          lng,
+                          user,
+                          artist: song.artist || song.album,
+                          title: song.title,
+                        })
+                      : i18n.t("runtime.songCommandUnavailable", { lng, user });
+                  },
+                  () =>
+                    i18n.t("runtime.songCommandUnavailable", {
+                      lng: resolveLanguage(state().settings.language),
+                      user: message.displayName || message.login,
+                    }),
+                )
+                .then((response) => dispatchResponse(response))
+                .catch((error) => {
+                  toast.error(i18n.t("chat.sendError"), {
+                    description: errorMessage(error),
+                  });
+                });
+            } else {
+              void dispatchResponse(cmd.response).catch((error) => {
+                toast.error(i18n.t("chat.sendError"), {
+                  description: errorMessage(error),
+                });
+              });
+            }
+            break;
+          }
         },
         (phase, detail) => state().setChat({ phase, detail }),
         (id) => state().removeChatMessage(id),
@@ -564,12 +749,25 @@ export function RuntimeProvider({ children }: { children: ReactNode }) {
     const unlisten: Array<() => void> = [];
     (async () => {
       try {
-        const { settings, giveaway, cachedStats, events, chatMessages } =
-          await loadBootstrap();
+        const {
+          settings,
+          giveaway,
+          cachedStats,
+          commands,
+          channelRewards,
+          events,
+          chatMessages,
+        } = await loadBootstrap();
         if (disposed) return;
         setSettings(settings);
         setEvents(events);
         setChatMessages(chatMessages);
+        if (Array.isArray(commands)) {
+          state().setCommands(commands);
+        }
+        if (Array.isArray(channelRewards)) {
+          state().setChannelRewards(channelRewards);
+        }
         if (giveaway && typeof giveaway === "object") {
           state().setGiveaway({
             ...giveaway,

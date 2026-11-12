@@ -10,10 +10,12 @@ import {
   MonitorPlay,
   RadioTower,
   Settings,
+  Sparkles,
+  Terminal,
   type LucideIcon,
 } from "lucide-react";
 
-export type NavigationGroup = "main" | "insights" | "system";
+export type NavigationGroup = "main" | "tools" | "insights" | "system";
 export const OPEN_COMMAND_PALETTE = "streamdash:open-command-palette";
 
 export type NavigationItem = {
@@ -29,7 +31,9 @@ export const navigationItems: NavigationItem[] = [
   { id: "obs", label: "obs", icon: Clapperboard, group: "main" },
   { id: "chat", label: "chat", icon: MessageSquare, group: "main" },
   { id: "activitys", label: "activitys", icon: Activity, group: "main" },
-  { id: "giveaways", label: "giveaways", icon: Gift, group: "main" },
+  { id: "commands", label: "commands", icon: Terminal, group: "tools" },
+  { id: "channelPoints", label: "channelPoints", icon: Sparkles, group: "tools" },
+  { id: "giveaways", label: "giveaways", icon: Gift, group: "tools" },
   { id: "livePreview", label: "livePreview", icon: MonitorPlay, group: "insights" },
   { id: "statistics", label: "statistics", icon: BarChart3, group: "insights" },
   { id: "goals", label: "goals", icon: Goal, group: "insights" },
@@ -37,4 +41,4 @@ export const navigationItems: NavigationItem[] = [
   { id: "settings", label: "settings", icon: Settings, group: "system" },
 ];
 
-export const navigationGroups: NavigationGroup[] = ["main", "insights", "system"];
+export const navigationGroups: NavigationGroup[] = ["main", "tools", "insights", "system"];

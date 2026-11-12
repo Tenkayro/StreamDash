@@ -390,7 +390,8 @@
     "openHint": "Enter Open",
     "quickSwitch": "Search everything",
     "searchPlaceholder": "Search pages, settings, people, messages…",
-    "system": "System"
+    "system": "System",
+    "tools": "Tools"
   },
   "obs": {
     "title": "OBS Studio",
@@ -487,6 +488,8 @@
     }
   },
   "pageDescriptions": {
+    "channelPoints": "Create interactive experiences with your audience using Twitch's Channel Points.",
+    "commands": "Automate repetitive messages and custom bot commands.",
     "donations": "Review, filter and moderate donations and stream events in one inbox.",
     "connections": "Connect accounts and review service health.",
     "dashboard": "Your stream, audience and activity at a glance.",
@@ -500,9 +503,11 @@
   },
   "nav": {
     "activity": "Activity",
+    "channelPoints": "Channel Points",
     "chat": "Chat",
     "collapse": "Collapse",
     "collapseNavigation": "Collapse navigation",
+    "commands": "Commands",
     "connections": "Connections",
     "dashboard": "Dashboard",
     "donations": "Donations",
@@ -517,6 +522,173 @@
     "statistics": "Statistics",
     "stream": "Stream",
     "activitys": "Activitys"
+  },
+  "channelPoints": {
+    "backgroundColor": "Background color",
+    "conditions": "Conditions",
+    "cooldownHint": "Min. number of seconds between each use",
+    "cost": "Cost",
+    "costHint": "The cost of the reward in Channel Points.",
+    "create": "Create",
+    "createdSuccess": "Channel Points reward created",
+    "createReward": "Create reward",
+    "delete": "Delete",
+    "deletedSuccess": "Channel Points reward deleted",
+    "deleteError": "Reward could not be deleted",
+    "description": "Description",
+    "descriptionHint": "A short description to show viewers before they redeem the reward.",
+    "descriptionPlaceholder": "Explain what happens when this reward is redeemed…",
+    "disabledBadge": "Disabled",
+    "editReward": "Edit reward",
+    "emptyBody": "Create custom Channel Point rewards to interact with your viewers directly from StreamDash.",
+    "emptyTitle": "No custom rewards yet",
+    "enabled": "Enabled",
+    "enabledWhenOffline": "Enabled when stream offline",
+    "enabledWhenOnline": "Enabled when stream online",
+    "enterTitle": "Please enter a reward title",
+    "general": "General",
+    "globalCooldown": "Global cooldown",
+    "imageHint": "Custom reward images can be changed through the Twitch dashboard.",
+    "inputBadge": "Input required",
+    "loadError": "Could not load Channel Point rewards",
+    "maxPerStream": "Max per stream",
+    "maxPerStreamHint": "Max number of redemptions per stream",
+    "maxPerUser": "Max redemptions per user per stream",
+    "maxPerUserHint": "Max number of uses per user per stream",
+    "newReward": "New reward",
+    "openTwitchDashboard": "Twitch dashboard",
+    "pausedBadge": "Paused",
+    "permissionNotice": "Reconnect Twitch once to grant permission to create and manage Channel Point rewards.",
+    "pointsCost": "{{points}} points",
+    "pointsUnit": "points",
+    "preview": "Preview",
+    "redemptionLimits": "Redemption limits",
+    "rewardCount_one": "{{count}} reward",
+    "rewardCount_other": "{{count}} rewards",
+    "rewardsList": "Custom rewards",
+    "rewardTitle": "Title",
+    "saveError": "Reward could not be saved",
+    "saveReward": "Save changes",
+    "secondsUnit": "seconds",
+    "selectColor": "Select color…",
+    "skipQueue": "Disable Twitch reward queue management",
+    "sync": "Sync",
+    "titleHint": "The name of the reward on Twitch.",
+    "titlePlaceholder": "Highlight my message",
+    "updatedSuccess": "Channel Points reward updated",
+    "userInputRequired": "User input required"
+  },
+  "commands": {
+    "aliases": "Aliases",
+    "aliasesHint": "Alternative names for triggering this command. Press Enter to submit.",
+    "aliasPlaceholder": "socials",
+    "builtInSongDescription": "Replies with the currently playing Spotify desktop track.",
+    "charactersUsed": "{{count}} out of {{max}} characters used.",
+    "cooldownNotice": "@{{user}} {{command}} is on cooldown ({{seconds}}s remaining).",
+    "create": "Create",
+    "createdSuccess": "Command created",
+    "createTitle": "Create Command",
+    "delete": "Delete",
+    "deletedSuccess": "Command deleted",
+    "duplicateError": "A command with this name already exists",
+    "edit": "Edit",
+    "editTitle": "Edit Command",
+    "emptyBody": "Create custom chat commands to automate answers, links and stream information.",
+    "emptyTitle": "No custom commands yet",
+    "enabled": "Enabled",
+    "enabledWhenOffline": "Enabled when stream offline",
+    "enabledWhenOnline": "Enabled when stream online",
+    "enterNameError": "Please enter a command name",
+    "enterResponseError": "Please enter a command response",
+    "expiresIn": "Expires in",
+    "expiryActions": {
+      "delete": {
+        "description": "Automatically deletes the command once it expires.",
+        "label": "Delete command"
+      },
+      "disable": {
+        "description": "Automatically disables the command once it expires.",
+        "label": "Disable command"
+      },
+      "none": {
+        "description": "Expiry is disabled.",
+        "label": "None"
+      }
+    },
+    "gamePlaceholder": "Search for a game",
+    "games": "Games",
+    "gamesHint": "Limit commands to be used when in certain categories. Leave blank for all.",
+    "globalCooldown": "Global cooldown",
+    "hiddenFromPublic": "Hidden from public command page",
+    "keywordInfoBody": "Keywords match case-insensitively anywhere inside a viewer's chat message.",
+    "keywordInfoTitle": "Flexible keyword matching",
+    "keywordPlaceholder": "what is your setup?",
+    "keywords": "Keywords",
+    "keywordsHint": "Can be anywhere in the message. Press Enter to submit.",
+    "namePlaceholder": "command",
+    "noMatches": "No matching commands",
+    "noMatchesDetail": "Try another search term or switch between Custom and Default.",
+    "noPrefixBadge": "No !",
+    "perUserCooldown": "Per-user cooldown",
+    "prefixToggleHint": "Click the '!' button to turn the command prefix on or off.",
+    "response": "Response",
+    "responsePlaceholder": "Enter the message the bot should send…",
+    "responseType": "Response Type",
+    "responseTypes": {
+      "mention": {
+        "description": "Mentions the user at the start of the message.",
+        "label": "Mention"
+      },
+      "reply": {
+        "description": "Replies directly to the user's message thread.",
+        "label": "Reply"
+      },
+      "say": {
+        "description": "Sends the message normally.",
+        "label": "Say"
+      },
+      "whisper": {
+        "description": "Sends a direct reply to the user.",
+        "label": "Whisper"
+      }
+    },
+    "roles": {
+      "broadcaster": "Broadcaster",
+      "founder": "Founder",
+      "moderator": "Moderator",
+      "non_subscriber": "Non-Subscriber",
+      "subscriber": "Subscriber",
+      "vip": "VIP"
+    },
+    "rolesHint": "Any of these roles are able to trigger the command. Leave blank for all.",
+    "rolesLabel": "Roles",
+    "save": "Save",
+    "searchPlaceholder": "Search for commands...",
+    "secs": "secs",
+    "sections": {
+      "aliases": "Aliases and Keywords",
+      "conditions": "Conditions",
+      "expiry": "Expiry",
+      "general": "General",
+      "titleGame": "Title & Game Conditions"
+    },
+    "table": {
+      "actions": "Actions",
+      "name": "Name",
+      "response": "Response"
+    },
+    "tabs": {
+      "custom": "Custom",
+      "default": "Default"
+    },
+    "title": "Chat Commands",
+    "titleKeywordPlaceholder": "Enter title keyword",
+    "titleKeywords": "Title Keywords",
+    "titleKeywordsHint": "Only triggers when the stream title contains keywords. Leave blank for all.",
+    "updatedSuccess": "Command saved",
+    "useRelativeTime": "Use relative time",
+    "variablesHint": "Variables: {user}, {channel}, {game}, {title}",
+    "whisperOnCooldown": "Whisper responses when in cooldown"
   },
   "onboarding": {
     "back": "Back",

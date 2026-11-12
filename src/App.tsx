@@ -37,6 +37,14 @@ const pageLoaders = {
     import("./pages/ActivityPage").then((module) => ({
       default: module.ActivityPage,
     })),
+  commands: () =>
+    import("./pages/CommandsPage").then((module) => ({
+      default: module.CommandsPage,
+    })),
+  channelPoints: () =>
+    import("./pages/ChannelPointsPage").then((module) => ({
+      default: module.ChannelPointsPage,
+    })),
   giveaways: () =>
     import("./pages/GiveawaysPage").then((module) => ({
       default: module.GiveawaysPage,
@@ -67,6 +75,8 @@ const Dashboard = lazy(pageLoaders.dashboard);
 const StreamPage = lazy(pageLoaders.stream);
 const ChatPage = lazy(pageLoaders.chat);
 const ActivityPage = lazy(pageLoaders.activitys);
+const CommandsPage = lazy(pageLoaders.commands);
+const ChannelPointsPage = lazy(pageLoaders.channelPoints);
 const GiveawaysPage = lazy(pageLoaders.giveaways);
 const LivePreview = lazy(pageLoaders.livePreview);
 const Statistics = lazy(pageLoaders.statistics);
@@ -82,6 +92,8 @@ const pages: Record<string, React.ComponentType> = {
   activitys: ActivityPage,
   activity: ActivityPage,
   donations: ActivityPage,
+  commands: CommandsPage,
+  channelPoints: ChannelPointsPage,
   giveaways: GiveawaysPage,
   livePreview: LivePreview,
   statistics: Statistics,
@@ -227,6 +239,8 @@ export default function App() {
   };
   const isViewportPage = [
     "chat",
+    "commands",
+    "channelPoints",
     "giveaways",
     "livePreview",
     "activitys",

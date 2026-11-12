@@ -2,8 +2,8 @@ import type { ActivityEvent, DashboardStats, TwitchSession } from '../../types'
 import { twitchNative } from '../native'
 import { normalizeTwitch } from './events'
 
-export const TWITCH_SCOPES = ['moderator:read:followers', 'moderator:manage:banned_users', 'moderator:manage:chat_messages', 'moderator:manage:shield_mode', 'channel:manage:moderators', 'channel:manage:vips', 'channel:read:subscriptions', 'bits:read', 'channel:read:redemptions', 'channel:manage:broadcast', 'user:write:chat', 'chat:read', 'chat:edit']
-export const TWITCH_BOT_SCOPES = ['user:write:chat', 'chat:read', 'chat:edit']
+export const TWITCH_SCOPES = ['moderator:read:followers', 'moderator:manage:banned_users', 'moderator:manage:chat_messages', 'moderator:manage:shield_mode', 'channel:manage:moderators', 'channel:manage:vips', 'channel:read:subscriptions', 'bits:read', 'channel:read:redemptions', 'channel:manage:redemptions', 'channel:manage:broadcast', 'user:write:chat', 'user:manage:whispers', 'chat:read', 'chat:edit']
+export const TWITCH_BOT_SCOPES = ['user:write:chat', 'user:manage:whispers', 'chat:read', 'chat:edit']
 export const needsTwitchPermissionUpdate = (scopes?: string[]) => TWITCH_SCOPES.some((scope) => !scopes?.includes(scope))
 export const needsTwitchBotPermissionUpdate = (scopes?: string[]) => TWITCH_BOT_SCOPES.some((scope) => !scopes?.includes(scope))
 type EventSubEnvelope = { metadata: { message_id: string; message_type: string; message_timestamp: string }; payload: { session?: { id: string; keepalive_timeout_seconds?: number; reconnect_url?: string }; subscription?: { type: string }; event?: Record<string, unknown> } }

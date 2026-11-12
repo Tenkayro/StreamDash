@@ -390,7 +390,8 @@
     "openHint": "Enter Öffnen",
     "quickSwitch": "Alles durchsuchen",
     "searchPlaceholder": "Seiten, Einstellungen, Personen, Nachrichten suchen…",
-    "system": "System"
+    "system": "System",
+    "tools": "Tools"
   },
   "obs": {
     "title": "OBS Studio",
@@ -487,6 +488,8 @@
     }
   },
   "pageDescriptions": {
+    "channelPoints": "Erstelle interaktive Erlebnisse für deine Zuschauer mit Twitch-Kanalpunkten.",
+    "commands": "Automatisiere wiederkehrende Nachrichten und eigene Chat-Befehle.",
     "donations": "Spenden und Stream-Ereignisse in einer Inbox prüfen, filtern und moderieren.",
     "connections": "Accounts verbinden und den Zustand der Dienste prüfen.",
     "dashboard": "Stream, Publikum und Aktivitäten auf einen Blick.",
@@ -500,9 +503,11 @@
   },
   "nav": {
     "activity": "Aktivität",
+    "channelPoints": "Channel Points",
     "chat": "Chat",
     "collapse": "Einklappen",
     "collapseNavigation": "Navigation einklappen",
+    "commands": "Commands",
     "connections": "Verbindungen",
     "dashboard": "Dashboard",
     "donations": "Spenden",
@@ -517,6 +522,173 @@
     "statistics": "Statistiken",
     "stream": "Stream",
     "activitys": "Activitys"
+  },
+  "channelPoints": {
+    "backgroundColor": "Hintergrundfarbe",
+    "conditions": "Bedingungen",
+    "cooldownHint": "Mindestanzahl an Sekunden zwischen zwei Einlösungen",
+    "cost": "Kosten",
+    "costHint": "Die Kosten der Belohnung in Kanalpunkten.",
+    "create": "Erstellen",
+    "createdSuccess": "Kanalpunkte-Belohnung erstellt",
+    "createReward": "Belohnung erstellen",
+    "delete": "Löschen",
+    "deletedSuccess": "Kanalpunkte-Belohnung gelöscht",
+    "deleteError": "Belohnung konnte nicht gelöscht werden",
+    "description": "Beschreibung",
+    "descriptionHint": "Eine kurze Beschreibung, die Zuschauern vor dem Einlösen angezeigt wird.",
+    "descriptionPlaceholder": "Beschreibe kurz, was beim Einlösen dieser Belohnung passiert…",
+    "disabledBadge": "Deaktiviert",
+    "editReward": "Belohnung bearbeiten",
+    "emptyBody": "Erstelle eigene Kanalpunkte-Belohnungen, um direkt aus StreamDash mit deinen Zuschauern zu interagieren.",
+    "emptyTitle": "Noch keine Belohnungen vorhanden",
+    "enabled": "Aktiviert",
+    "enabledWhenOffline": "Aktiviert, wenn Stream offline ist",
+    "enabledWhenOnline": "Aktiviert, wenn Stream online ist",
+    "enterTitle": "Bitte gib einen Titel für die Belohnung ein",
+    "general": "Allgemein",
+    "globalCooldown": "Globaler Cooldown",
+    "imageHint": "Eigene Belohnungs-Icons können im Twitch-Dashboard angepasst werden.",
+    "inputBadge": "Eingabe erforderlich",
+    "loadError": "Kanalpunkte-Belohnungen konnten nicht geladen werden",
+    "maxPerStream": "Max. pro Stream",
+    "maxPerStreamHint": "Maximale Anzahl an Einlösungen pro Stream",
+    "maxPerUser": "Max. Einlösungen pro Nutzer pro Stream",
+    "maxPerUserHint": "Maximale Anzahl an Einlösungen pro Zuschauer pro Stream",
+    "newReward": "Neue Belohnung",
+    "openTwitchDashboard": "Twitch-Dashboard",
+    "pausedBadge": "Pausiert",
+    "permissionNotice": "Verbinde Twitch einmal neu, um die Berechtigung zum Erstellen und Verwalten von Kanalpunkten zu erteilen.",
+    "pointsCost": "{{points}} Punkte",
+    "pointsUnit": "Punkte",
+    "preview": "Vorschau",
+    "redemptionLimits": "Einlöselimits",
+    "rewardCount_one": "{{count}} Belohnung",
+    "rewardCount_other": "{{count}} Belohnungen",
+    "rewardsList": "Eigene Belohnungen",
+    "rewardTitle": "Titel",
+    "saveError": "Belohnung konnte nicht gespeichert werden",
+    "saveReward": "Änderungen speichern",
+    "secondsUnit": "Sekunden",
+    "selectColor": "Farbe wählen…",
+    "skipQueue": "Twitch-Belohnungswarteschlange überspringen",
+    "sync": "Synchronisieren",
+    "titleHint": "Der Name der Belohnung auf Twitch.",
+    "titlePlaceholder": "Nachricht hervorheben",
+    "updatedSuccess": "Kanalpunkte-Belohnung aktualisiert",
+    "userInputRequired": "Nutzereingabe erforderlich"
+  },
+  "commands": {
+    "aliases": "Aliase",
+    "aliasesHint": "Alternative Namen zum Auslösen dieses Befehls. Drücke Enter zum Hinzufügen.",
+    "aliasPlaceholder": "socials",
+    "builtInSongDescription": "Antwortet mit dem aktuell in der Spotify-Desktop-App gespielten Song.",
+    "charactersUsed": "{{count}} von {{max}} Zeichen verwendet.",
+    "cooldownNotice": "@{{user}} {{command}} hat noch Cooldown ({{seconds}}s verbleibend).",
+    "create": "Erstellen",
+    "createdSuccess": "Befehl erstellt",
+    "createTitle": "Befehl erstellen",
+    "delete": "Löschen",
+    "deletedSuccess": "Befehl gelöscht",
+    "duplicateError": "Ein Befehl mit diesem Namen existiert bereits",
+    "edit": "Bearbeiten",
+    "editTitle": "Befehl bearbeiten",
+    "emptyBody": "Erstelle eigene Chat-Befehle, um Antworten, Links und Stream-Infos zu automatisieren.",
+    "emptyTitle": "Noch keine eigenen Befehle",
+    "enabled": "Aktiviert",
+    "enabledWhenOffline": "Aktiviert, wenn Stream offline ist",
+    "enabledWhenOnline": "Aktiviert, wenn Stream online ist",
+    "enterNameError": "Bitte gib einen Befehlsnamen ein",
+    "enterResponseError": "Bitte gib eine Antwortnachricht ein",
+    "expiresIn": "Läuft ab in",
+    "expiryActions": {
+      "delete": {
+        "description": "Löscht den Befehl automatisch nach Ablauf.",
+        "label": "Befehl löschen"
+      },
+      "disable": {
+        "description": "Deaktiviert den Befehl automatisch nach Ablauf.",
+        "label": "Befehl deaktivieren"
+      },
+      "none": {
+        "description": "Ablaufzeit ist deaktiviert.",
+        "label": "Keine"
+      }
+    },
+    "gamePlaceholder": "Nach einem Spiel suchen",
+    "games": "Spiele / Kategorien",
+    "gamesHint": "Befehl nur in bestimmten Kategorien erlauben. Leer lassen für alle.",
+    "globalCooldown": "Globaler Cooldown",
+    "hiddenFromPublic": "Auf öffentlicher Befehlsseite ausblenden",
+    "keywordInfoBody": "Keywords werden unabhängig von Groß-/Kleinschreibung überall in der Nachricht erkannt.",
+    "keywordInfoTitle": "Flexible Keyword-Erkennung",
+    "keywordPlaceholder": "wie ist dein setup?",
+    "keywords": "Keywords",
+    "keywordsHint": "Kann überall in der Nachricht stehen. Drücke Enter zum Hinzufügen.",
+    "namePlaceholder": "befehl",
+    "noMatches": "Keine passenden Befehle",
+    "noMatchesDetail": "Versuche einen anderen Suchbegriff oder wechsle zwischen Eigene und Standard.",
+    "noPrefixBadge": "Ohne !",
+    "perUserCooldown": "Pro-Nutzer-Cooldown",
+    "prefixToggleHint": "Klicke auf '!', um das Ausrufezeichen-Präfix an- oder auszuschalten.",
+    "response": "Antwort",
+    "responsePlaceholder": "Nachricht eingeben, die der Bot senden soll…",
+    "responseType": "Antworttyp",
+    "responseTypes": {
+      "mention": {
+        "description": "Erwähnt den Zuschauer am Anfang der Nachricht (@Nutzer).",
+        "label": "Mention"
+      },
+      "reply": {
+        "description": "Antwortet direkt auf die Chat-Nachricht des Zuschauers.",
+        "label": "Reply"
+      },
+      "say": {
+        "description": "Sendet die Nachricht normal in den Chat.",
+        "label": "Say"
+      },
+      "whisper": {
+        "description": "Sendet die Antwort direkt an den Nutzer.",
+        "label": "Whisper"
+      }
+    },
+    "roles": {
+      "broadcaster": "Broadcaster",
+      "founder": "Founder",
+      "moderator": "Moderator",
+      "non_subscriber": "Non-Subscriber",
+      "subscriber": "Subscriber",
+      "vip": "VIP"
+    },
+    "rolesHint": "Jede dieser Rollen kann den Befehl auslösen. Leer lassen für alle Zuschauer.",
+    "rolesLabel": "Rollen",
+    "save": "Speichern",
+    "searchPlaceholder": "Nach Befehlen suchen...",
+    "secs": "Sek.",
+    "sections": {
+      "aliases": "Aliase und Keywords",
+      "conditions": "Bedingungen",
+      "expiry": "Ablauf",
+      "general": "Allgemein",
+      "titleGame": "Titel- & Spiel-Bedingungen"
+    },
+    "table": {
+      "actions": "Aktionen",
+      "name": "Name",
+      "response": "Antwort"
+    },
+    "tabs": {
+      "custom": "Eigene",
+      "default": "Standard"
+    },
+    "title": "Chat Commands",
+    "titleKeywordPlaceholder": "Titel-Keyword eingeben",
+    "titleKeywords": "Titel-Keywords",
+    "titleKeywordsHint": "Löst nur aus, wenn der Stream-Titel diese Wörter enthält. Leer lassen für alle.",
+    "updatedSuccess": "Befehl gespeichert",
+    "useRelativeTime": "Relative Zeit verwenden",
+    "variablesHint": "Variablen: {user}, {channel}, {game}, {title}",
+    "whisperOnCooldown": "Bei Cooldown per Flüsternachricht antworten"
   },
   "onboarding": {
     "back": "Zurück",

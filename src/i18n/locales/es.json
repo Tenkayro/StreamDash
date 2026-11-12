@@ -390,7 +390,8 @@
     "openHint": "Enter Abrir",
     "quickSwitch": "Buscar en todo",
     "searchPlaceholder": "Buscar páginas, ajustes, personas, mensajes…",
-    "system": "Sistema"
+    "system": "Sistema",
+    "tools": "Herramientas"
   },
   "obs": {
     "title": "OBS Studio",
@@ -487,6 +488,8 @@
     }
   },
   "pageDescriptions": {
+    "channelPoints": "Crea experiencias interactivas con tu audiencia usando los puntos de canal de Twitch.",
+    "commands": "Automatiza mensajes repetitivos y comandos personalizados de chat.",
     "donations": "Revisa, filtra y modera donaciones y eventos del stream en una sola bandeja.",
     "connections": "Conecta cuentas y revisa el estado de los servicios.",
     "dashboard": "Tu stream, audiencia y actividad de un vistazo.",
@@ -500,9 +503,11 @@
   },
   "nav": {
     "activity": "Actividad",
+    "channelPoints": "Puntos de canal",
     "chat": "Chat",
     "collapse": "Contraer",
     "collapseNavigation": "Contraer navegación",
+    "commands": "Comandos",
     "connections": "Conexiones",
     "dashboard": "Panel",
     "donations": "Donaciones",
@@ -517,6 +522,173 @@
     "statistics": "Estadísticas",
     "stream": "Emisión",
     "activitys": "Activitys"
+  },
+  "channelPoints": {
+    "backgroundColor": "Color de fondo",
+    "conditions": "Condiciones",
+    "cooldownHint": "Número mínimo de segundos entre cada uso",
+    "cost": "Coste",
+    "costHint": "El coste de la recompensa en puntos de canal.",
+    "create": "Crear",
+    "createdSuccess": "Recompensa de puntos de canal creada",
+    "createReward": "Crear recompensa",
+    "delete": "Eliminar",
+    "deletedSuccess": "Recompensa de puntos de canal eliminada",
+    "deleteError": "No se pudo eliminar la recompensa",
+    "description": "Descripción",
+    "descriptionHint": "Una breve descripción que verán los espectadores antes de canjear la recompensa.",
+    "descriptionPlaceholder": "Explica qué ocurre al canjear esta recompensa…",
+    "disabledBadge": "Desactivado",
+    "editReward": "Editar recompensa",
+    "emptyBody": "Crea recompensas personalizadas de puntos de canal para interactuar con tu audiencia desde StreamDash.",
+    "emptyTitle": "Aún no hay recompensas personalizadas",
+    "enabled": "Activado",
+    "enabledWhenOffline": "Activado cuando el stream está desconectado",
+    "enabledWhenOnline": "Activado cuando el stream está en directo",
+    "enterTitle": "Introduce un título para la recompensa",
+    "general": "General",
+    "globalCooldown": "Enfriamiento global",
+    "imageHint": "Las imágenes de recompensa personalizadas se cambian desde el panel de Twitch.",
+    "inputBadge": "Texto requerido",
+    "loadError": "No se pudieron cargar las recompensas de puntos de canal",
+    "maxPerStream": "Máx. por stream",
+    "maxPerStreamHint": "Número máximo de canjes por stream",
+    "maxPerUser": "Máx. canjes por usuario por stream",
+    "maxPerUserHint": "Número máximo de usos por usuario por stream",
+    "newReward": "Nueva recompensa",
+    "openTwitchDashboard": "Panel de Twitch",
+    "pausedBadge": "En pausa",
+    "permissionNotice": "Reconecta Twitch una vez para conceder permisos de creación y gestión de puntos de canal.",
+    "pointsCost": "{{points}} puntos",
+    "pointsUnit": "puntos",
+    "preview": "Vista previa",
+    "redemptionLimits": "Límites de canje",
+    "rewardCount_one": "{{count}} recompensa",
+    "rewardCount_other": "{{count}} recompensas",
+    "rewardsList": "Recompensas personalizadas",
+    "rewardTitle": "Título",
+    "saveError": "No se pudo guardar la recompensa",
+    "saveReward": "Guardar cambios",
+    "secondsUnit": "segundos",
+    "selectColor": "Seleccionar color…",
+    "skipQueue": "Omitir cola de solicitudes de recompensas de Twitch",
+    "sync": "Sincronizar",
+    "titleHint": "El nombre de la recompensa en Twitch.",
+    "titlePlaceholder": "Destacar mi mensaje",
+    "updatedSuccess": "Recompensa de puntos de canal actualizada",
+    "userInputRequired": "Requiere texto del usuario"
+  },
+  "commands": {
+    "aliases": "Alias",
+    "aliasesHint": "Nombres alternativos para activar este comando. Pulsa Enter para añadir.",
+    "aliasPlaceholder": "redes",
+    "builtInSongDescription": "Responde con la canción actual de la aplicación de escritorio de Spotify.",
+    "charactersUsed": "{{count}} de {{max}} caracteres usados.",
+    "cooldownNotice": "@{{user}} {{command}} está en enfriamiento ({{seconds}}s restantes).",
+    "create": "Crear",
+    "createdSuccess": "Comando creado",
+    "createTitle": "Crear comando",
+    "delete": "Eliminar",
+    "deletedSuccess": "Comando eliminado",
+    "duplicateError": "Ya existe un comando con este nombre",
+    "edit": "Editar",
+    "editTitle": "Editar comando",
+    "emptyBody": "Crea comandos de chat personalizados para automatizar respuestas, enlaces e información del stream.",
+    "emptyTitle": "Aún no hay comandos personalizados",
+    "enabled": "Activado",
+    "enabledWhenOffline": "Activado cuando el stream está desconectado",
+    "enabledWhenOnline": "Activado cuando el stream está en directo",
+    "enterNameError": "Introduce un nombre para el comando",
+    "enterResponseError": "Introduce una respuesta para el comando",
+    "expiresIn": "Expira en",
+    "expiryActions": {
+      "delete": {
+        "description": "Elimina automáticamente el comando cuando expira.",
+        "label": "Eliminar comando"
+      },
+      "disable": {
+        "description": "Desactiva automáticamente el comando cuando expira.",
+        "label": "Desactivar comando"
+      },
+      "none": {
+        "description": "La expiración está desactivada.",
+        "label": "Ninguna"
+      }
+    },
+    "gamePlaceholder": "Buscar un juego",
+    "games": "Juegos",
+    "gamesHint": "Limita el comando a determinadas categorías. Déjalo vacío para todas.",
+    "globalCooldown": "Enfriamiento global",
+    "hiddenFromPublic": "Oculto en la página pública de comandos",
+    "keywordInfoBody": "Las palabras clave coinciden sin distinguir mayúsculas en cualquier parte del mensaje.",
+    "keywordInfoTitle": "Coincidencia flexible de palabras clave",
+    "keywordPlaceholder": "¿cuál es tu setup?",
+    "keywords": "Palabras clave",
+    "keywordsHint": "Puede aparecer en cualquier parte del mensaje. Pulsa Enter para añadir.",
+    "namePlaceholder": "comando",
+    "noMatches": "No hay comandos coincidentes",
+    "noMatchesDetail": "Prueba con otro término o cambia entre Personalizados y Predeterminados.",
+    "noPrefixBadge": "Sin !",
+    "perUserCooldown": "Enfriamiento por usuario",
+    "prefixToggleHint": "Haz clic en el botón '!' para activar o desactivar el prefijo del comando.",
+    "response": "Respuesta",
+    "responsePlaceholder": "Escribe el mensaje que enviará el bot…",
+    "responseType": "Tipo de respuesta",
+    "responseTypes": {
+      "mention": {
+        "description": "Menciona al usuario al inicio del mensaje.",
+        "label": "Mención"
+      },
+      "reply": {
+        "description": "Responde directamente al hilo del mensaje del usuario.",
+        "label": "Respuesta"
+      },
+      "say": {
+        "description": "Envía el mensaje normalmente en el chat.",
+        "label": "Decir"
+      },
+      "whisper": {
+        "description": "Envía una respuesta directa al usuario.",
+        "label": "Susurro"
+      }
+    },
+    "roles": {
+      "broadcaster": "Broadcaster",
+      "founder": "Fundador",
+      "moderator": "Moderador",
+      "non_subscriber": "No suscriptor",
+      "subscriber": "Suscriptor",
+      "vip": "VIP"
+    },
+    "rolesHint": "Cualquiera de estos roles puede activar el comando. Déjalo vacío para todos.",
+    "rolesLabel": "Roles",
+    "save": "Guardar",
+    "searchPlaceholder": "Buscar comandos...",
+    "secs": "seg",
+    "sections": {
+      "aliases": "Alias y palabras clave",
+      "conditions": "Condiciones",
+      "expiry": "Expiración",
+      "general": "General",
+      "titleGame": "Condiciones de título y juego"
+    },
+    "table": {
+      "actions": "Acciones",
+      "name": "Nombre",
+      "response": "Respuesta"
+    },
+    "tabs": {
+      "custom": "Personalizados",
+      "default": "Predeterminados"
+    },
+    "title": "Comandos de chat",
+    "titleKeywordPlaceholder": "Palabra clave del título",
+    "titleKeywords": "Palabras clave del título",
+    "titleKeywordsHint": "Solo se activa si el título del stream contiene estas palabras. Déjalo vacío para todos.",
+    "updatedSuccess": "Comando guardado",
+    "useRelativeTime": "Usar tiempo relativo",
+    "variablesHint": "Variables: {user}, {channel}, {game}, {title}",
+    "whisperOnCooldown": "Susurrar respuesta cuando esté en enfriamiento"
   },
   "onboarding": {
     "back": "Atrás",

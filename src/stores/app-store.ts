@@ -4,6 +4,8 @@ import { withPageTransition } from "../lib/page-transition";
 import type {
   ActivityEvent,
   AppSettings,
+  ChannelPointReward,
+  ChatCommand,
   ChatEmote,
   ChatMessage,
   ConnectionState,
@@ -85,6 +87,32 @@ const initialGiveaway: GiveawayState = {
   disqualifiedUsers: [],
   winner: undefined,
 };
+export const defaultCommands: ChatCommand[] = [
+  {
+    id: "builtin-song",
+    name: "song",
+    usePrefix: true,
+    enabled: true,
+    builtIn: true,
+    response: "{song}",
+    globalCooldown: 5,
+    perUserCooldown: 15,
+    responseType: "reply",
+    aliases: ["currentsong", "music"],
+    keywords: [],
+    enabledWhenOffline: true,
+    enabledWhenOnline: true,
+    hiddenFromPublic: false,
+    whisperOnCooldown: false,
+    roles: [],
+    games: [],
+    titleKeywords: [],
+    useRelativeTime: true,
+    expiryAction: "none",
+    expiresInSeconds: 600,
+    createdAt: 0,
+  },
+];
 interface AppStore {
   searchTarget?: SearchTarget;
   setSearchTarget: (target?: SearchTarget) => void;
@@ -136,6 +164,15 @@ interface AppStore {
   removeGiveawayEntry: (login: string) => void;
   clearGiveawayEntries: () => void;
   pruneInactiveGiveawayEntries: (now?: number) => void;
+  commands: ChatCommand[];
+  setCommands: (commands: ChatCommand[]) => void;
+  upsertCommand: (command: ChatCommand) => void;
+  deleteCommand: (id: string) => void;
+  toggleCommand: (id: string, enabled: boolean) => void;
+  channelRewards: ChannelPointReward[];
+  setChannelRewards: (rewards: ChannelPointReward[]) => void;
+  upsertChannelReward: (reward: ChannelPointReward) => void;
+  deleteChannelReward: (id: string) => void;
 }
 export const useAppStore = create<AppStore>((set) => ({
   searchTarget: undefined,
@@ -419,5 +456,76 @@ export const useAppStore = create<AppStore>((set) => ({
         void saveLocalState("giveaway", nextGiveaway).catch(() => undefined);
       }
       return { giveaway: nextGiveaway };
+    }),
+  commands: defaultCommands,
+  setCommands: (commands) =>
+    set(() => {
+      const hasBuiltIn = commands.some((cmd) => cmd.id === "builtin-song");
+      const merged = hasBuiltIn ? commands : [...defaultCommands, ...commands];
+      return { commands: merged };
+    }),
+  upsertCommand: (command) =>
+    set((s) => {
+      const exists = s.commands.some((item) => item.id === command.id);
+      const nextCommands = exists
+        ? s.commands.map((item) => (item.id === command.id ? command : item))
+        : [...s.commands, command];
+      if (s.ready) {
+        void saveLocalState("commands", nextCommands).catch(() => undefined);
+      }
+      return { commands: nextCommands };
+    }),
+  deleteCommand: (id) =>
+    set((s) => {
+      const nextCommands = s.commands.filter(
+        (item) => item.id !== id || item.builtIn,
+      );
+      if (s.ready) {
+        void saveLocalState("commands", nextCommands).catch(() => undefined);
+      }
+      return { commands: nextCommands };
+    }),
+  toggleCommand: (id, enabled) =>
+    set((s) => {
+      const nextCommands = s.commands.map((item) =>
+        item.id === id ? { ...item, enabled } : item,
+      );
+      if (s.ready) {
+        void saveLocalState("commands", nextCommands).catch(() => undefined);
+      }
+      return { commands: nextCommands };
+    }),
+  channelRewards: [],
+  setChannelRewards: (channelRewards) =>
+    set((s) => {
+      if (s.ready) {
+        void saveLocalState("channelRewards", channelRewards).catch(
+          () => undefined,
+        );
+      }
+      return { channelRewards };
+    }),
+  upsertChannelReward: (reward) =>
+    set((s) => {
+      const exists = s.channelRewards.some((item) => item.id === reward.id);
+      const nextRewards = exists
+        ? s.channelRewards.map((item) => (item.id === reward.id ? reward : item))
+        : [reward, ...s.channelRewards];
+      if (s.ready) {
+        void saveLocalState("channelRewards", nextRewards).catch(
+          () => undefined,
+        );
+      }
+      return { channelRewards: nextRewards };
+    }),
+  deleteChannelReward: (id) =>
+    set((s) => {
+      const nextRewards = s.channelRewards.filter((item) => item.id !== id);
+      if (s.ready) {
+        void saveLocalState("channelRewards", nextRewards).catch(
+          () => undefined,
+        );
+      }
+      return { channelRewards: nextRewards };
     }),
 }));
