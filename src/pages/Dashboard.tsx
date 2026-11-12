@@ -1,6 +1,5 @@
 import {
   Activity,
-  Braces,
   Clock3,
   Copy,
   Eye,
@@ -20,6 +19,7 @@ import {
   Play,
   Plus,
   Radio,
+  RadioTower,
   RefreshCw,
   RotateCcw,
   Send,
@@ -1632,11 +1632,11 @@ export function Dashboard() {
             </button>
             <button
               type="button"
-              onClick={() => setPage("variables")}
+              onClick={() => setPage("stream")}
               className="flex items-center gap-2 rounded-xl border border-line bg-white/2 px-3 py-2 text-left text-xs font-medium text-zinc-200 transition hover:border-accent/40 hover:bg-accent-soft hover:text-accent"
             >
-              <Braces size={13} className="shrink-0 text-accent" />
-              <span className="truncate">{t("nav.variables")}</span>
+              <RadioTower size={13} className="shrink-0 text-accent" />
+              <span className="truncate">{t("nav.stream")}</span>
             </button>
           </div>
         </Card>
@@ -1856,13 +1856,38 @@ export function Dashboard() {
                   </div>
                   <Toggle
                     value={reward.enabled && !reward.paused}
-                    onChange={(active) =>
-                      upsertChannelReward({
+                    onChange={(active) => {
+                      const prev = reward;
+                      const next = {
                         ...reward,
                         enabled: active,
                         paused: !active,
-                      })
-                    }
+                      };
+                      upsertChannelReward(next);
+                      const canManage =
+                        twitch.phase === "connected" &&
+                        Boolean(twitch.userId) &&
+                        Boolean(reward.manageable) &&
+                        Boolean(twitch.scopes?.includes("channel:manage:redemptions"));
+                      if (canManage && twitch.userId) {
+                        void twitchNative
+                          .helixPatch(
+                            TWITCH_CLIENT_ID,
+                            "channel_points/custom_rewards",
+                            [
+                              ["broadcaster_id", twitch.userId],
+                              ["id", reward.id],
+                            ],
+                            { is_enabled: active, is_paused: !active },
+                          )
+                          .catch((error) => {
+                            upsertChannelReward(prev);
+                            toast.error(t("channelPoints.saveError"), {
+                              description: errorMessage(error),
+                            });
+                          });
+                      }
+                    }}
                     label={reward.title}
                   />
                 </div>

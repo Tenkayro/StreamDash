@@ -1220,6 +1220,12 @@
       "time": "Current time",
       "date": "Current date",
       "random": "Random number, e.g. $(random.1-6)"
-    }
+    },
+    "tabs": {
+      "catalog": "Variables",
+      "custom": "Custom counters & text",
+      "test": "Test"
+    },
+    "testHint": "Try any template with variables here to see how it looks in chat."
   }
 }

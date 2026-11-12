@@ -1220,6 +1220,12 @@
       "time": "Aktuelle Uhrzeit",
       "date": "Aktuelles Datum",
       "random": "Zufallszahl, z. B. $(random.1-6)"
-    }
+    },
+    "tabs": {
+      "catalog": "Variablen",
+      "custom": "Eigene Zähler & Texte",
+      "test": "Testen"
+    },
+    "testHint": "Teste hier eine Nachricht mit Variablen und sieh direkt das Ergebnis."
   }
 }

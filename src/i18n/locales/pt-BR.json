@@ -1220,6 +1220,12 @@
       "time": "Hora atual",
       "date": "Data atual",
       "random": "Número aleatório, ex. $(random.1-6)"
-    }
+    },
+    "tabs": {
+      "catalog": "Variáveis",
+      "custom": "Contadores e textos próprios",
+      "test": "Testar"
+    },
+    "testHint": "Teste aqui qualquer modelo com variáveis para ver o resultado."
   }
 }
