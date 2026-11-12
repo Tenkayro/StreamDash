@@ -751,7 +751,8 @@
       "ready": "Fertig",
       "twitch": "Twitch"
     },
-    "twitchBody": "Verbinde deinen Broadcaster-Account, um Stream, Chat, Statistiken und Moderation direkt in StreamDash zu verwalten.",
+    "twitchBody": "Verbinde deinen Broadcaster-Account für die Kanalsteuerung und optional einen separaten Bot-Account für Chat-Befehle, Alerts und Giveaways.",
+    "twitchBotHint": "Optional: Verbinde einen eigenen Bot-Account für automatische Chat-Nachrichten (!song, Commands, Alerts, Giveaways).",
     "twitchConnectedDetail": "Streamdaten und Chat werden automatisch geladen.",
     "twitchOptional": "Dieser Schritt ist optional. Du kannst Twitch später unter Verbindungen hinzufügen.",
     "twitchTitle": "Twitch-Account verbinden"

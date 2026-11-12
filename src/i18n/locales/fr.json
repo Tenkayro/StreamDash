@@ -751,7 +751,8 @@
       "ready": "Prêt",
       "twitch": "Twitch"
     },
-    "twitchBody": "Connectez votre compte de diffuseur pour gérer le stream, le chat, les statistiques et la modération depuis StreamDash.",
+    "twitchBody": "Connectez votre compte diffuseur pour contrôler la chaîne et, en option, un compte bot dédié pour les commandes, alertes et tirages.",
+    "twitchBotHint": "Optionnel : Connectez un compte bot dédié pour les réponses automatiques (!song, commandes, alertes, tirages).",
     "twitchConnectedDetail": "Les données du stream et le chat seront chargés automatiquement.",
     "twitchOptional": "Cette étape est facultative. Vous pourrez connecter Twitch plus tard dans Connexions.",
     "twitchTitle": "Connectez votre compte Twitch"

@@ -751,7 +751,8 @@
       "ready": "Listo",
       "twitch": "Twitch"
     },
-    "twitchBody": "Conecta tu cuenta de streamer para gestionar la emisión, el chat, las estadísticas y la moderación desde StreamDash.",
+    "twitchBody": "Conecta tu cuenta de broadcaster para controlar el canal y, opcionalmente, una cuenta de bot dedicada para comandos, alertas y sorteos.",
+    "twitchBotHint": "Opcional: Conecta una cuenta de bot dedicada para respuestas automáticas (!song, comandos, alertas, sorteos).",
     "twitchConnectedDetail": "Los datos de la emisión y el chat se cargarán automáticamente.",
     "twitchOptional": "Este paso es opcional. Puedes conectar Twitch más tarde en Conexiones.",
     "twitchTitle": "Conecta tu cuenta de Twitch"

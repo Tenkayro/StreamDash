@@ -751,7 +751,8 @@
       "ready": "Ready",
       "twitch": "Twitch"
     },
-    "twitchBody": "Connect your broadcaster account to manage your stream, chat, statistics and moderation directly in StreamDash.",
+    "twitchBody": "Connect your broadcaster account and optional bot account to manage your stream, chat, commands and alerts directly in StreamDash.",
+    "twitchBotHint": "Optional: Replies to commands, giveaways and alerts. Falls back to your broadcaster account if skipped.",
     "twitchConnectedDetail": "Stream data and chat will load automatically.",
     "twitchOptional": "This step is optional. You can connect Twitch later under Connections.",
     "twitchTitle": "Connect your Twitch account"
