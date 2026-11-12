@@ -149,7 +149,7 @@ export function Sidebar() {
         aria-label={t("navigation.quickSwitch")}
         onClick={() => window.dispatchEvent(new Event(OPEN_COMMAND_PALETTE))}
         className={cn(
-          "sidebar-search mb-4 flex h-9 w-full shrink-0 items-center rounded-lg border border-line bg-black/15 text-zinc-500 transition hover:border-accent/30 hover:text-zinc-200",
+          "sidebar-search mb-3 flex h-9 w-full shrink-0 items-center rounded-lg border border-line bg-black/15 text-zinc-500 transition hover:border-accent/30 hover:text-zinc-200",
           compact ? "justify-center" : "gap-2 px-3",
         )}
       >
@@ -162,8 +162,8 @@ export function Sidebar() {
         )}
       </button>
       <div className="relative min-h-0 flex-1">
-        <div className="h-full overflow-x-hidden overflow-y-auto">
-          <nav ref={navRef} className="relative">
+        <div className="h-full overflow-x-hidden overflow-y-auto pr-1">
+          <nav ref={navRef} className="relative pb-7">
           <span
             aria-hidden="true"
             ref={indicatorRef}
@@ -236,7 +236,7 @@ export function Sidebar() {
         />
       </div>
       <div className="shrink-0">
-        <div className="mx-2 my-4 h-px bg-line" />
+        <div className="mx-2 my-2.5 h-px bg-line" />
         {compact ? (
           <div className="mb-2 space-y-0.5">
             {services.map(({ name, icon, state }) => (
