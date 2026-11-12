@@ -111,7 +111,6 @@ export function ProCloudSection() {
 
   const currentCheckpoint = twitch.userId ? cloudSyncCheckpoints[twitch.userId] : undefined;
   const activeCloudMeta = cloudSync.remoteMeta;
-  const cloudRevision = activeCloudMeta?.revision ?? currentCheckpoint?.revision;
   const cloudBytes = activeCloudMeta?.rawBytes ?? currentCheckpoint?.rawBytes;
   const cloudTimestamp =
     cloudSync.lastSyncedAt ?? currentCheckpoint?.syncedAt ?? activeCloudMeta?.serverUpdatedAt;
@@ -418,11 +417,7 @@ export function ProCloudSection() {
                   ) : !cloudSyncEnabled ? (
                     <Badge tone="neutral">{t("profiles.cloud.statusPaused")}</Badge>
                   ) : cloudSync.phase === "synced" || hasRemoteBackup ? (
-                    <Badge tone="green">
-                      {cloudRevision
-                        ? t("profiles.cloud.statusSyncedRev", { rev: cloudRevision })
-                        : t("profiles.cloud.statusSynced")}
-                    </Badge>
+                    <Badge tone="green">{t("profiles.cloud.statusSynced")}</Badge>
                   ) : (
                     <Badge tone="neutral">{t("profiles.cloud.statusReady")}</Badge>
                   )}
@@ -506,11 +501,14 @@ export function ProCloudSection() {
                     <Trash2 size={13} />
                   </Button>
                 )}
-                <Toggle
-                  label={t("profiles.cloud.autoSyncLabel")}
-                  value={cloudSyncEnabled}
-                  onChange={(value) => void runtime.setCloudSyncEnabled(value)}
-                />
+                <div className="flex items-center gap-2 pl-1">
+                  <span className="text-xs text-muted">{t("profiles.cloud.autoSyncShort")}</span>
+                  <Toggle
+                    label={t("profiles.cloud.autoSyncLabel")}
+                    value={cloudSyncEnabled}
+                    onChange={(value) => void runtime.setCloudSyncEnabled(value)}
+                  />
+                </div>
               </div>
             )}
           </div>
@@ -535,6 +533,7 @@ export function ProCloudSection() {
               </div>
               <div className="flex flex-wrap items-center gap-1.5">
                 <Button
+                  variant="primary"
                   disabled={syncBusy}
                   onClick={() => {
                     setSyncBusy(true);
@@ -544,6 +543,7 @@ export function ProCloudSection() {
                       .finally(() => setSyncBusy(false));
                   }}
                 >
+                  <CloudDownload size={13} />
                   {t("profiles.cloud.useCloud")}
                 </Button>
                 <Button
@@ -559,7 +559,6 @@ export function ProCloudSection() {
                   {t("profiles.cloud.mergeCloud")}
                 </Button>
                 <Button
-                  variant="primary"
                   disabled={syncBusy}
                   onClick={() => {
                     setSyncBusy(true);
