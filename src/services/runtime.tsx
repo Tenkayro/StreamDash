@@ -20,6 +20,7 @@ import {
 import { toast } from "sonner";
 import { useAppStore } from "../stores/app-store";
 import { errorMessage, isTauri, money } from "../lib/utils";
+import { cloudSyncLimiter, parseRateLimitWaitSeconds } from "../lib/cloud-sync-limiter";
 import {
   bootstrapProfiles,
   buildPersistenceBatch,
@@ -905,6 +906,7 @@ export function RuntimeProvider({ children }: { children: ReactNode }) {
         localSha256,
         serverSha256: remoteMeta.payloadSha256,
         syncedAt,
+        lastCheckedAt: syncedAt,
         serverUpdatedAt: remoteMeta.serverUpdatedAt,
         rawBytes: remoteMeta.rawBytes,
         profileCount: remoteMeta.profileCount ?? finalProfiles.length,
@@ -912,6 +914,8 @@ export function RuntimeProvider({ children }: { children: ReactNode }) {
       state().setCloudSync({
         phase: "synced",
         lastSyncedAt: syncedAt,
+        lastCheckedAt: syncedAt,
+        hasLocalChanges: false,
         remoteMeta,
         conflict: undefined,
         error: undefined,
@@ -957,6 +961,7 @@ export function RuntimeProvider({ children }: { children: ReactNode }) {
         localSha256,
         serverSha256: result.meta.payloadSha256,
         syncedAt,
+        lastCheckedAt: syncedAt,
         serverUpdatedAt: result.meta.serverUpdatedAt,
         rawBytes: result.meta.rawBytes,
         profileCount: result.meta.profileCount ?? bundle.profiles.length,
@@ -964,6 +969,8 @@ export function RuntimeProvider({ children }: { children: ReactNode }) {
       state().setCloudSync({
         phase: "synced",
         lastSyncedAt: syncedAt,
+        lastCheckedAt: syncedAt,
+        hasLocalChanges: false,
         remoteMeta: result.meta,
         conflict: undefined,
         error: undefined,
@@ -974,39 +981,65 @@ export function RuntimeProvider({ children }: { children: ReactNode }) {
   );
 
   const reconcileCloudOnConnect = useCallback(
-    async (userId: string, accountLogin: string) => {
+    async (
+      userId: string,
+      accountLogin: string,
+      options?: { force?: boolean; manual?: boolean },
+    ): Promise<"noop" | "pushed" | "pulled" | "conflict" | "skipped"> => {
       if (
         !isTauri() ||
-        !state().cloudSyncEnabled ||
+        (!options?.manual && !state().cloudSyncEnabled) ||
         !state().entitlements.pro ||
         cloudSyncInFlightRef.current
       ) {
-        return;
+        return "skipped";
+      }
+      if (!options?.force && !cloudSyncLimiter.canAutoReconcile(userId)) {
+        const checkpoint = state().cloudSyncCheckpoints[userId];
+        if (checkpoint) {
+          const { localSha256 } = await buildLocalCloudPayload();
+          const localDirty = localSha256 !== checkpoint.localSha256;
+          if (!localDirty) {
+            state().setCloudSync({
+              phase: "synced",
+              lastSyncedAt: checkpoint.syncedAt,
+              lastCheckedAt: checkpoint.lastCheckedAt ?? state().cloudSync.lastCheckedAt,
+              hasLocalChanges: false,
+              conflict: undefined,
+              error: undefined,
+            });
+            return "noop";
+          }
+        }
+        return "skipped";
       }
       cloudSyncInFlightRef.current = true;
       state().setCloudSync({ phase: "syncing", error: undefined });
       try {
         const remoteMeta = await cloudSyncNative.meta(TWITCH_CLIENT_ID);
-        if (state().twitch.userId !== userId) return;
+        if (state().twitch.userId !== userId) return "skipped";
         if (remoteMeta.proRequired) {
+          cloudSyncLimiter.invalidateEntitlements(userId);
           state().setEntitlements({ tier: "free", pro: false, features: [], license: undefined });
           state().setCloudSync({ phase: "idle", error: undefined });
-          return;
+          return "skipped";
         }
 
+        const now = Date.now();
+        cloudSyncLimiter.markAutoReconciled(userId, now);
         const checkpoint = state().cloudSyncCheckpoints[userId];
         const { nextProfiles, localSha256 } = await buildLocalCloudPayload();
 
         if (!remoteMeta.exists) {
-          await pushLocalToCloud(userId, { expectedRevision: 0 });
-          return;
+          const pushResult = await pushLocalToCloud(userId, { expectedRevision: 0 });
+          return pushResult === "synced" ? "pushed" : "conflict";
         }
 
         if (!checkpoint) {
           const pulled = await cloudSyncNative.pull(TWITCH_CLIENT_ID);
           if (!("bundle" in pulled)) {
-            await pushLocalToCloud(userId, { expectedRevision: 0 });
-            return;
+            const pushResult = await pushLocalToCloud(userId, { expectedRevision: 0 });
+            return pushResult === "synced" ? "pushed" : "conflict";
           }
           const remoteNormalized = normalizeCloudBundle(pulled.bundle);
           const remoteLocalSha = remoteNormalized
@@ -1019,6 +1052,7 @@ export function RuntimeProvider({ children }: { children: ReactNode }) {
               localSha256,
               serverSha256: pulled.meta.payloadSha256,
               syncedAt,
+              lastCheckedAt: syncedAt,
               serverUpdatedAt: pulled.meta.serverUpdatedAt,
               rawBytes: pulled.meta.rawBytes,
               profileCount: pulled.meta.profileCount,
@@ -1026,11 +1060,13 @@ export function RuntimeProvider({ children }: { children: ReactNode }) {
             state().setCloudSync({
               phase: "synced",
               lastSyncedAt: syncedAt,
+              lastCheckedAt: syncedAt,
+              hasLocalChanges: false,
               remoteMeta: pulled.meta,
               conflict: undefined,
               error: undefined,
             });
-            return;
+            return "noop";
           }
 
           if (isFreshDefaultProfileSetup(nextProfiles)) {
@@ -1038,68 +1074,85 @@ export function RuntimeProvider({ children }: { children: ReactNode }) {
             toast.success(
               i18n.t("profiles.cloud.restoredToast", { account: accountLogin }),
             );
-            return;
+            return "pulled";
           }
 
           state().setCloudSync({
             phase: "conflict",
+            lastCheckedAt: now,
             remoteMeta: pulled.meta,
             conflict: { remoteMeta: pulled.meta, remoteBundle: remoteNormalized },
             error: undefined,
           });
           toast.warning(i18n.t("profiles.cloud.conflictToast"));
-          return;
+          return "conflict";
         }
 
         const localDirty = localSha256 !== checkpoint.localSha256;
         const remoteChanged =
-          typeof remoteMeta.revision === "number" &&
-          remoteMeta.revision !== checkpoint.revision;
+          (typeof remoteMeta.revision === "number" &&
+            remoteMeta.revision !== checkpoint.revision) ||
+          Boolean(
+            remoteMeta.payloadSha256 &&
+              checkpoint.serverSha256 &&
+              remoteMeta.payloadSha256 !== checkpoint.serverSha256,
+          );
 
         if (!localDirty && !remoteChanged) {
           state().setCloudSync({
             phase: "synced",
             lastSyncedAt: checkpoint.syncedAt,
+            lastCheckedAt: now,
+            hasLocalChanges: false,
             remoteMeta,
             conflict: undefined,
             error: undefined,
           });
-          return;
+          return "noop";
         }
 
         if (localDirty && !remoteChanged) {
-          await pushLocalToCloud(userId, {
+          const pushResult = await pushLocalToCloud(userId, {
             expectedRevision: checkpoint.revision,
             notifyConflict: true,
           });
-          return;
+          return pushResult === "synced" ? "pushed" : "conflict";
         }
 
         const pulled = await cloudSyncNative.pull(TWITCH_CLIENT_ID);
         if (!("bundle" in pulled)) {
-          await pushLocalToCloud(userId, { expectedRevision: 0 });
-          return;
+          const pushResult = await pushLocalToCloud(userId, { expectedRevision: 0 });
+          return pushResult === "synced" ? "pushed" : "conflict";
         }
 
         if (!localDirty) {
           await applyPulledCloudBundle(userId, pulled.bundle, pulled.meta, false);
           toast.info(i18n.t("profiles.cloud.updatedFromCloudToast"));
-          return;
+          return "pulled";
         }
 
         const remoteNormalized = normalizeCloudBundle(pulled.bundle);
         state().setCloudSync({
           phase: "conflict",
+          lastCheckedAt: now,
+          hasLocalChanges: true,
           remoteMeta: pulled.meta,
           conflict: { remoteMeta: pulled.meta, remoteBundle: remoteNormalized },
           error: undefined,
         });
         toast.warning(i18n.t("profiles.cloud.conflictToast"));
+        return "conflict";
       } catch (error) {
+        const msg = errorMessage(error);
+        cloudSyncLimiter.applyServerRateLimit(msg);
         state().setCloudSync({
           phase: "error",
-          error: errorMessage(error),
+          cooldownUntil: cloudSyncLimiter.getManualRemainingMs()
+            ? Date.now() + cloudSyncLimiter.getManualRemainingMs()
+            : state().cloudSync.cooldownUntil,
+          error: msg,
         });
+        return "skipped";
       } finally {
         cloudSyncInFlightRef.current = false;
       }
@@ -1116,10 +1169,20 @@ export function RuntimeProvider({ children }: { children: ReactNode }) {
   const refreshProAndSync = useCallback(
     async (userId: string, accountLogin: string) => {
       if (!isTauri()) return;
+      const cached = cloudSyncLimiter.getCachedEntitlements(userId);
+      if (cached) {
+        if (state().twitch.userId !== userId) return;
+        state().setEntitlements({ ...cached, loading: false, error: undefined });
+        if (cached.pro) {
+          await reconcileCloudOnConnect(userId, accountLogin);
+        }
+        return;
+      }
       state().setEntitlements({ loading: true, error: undefined });
       try {
         const entitlements = await proNative.entitlements(TWITCH_CLIENT_ID);
         if (state().twitch.userId !== userId) return;
+        cloudSyncLimiter.setCachedEntitlements(userId, entitlements);
         state().setEntitlements({ ...entitlements, loading: false, error: undefined });
         if (entitlements.pro) {
           await reconcileCloudOnConnect(userId, accountLogin);
@@ -1479,7 +1542,6 @@ export function RuntimeProvider({ children }: { children: ReactNode }) {
     if (
       !isTauri() ||
       !ready ||
-      !cloudSyncEnabled ||
       !proActive ||
       !twitchUserId ||
       applyingProfileRef.current ||
@@ -1491,13 +1553,13 @@ export function RuntimeProvider({ children }: { children: ReactNode }) {
     if (!checkpoint) return;
 
     window.clearTimeout(cloudPushTimerRef.current);
+    const delayMs = cloudSyncEnabled ? 2500 : 1200;
     cloudPushTimerRef.current = window.setTimeout(() => {
       cloudPushTimerRef.current = undefined;
       if (cloudSyncInFlightRef.current || applyingProfileRef.current) return;
       void (async () => {
         const current = state();
         if (
-          !current.cloudSyncEnabled ||
           !current.entitlements.pro ||
           current.twitch.userId !== twitchUserId ||
           current.cloudSync.phase === "conflict"
@@ -1506,26 +1568,63 @@ export function RuntimeProvider({ children }: { children: ReactNode }) {
         }
         const { localSha256 } = await buildLocalCloudPayload();
         const latestCheckpoint = current.cloudSyncCheckpoints[twitchUserId];
-        if (!latestCheckpoint || localSha256 === latestCheckpoint.localSha256) {
+        if (!latestCheckpoint) return;
+
+        if (localSha256 === latestCheckpoint.localSha256) {
+          if (current.cloudSync.hasLocalChanges || current.cloudSync.phase === "pending") {
+            current.setCloudSync({
+              phase: "synced",
+              hasLocalChanges: false,
+              lastSyncedAt: latestCheckpoint.syncedAt,
+              error: undefined,
+            });
+          }
           return;
         }
+
+        if (!current.cloudSyncEnabled) {
+          if (current.cloudSync.phase !== "pending" || !current.cloudSync.hasLocalChanges) {
+            current.setCloudSync({
+              phase: "pending",
+              hasLocalChanges: true,
+              error: undefined,
+            });
+          }
+          return;
+        }
+
+        const rateWait = cloudSyncLimiter.getManualRemainingMs();
+        if (rateWait > 0) {
+          current.setCloudSync({
+            phase: "pending",
+            hasLocalChanges: true,
+            cooldownUntil: Date.now() + rateWait,
+          });
+          return;
+        }
+
         cloudSyncInFlightRef.current = true;
-        current.setCloudSync({ phase: "syncing", error: undefined });
+        current.setCloudSync({ phase: "syncing", hasLocalChanges: true, error: undefined });
         try {
           await pushLocalToCloud(twitchUserId, {
             expectedRevision: latestCheckpoint.revision,
             notifyConflict: true,
           });
         } catch (error) {
+          const msg = errorMessage(error);
+          cloudSyncLimiter.applyServerRateLimit(msg);
           state().setCloudSync({
             phase: "error",
-            error: errorMessage(error),
+            cooldownUntil: cloudSyncLimiter.getManualRemainingMs()
+              ? Date.now() + cloudSyncLimiter.getManualRemainingMs()
+              : state().cloudSync.cooldownUntil,
+            error: msg,
           });
         } finally {
           cloudSyncInFlightRef.current = false;
         }
       })();
-    }, 2500);
+    }, delayMs);
 
     return () => {
       window.clearTimeout(cloudPushTimerRef.current);
@@ -1611,11 +1710,20 @@ export function RuntimeProvider({ children }: { children: ReactNode }) {
         state().setCloudSyncEnabled(
           typeof rawCloudSyncEnabled === "boolean" ? rawCloudSyncEnabled : true,
         );
-        if (rawCloudSyncCheckpoints && typeof rawCloudSyncCheckpoints === "object") {
-          state().setCloudSyncCheckpoints(
-            rawCloudSyncCheckpoints as Record<string, CloudSyncUserCheckpoint>,
-          );
-        }
+    if (rawCloudSyncCheckpoints && typeof rawCloudSyncCheckpoints === "object") {
+      const checkpoints = rawCloudSyncCheckpoints as Record<string, CloudSyncUserCheckpoint>;
+      state().setCloudSyncCheckpoints(checkpoints);
+      const lastUid = typeof rawLastTwitchUserId === "string" ? rawLastTwitchUserId : undefined;
+      const lastCp = lastUid ? checkpoints[lastUid] : undefined;
+      if (lastCp) {
+        state().setCloudSync({
+          phase: "synced",
+          lastSyncedAt: lastCp.syncedAt,
+          lastCheckedAt: lastCp.lastCheckedAt,
+          hasLocalChanges: false,
+        });
+      }
+    }
         setSettings(settings);
         setEvents(events);
         setChatMessages(chatMessages);
@@ -1753,6 +1861,7 @@ export function RuntimeProvider({ children }: { children: ReactNode }) {
     state().setChat({ phase: "disconnected" });
     state().setChatEmotes([]);
     await secretDelete("twitch-oauth");
+    cloudSyncLimiter.invalidateEntitlements();
     state().setTwitch({ phase: "disconnected" });
     state().setCloudSync({
       phase: "idle",
@@ -1760,6 +1869,9 @@ export function RuntimeProvider({ children }: { children: ReactNode }) {
       conflict: undefined,
       error: undefined,
       lastSyncedAt: undefined,
+      lastCheckedAt: undefined,
+      cooldownUntil: undefined,
+      hasLocalChanges: undefined,
     });
     state().setEntitlements({ tier: "free", pro: false, features: [] });
     state().setStatsLoading(false);
@@ -2448,13 +2560,33 @@ export function RuntimeProvider({ children }: { children: ReactNode }) {
       throw new Error(i18n.t("stream.notConnected"));
     }
     if (cloudSyncInFlightRef.current) return;
+
+    const allowDuringCooldown =
+      current.cloudSync.phase === "conflict" || Boolean(options?.force);
+    const gate = cloudSyncLimiter.canRunManualAction(allowDuringCooldown);
+    if (!gate.allowed) {
+      const waitSeconds = Math.max(1, Math.ceil(gate.waitMs / 1000));
+      current.setCloudSync({ cooldownUntil: Date.now() + gate.waitMs });
+      toast.info(i18n.t("profiles.cloud.rateLimited", { seconds: waitSeconds }));
+      return;
+    }
+
     cloudSyncInFlightRef.current = true;
     current.setCloudSync({ phase: "syncing", error: undefined });
     try {
       if (mode === "smart") {
         cloudSyncInFlightRef.current = false;
-        await reconcileCloudOnConnect(userId, account);
-        if (state().cloudSync.phase === "synced") {
+        const outcome = await reconcileCloudOnConnect(userId, account, {
+          force: true,
+          manual: true,
+        });
+        const until = cloudSyncLimiter.recordManualOutcome({
+          serverWork: outcome === "pushed" || outcome === "pulled",
+        });
+        state().setCloudSync({ cooldownUntil: until });
+        if (outcome === "noop") {
+          toast.info(i18n.t("profiles.cloud.alreadyUpToDate"));
+        } else if (outcome === "pushed" || outcome === "pulled") {
           toast.success(i18n.t("profiles.cloud.syncSuccess"));
         }
         return;
@@ -2462,27 +2594,134 @@ export function RuntimeProvider({ children }: { children: ReactNode }) {
 
       if (mode === "push") {
         const checkpoint = state().cloudSyncCheckpoints[userId];
+        if (!options?.force && checkpoint) {
+          const { localSha256 } = await buildLocalCloudPayload();
+          if (localSha256 === checkpoint.localSha256) {
+            const now = Date.now();
+            const recentMeta = state().cloudSync.remoteMeta;
+            const recentlyChecked =
+              recentMeta &&
+              recentMeta.exists &&
+              typeof state().cloudSync.lastCheckedAt === "number" &&
+              now - (state().cloudSync.lastCheckedAt ?? 0) < 15_000;
+            const remoteMeta = recentlyChecked
+              ? recentMeta
+              : await cloudSyncNative.meta(TWITCH_CLIENT_ID);
+
+            if (remoteMeta.proRequired) {
+              cloudSyncLimiter.invalidateEntitlements(userId);
+              state().setEntitlements({ tier: "free", pro: false, features: [], license: undefined });
+              state().setCloudSync({ phase: "idle", error: undefined });
+              toast.info(i18n.t("pro.requiredToast"));
+              return;
+            }
+
+            if (
+              remoteMeta.exists &&
+              remoteMeta.revision === checkpoint.revision &&
+              (!remoteMeta.payloadSha256 ||
+                !checkpoint.serverSha256 ||
+                remoteMeta.payloadSha256 === checkpoint.serverSha256)
+            ) {
+              const until = cloudSyncLimiter.recordManualOutcome({ serverWork: false });
+              state().setCloudSync({
+                phase: "synced",
+                lastSyncedAt: checkpoint.syncedAt,
+                lastCheckedAt: now,
+                hasLocalChanges: false,
+                cooldownUntil: until,
+                remoteMeta,
+                conflict: undefined,
+                error: undefined,
+              });
+              toast.info(i18n.t("profiles.cloud.alreadyUpToDate"));
+              return;
+            }
+
+            if (remoteMeta.exists) {
+              cloudSyncInFlightRef.current = false;
+              await reconcileCloudOnConnect(userId, account, { force: true, manual: true });
+              const until = cloudSyncLimiter.recordManualOutcome({ serverWork: true });
+              state().setCloudSync({ cooldownUntil: until });
+              return;
+            }
+          }
+        }
+
         const status = await pushLocalToCloud(userId, {
           expectedRevision: options?.force ? undefined : checkpoint?.revision,
           force: options?.force,
           notifyConflict: true,
         });
+        const until = cloudSyncLimiter.recordManualOutcome({
+          serverWork: status === "synced",
+        });
+        state().setCloudSync({ cooldownUntil: until });
         if (status === "synced") {
           toast.success(i18n.t("profiles.cloud.uploadSuccess"));
         }
         return;
       }
 
+      if (!options?.merge && current.cloudSync.phase !== "conflict") {
+        const remoteMeta = await cloudSyncNative.meta(TWITCH_CLIENT_ID);
+        const now = Date.now();
+        if (remoteMeta.proRequired) {
+          cloudSyncLimiter.invalidateEntitlements(userId);
+          const until = cloudSyncLimiter.recordManualOutcome({ serverWork: false });
+          state().setEntitlements({ tier: "free", pro: false, features: [], license: undefined });
+          state().setCloudSync({ phase: "idle", cooldownUntil: until, error: undefined });
+          toast.info(i18n.t("pro.requiredToast"));
+          return;
+        }
+        if (!remoteMeta.exists) {
+          const until = cloudSyncLimiter.recordManualOutcome({ serverWork: false });
+          state().setCloudSync({
+            phase: "idle",
+            lastCheckedAt: now,
+            cooldownUntil: until,
+            remoteMeta: { exists: false },
+            conflict: undefined,
+            error: undefined,
+          });
+          toast.info(i18n.t("profiles.cloud.noRemoteBackup"));
+          return;
+        }
+        const checkpoint = state().cloudSyncCheckpoints[userId];
+        if (checkpoint && remoteMeta.revision === checkpoint.revision) {
+          const { localSha256 } = await buildLocalCloudPayload();
+          if (localSha256 === checkpoint.localSha256) {
+            const until = cloudSyncLimiter.recordManualOutcome({ serverWork: false });
+            state().setCloudSync({
+              phase: "synced",
+              lastSyncedAt: checkpoint.syncedAt,
+              lastCheckedAt: now,
+              hasLocalChanges: false,
+              cooldownUntil: until,
+              remoteMeta,
+              conflict: undefined,
+              error: undefined,
+            });
+            toast.info(i18n.t("profiles.cloud.alreadyUpToDate"));
+            return;
+          }
+        }
+      }
+
       const pulled = await cloudSyncNative.pull(TWITCH_CLIENT_ID);
       if ("proRequired" in pulled && pulled.proRequired) {
+        cloudSyncLimiter.invalidateEntitlements(userId);
+        const until = cloudSyncLimiter.recordManualOutcome({ serverWork: false });
         state().setEntitlements({ tier: "free", pro: false, features: [], license: undefined });
-        state().setCloudSync({ phase: "idle", error: undefined });
+        state().setCloudSync({ phase: "idle", cooldownUntil: until, error: undefined });
         toast.info(i18n.t("pro.requiredToast"));
         return;
       }
       if (!("bundle" in pulled)) {
+        const until = cloudSyncLimiter.recordManualOutcome({ serverWork: false });
         state().setCloudSync({
           phase: "idle",
+          cooldownUntil: until,
           remoteMeta: { exists: false },
           conflict: undefined,
           error: undefined,
@@ -2496,11 +2735,23 @@ export function RuntimeProvider({ children }: { children: ReactNode }) {
         pulled.meta,
         Boolean(options?.merge),
       );
+      const until = cloudSyncLimiter.recordManualOutcome({ serverWork: true });
+      state().setCloudSync({ cooldownUntil: until });
       toast.success(i18n.t("profiles.cloud.downloadSuccess"));
     } catch (error) {
-      const msg = errorMessage(error);
-      state().setCloudSync({ phase: "error", error: msg });
-      toast.error(i18n.t("profiles.cloud.syncError"), { description: msg });
+      const rawMsg = errorMessage(error);
+      const waitSeconds = cloudSyncLimiter.applyServerRateLimit(rawMsg);
+      const displayMsg = waitSeconds
+        ? i18n.t("profiles.cloud.rateLimited", { seconds: waitSeconds })
+        : rawMsg;
+      state().setCloudSync({
+        phase: "error",
+        cooldownUntil: cloudSyncLimiter.getManualRemainingMs()
+          ? Date.now() + cloudSyncLimiter.getManualRemainingMs()
+          : state().cloudSync.cooldownUntil,
+        error: displayMsg,
+      });
+      toast.error(i18n.t("profiles.cloud.syncError"), { description: displayMsg });
       throw error;
     } finally {
       cloudSyncInFlightRef.current = false;
@@ -2514,23 +2765,44 @@ export function RuntimeProvider({ children }: { children: ReactNode }) {
       throw new Error(i18n.t("stream.notConnected"));
     }
     if (cloudSyncInFlightRef.current) return;
+    const gate = cloudSyncLimiter.canRunManualAction(false);
+    if (!gate.allowed) {
+      const waitSeconds = Math.max(1, Math.ceil(gate.waitMs / 1000));
+      current.setCloudSync({ cooldownUntil: Date.now() + gate.waitMs });
+      toast.info(i18n.t("profiles.cloud.rateLimited", { seconds: waitSeconds }));
+      return;
+    }
     cloudSyncInFlightRef.current = true;
     current.setCloudSync({ phase: "syncing", error: undefined });
     try {
       await cloudSyncNative.remove(TWITCH_CLIENT_ID);
       await setCloudSyncCheckpoint(userId, undefined);
+      const until = cloudSyncLimiter.recordManualOutcome({ serverWork: true });
       current.setCloudSync({
         phase: "idle",
         lastSyncedAt: undefined,
+        lastCheckedAt: Date.now(),
+        hasLocalChanges: undefined,
+        cooldownUntil: until,
         remoteMeta: { exists: false },
         conflict: undefined,
         error: undefined,
       });
       toast.success(i18n.t("profiles.cloud.deleteSuccess"));
     } catch (error) {
-      const msg = errorMessage(error);
-      current.setCloudSync({ phase: "error", error: msg });
-      toast.error(i18n.t("profiles.cloud.syncError"), { description: msg });
+      const rawMsg = errorMessage(error);
+      const waitSeconds = cloudSyncLimiter.applyServerRateLimit(rawMsg);
+      const displayMsg = waitSeconds
+        ? i18n.t("profiles.cloud.rateLimited", { seconds: waitSeconds })
+        : rawMsg;
+      current.setCloudSync({
+        phase: "error",
+        cooldownUntil: cloudSyncLimiter.getManualRemainingMs()
+          ? Date.now() + cloudSyncLimiter.getManualRemainingMs()
+          : current.cloudSync.cooldownUntil,
+        error: displayMsg,
+      });
+      toast.error(i18n.t("profiles.cloud.syncError"), { description: displayMsg });
       throw error;
     } finally {
       cloudSyncInFlightRef.current = false;
@@ -2539,7 +2811,8 @@ export function RuntimeProvider({ children }: { children: ReactNode }) {
 
   const refreshProEntitlements = async () => {
     const current = state();
-    if (!isTauri() || !current.twitch.userId) {
+    const userId = current.twitch.userId;
+    if (!isTauri() || !userId) {
       const freeState = { tier: "free" as const, pro: false, features: [] };
       current.setEntitlements(freeState);
       return freeState;
@@ -2547,6 +2820,7 @@ export function RuntimeProvider({ children }: { children: ReactNode }) {
     current.setEntitlements({ loading: true, error: undefined });
     try {
       const entitlements = await proNative.entitlements(TWITCH_CLIENT_ID);
+      cloudSyncLimiter.setCachedEntitlements(userId, entitlements);
       state().setEntitlements({ ...entitlements, loading: false, error: undefined });
       return entitlements;
     } catch (error) {
@@ -2563,15 +2837,29 @@ export function RuntimeProvider({ children }: { children: ReactNode }) {
     if (!isTauri() || !userId) {
       throw new Error(i18n.t("stream.notConnected"));
     }
-    const result = await proNative.activate(TWITCH_CLIENT_ID, licenseKey.trim());
-    state().setEntitlements({ ...result.entitlements, loading: false, error: undefined });
-    toast.success(
-      i18n.t("pro.activatedToast", { account }),
-    );
-    if (result.entitlements.pro && state().cloudSyncEnabled) {
-      void reconcileCloudOnConnect(userId, account);
+    const gate = cloudSyncLimiter.canActivatePro();
+    if (!gate.allowed) {
+      throw new Error(`rate_limited:${gate.waitSeconds}`);
     }
-    return result.entitlements;
+    cloudSyncLimiter.recordProActivateAttempt();
+    try {
+      const result = await proNative.activate(TWITCH_CLIENT_ID, licenseKey.trim());
+      cloudSyncLimiter.setCachedEntitlements(userId, result.entitlements);
+      state().setEntitlements({ ...result.entitlements, loading: false, error: undefined });
+      toast.success(
+        i18n.t("pro.activatedToast", { account }),
+      );
+      if (result.entitlements.pro && state().cloudSyncEnabled) {
+        void reconcileCloudOnConnect(userId, account, { force: true });
+      }
+      return result.entitlements;
+    } catch (error) {
+      const waitSeconds = parseRateLimitWaitSeconds(errorMessage(error));
+      if (waitSeconds) {
+        cloudSyncLimiter.applyServerRateLimit(`rate_limited:${waitSeconds}`);
+      }
+      throw error;
+    }
   };
 
   const deactivateProLicense = async () => {
@@ -2580,8 +2868,14 @@ export function RuntimeProvider({ children }: { children: ReactNode }) {
       throw new Error(i18n.t("stream.notConnected"));
     }
     const result = await proNative.deactivate(TWITCH_CLIENT_ID);
+    cloudSyncLimiter.invalidateEntitlements(current.twitch.userId);
     state().setEntitlements({ ...result.entitlements, loading: false, error: undefined });
-    state().setCloudSync({ phase: "idle", error: undefined });
+    state().setCloudSync({
+      phase: "idle",
+      error: undefined,
+      hasLocalChanges: undefined,
+      cooldownUntil: undefined,
+    });
     toast.success(i18n.t("pro.unlinkedToast"));
   };
 

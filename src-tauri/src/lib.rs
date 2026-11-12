@@ -1175,11 +1175,21 @@ async fn cloud_sync_send(
         }
         let response = req.send().await.map_err(|e| e.to_string())?;
         let status = response.status().as_u16();
+        let retry_after = response
+            .headers()
+            .get("retry-after")
+            .and_then(|v| v.to_str().ok())
+            .and_then(|s| s.trim().parse::<u64>().ok());
         if status == 401 && attempt == 0 {
             tokens = refresh_twitch_for(client_id, tokens, false).await?;
             continue;
         }
-        let value: Value = response.json().await.unwrap_or(json!({}));
+        let mut value: Value = response.json().await.unwrap_or(json!({}));
+        if status == 429 {
+            if let (Some(secs), Some(obj)) = (retry_after, value.as_object_mut()) {
+                obj.insert("retryAfter".into(), json!(secs));
+            }
+        }
         return Ok((status, value));
     }
 
@@ -1187,6 +1197,12 @@ async fn cloud_sync_send(
 }
 
 fn cloud_sync_error(status: u16, body: &Value) -> String {
+    if status == 429 {
+        if let Some(secs) = body.get("retryAfter").and_then(|v| v.as_u64()) {
+            return format!("rate_limited:{secs}");
+        }
+        return "rate_limited".to_string();
+    }
     body["error"]
         .as_str()
         .or_else(|| body["message"].as_str())

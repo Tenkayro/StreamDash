@@ -375,6 +375,7 @@ export interface CloudSyncUserCheckpoint {
   localSha256: string
   serverSha256?: string
   syncedAt: number
+  lastCheckedAt?: number
   serverUpdatedAt?: number
   rawBytes?: number
   profileCount?: number
@@ -386,8 +387,11 @@ export interface CloudSyncConflict {
 }
 
 export interface CloudSyncState {
-  phase: 'idle' | 'syncing' | 'synced' | 'conflict' | 'error'
+  phase: 'idle' | 'syncing' | 'pending' | 'synced' | 'conflict' | 'error'
   lastSyncedAt?: number
+  lastCheckedAt?: number
+  cooldownUntil?: number
+  hasLocalChanges?: boolean
   remoteMeta?: CloudSyncRemoteMeta
   conflict?: CloudSyncConflict
   error?: string

@@ -164,6 +164,24 @@ export function ProfilesSection() {
   const [deleteTarget, setDeleteTarget] = useState<UserProfile>();
   const [deleteCloudOpen, setDeleteCloudOpen] = useState(false);
   const [proModalOpen, setProModalOpen] = useState(false);
+  const [nowMs, setNowMs] = useState(() => Date.now());
+
+  useEffect(() => {
+    const until = cloudSync.cooldownUntil;
+    if (!until || until <= Date.now()) return;
+    const kick = window.setTimeout(() => setNowMs(Date.now()), 0);
+    const timer = window.setInterval(() => {
+      const now = Date.now();
+      setNowMs(now);
+      if (now >= until) {
+        window.clearInterval(timer);
+      }
+    }, 500);
+    return () => {
+      window.clearTimeout(kick);
+      window.clearInterval(timer);
+    };
+  }, [cloudSync.cooldownUntil]);
 
   // Create modal state
   const [createOpen, setCreateOpen] = useState(false);
@@ -212,6 +230,12 @@ export function ProfilesSection() {
   const hasRemoteBackup = Boolean(
     activeCloudMeta?.exists || currentCheckpoint || cloudSync.phase === "synced",
   );
+  const cooldownSeconds =
+    cloudSync.cooldownUntil && cloudSync.cooldownUntil > nowMs
+      ? Math.max(1, Math.ceil((cloudSync.cooldownUntil - nowMs) / 1000))
+      : 0;
+  const syncButtonsDisabled =
+    busy || cloudSync.phase === "syncing" || cooldownSeconds > 0;
 
   const startRename = (profile: UserProfile) => {
     setEditingId(profile.id);
@@ -444,6 +468,8 @@ export function ProfilesSection() {
                     <Badge tone="amber">{t("profiles.cloud.statusConflict")}</Badge>
                   ) : cloudSync.phase === "error" ? (
                     <Badge tone="red">{t("profiles.cloud.statusError")}</Badge>
+                  ) : cloudSync.phase === "pending" || cloudSync.hasLocalChanges ? (
+                    <Badge tone="amber">{t("profiles.cloud.statusPending")}</Badge>
                   ) : !cloudSyncEnabled ? (
                     <Badge tone="neutral">{t("profiles.cloud.statusPaused")}</Badge>
                   ) : cloudSync.phase === "synced" || hasRemoteBackup ? (
@@ -490,8 +516,12 @@ export function ProfilesSection() {
               ) : twitchConnected ? (
                 <>
                   <Button
-                    disabled={busy || cloudSync.phase === "syncing"}
-                    title={t("profiles.cloud.uploadHint")}
+                    disabled={syncButtonsDisabled}
+                    title={
+                      cooldownSeconds > 0
+                        ? t("profiles.cloud.cooldownHint", { seconds: cooldownSeconds })
+                        : t("profiles.cloud.uploadHint")
+                    }
                     onClick={() => {
                       setBusy(true);
                       void runtime
@@ -502,10 +532,15 @@ export function ProfilesSection() {
                   >
                     <CloudUpload size={13} />
                     {t("profiles.cloud.upload")}
+                    {cooldownSeconds >= 4 ? ` (${cooldownSeconds}s)` : ""}
                   </Button>
                   <Button
-                    disabled={busy || cloudSync.phase === "syncing"}
-                    title={t("profiles.cloud.downloadHint")}
+                    disabled={syncButtonsDisabled}
+                    title={
+                      cooldownSeconds > 0
+                        ? t("profiles.cloud.cooldownHint", { seconds: cooldownSeconds })
+                        : t("profiles.cloud.downloadHint")
+                    }
                     onClick={() => {
                       setBusy(true);
                       void runtime
@@ -519,8 +554,12 @@ export function ProfilesSection() {
                   </Button>
                   {hasRemoteBackup && (
                     <Button
-                      disabled={busy || cloudSync.phase === "syncing"}
-                      title={t("profiles.cloud.deleteAction")}
+                      disabled={syncButtonsDisabled}
+                      title={
+                        cooldownSeconds > 0
+                          ? t("profiles.cloud.cooldownHint", { seconds: cooldownSeconds })
+                          : t("profiles.cloud.deleteAction")
+                      }
                       aria-label={t("profiles.cloud.deleteAction")}
                       onClick={() => setDeleteCloudOpen(true)}
                       className="hover:border-red-500/30 hover:text-red-300"
