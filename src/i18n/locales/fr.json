@@ -340,13 +340,14 @@
       "markerOfflineError": "Les marqueurs ne peuvent être créés qu'en direct",
       "markerSuccess": "Marqueur créé",
       "channelCopied": "Lien de la chaîne copié",
-      "copyChannel": "Copier le lien de la chaîne",
+      "copyChannel": "Lien chaîne",
       "chatCleared": "Vue locale du chat vidée",
-      "clearChat": "Vider la vue du chat",
+      "clearChat": "Vider chat",
       "reconnecting": "Reconnexion de tous les services…",
       "reconnect": "Reconnecter",
-      "startGiveaway": "Lancer le tirage",
-      "stopGiveaway": "Arrêter le tirage"
+      "startGiveaway": "Tirage",
+      "stopGiveaway": "Arrêter tirage",
+      "marker": "Marqueur"
     }
   },
   "events": {

@@ -340,13 +340,14 @@
       "markerOfflineError": "Stream markers can only be created while live",
       "markerSuccess": "Stream marker created",
       "channelCopied": "Channel link copied",
-      "copyChannel": "Copy channel link",
+      "copyChannel": "Channel link",
       "chatCleared": "Local chat view cleared",
-      "clearChat": "Clear chat view",
+      "clearChat": "Clear chat",
       "reconnecting": "Reconnecting all services…",
       "reconnect": "Reconnect",
-      "startGiveaway": "Start giveaway",
-      "stopGiveaway": "Stop giveaway"
+      "startGiveaway": "Run giveaway",
+      "stopGiveaway": "Stop giveaway",
+      "marker": "Marker"
     }
   },
   "events": {

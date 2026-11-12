@@ -340,13 +340,14 @@
       "markerOfflineError": "Los marcadores solo se pueden crear en directo",
       "markerSuccess": "Marcador creado",
       "channelCopied": "Enlace del canal copiado",
-      "copyChannel": "Copiar enlace del canal",
+      "copyChannel": "Enlace canal",
       "chatCleared": "Vista local del chat vaciada",
-      "clearChat": "Vaciar vista del chat",
+      "clearChat": "Vaciar chat",
       "reconnecting": "Reconectando todos los servicios…",
       "reconnect": "Reconectar",
-      "startGiveaway": "Iniciar sorteo",
-      "stopGiveaway": "Detener sorteo"
+      "startGiveaway": "Sorteo",
+      "stopGiveaway": "Parar sorteo",
+      "marker": "Marcador"
     }
   },
   "events": {

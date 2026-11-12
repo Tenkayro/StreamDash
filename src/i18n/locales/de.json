@@ -340,13 +340,14 @@
       "markerOfflineError": "Stream-Marker können nur live erstellt werden",
       "markerSuccess": "Stream-Marker erstellt",
       "channelCopied": "Kanal-Link kopiert",
-      "copyChannel": "Kanal-Link kopieren",
+      "copyChannel": "Kanal-Link",
       "chatCleared": "Lokale Chat-Ansicht geleert",
-      "clearChat": "Chat-Ansicht leeren",
+      "clearChat": "Chat leeren",
       "reconnecting": "Alle Dienste werden neu verbunden…",
       "reconnect": "Neu verbinden",
-      "startGiveaway": "Giveaway starten",
-      "stopGiveaway": "Giveaway stoppen"
+      "startGiveaway": "Giveaway",
+      "stopGiveaway": "Giveaway aus",
+      "marker": "Marker"
     }
   },
   "events": {

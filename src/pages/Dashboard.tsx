@@ -440,31 +440,97 @@ function DashboardWidget({
 function defaultWidgetDimensions(
   id: DashboardItemId,
 ): DashboardWidgetDimensions {
-  if (metricWidgetIds.has(id)) return { width: "single", height: 96 };
+  if (metricWidgetIds.has(id)) return { width: "single", height: 92 };
   if (id === "activitys") return { width: "wide", height: 288 };
   if (id === "chat") return { width: "wide", height: 288 };
   if (id === "quickActions") return { width: "single", height: 224 };
   if (id === "customCounters") return { width: "single", height: 224 };
-  if (id === "giveaway") return { width: "single", height: 232 };
-  if (id === "commands") return { width: "single", height: 232 };
-  if (id === "channelPoints") return { width: "single", height: 232 };
+  if (id === "giveaway") return { width: "single", height: 224 };
+  if (id === "commands") return { width: "single", height: 224 };
+  if (id === "channelPoints") return { width: "single", height: 224 };
   if (id === "streamDetails") return { width: "single", height: 224 };
   if (id === "livePreview") return { width: "full", height: 384 };
-  if (id === "goals") return { width: "single", height: 208 };
-  if (id === "connections") return { width: "single", height: 232 };
+  if (id === "goals") return { width: "single", height: 224 };
+  if (id === "connections") return { width: "single", height: 224 };
   if (id === "obs") return { width: "single", height: 224 };
-  return { width: "single", height: 320 };
+  return { width: "single", height: 288 };
 }
 
-function widgetLayoutClass(width: DashboardWidgetWidth) {
-  if (width === "full") return "col-span-full";
-  if (width === "wide") return "lg:col-span-2";
-  return "";
+function sameWidgetList(a: DashboardItemId[], b: DashboardItemId[]) {
+  return a.length === b.length && a.every((id, index) => id === b[index]);
+}
+
+function packMetricRows(ids: DashboardItemId[], maxCols: number) {
+  if (ids.length === 0) return [] as DashboardItemId[][];
+  const cols = Math.max(1, Math.min(maxCols, ids.length));
+  const rowCount = Math.ceil(ids.length / cols);
+  const base = Math.floor(ids.length / rowCount);
+  const extra = ids.length % rowCount;
+  const rows: DashboardItemId[][] = [];
+  let cursor = 0;
+  for (let row = 0; row < rowCount; row++) {
+    const count = base + (row < extra ? 1 : 0);
+    rows.push(ids.slice(cursor, cursor + count));
+    cursor += count;
+  }
+  return rows;
+}
+
+interface PackedContentItem {
+  id: DashboardItemId;
+  units: number;
+  height: number;
+}
+
+interface PackedContentRow {
+  items: PackedContentItem[];
+  height: number;
+}
+
+function packContentRows(
+  ids: DashboardItemId[],
+  maxCols: number,
+  getDimensions: (id: DashboardItemId) => DashboardWidgetDimensions,
+): PackedContentRow[] {
+  const rows: PackedContentRow[] = [];
+  let current: PackedContentItem[] = [];
+  let used = 0;
+
+  const flush = () => {
+    if (current.length === 0) return;
+    rows.push({
+      items: current,
+      height: Math.max(...current.map((item) => item.height)),
+    });
+    current = [];
+    used = 0;
+  };
+
+  for (const id of ids) {
+    const dims = getDimensions(id);
+    const units =
+      dims.width === "full"
+        ? maxCols
+        : dims.width === "wide"
+          ? Math.min(2, maxCols)
+          : 1;
+    if (used > 0 && used + units > maxCols) {
+      flush();
+    }
+    current.push({ id, units, height: dims.height });
+    used += units;
+    if (used >= maxCols) {
+      flush();
+    }
+  }
+  flush();
+  return rows;
 }
 
 function CustomizeToolbar({
   widgets,
   zoom,
+  activePreset,
   onShow,
   onApplyPreset,
   onZoomChange,
@@ -474,6 +540,7 @@ function CustomizeToolbar({
 }: {
   widgets: WidgetCatalogEntry[];
   zoom: number;
+  activePreset: "standard" | "cockpit" | "metrics" | null;
   onShow: (id: DashboardItemId) => void;
   onApplyPreset: (preset: "standard" | "cockpit" | "metrics") => void;
   onZoomChange: (nextZoom: number) => void;
@@ -495,7 +562,12 @@ function CustomizeToolbar({
               key={preset}
               type="button"
               onClick={() => onApplyPreset(preset)}
-              className="rounded-md border border-line bg-white/3 px-2 py-1 text-[10.5px] font-medium text-zinc-300 transition hover:border-accent/40 hover:text-accent"
+              className={cn(
+                "rounded-md border px-2 py-1 text-[10.5px] font-medium transition",
+                activePreset === preset
+                  ? "border-accent/40 bg-accent-soft text-accent"
+                  : "border-line bg-white/3 text-zinc-300 hover:border-accent/40 hover:text-accent",
+              )}
             >
               {t(`dashboard.presets.${preset}`)}
             </button>
@@ -711,6 +783,7 @@ export function Dashboard() {
     null,
   );
   const [dragOrder, setDragOrder] = useState<DashboardItemId[] | null>(null);
+  const [containerWidth, setContainerWidth] = useState(1200);
   const dashboardRef = useRef<HTMLDivElement | null>(null);
   const zoomSaveTimer = useRef<ReturnType<typeof setTimeout> | undefined>(
     undefined,
@@ -719,6 +792,21 @@ export function Dashboard() {
   useEffect(() => {
     const id = setInterval(() => tick((x) => x + 1), 30_000);
     return () => clearInterval(id);
+  }, []);
+
+  useEffect(() => {
+    const dashboard = dashboardRef.current;
+    if (!dashboard) return;
+    const syncWidth = (width: number) => {
+      if (width > 0) setContainerWidth(width);
+    };
+    syncWidth(dashboard.clientWidth);
+    const observer = new ResizeObserver((entries) => {
+      const width = entries[0]?.contentRect.width;
+      if (typeof width === "number") syncWidth(width);
+    });
+    observer.observe(dashboard);
+    return () => observer.disconnect();
   }, []);
 
   const setZoomLevel = (nextZoom: number) => {
@@ -996,8 +1084,12 @@ export function Dashboard() {
             : widget,
       );
       flushSync(() => setDragOrder([...order]));
-      if (sourceElement && sourceRect) animateElement(sourceElement, sourceRect);
-      if (targetElement && targetRect) animateElement(targetElement, targetRect);
+      const nextSourceElement = findWidgetElement(id);
+      const nextTargetElement = findWidgetElement(targetId);
+      if (nextSourceElement && sourceRect)
+        animateElement(nextSourceElement, sourceRect);
+      if (nextTargetElement && targetRect)
+        animateElement(nextTargetElement, targetRect);
       lastTarget = targetId;
     };
     const finish = (pointerEvent: PointerEvent) => {
@@ -1048,26 +1140,32 @@ export function Dashboard() {
     );
     const item = widget?.parentElement;
     const grid = item?.parentElement;
+    const container = dashboardRef.current;
     if (!widget || !item || !grid) return;
 
     const startRect = item.getBoundingClientRect();
-    const gridRect = grid.getBoundingClientRect();
+    const containerRect = (container ?? grid).getBoundingClientRect();
     const gridStyle = getComputedStyle(grid);
-    const tracks = gridStyle.gridTemplateColumns
-      .split(" ")
-      .map((track) => Number.parseFloat(track))
-      .filter(Number.isFinite);
-    const columnCount = Math.max(1, tracks.length);
+    const isMetric = metricWidgetIds.has(id);
+    const columnCount = isMetric
+      ? Math.max(1, Math.min(6, Math.floor((containerWidth + 8) / (180 + 8))))
+      : Math.max(1, Math.min(4, Math.floor((containerWidth + 8) / (280 + 8))));
     const scale =
       Math.max(50, Math.min(150, settings.dashboardZoom || 100)) / 100;
-    const columnGap = (Number.parseFloat(gridStyle.columnGap) || 0) * scale;
-    const cellWidth = tracks.length ? tracks[0] * scale : gridRect.width;
+    const columnGap = (Number.parseFloat(gridStyle.columnGap) || 8) * scale;
+    const cellWidth = Math.max(
+      160 * scale,
+      (containerRect.width - Math.max(0, columnCount - 1) * columnGap) /
+        columnCount,
+    );
     const startX = event.clientX;
     const startY = event.clientY;
     let nextWidth = dimensionsFor(id).width;
     let nextHeight = dimensionsFor(id).height;
     const heightSnapCandidates = Array.from(
-      grid.querySelectorAll<HTMLElement>("[data-dashboard-drop-id]"),
+      (container ?? grid).querySelectorAll<HTMLElement>(
+        "[data-dashboard-drop-id]",
+      ),
     )
       .filter((element) => element !== item)
       .flatMap((element) => {
@@ -1118,9 +1216,9 @@ export function Dashboard() {
       if (pointerEvent.pointerId !== event.pointerId) return;
       pointerEvent.preventDefault();
       const visualWidth = Math.max(
-        Math.min(160, gridRect.width),
+        Math.min(160, containerRect.width),
         Math.min(
-          gridRect.right - startRect.left,
+          containerRect.right - startRect.left,
           startRect.width + pointerEvent.clientX - startX,
         ),
       );
@@ -1548,20 +1646,20 @@ export function Dashboard() {
               {t("nav.variables")}
             </button>
           </div>
-          <div className="grid min-h-0 flex-1 grid-cols-2 gap-2">
+          <div className="grid min-h-0 flex-1 grid-cols-2 gap-1.5">
             <button
               type="button"
               disabled={creatingMarker}
               onClick={() => void handleCreateStreamMarker()}
-              className="flex items-center gap-2 rounded-xl border border-line bg-white/2 px-3 py-2 text-left text-xs font-medium text-zinc-200 transition hover:border-accent/40 hover:bg-accent-soft hover:text-accent disabled:opacity-50"
+              className="flex items-center gap-1.5 rounded-xl border border-line bg-white/2 px-2.5 py-2 text-left text-[11px] font-medium text-zinc-200 transition hover:border-accent/40 hover:bg-accent-soft hover:text-accent disabled:opacity-50"
             >
               <Flag size={13} className="shrink-0 text-accent" />
-              <span className="truncate">{t("stream.addMarker")}</span>
+              <span className="truncate">{t("dashboard.quickActions.marker")}</span>
             </button>
             <button
               type="button"
               onClick={handleToggleGiveaway}
-              className="flex items-center gap-2 rounded-xl border border-line bg-white/2 px-3 py-2 text-left text-xs font-medium text-zinc-200 transition hover:border-accent/40 hover:bg-accent-soft hover:text-accent"
+              className="flex items-center gap-1.5 rounded-xl border border-line bg-white/2 px-2.5 py-2 text-left text-[11px] font-medium text-zinc-200 transition hover:border-accent/40 hover:bg-accent-soft hover:text-accent"
             >
               <Gift size={13} className="shrink-0 text-accent" />
               <span className="truncate">
@@ -1582,7 +1680,7 @@ export function Dashboard() {
                 );
                 toast.success(t("dashboard.quickActions.channelCopied"));
               }}
-              className="flex items-center gap-2 rounded-xl border border-line bg-white/2 px-3 py-2 text-left text-xs font-medium text-zinc-200 transition hover:border-accent/40 hover:bg-accent-soft hover:text-accent"
+              className="flex items-center gap-1.5 rounded-xl border border-line bg-white/2 px-2.5 py-2 text-left text-[11px] font-medium text-zinc-200 transition hover:border-accent/40 hover:bg-accent-soft hover:text-accent"
             >
               <Copy size={13} className="shrink-0 text-accent" />
               <span className="truncate">
@@ -1595,7 +1693,7 @@ export function Dashboard() {
                 clearChat();
                 toast.success(t("dashboard.quickActions.chatCleared"));
               }}
-              className="flex items-center gap-2 rounded-xl border border-line bg-white/2 px-3 py-2 text-left text-xs font-medium text-zinc-200 transition hover:border-accent/40 hover:bg-accent-soft hover:text-accent"
+              className="flex items-center gap-1.5 rounded-xl border border-line bg-white/2 px-2.5 py-2 text-left text-[11px] font-medium text-zinc-200 transition hover:border-accent/40 hover:bg-accent-soft hover:text-accent"
             >
               <Trash2 size={13} className="shrink-0 text-accent" />
               <span className="truncate">
@@ -1608,7 +1706,7 @@ export function Dashboard() {
                 void runtime.reconnect();
                 toast.success(t("dashboard.quickActions.reconnecting"));
               }}
-              className="flex items-center gap-2 rounded-xl border border-line bg-white/2 px-3 py-2 text-left text-xs font-medium text-zinc-200 transition hover:border-accent/40 hover:bg-accent-soft hover:text-accent"
+              className="flex items-center gap-1.5 rounded-xl border border-line bg-white/2 px-2.5 py-2 text-left text-[11px] font-medium text-zinc-200 transition hover:border-accent/40 hover:bg-accent-soft hover:text-accent"
             >
               <RefreshCw size={13} className="shrink-0 text-accent" />
               <span className="truncate">
@@ -1618,7 +1716,7 @@ export function Dashboard() {
             <button
               type="button"
               onClick={() => setPage("stream")}
-              className="flex items-center gap-2 rounded-xl border border-line bg-white/2 px-3 py-2 text-left text-xs font-medium text-zinc-200 transition hover:border-accent/40 hover:bg-accent-soft hover:text-accent"
+              className="flex items-center gap-1.5 rounded-xl border border-line bg-white/2 px-2.5 py-2 text-left text-[11px] font-medium text-zinc-200 transition hover:border-accent/40 hover:bg-accent-soft hover:text-accent"
             >
               <RadioTower size={13} className="shrink-0 text-accent" />
               <span className="truncate">{t("nav.stream")}</span>
@@ -1647,8 +1745,20 @@ export function Dashboard() {
           </div>
           <div className="min-h-0 flex-1 space-y-2 overflow-y-auto">
             {counters.length === 0 ? (
-              <div className="py-6 text-center text-[11px] text-muted">
-                {t("variables.noCustomVariables")}
+              <div className="grid h-full place-items-center text-center">
+                <div className="space-y-2">
+                  <div className="text-[11px] text-muted">
+                    {t("variables.noCustomVariables")}
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => setPage("variables")}
+                    className="inline-flex items-center gap-1 rounded-lg border border-accent/35 bg-accent-soft px-2.5 py-1 text-[11px] font-medium text-accent transition hover:brightness-110"
+                  >
+                    <Plus size={12} />
+                    {t("variables.addCustom")}
+                  </button>
+                </div>
               </div>
             ) : (
               counters.map((item) => (
@@ -2111,6 +2221,27 @@ export function Dashboard() {
   const visibleContentWidgets = displayedWidgets.filter(
     (id) => !metricWidgetIds.has(id),
   );
+  const maxMetricCols = Math.max(
+    1,
+    Math.min(6, Math.floor((containerWidth + 8) / (180 + 8))),
+  );
+  const maxContentCols = Math.max(
+    1,
+    Math.min(4, Math.floor((containerWidth + 8) / (280 + 8))),
+  );
+  const metricRows = packMetricRows(visibleMetricWidgets, maxMetricCols);
+  const contentRows = packContentRows(
+    visibleContentWidgets,
+    maxContentCols,
+    dimensionsFor,
+  );
+  const activePreset = sameWidgetList(widgets, defaultDashboardWidgets)
+    ? "standard"
+    : sameWidgetList(widgets, cockpitPresetWidgets)
+      ? "cockpit"
+      : sameWidgetList(widgets, metricsPresetWidgets)
+        ? "metrics"
+        : null;
 
   return (
     <div
@@ -2157,6 +2288,7 @@ export function Dashboard() {
         <CustomizeToolbar
           widgets={hiddenWidgets}
           zoom={zoom}
+          activePreset={activePreset}
           onShow={showWidget}
           onApplyPreset={applyPreset}
           onZoomChange={setZoomLevel}
@@ -2165,94 +2297,109 @@ export function Dashboard() {
           onReset={resetDashboard}
         />
       )}
-      {visibleMetricWidgets.length > 0 && (
-        <div
-          className="dashboard-metrics grid gap-2"
-          style={{
-            gridTemplateColumns:
-              "repeat(auto-fit, minmax(min(100%, 240px), 1fr))",
-          }}
-        >
-          {visibleMetricWidgets.map((id) => {
-            const label =
-              availableWidgets.find((widget) => widget.id === id)?.label ??
-              t("dashboard.widget");
-            const dimensions = dimensionsFor(id);
+      {metricRows.length > 0 && (
+        <div className="dashboard-metrics space-y-2">
+          {metricRows.map((row, rowIndex) => {
+            const rowHeight = Math.max(
+              ...row.map((id) => dimensionsFor(id).height),
+            );
             return (
               <div
-                key={id}
-                data-dashboard-drop-id={id}
-                className={cn(
-                  "rounded-xl transition",
-                  widgetLayoutClass(dimensions.width),
-                  draggedWidget === id && "ring-2 ring-accent/60",
-                )}
-                style={{ height: dimensions.height }}
+                key={`metric-row-${rowIndex}`}
+                className="grid gap-2"
+                style={{
+                  gridTemplateColumns: `repeat(${row.length}, minmax(0, 1fr))`,
+                }}
               >
-                <DashboardWidget
-                  id={id}
-                  editing={editing}
-                  label={label}
-                  width={dimensions.width}
-                  onHide={() => hideWidget(id)}
-                  onMoveStart={(event) => startWidgetMove(event, id)}
-                  onResizeStart={(event) => startWidgetResize(event, id)}
-                >
-                  {renderWidget(id)}
-                </DashboardWidget>
+                {row.map((id) => {
+                  const label =
+                    availableWidgets.find((widget) => widget.id === id)
+                      ?.label ?? t("dashboard.widget");
+                  const dimensions = dimensionsFor(id);
+                  return (
+                    <div
+                      key={id}
+                      data-dashboard-drop-id={id}
+                      className={cn(
+                        "min-w-0 rounded-xl transition",
+                        draggedWidget === id && "ring-2 ring-accent/60",
+                      )}
+                      style={{ height: rowHeight }}
+                    >
+                      <DashboardWidget
+                        id={id}
+                        editing={editing}
+                        label={label}
+                        width={dimensions.width}
+                        onHide={() => hideWidget(id)}
+                        onMoveStart={(event) => startWidgetMove(event, id)}
+                        onResizeStart={(event) => startWidgetResize(event, id)}
+                      >
+                        {renderWidget(id)}
+                      </DashboardWidget>
+                    </div>
+                  );
+                })}
               </div>
             );
           })}
         </div>
       )}
-      {visibleContentWidgets.length > 0 && (
+      {contentRows.length > 0 && (
         <div
           className={cn(
-            "dashboard-content grid grid-flow-row-dense gap-2",
-            visibleMetricWidgets.length > 0 && "mt-2",
+            "dashboard-content space-y-2",
+            metricRows.length > 0 && "mt-2",
           )}
-          style={{
-            gridTemplateColumns:
-              "repeat(auto-fit, minmax(min(100%, 260px), 1fr))",
-          }}
         >
-          {visibleContentWidgets.map((id) => {
-            const label =
-              availableWidgets.find((widget) => widget.id === id)?.label ??
-              t("dashboard.widget");
-            const dimensions = dimensionsFor(id);
-            return (
-              <div
-                key={id}
-                data-dashboard-drop-id={id}
-                className={cn(
-                  "rounded-xl transition",
-                  widgetLayoutClass(dimensions.width),
-                  draggedWidget === id && "ring-2 ring-accent/60",
-                )}
-                style={{ height: dimensions.height }}
-              >
-                <DashboardWidget
-                  id={id}
-                  editing={editing}
-                  label={label}
-                  width={dimensions.width}
-                  showWidthControls
-                  onWidthChange={(w) => setWidgetWidth(id, w)}
-                  onHide={() => hideWidget(id)}
-                  onMoveStart={(event) => startWidgetMove(event, id)}
-                  onResizeStart={(event) => startWidgetResize(event, id)}
-                  onDelete={
-                    isBrowserWidget(id)
-                      ? () => deleteBrowserSource(id)
-                      : undefined
-                  }
-                >
-                  {renderWidget(id)}
-                </DashboardWidget>
-              </div>
-            );
-          })}
+          {contentRows.map((row, rowIndex) => (
+            <div
+              key={`content-row-${rowIndex}`}
+              className="grid gap-2"
+              style={{
+                gridTemplateColumns: row.items
+                  .map((item) => `minmax(0, ${item.units}fr)`)
+                  .join(" "),
+              }}
+            >
+              {row.items.map(({ id }) => {
+                const label =
+                  availableWidgets.find((widget) => widget.id === id)?.label ??
+                  t("dashboard.widget");
+                const dimensions = dimensionsFor(id);
+                return (
+                  <div
+                    key={id}
+                    data-dashboard-drop-id={id}
+                    className={cn(
+                      "min-w-0 rounded-xl transition",
+                      draggedWidget === id && "ring-2 ring-accent/60",
+                    )}
+                    style={{ height: row.height }}
+                  >
+                    <DashboardWidget
+                      id={id}
+                      editing={editing}
+                      label={label}
+                      width={dimensions.width}
+                      showWidthControls
+                      onWidthChange={(w) => setWidgetWidth(id, w)}
+                      onHide={() => hideWidget(id)}
+                      onMoveStart={(event) => startWidgetMove(event, id)}
+                      onResizeStart={(event) => startWidgetResize(event, id)}
+                      onDelete={
+                        isBrowserWidget(id)
+                          ? () => deleteBrowserSource(id)
+                          : undefined
+                      }
+                    >
+                      {renderWidget(id)}
+                    </DashboardWidget>
+                  </div>
+                );
+              })}
+            </div>
+          ))}
         </div>
       )}
       {widgets.length === 0 && (
