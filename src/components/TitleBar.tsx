@@ -341,36 +341,36 @@ export function TitleBar({ setup = false }: { setup?: boolean }) {
           data-tauri-drag-region="false"
           role="menu"
           aria-label={t("titleBar.closeOptions")}
-          className="fixed z-50 w-52 rounded-xl border border-white/10 bg-[#14161b]/95 p-1.5 text-zinc-200 shadow-2xl shadow-black/60 backdrop-blur-2xl"
-          style={{ right: menuPos.right, top: menuPos.top }}
+          className="fixed z-50 w-max min-w-44 max-w-xs space-y-0.5 rounded-2xl border border-white/10 bg-linear-to-br from-[#191c24]/95 to-[#0e1014]/98 p-1.5 text-[11px] text-zinc-200 shadow-[0_20px_52px_rgba(0,0,0,0.72),inset_0_1px_0_rgba(255,255,255,0.09)] backdrop-blur-2xl"
+          style={{ right: menuPos.right + 6, top: menuPos.top + 2 }}
         >
           <button
             type="button"
             role="menuitem"
-            className="flex w-full items-center gap-2 rounded-lg px-2.5 py-1.5 text-left text-[10px] transition hover:bg-white/6"
+            className="flex w-full items-center gap-2.5 rounded-xl border border-transparent px-2.5 py-1.5 text-left text-[11px] transition hover:border-white/8 hover:bg-white/[0.06]"
             onClick={() => {
               setCloseMenuOpen(false);
               void window?.hide();
             }}
           >
-            <span className="grid size-4 shrink-0 place-items-center text-accent">
-              <PanelBottomClose size={12} />
+            <span className="grid size-5 shrink-0 place-items-center rounded-lg border border-white/8 bg-white/[0.04] text-accent shadow-[inset_0_1px_0_rgba(255,255,255,0.06)]">
+              <PanelBottomClose size={11} />
             </span>
-            <span className="truncate font-medium">{t("titleBar.closeToTray")}</span>
+            <span className="whitespace-nowrap font-medium">{t("titleBar.closeToTray")}</span>
           </button>
           <button
             type="button"
             role="menuitem"
-            className="flex w-full items-center gap-2 rounded-lg px-2.5 py-1.5 text-left text-[10px] transition hover:bg-red-400/10"
+            className="flex w-full items-center gap-2.5 rounded-xl border border-transparent px-2.5 py-1.5 text-left text-[11px] transition hover:border-red-400/20 hover:bg-red-400/10"
             onClick={() => {
               setCloseMenuOpen(false);
               if (isTauri()) void invoke("app_quit");
             }}
           >
-            <span className="grid size-4 shrink-0 place-items-center text-red-300">
-              <Power size={12} />
+            <span className="grid size-5 shrink-0 place-items-center rounded-lg border border-red-400/15 bg-red-400/10 text-red-300 shadow-[inset_0_1px_0_rgba(255,255,255,0.05)]">
+              <Power size={11} />
             </span>
-            <span className="truncate font-medium text-red-200">{t("titleBar.quitApp")}</span>
+            <span className="whitespace-nowrap font-medium text-red-200">{t("titleBar.quitApp")}</span>
           </button>
         </div>,
         document.body,
