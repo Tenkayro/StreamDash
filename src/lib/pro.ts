@@ -22,6 +22,32 @@ export async function openProPurchasePage(): Promise<void> {
   }
 }
 
+export function isCloudServerUnavailableError(rawError?: string): boolean {
+  if (!rawError) return false;
+  const code = rawError.trim().toLowerCase();
+  return (
+    code.includes("pro_service_unavailable") ||
+    code.includes("failed to fetch") ||
+    code.includes("network") ||
+    code.includes("timed out") ||
+    code.includes("timeout") ||
+    code.includes("connection refused") ||
+    code.includes("error sending request") ||
+    code.includes("unreachable") ||
+    code.includes("dns") ||
+    code.includes("502") ||
+    code.includes("503") ||
+    code.includes("504")
+  );
+}
+
+export function formatCloudError(rawError: string, t: (key: string) => string): string {
+  if (isCloudServerUnavailableError(rawError)) {
+    return t("pro.offlineDetail");
+  }
+  return rawError;
+}
+
 export function mapProError(rawError: string, t: (key: string) => string): string {
   const code = rawError.trim().toLowerCase();
   if (code.includes("invalid_license_key") || code.includes("missing_license_key")) {
@@ -36,7 +62,7 @@ export function mapProError(rawError: string, t: (key: string) => string): strin
   if (code.includes("rate_limited")) {
     return t("pro.errors.rateLimited");
   }
-  if (code.includes("payhip") || code.includes("pro_service_unavailable")) {
+  if (code.includes("payhip") || isCloudServerUnavailableError(rawError)) {
     return t("pro.errors.serviceUnavailable");
   }
   return rawError || t("pro.errors.generic");

@@ -27,7 +27,12 @@ import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { toast } from "sonner";
 import { Badge, Button, Card, Toggle } from "../ui";
-import { mapProError, openProPurchasePage } from "../../lib/pro";
+import {
+  formatCloudError,
+  isCloudServerUnavailableError,
+  mapProError,
+  openProPurchasePage,
+} from "../../lib/pro";
 import { parseRateLimitWaitSeconds } from "../../lib/cloud-sync-limiter";
 import { errorMessage } from "../../lib/utils";
 import { useRuntime } from "../../services/runtime-context";
@@ -121,7 +126,14 @@ export function ProCloudSection() {
     cloudSync.cooldownUntil && cloudSync.cooldownUntil > nowMs
       ? Math.max(1, Math.ceil((cloudSync.cooldownUntil - nowMs) / 1000))
       : 0;
-  const syncButtonsDisabled = syncBusy || cloudSync.phase === "syncing" || cooldownSeconds > 0;
+  const serverOffline = Boolean(
+    isCloudServerUnavailableError(entitlements.error) ||
+      isCloudServerUnavailableError(cloudSync.error) ||
+      isCloudServerUnavailableError(supportTicket?.error) ||
+      isCloudServerUnavailableError(activateError),
+  );
+  const syncButtonsDisabled =
+    serverOffline || syncBusy || cloudSync.phase === "syncing" || cooldownSeconds > 0;
 
   const handleDismissTicket = () => {
     if (!ticketFingerprint || hasPending || !twitch.userId) return;
@@ -137,7 +149,7 @@ export function ProCloudSection() {
 
   useEffect(() => {
     if (!twitchConnected) return;
-    void runtime.refreshProEntitlements();
+    void runtime.refreshProEntitlements().catch(() => undefined);
     void runtime.refreshSupportTicket(false);
   }, [twitchConnected, twitch.userId, runtime]);
 
@@ -234,6 +246,41 @@ export function ProCloudSection() {
       </div>
 
       <Card className="overflow-hidden">
+        {serverOffline && (
+          <div className="flex flex-wrap items-center justify-between gap-3 border-b border-amber-500/25 bg-amber-500/10 px-5 py-3 text-xs text-amber-100">
+            <div className="flex min-w-0 flex-1 items-center gap-2.5">
+              <CloudOff size={15} className="shrink-0 text-amber-300" />
+              <div className="min-w-0">
+                <div className="font-semibold text-amber-200">{t("pro.offlineTitle")}</div>
+                <div className="text-[11px] text-amber-200/80">{t("pro.offlineDetail")}</div>
+              </div>
+            </div>
+            <Button
+              type="button"
+              disabled={entitlements.loading || syncBusy}
+              onClick={() => {
+                setSyncBusy(true);
+                setActivateError(undefined);
+                void runtime
+                  .refreshProEntitlements()
+                  .then((ent) => {
+                    if (ent.pro) {
+                      return runtime.syncCloudNow("smart").catch(() => undefined);
+                    }
+                    return undefined;
+                  })
+                  .catch(() => undefined)
+                  .finally(() => setSyncBusy(false));
+              }}
+            >
+              <RefreshCw
+                size={13}
+                className={entitlements.loading || syncBusy ? "animate-spin" : ""}
+              />
+              {t("pro.retryConnection")}
+            </Button>
+          </div>
+        )}
         {/* Step / License Block */}
         <div
           data-search-label={`${t("settings.proCloud")} ${t("pro.title")}`}
@@ -354,7 +401,7 @@ export function ProCloudSection() {
                     <Button
                       type="submit"
                       variant="primary"
-                      disabled={activating || !licenseKey.trim()}
+                      disabled={serverOffline || activating || !licenseKey.trim()}
                     >
                       {activating ? t("pro.activating") : t("pro.activateButton")}
                     </Button>
@@ -404,6 +451,8 @@ export function ProCloudSection() {
                   <span className="text-sm font-medium">{t("profiles.cloud.title")}</span>
                   {!twitchConnected ? (
                     <Badge tone="neutral">{t("profiles.cloud.statusDisconnected")}</Badge>
+                  ) : serverOffline ? (
+                    <Badge tone="amber">{t("pro.offlineBadge")}</Badge>
                   ) : !entitlements.pro ? (
                     <Badge tone="neutral">{t("pro.lockedBadge")}</Badge>
                   ) : cloudSync.phase === "syncing" ? (
@@ -425,24 +474,26 @@ export function ProCloudSection() {
                 <div className="mt-0.5 text-xs text-muted">
                   {!twitchConnected
                     ? t("profiles.cloud.connectPrompt")
-                    : !entitlements.pro
-                      ? t("pro.cloudGateHint", { account: twitch.account ?? "" })
-                      : cloudSync.phase === "error" && cloudSync.error
-                        ? cloudSync.error
-                        : cloudTimestamp
-                          ? t("profiles.cloud.metaSummary", {
-                              account: twitch.account ?? "",
-                              time: new Date(cloudTimestamp).toLocaleString([], {
-                                dateStyle: "short",
-                                timeStyle: "short",
-                              }),
-                              size: cloudBytes
-                                ? `${Math.max(1, Math.round(cloudBytes / 1024))} KB`
-                                : "—",
-                            })
-                          : t("profiles.cloud.connectedHint", {
-                              account: twitch.account ?? "",
-                            })}
+                    : serverOffline
+                      ? t("pro.offlineDetail")
+                      : !entitlements.pro
+                        ? t("pro.cloudGateHint", { account: twitch.account ?? "" })
+                        : cloudSync.phase === "error" && cloudSync.error
+                          ? formatCloudError(cloudSync.error, t)
+                          : cloudTimestamp
+                            ? t("profiles.cloud.metaSummary", {
+                                account: twitch.account ?? "",
+                                time: new Date(cloudTimestamp).toLocaleString([], {
+                                  dateStyle: "short",
+                                  timeStyle: "short",
+                                }),
+                                size: cloudBytes
+                                  ? `${Math.max(1, Math.round(cloudBytes / 1024))} KB`
+                                  : "—",
+                              })
+                            : t("profiles.cloud.connectedHint", {
+                                account: twitch.account ?? "",
+                              })}
                 </div>
               </div>
             </div>

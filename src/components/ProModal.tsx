@@ -15,7 +15,11 @@ import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { toast } from "sonner";
 import { Badge, Button, Card } from "./ui";
-import { mapProError, openProPurchasePage } from "../lib/pro";
+import {
+  isCloudServerUnavailableError,
+  mapProError,
+  openProPurchasePage,
+} from "../lib/pro";
 import { errorMessage } from "../lib/utils";
 import { useRuntime } from "../services/runtime-context";
 import { useAppStore } from "../stores/app-store";
@@ -272,7 +276,11 @@ function ProModalContent({ onClose }: { onClose: () => void }) {
                   <Button
                     type="submit"
                     variant="primary"
-                    disabled={busy || !licenseKey.trim()}
+                    disabled={
+                      busy ||
+                      !licenseKey.trim() ||
+                      isCloudServerUnavailableError(entitlements.error)
+                    }
                   >
                     {busy ? t("pro.activating") : t("pro.activateButton")}
                   </Button>
