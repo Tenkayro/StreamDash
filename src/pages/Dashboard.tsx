@@ -359,14 +359,14 @@ function DashboardWidget({
     <div
       data-dashboard-widget={id}
       className={cn(
-        "relative h-full min-w-0",
-        editing && "ring-1 ring-accent/25",
+        "relative h-full min-w-0 rounded-[18px]",
+        editing && "ring-1 ring-accent/30",
       )}
     >
       {editing && (
-        <div className="absolute -top-2 right-2 z-20 flex items-center rounded-md border border-line bg-raised shadow-lg">
+        <div className="absolute -top-2.5 right-2.5 z-20 flex items-center gap-0.5 rounded-full border border-white/12 bg-[#14161c]/92 px-1 py-0.5 shadow-[0_6px_18px_rgba(0,0,0,0.55),inset_0_1px_0_rgba(255,255,255,0.08)] backdrop-blur-xl">
           {showWidthControls && onWidthChange && (
-            <div className="flex items-center border-r border-line px-1">
+            <div className="flex items-center border-r border-white/10 pr-1 mr-0.5">
               {(
                 [
                   ["single", "1x"],
@@ -379,7 +379,7 @@ function DashboardWidget({
                   type="button"
                   onClick={() => onWidthChange(w)}
                   className={cn(
-                    "rounded px-1.5 py-0.5 text-[9.5px] font-semibold transition",
+                    "rounded-full px-1.5 py-0.5 text-[9.5px] font-semibold transition",
                     width === w
                       ? "bg-accent-soft text-accent"
                       : "text-zinc-500 hover:text-zinc-200",
@@ -395,18 +395,18 @@ function DashboardWidget({
             title={t("dashboard.moveWidget", { label })}
             aria-label={t("dashboard.moveWidget", { label })}
             onPointerDown={onMoveStart}
-            className="grid size-6 touch-none cursor-grab place-items-center text-zinc-500 outline-none hover:bg-white/5 hover:text-zinc-200 active:cursor-grabbing"
+            className="grid size-5.5 touch-none cursor-grab place-items-center rounded-full text-zinc-400 outline-none hover:bg-white/10 hover:text-zinc-100 active:cursor-grabbing"
           >
-            <GripVertical size={12} />
+            <GripVertical size={11} />
           </button>
           <button
             type="button"
             title={t("dashboard.hideWidget", { label })}
             aria-label={t("dashboard.hideWidget", { label })}
             onClick={onHide}
-            className="grid size-6 place-items-center border-l border-line text-zinc-500 hover:bg-white/5 hover:text-zinc-200"
+            className="grid size-5.5 place-items-center rounded-full text-zinc-400 hover:bg-white/10 hover:text-zinc-100"
           >
-            <EyeOff size={12} />
+            <EyeOff size={11} />
           </button>
           {onDelete && (
             <button
@@ -414,9 +414,9 @@ function DashboardWidget({
               title={t("dashboard.deleteWidget", { label })}
               aria-label={t("dashboard.deleteWidget", { label })}
               onClick={onDelete}
-              className="grid size-6 place-items-center border-l border-line text-zinc-500 hover:bg-red-400/10 hover:text-red-300"
+              className="grid size-5.5 place-items-center rounded-full text-zinc-400 hover:bg-red-400/15 hover:text-red-300"
             >
-              <Trash2 size={12} />
+              <Trash2 size={11} />
             </button>
           )}
         </div>
@@ -428,9 +428,9 @@ function DashboardWidget({
           title={t("dashboard.resizeWidget", { label })}
           aria-label={t("dashboard.resizeWidget", { label })}
           onPointerDown={onResizeStart}
-          className="absolute bottom-0 right-0 z-20 grid size-7 touch-none cursor-se-resize place-items-center rounded-tl-md border-l border-t border-line bg-raised/95 text-accent outline-none hover:bg-raised"
+          className="absolute bottom-2 right-2 z-20 grid size-6 touch-none cursor-se-resize place-items-center rounded-full border border-white/12 bg-[#14161c]/90 text-accent shadow-[0_4px_12px_rgba(0,0,0,0.5),inset_0_1px_0_rgba(255,255,255,0.08)] backdrop-blur-md outline-none transition hover:border-accent/45 hover:bg-accent-soft"
         >
-          <MoveDiagonal2 size={12} />
+          <MoveDiagonal2 size={11} />
         </button>
       )}
     </div>
@@ -563,10 +563,10 @@ function CustomizeToolbar({
               type="button"
               onClick={() => onApplyPreset(preset)}
               className={cn(
-                "rounded-md border px-2 py-1 text-[10.5px] font-medium transition",
+                "rounded-full border px-2.5 py-1 text-[10.5px] font-medium transition",
                 activePreset === preset
-                  ? "border-accent/40 bg-accent-soft text-accent"
-                  : "border-line bg-white/3 text-zinc-300 hover:border-accent/40 hover:text-accent",
+                  ? "border-accent/40 bg-accent-soft text-accent shadow-[inset_0_1px_0_rgba(255,255,255,0.08)]"
+                  : "border-white/[0.08] bg-white/[0.03] text-zinc-300 hover:border-accent/40 hover:text-accent",
               )}
             >
               {t(`dashboard.presets.${preset}`)}
@@ -575,12 +575,12 @@ function CustomizeToolbar({
         </div>
 
         <div className="flex flex-wrap items-center gap-1.5">
-          <div className="inline-flex items-center rounded-md border border-line bg-black/20 p-0.5">
+          <div className="inline-flex items-center rounded-full border border-white/[0.08] bg-black/30 p-0.5 shadow-[inset_2px_2px_5px_rgba(0,0,0,0.5)]">
             <button
               type="button"
               onClick={() => onZoomChange(Math.max(50, zoom - 10))}
               title={t("dashboard.zoomOut")}
-              className="grid size-6 place-items-center rounded text-zinc-400 hover:bg-white/5 hover:text-zinc-100"
+              className="grid size-6 place-items-center rounded-full text-zinc-400 hover:bg-white/8 hover:text-zinc-100"
             >
               <ZoomOut size={12} />
             </button>
@@ -595,7 +595,7 @@ function CustomizeToolbar({
               type="button"
               onClick={() => onZoomChange(Math.min(150, zoom + 10))}
               title={t("dashboard.zoomIn")}
-              className="grid size-6 place-items-center rounded text-zinc-400 hover:bg-white/5 hover:text-zinc-100"
+              className="grid size-6 place-items-center rounded-full text-zinc-400 hover:bg-white/8 hover:text-zinc-100"
             >
               <ZoomIn size={12} />
             </button>
@@ -605,7 +605,7 @@ function CustomizeToolbar({
             type="button"
             title={t("dashboard.addBrowserSource")}
             onClick={onAddBrowser}
-            className="inline-flex h-7 shrink-0 items-center gap-1.5 rounded-md border border-line bg-black/15 px-2 text-[10px] text-zinc-400 transition hover:border-accent/50 hover:text-accent"
+            className="inline-flex h-7 shrink-0 items-center gap-1.5 rounded-full border border-white/[0.08] bg-black/25 px-2.5 text-[10px] text-zinc-300 transition hover:border-accent/50 hover:text-accent"
           >
             <Plus size={11} />
             {t("dashboard.browserSource")}
@@ -616,7 +616,7 @@ function CustomizeToolbar({
             title={t("dashboard.resetDashboard")}
             aria-label={t("dashboard.resetDashboard")}
             onClick={onReset}
-            className="grid size-7 shrink-0 place-items-center rounded-md border border-line bg-black/15 text-zinc-400 hover:bg-white/5 hover:text-zinc-200"
+            className="grid size-7 shrink-0 place-items-center rounded-full border border-white/[0.08] bg-black/25 text-zinc-400 hover:bg-white/8 hover:text-zinc-200"
           >
             <RotateCcw size={12} />
           </button>
@@ -628,7 +628,7 @@ function CustomizeToolbar({
         <div className="flex shrink-0 items-center gap-1.5 text-[11px] font-medium text-zinc-500">
           <EyeOff size={12} />
           {t("dashboard.hidden")}{" "}
-          <span className="rounded bg-white/5 px-1.5 py-0.5 text-[9px] tabular-nums text-zinc-500">
+          <span className="rounded-full bg-white/5 px-1.5 py-0.5 text-[9px] tabular-nums text-zinc-500">
             {widgets.length}
           </span>
         </div>
@@ -637,7 +637,7 @@ function CustomizeToolbar({
             widgets.map((widget) => (
               <div
                 key={widget.id}
-                className="inline-flex h-6.5 overflow-hidden rounded-md border border-line bg-black/20"
+                className="inline-flex h-6.5 overflow-hidden rounded-full border border-white/[0.08] bg-black/25 shadow-[inset_1px_1px_4px_rgba(0,0,0,0.45)] transition hover:border-accent/35"
               >
                 <button
                   type="button"
@@ -2321,7 +2321,7 @@ export function Dashboard() {
                       key={id}
                       data-dashboard-drop-id={id}
                       className={cn(
-                        "min-w-0 rounded-xl transition",
+                        "min-w-0 rounded-[18px] transition",
                         draggedWidget === id && "ring-2 ring-accent/60",
                       )}
                       style={{ height: rowHeight }}

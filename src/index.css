@@ -357,7 +357,7 @@ button:focus-visible,
 .app-workspace { padding: 10px 0 0; gap: 12px; }
 .app-main { scrollbar-gutter: stable; }
 .app-content { padding: 16px 20px; }
-.app-bottom-fade { background: linear-gradient(to top, #0c0d10, transparent); }
+.app-bottom-fade { background: linear-gradient(to top, rgba(12, 13, 16, 0.72), transparent); }
 .app-titlebar {
   height: 44px;
   padding-left: 22px;
