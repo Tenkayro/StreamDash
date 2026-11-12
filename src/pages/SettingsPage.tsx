@@ -8,6 +8,7 @@ import {
   Bell,
   CircleDollarSign,
   Clock3,
+  Crown,
   Database,
   DatabaseBackup,
   EyeOff,
@@ -18,7 +19,6 @@ import {
   Languages,
   Layers,
   LayoutDashboard,
-  LifeBuoy,
   ListFilter,
   Maximize2,
   MessageSquare,
@@ -43,8 +43,8 @@ import {
 import { useEffect, useLayoutEffect, useRef, useState, type ReactNode } from "react";
 import { toast } from "sonner";
 import { Button, Card, Toggle } from "../components/ui";
+import { ProCloudSection } from "../components/settings/ProCloudSection";
 import { ProfilesSection } from "../components/settings/ProfilesSection";
-import { SupportSection } from "../components/settings/SupportSection";
 import { defaultDashboardWidgets, useAppStore } from "../stores/app-store";
 import { saveSetting } from "../services/native";
 import { errorMessage, isTauri } from "../lib/utils";
@@ -66,6 +66,7 @@ const eventOptions: Array<{ id: ActivityType; label: string; icon: LucideIcon }>
 ];
 
 const settingsSections: Array<{ id: string; label: string; icon: LucideIcon }> = [
+  { id: "pro", label: "proCloud", icon: Crown },
   { id: "profiles", label: "profiles", icon: Layers },
   { id: "general", label: "general", icon: Settings2 },
   { id: "appearance", label: "appearance", icon: Palette },
@@ -73,7 +74,6 @@ const settingsSections: Array<{ id: string; label: string; icon: LucideIcon }> =
   { id: "chat", label: "chat", icon: MessageSquare },
   { id: "events", label: "events", icon: ListFilter },
   { id: "data", label: "data", icon: Database },
-  { id: "support", label: "supportSection", icon: LifeBuoy },
 ];
 
 function currentTranslateX(element: HTMLElement) {
@@ -477,6 +477,7 @@ export function SettingsPage() {
     <>
       <SettingsNav smooth={settings.animations} />
       <div className="space-y-4">
+        <ProCloudSection />
         <ProfilesSection />
         <section id="general" className="scroll-mt-16">
           <SectionTitle icon={Settings2}>{t("settings.general")}</SectionTitle>
@@ -868,8 +869,6 @@ export function SettingsPage() {
             </Row>
           </Card>
         </section>
-
-        <SupportSection />
       </div>
     </>
   );

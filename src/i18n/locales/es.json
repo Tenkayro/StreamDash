@@ -936,12 +936,12 @@
     "wide": "Amplia",
     "windowsNotifications": "Notificaciones de Windows",
     "windowsNotificationsDetail": "Mostrar eventos seleccionados como notificaciones nativas.",
+    "proCloud": "Pro y Nube",
     "profiles": "Perfiles y respaldo",
     "profilesAutoSwitch": "Cambiar perfil automáticamente según la cuenta de Twitch",
-    "supportSection": "Soporte y licencia",
     "support": {
-      "sectionTitle": "Soporte y restablecimiento de licencia",
       "title": "Restablecer clave de licencia Pro",
+      "manageReset": "Restablecer clave",
       "description": "¿Activaste tu clave de Payhip en la cuenta de Twitch equivocada? Envía un ticket para revisar y liberar tu clave una vez.",
       "resetsCounter": "Restablecimientos usados: {{used}} / {{max}}",
       "refresh": "Actualizar estado",
@@ -956,7 +956,7 @@
       "cooldownUntil": "Espera activa hasta {{time}}.",
       "boundToAccount": "Vinculada actualmente a @{{account}} ({{key}})",
       "reasonPlaceholder": "Explica por qué necesitas restablecer la clave (p. ej., cuenta de Twitch equivocada)…",
-      "oneTimeWarning": "Cada clave de licencia Pro solo puede restablecerse una vez.",
+      "cloudRetentionHint": "Tras aprobar un restablecimiento, la copia en la nube anterior se conserva 24 h por si vuelves a vincularla y luego se elimina automáticamente.",
       "submitting": "Enviando…",
       "submitButton": "Enviar ticket",
       "loadError": "No se pudo cargar el estado del ticket.",
@@ -971,7 +971,7 @@
       "errors": {
         "messageTooShort": "Escribe al menos 10 caracteres explicando tu solicitud.",
         "noActiveLicense": "No hay ninguna licencia Pro activa vinculada a esta cuenta.",
-        "resetLimitReached": "Esta clave de licencia ya utilizó su único restablecimiento.",
+        "resetLimitReached": "Esta clave de licencia ha alcanzado su límite de restablecimientos.",
         "alreadyPending": "Ya tienes un ticket pendiente para esta clave.",
         "rateLimited": "Espera activa. Espera {{seconds}}s antes de enviar otro ticket."
       }
@@ -1452,6 +1452,10 @@
     "licenseKeyPlaceholder": "XXXX-XXXX-XXXX-XXXX",
     "activateButton": "Activar",
     "activating": "Verificando…",
+    "connectStepHint": "1. Conecta Twitch → 2. Compra o introduce tu clave → 3. Nube desbloqueada",
+    "permanentBindHint": "Se vincula permanentemente a @{{account}}. ¿Cuenta equivocada? Pide un restablecimiento abajo.",
+    "keyIdLabel": "ID de clave (para soporte)",
+    "keyIdCopied": "ID de clave copiado al portapapeles",
     "requestResetButton": "¿Cuenta equivocada? Solicitar reset",
     "requiredToast": "Se requiere StreamDash Pro para sincronizar en la nube",
     "activatedToast": "¡StreamDash Pro activado para @{{account}}!",

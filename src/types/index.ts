@@ -339,6 +339,7 @@ export interface ProfileExportBundle {
 }
 
 export interface ProLicenseInfo {
+  keyId?: string
   maskedKey: string
   variantName?: string
   activatedAt: number
@@ -401,6 +402,7 @@ export interface SupportResetTicket {
   id: number
   twitchUserId: string
   twitchLogin: string
+  keyId?: string
   licenseMasked: string
   userMessage: string
   status: 'pending' | 'approved' | 'rejected'
@@ -413,6 +415,7 @@ export interface SupportResetTicket {
 
 export interface SupportTicketState {
   hasActiveLicense: boolean
+  keyId?: string
   licenseMasked?: string
   resetsUsed: number
   maxResets: number

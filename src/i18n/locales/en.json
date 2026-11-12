@@ -936,12 +936,12 @@
     "wide": "Wide",
     "windowsNotifications": "Windows notifications",
     "windowsNotificationsDetail": "Show selected stream events as native notifications.",
+    "proCloud": "Pro & Cloud",
     "profiles": "Profiles & Backup",
     "profilesAutoSwitch": "Auto-switch profile per Twitch account",
-    "supportSection": "Support & License",
     "support": {
-      "sectionTitle": "Support & License Reset",
       "title": "Pro License Key Reset",
+      "manageReset": "Key reset",
       "description": "Activated your Payhip key on the wrong Twitch account? Submit a reset ticket to review and unlock your key once.",
       "resetsCounter": "Resets used: {{used}} / {{max}}",
       "refresh": "Refresh status",
@@ -956,7 +956,7 @@
       "cooldownUntil": "Cooldown active until {{time}}.",
       "boundToAccount": "Currently bound to @{{account}} ({{key}})",
       "reasonPlaceholder": "Explain why you need a key reset (e.g. wrong Twitch account connected)...",
-      "oneTimeWarning": "Each Pro license key can only be reset once in its lifetime.",
+      "cloudRetentionHint": "After an approved reset, your old account's cloud backup is kept for 24h in case you re-link it, then automatically deleted.",
       "submitting": "Submitting…",
       "submitButton": "Submit Reset Ticket",
       "loadError": "Could not load support ticket status.",
@@ -971,7 +971,7 @@
       "errors": {
         "messageTooShort": "Please write at least 10 characters explaining your request.",
         "noActiveLicense": "No active Pro license is bound to this Twitch account.",
-        "resetLimitReached": "This license key has already used its 1 lifetime reset.",
+        "resetLimitReached": "This license key has reached its reset limit.",
         "alreadyPending": "You already have a pending support ticket for this key.",
         "rateLimited": "Cooldown active. Please wait {{seconds}}s before submitting another ticket."
       }
@@ -1452,6 +1452,10 @@
     "licenseKeyPlaceholder": "XXXX-XXXX-XXXX-XXXX",
     "activateButton": "Activate",
     "activating": "Checking…",
+    "connectStepHint": "1. Connect Twitch → 2. Buy or enter your Payhip key → 3. Cloud Sync unlocked",
+    "permanentBindHint": "Locked permanently to @{{account}}. Wrong account? You can request a one-time reset below.",
+    "keyIdLabel": "Key ID (for support)",
+    "keyIdCopied": "Key ID copied to clipboard",
     "requestResetButton": "Wrong account? Request key reset",
     "requiredToast": "StreamDash Pro is required for Cloud Sync",
     "activatedToast": "StreamDash Pro unlocked for @{{account}}!",

@@ -2,6 +2,7 @@ import { openUrl } from "@tauri-apps/plugin-opener";
 import {
   CheckCircle2,
   Cloud,
+  Copy,
   Crown,
   ExternalLink,
   KeyRound,
@@ -13,32 +14,12 @@ import {
 } from "lucide-react";
 import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
+import { toast } from "sonner";
 import { Badge, Button, Card } from "./ui";
+import { PAYHIP_PRO_URL, mapProError } from "../lib/pro";
 import { errorMessage } from "../lib/utils";
 import { useRuntime } from "../services/runtime-context";
 import { useAppStore } from "../stores/app-store";
-
-export const PAYHIP_PRO_URL = "https://store.tenkayro.de/b/siOJA";
-
-function mapProError(rawError: string, t: (key: string) => string): string {
-  const code = rawError.trim().toLowerCase();
-  if (code.includes("invalid_license_key") || code.includes("missing_license_key")) {
-    return t("pro.errors.invalidKey");
-  }
-  if (code.includes("license_disabled")) {
-    return t("pro.errors.disabledKey");
-  }
-  if (code.includes("license_already_claimed")) {
-    return t("pro.errors.alreadyClaimed");
-  }
-  if (code.includes("rate_limited")) {
-    return t("pro.errors.rateLimited");
-  }
-  if (code.includes("payhip") || code.includes("pro_service_unavailable")) {
-    return t("pro.errors.serviceUnavailable");
-  }
-  return rawError || t("pro.errors.generic");
-}
 
 export function ProModal({
   open,
@@ -93,6 +74,7 @@ function ProModalContent({ onClose }: { onClose: () => void }) {
     onClose();
     setPage("settings");
     window.setTimeout(() => {
+      window.dispatchEvent(new CustomEvent("streamdash:open-support"));
       document.getElementById("support")?.scrollIntoView({ behavior: "smooth", block: "start" });
     }, 120);
   };
@@ -170,6 +152,28 @@ function ProModalContent({ onClose }: { onClose: () => void }) {
                           : "—",
                       })}
                     </div>
+                    {entitlements.license?.keyId && (
+                      <div className="mt-1.5 flex items-center gap-2">
+                        <span className="text-zinc-400">{t("pro.keyIdLabel")}:</span>
+                        <code className="rounded bg-black/35 px-1.5 py-0.5 font-mono text-[11px] text-emerald-200">
+                          {entitlements.license.keyId}
+                        </code>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            const id = entitlements.license?.keyId;
+                            if (!id) return;
+                            void navigator.clipboard.writeText(id).then(() => {
+                              toast.success(t("pro.keyIdCopied"));
+                            });
+                          }}
+                          className="inline-flex items-center gap-1 rounded border border-line bg-white/5 px-1.5 py-0.5 text-[11px] text-zinc-200 transition hover:bg-white/10"
+                          title={t("pro.keyIdLabel")}
+                        >
+                          <Copy size={11} />
+                        </button>
+                      </div>
+                    )}
                   </div>
                 </div>
               </div>

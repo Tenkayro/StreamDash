@@ -936,12 +936,12 @@
     "wide": "Breit",
     "windowsNotifications": "Windows-Benachrichtigungen",
     "windowsNotificationsDetail": "Ausgewählte Stream-Ereignisse als native Benachrichtigungen anzeigen.",
+    "proCloud": "Pro & Cloud",
     "profiles": "Profile & Backup",
     "profilesAutoSwitch": "Profil automatisch nach Twitch-Account wechseln",
-    "supportSection": "Support & Lizenz",
     "support": {
-      "sectionTitle": "Support & Lizenz-Reset",
       "title": "Pro-Lizenzschlüssel zurücksetzen",
+      "manageReset": "Key zurücksetzen",
       "description": "Payhip-Key versehentlich auf dem falschen Twitch-Account aktiviert? Reiche hier ein Ticket ein, um deinen Key einmalig freigeben zu lassen.",
       "resetsCounter": "Genutzte Resets: {{used}} / {{max}}",
       "refresh": "Status aktualisieren",
@@ -956,7 +956,7 @@
       "cooldownUntil": "Cooldown aktiv bis {{time}}.",
       "boundToAccount": "Aktuell verknüpft mit @{{account}} ({{key}})",
       "reasonPlaceholder": "Beschreibe kurz, warum du den Key-Reset brauchst (z. B. falscher Twitch-Account)…",
-      "oneTimeWarning": "Jeder Pro-Lizenzschlüssel kann insgesamt nur einmal zurückgesetzt werden.",
+      "cloudRetentionHint": "Nach einem Reset bleiben alte Cloud-Daten noch 24 Std. erhalten (falls du denselben Account wieder verknüpfst) und werden danach automatisch gelöscht.",
       "submitting": "Sende…",
       "submitButton": "Reset-Ticket absenden",
       "loadError": "Ticket-Status konnte nicht geladen werden.",
@@ -971,7 +971,7 @@
       "errors": {
         "messageTooShort": "Bitte gib mindestens 10 Zeichen als Begründung an.",
         "noActiveLicense": "Auf diesem Twitch-Account ist keine aktive Pro-Lizenz hinterlegt.",
-        "resetLimitReached": "Dieser Lizenzschlüssel wurde bereits 1x zurückgesetzt (Limit erreicht).",
+        "resetLimitReached": "Dieser Lizenzschlüssel hat sein Reset-Limit erreicht.",
         "alreadyPending": "Für diesen Key läuft bereits ein offenes Support-Ticket.",
         "rateLimited": "Cooldown aktiv. Bitte warte noch {{seconds}}s vor einer neuen Anfrage."
       }
@@ -1452,6 +1452,10 @@
     "licenseKeyPlaceholder": "XXXX-XXXX-XXXX-XXXX",
     "activateButton": "Aktivieren",
     "activating": "Prüfe…",
+    "connectStepHint": "1. Twitch verbinden → 2. Payhip-Key holen oder eingeben → 3. Cloud Sync freigeschaltet",
+    "permanentBindHint": "Wird fest mit @{{account}} verknüpft. Falscher Account? Unten kannst du einmalig einen Reset anfragen.",
+    "keyIdLabel": "Key-ID (für Support)",
+    "keyIdCopied": "Key-ID in die Zwischenablage kopiert",
     "requestResetButton": "Falscher Account? Key-Reset anfragen",
     "requiredToast": "Für Cloud Sync ist StreamDash Pro erforderlich",
     "activatedToast": "StreamDash Pro für @{{account}} aktiviert!",

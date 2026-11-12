@@ -1,13 +1,7 @@
 import {
-  AlertTriangle,
   Bell,
   Check,
-  Cloud,
-  CloudDownload,
-  CloudOff,
-  CloudUpload,
   Copy,
-  Crown,
   Download,
   FileJson,
   History,
@@ -30,7 +24,6 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { toast } from "sonner";
 import { Select } from "../Select";
-import { ProModal } from "../ProModal";
 import { Badge, Button, Card, Toggle } from "../ui";
 import { parseImportBundle } from "../../lib/profiles";
 import { errorMessage } from "../../lib/utils";
@@ -150,10 +143,6 @@ export function ProfilesSection() {
   const profiles = useAppStore((s) => s.profiles);
   const activeProfileId = useAppStore((s) => s.activeProfileId);
   const profilesAutoSwitch = useAppStore((s) => s.profilesAutoSwitch);
-  const cloudSyncEnabled = useAppStore((s) => s.cloudSyncEnabled);
-  const cloudSyncCheckpoints = useAppStore((s) => s.cloudSyncCheckpoints);
-  const cloudSync = useAppStore((s) => s.cloudSync);
-  const entitlements = useAppStore((s) => s.entitlements);
   const twitch = useAppStore((s) => s.twitch);
   const eventsCount = useAppStore((s) => s.events.length);
   const chatCount = useAppStore((s) => s.chatMessages.length);
@@ -162,26 +151,6 @@ export function ProfilesSection() {
   const [editingId, setEditingId] = useState<string>();
   const [editName, setEditName] = useState("");
   const [deleteTarget, setDeleteTarget] = useState<UserProfile>();
-  const [deleteCloudOpen, setDeleteCloudOpen] = useState(false);
-  const [proModalOpen, setProModalOpen] = useState(false);
-  const [nowMs, setNowMs] = useState(() => Date.now());
-
-  useEffect(() => {
-    const until = cloudSync.cooldownUntil;
-    if (!until || until <= Date.now()) return;
-    const kick = window.setTimeout(() => setNowMs(Date.now()), 0);
-    const timer = window.setInterval(() => {
-      const now = Date.now();
-      setNowMs(now);
-      if (now >= until) {
-        window.clearInterval(timer);
-      }
-    }, 500);
-    return () => {
-      window.clearTimeout(kick);
-      window.clearInterval(timer);
-    };
-  }, [cloudSync.cooldownUntil]);
 
   // Create modal state
   const [createOpen, setCreateOpen] = useState(false);
@@ -217,25 +186,6 @@ export function ProfilesSection() {
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const twitchConnected = twitch.phase === "connected" && Boolean(twitch.userId);
-  const currentCheckpoint = twitch.userId
-    ? cloudSyncCheckpoints[twitch.userId]
-    : undefined;
-  const activeCloudMeta = cloudSync.remoteMeta;
-  const cloudRevision = activeCloudMeta?.revision ?? currentCheckpoint?.revision;
-  const cloudBytes = activeCloudMeta?.rawBytes ?? currentCheckpoint?.rawBytes;
-  const cloudTimestamp =
-    cloudSync.lastSyncedAt ??
-    currentCheckpoint?.syncedAt ??
-    activeCloudMeta?.serverUpdatedAt;
-  const hasRemoteBackup = Boolean(
-    activeCloudMeta?.exists || currentCheckpoint || cloudSync.phase === "synced",
-  );
-  const cooldownSeconds =
-    cloudSync.cooldownUntil && cloudSync.cooldownUntil > nowMs
-      ? Math.max(1, Math.ceil((cloudSync.cooldownUntil - nowMs) / 1000))
-      : 0;
-  const syncButtonsDisabled =
-    busy || cloudSync.phase === "syncing" || cooldownSeconds > 0;
 
   const startRename = (profile: UserProfile) => {
     setEditingId(profile.id);
@@ -368,17 +318,6 @@ export function ProfilesSection() {
         </div>
         <div className="flex flex-wrap items-center gap-1.5">
           <Button
-            onClick={() => setProModalOpen(true)}
-            className={
-              entitlements.pro
-                ? "border-amber-400/35 bg-amber-400/10 text-amber-200 hover:border-amber-400/50"
-                : "border-[#9146ff]/35 bg-[#9146ff]/10 text-[#cfaaff] hover:border-[#9146ff]/55"
-            }
-          >
-            <Crown size={13} />
-            {entitlements.pro ? t("pro.manageButton") : t("pro.buttonLabel")}
-          </Button>
-          <Button
             onClick={() => {
               setNewName("");
               setNewTemplate("copy");
@@ -423,226 +362,6 @@ export function ProfilesSection() {
             value={profilesAutoSwitch}
             onChange={(value) => void runtime.setProfilesAutoSwitch(value)}
           />
-        </div>
-
-        <div
-          data-search-label={t("profiles.cloud.title")}
-          className="border-b border-line bg-black/15 px-5 py-3.5"
-        >
-          <div className="flex flex-wrap items-center justify-between gap-3">
-            <div className="flex min-w-0 flex-1 items-center gap-3">
-              <span
-                className={`grid size-8 shrink-0 place-items-center rounded-lg ${
-                  cloudSync.phase === "conflict"
-                    ? "bg-amber-500/15 text-amber-300"
-                    : cloudSync.phase === "error"
-                      ? "bg-red-500/15 text-red-300"
-                      : cloudSyncEnabled && twitchConnected
-                        ? "bg-emerald-500/12 text-emerald-300"
-                        : "bg-black/25 text-zinc-400"
-                }`}
-              >
-                {!cloudSyncEnabled ? (
-                  <CloudOff size={15} />
-                ) : cloudSync.phase === "conflict" ? (
-                  <AlertTriangle size={15} />
-                ) : (
-                  <Cloud size={15} />
-                )}
-              </span>
-              <div className="min-w-0 flex-1">
-                <div className="flex flex-wrap items-center gap-2">
-                  <span className="text-sm font-medium">
-                    {t("profiles.cloud.title")}
-                  </span>
-                  <Badge tone={entitlements.pro ? "amber" : "purple"}>
-                    PRO
-                  </Badge>
-                  {!twitchConnected ? (
-                    <Badge tone="neutral">{t("profiles.cloud.statusDisconnected")}</Badge>
-                  ) : !entitlements.pro ? (
-                    <Badge tone="neutral">{t("pro.lockedBadge")}</Badge>
-                  ) : cloudSync.phase === "syncing" ? (
-                    <Badge tone="amber">{t("profiles.cloud.statusSyncing")}</Badge>
-                  ) : cloudSync.phase === "conflict" ? (
-                    <Badge tone="amber">{t("profiles.cloud.statusConflict")}</Badge>
-                  ) : cloudSync.phase === "error" ? (
-                    <Badge tone="red">{t("profiles.cloud.statusError")}</Badge>
-                  ) : cloudSync.phase === "pending" || cloudSync.hasLocalChanges ? (
-                    <Badge tone="amber">{t("profiles.cloud.statusPending")}</Badge>
-                  ) : !cloudSyncEnabled ? (
-                    <Badge tone="neutral">{t("profiles.cloud.statusPaused")}</Badge>
-                  ) : cloudSync.phase === "synced" || hasRemoteBackup ? (
-                    <Badge tone="green">
-                      {cloudRevision
-                        ? t("profiles.cloud.statusSyncedRev", { rev: cloudRevision })
-                        : t("profiles.cloud.statusSynced")}
-                    </Badge>
-                  ) : (
-                    <Badge tone="neutral">{t("profiles.cloud.statusReady")}</Badge>
-                  )}
-                </div>
-                <div className="mt-0.5 text-xs text-muted">
-                  {!twitchConnected
-                    ? t("profiles.cloud.connectPrompt")
-                    : !entitlements.pro
-                      ? t("pro.cloudGateHint", { account: twitch.account ?? "" })
-                      : cloudSync.phase === "error" && cloudSync.error
-                        ? cloudSync.error
-                        : cloudTimestamp
-                          ? t("profiles.cloud.metaSummary", {
-                              account: twitch.account ?? "",
-                              time: new Date(cloudTimestamp).toLocaleString([], {
-                                dateStyle: "short",
-                                timeStyle: "short",
-                              }),
-                              size: cloudBytes
-                                ? `${Math.max(1, Math.round(cloudBytes / 1024))} KB`
-                                : "—",
-                            })
-                          : t("profiles.cloud.connectedHint", {
-                              account: twitch.account ?? "",
-                            })}
-                </div>
-              </div>
-            </div>
-
-            <div className="flex flex-wrap items-center gap-2">
-              {twitchConnected && !entitlements.pro ? (
-                <Button variant="primary" onClick={() => setProModalOpen(true)}>
-                  <Crown size={13} />
-                  {t("pro.unlockButton")}
-                </Button>
-              ) : twitchConnected ? (
-                <>
-                  <Button
-                    disabled={syncButtonsDisabled}
-                    title={
-                      cooldownSeconds > 0
-                        ? t("profiles.cloud.cooldownHint", { seconds: cooldownSeconds })
-                        : t("profiles.cloud.uploadHint")
-                    }
-                    onClick={() => {
-                      setBusy(true);
-                      void runtime
-                        .syncCloudNow("push")
-                        .catch(() => undefined)
-                        .finally(() => setBusy(false));
-                    }}
-                  >
-                    <CloudUpload size={13} />
-                    {t("profiles.cloud.upload")}
-                    {cooldownSeconds >= 4 ? ` (${cooldownSeconds}s)` : ""}
-                  </Button>
-                  <Button
-                    disabled={syncButtonsDisabled}
-                    title={
-                      cooldownSeconds > 0
-                        ? t("profiles.cloud.cooldownHint", { seconds: cooldownSeconds })
-                        : t("profiles.cloud.downloadHint")
-                    }
-                    onClick={() => {
-                      setBusy(true);
-                      void runtime
-                        .syncCloudNow("pull", { merge: false })
-                        .catch(() => undefined)
-                        .finally(() => setBusy(false));
-                    }}
-                  >
-                    <CloudDownload size={13} />
-                    {t("profiles.cloud.download")}
-                  </Button>
-                  {hasRemoteBackup && (
-                    <Button
-                      disabled={syncButtonsDisabled}
-                      title={
-                        cooldownSeconds > 0
-                          ? t("profiles.cloud.cooldownHint", { seconds: cooldownSeconds })
-                          : t("profiles.cloud.deleteAction")
-                      }
-                      aria-label={t("profiles.cloud.deleteAction")}
-                      onClick={() => setDeleteCloudOpen(true)}
-                      className="hover:border-red-500/30 hover:text-red-300"
-                    >
-                      <Trash2 size={13} />
-                    </Button>
-                  )}
-                  <Toggle
-                    label={t("profiles.cloud.autoSyncLabel")}
-                    value={cloudSyncEnabled}
-                    onChange={(value) => void runtime.setCloudSyncEnabled(value)}
-                  />
-                </>
-              ) : null}
-            </div>
-          </div>
-
-          {cloudSync.phase === "conflict" && cloudSync.conflict && (
-            <div className="mt-3 flex flex-wrap items-center justify-between gap-2.5 rounded-xl border border-amber-500/30 bg-amber-500/10 px-3.5 py-2.5 text-xs text-amber-100">
-              <div className="min-w-0 flex-1">
-                <div className="font-medium text-amber-200">
-                  {t("profiles.cloud.conflictTitle")}
-                </div>
-                <div className="mt-0.5 text-[11px] text-amber-200/80">
-                  {t("profiles.cloud.conflictDetail", {
-                    rev: cloudSync.conflict.remoteMeta.revision ?? 1,
-                    time: cloudSync.conflict.remoteMeta.serverUpdatedAt
-                      ? new Date(
-                          cloudSync.conflict.remoteMeta.serverUpdatedAt,
-                        ).toLocaleString([], {
-                          dateStyle: "short",
-                          timeStyle: "short",
-                        })
-                      : "—",
-                  })}
-                </div>
-              </div>
-              <div className="flex flex-wrap items-center gap-1.5">
-                <Button
-                  disabled={busy}
-                  onClick={() => {
-                    setBusy(true);
-                    void runtime
-                      .syncCloudNow("pull", { merge: false })
-                      .catch(() => undefined)
-                      .finally(() => setBusy(false));
-                  }}
-                >
-                  {t("profiles.cloud.useCloud")}
-                </Button>
-                <Button
-                  disabled={busy}
-                  onClick={() => {
-                    setBusy(true);
-                    void runtime
-                      .syncCloudNow("pull", { merge: true })
-                      .catch(() => undefined)
-                      .finally(() => setBusy(false));
-                  }}
-                >
-                  {t("profiles.cloud.mergeCloud")}
-                </Button>
-                <Button
-                  variant="primary"
-                  disabled={busy}
-                  onClick={() => {
-                    setBusy(true);
-                    void runtime
-                      .syncCloudNow("push", { force: true })
-                      .catch(() => undefined)
-                      .finally(() => setBusy(false));
-                  }}
-                >
-                  {t("profiles.cloud.keepLocal")}
-                </Button>
-              </div>
-            </div>
-          )}
-
-          <div className="mt-2 flex items-center gap-1.5 text-[11px] text-zinc-500">
-            <Info size={12} className="shrink-0" />
-            <span>{t("profiles.cloud.zeroSecretsHint")}</span>
-          </div>
         </div>
 
         <div className="divide-y divide-line">
@@ -1428,40 +1147,6 @@ export function ProfilesSection() {
           </div>
         </ModalShell>
       )}
-
-      {deleteCloudOpen && (
-        <ModalShell
-          title={t("profiles.cloud.deleteTitle")}
-          onClose={() => setDeleteCloudOpen(false)}
-        >
-          <div className="space-y-4">
-            <p className="text-xs leading-5 text-zinc-400">
-              {t("profiles.cloud.deleteConfirm")}
-            </p>
-            <div className="flex justify-end gap-2">
-              <Button type="button" onClick={() => setDeleteCloudOpen(false)}>
-                {t("common.cancel")}
-              </Button>
-              <Button
-                variant="danger"
-                disabled={busy}
-                onClick={() => {
-                  setDeleteCloudOpen(false);
-                  setBusy(true);
-                  void runtime
-                    .deleteCloudBackup()
-                    .catch(() => undefined)
-                    .finally(() => setBusy(false));
-                }}
-              >
-                <Trash2 size={14} />
-                {t("common.delete")}
-              </Button>
-            </div>
-          </div>
-        </ModalShell>
-      )}
-      <ProModal open={proModalOpen} onClose={() => setProModalOpen(false)} />
     </section>
   );
 }

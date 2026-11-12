@@ -936,12 +936,12 @@
     "wide": "Ampla",
     "windowsNotifications": "Notificações do Windows",
     "windowsNotificationsDetail": "Mostrar eventos selecionados como notificações nativas.",
+    "proCloud": "Pro e Nuvem",
     "profiles": "Perfis e backup",
     "profilesAutoSwitch": "Alternar perfil automaticamente por conta da Twitch",
-    "supportSection": "Suporte e Licença",
     "support": {
-      "sectionTitle": "Suporte e Redefinição de Licença",
       "title": "Redefinir chave de licença Pro",
+      "manageReset": "Redefinir chave",
       "description": "Ativou sua chave Payhip na conta da Twitch errada? Envie um ticket para analisar e liberar sua chave uma vez.",
       "resetsCounter": "Redefinições usadas: {{used}} / {{max}}",
       "refresh": "Atualizar status",
@@ -956,7 +956,7 @@
       "cooldownUntil": "Espera ativa até {{time}}.",
       "boundToAccount": "Atualmente vinculada a @{{account}} ({{key}})",
       "reasonPlaceholder": "Explique por que precisa redefinir a chave (ex.: conta da Twitch errada)…",
-      "oneTimeWarning": "Cada chave de licença Pro só pode ser redefinida uma única vez.",
+      "cloudRetentionHint": "Após aprovação, o backup antigo na nuvem é mantido por 24h caso você revincule a conta e depois é excluído automaticamente.",
       "submitting": "Enviando…",
       "submitButton": "Enviar ticket",
       "loadError": "Não foi possível carregar o status do ticket.",
@@ -971,7 +971,7 @@
       "errors": {
         "messageTooShort": "Escreva pelo menos 10 caracteres explicando seu pedido.",
         "noActiveLicense": "Nenhuma licença Pro ativa está vinculada a esta conta.",
-        "resetLimitReached": "Esta chave de licença já usou sua única redefinição.",
+        "resetLimitReached": "Esta chave de licença atingiu seu limite de redefinições.",
         "alreadyPending": "Você já tem um ticket pendente para esta chave.",
         "rateLimited": "Espera ativa. Aguarde {{seconds}}s antes de enviar outro ticket."
       }
@@ -1452,6 +1452,10 @@
     "licenseKeyPlaceholder": "XXXX-XXXX-XXXX-XXXX",
     "activateButton": "Ativar",
     "activating": "Verificando…",
+    "connectStepHint": "1. Conecte a Twitch → 2. Compre ou insira sua chave → 3. Nuvem liberada",
+    "permanentBindHint": "Vincula permanentemente a @{{account}}. Conta errada? Solicite uma redefinição abaixo.",
+    "keyIdLabel": "ID da chave (para suporte)",
+    "keyIdCopied": "ID da chave copiado para a área de transferência",
     "requestResetButton": "Conta errada? Pedir redefinição",
     "requiredToast": "O StreamDash Pro é necessário para a sincronização na nuvem",
     "activatedToast": "StreamDash Pro ativado para @{{account}}!",
