@@ -60,15 +60,22 @@ export async function saveSetting<K extends keyof AppSettings>(
 ) {
   await saveLocalState(key, value);
 }
+async function postRemoteAction(type: string, payload: Record<string, unknown> = {}) {
+  if (typeof window === "undefined") return;
+  const token = sessionStorage.getItem("sd_remote_token") ?? "";
+  await fetch("/api/action", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      ...(token ? { "X-SD-Token": token } : {}),
+    },
+    body: JSON.stringify({ type, payload }),
+  }).catch(() => undefined);
+}
+
 export async function saveLocalState(key: string, value: unknown) {
   if (isTauri()) await invoke("setting_save", { key, value });
-  else {
-    const existing = await loadSettings();
-    localStorage.setItem(
-      "streamdash-settings",
-      JSON.stringify({ ...existing, [key]: value }),
-    );
-  }
+  else await postRemoteAction("state.save", { key, value });
 }
 export async function saveLocalStateBatch(entries: Record<string, unknown>) {
   if (!Object.keys(entries).length) return;
@@ -83,11 +90,7 @@ export async function saveLocalStateBatch(entries: Record<string, unknown>) {
       return;
     }
   }
-  const existing = await loadSettings();
-  localStorage.setItem(
-    "streamdash-settings",
-    JSON.stringify({ ...existing, ...entries }),
-  );
+  await postRemoteAction("state.saveBatch", { entries });
 }
 export async function importHistoryBatch(
   events: ActivityEvent[],
@@ -372,4 +375,54 @@ export const historySyncNative = {
           expectedRevision: params.expectedRevision,
         })
       : Promise.reject(new Error("Cloud history sync requires the desktop app")),
+};
+
+export interface WebHostStatus {
+  enabled: boolean;
+  running: boolean;
+  headless: boolean;
+  port: number;
+  requireAuth: boolean;
+  token: string;
+  localIps: string[];
+  urls: string[];
+  connectedClients: number;
+  lastError?: string | null;
+}
+
+export const webHostNative = {
+  status: async (): Promise<WebHostStatus> => {
+    if (isTauri()) return invoke<WebHostStatus>("web_host_status");
+    const token = typeof window !== "undefined" ? sessionStorage.getItem("sd_remote_token") ?? "" : "";
+    const res = await fetch(`/api/host-status${token ? `?token=${encodeURIComponent(token)}` : ""}`);
+    if (res.ok) return (await res.json()) as WebHostStatus;
+    return {
+      enabled: false,
+      running: false,
+      headless: false,
+      port: 48950,
+      requireAuth: true,
+      token: "",
+      localIps: ["127.0.0.1"],
+      urls: [],
+      connectedClients: 0,
+    };
+  },
+  configure: (params: {
+    enabled: boolean;
+    port: number;
+    requireAuth: boolean;
+    token?: string;
+  }): Promise<WebHostStatus> =>
+    isTauri()
+      ? invoke<WebHostStatus>("web_host_configure", params)
+      : Promise.reject(new Error("Web host requires the desktop app")),
+  regenerateToken: (): Promise<WebHostStatus> =>
+    isTauri()
+      ? invoke<WebHostStatus>("web_host_regenerate_token")
+      : Promise.reject(new Error("Web host requires the desktop app")),
+  publishState: (snapshot: unknown): Promise<void> =>
+    isTauri()
+      ? invoke<void>("web_host_publish_state", { snapshot })
+      : Promise.resolve(),
 };

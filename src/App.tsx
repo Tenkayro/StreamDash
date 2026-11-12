@@ -73,6 +73,10 @@ const pageLoaders = {
     import("./pages/Connections").then((module) => ({
       default: module.Connections,
     })),
+  host: () =>
+    import("./pages/HostPage").then((module) => ({
+      default: module.HostPage,
+    })),
   settings: () =>
     import("./pages/SettingsPage").then((module) => ({
       default: module.SettingsPage,
@@ -93,6 +97,7 @@ const Statistics = lazy(pageLoaders.statistics);
 const Goals = lazy(pageLoaders.goals);
 const ObsPage = lazy(pageLoaders.obs);
 const Connections = lazy(pageLoaders.connections);
+const HostPage = lazy(pageLoaders.host);
 const SettingsPage = lazy(pageLoaders.settings);
 
 const pages: Record<string, React.ComponentType> = {
@@ -112,6 +117,7 @@ const pages: Record<string, React.ComponentType> = {
   goals: Goals,
   obs: ObsPage,
   connections: Connections,
+  host: HostPage,
   settings: SettingsPage,
 };
 

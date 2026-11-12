@@ -87,6 +87,38 @@ curl -fsSL https://tenkayro.de/sh/streamdash.sh | bash
 
 ---
 
+## 🌐 Web & Mobile Host / Headless Mode
+
+StreamDash can host its full UI over your local network so you can control your stream from a phone, tablet, or any browser — or run invisibly in the background on a server.
+
+- Open **Host** in the sidebar to enable the Web Host, scan the generated **QR code**, copy the LAN URL, or configure the port and access token/PIN.
+- Live state syncs in real time and actions (chat, OBS scenes/audio/stream/recording, giveaways) execute on the host instance.
+
+### CLI Startup Flags
+
+```bash
+# Start invisibly without a desktop window and automatically enable the Web Host
+streamdash --headless
+
+# Start with custom port and fixed access token/PIN
+streamdash --headless --port 48950 --pin MYSECRET
+
+# Start normally with desktop window + Web Host enabled
+streamdash --host
+
+# On a display-less Linux server (no X11/Wayland session)
+xvfb-run -a streamdash --headless --port 48950
+```
+
+| Flag | Description |
+| :--- | :--- |
+| `--headless` | Keeps the desktop window hidden and starts the Web Host automatically |
+| `--host` / `--web-host` | Enables the Web Host on startup while showing the desktop window |
+| `--port <PORT>` | Overrides the Web Host port (default: `48950`) |
+| `--pin <TOKEN>` / `--token <TOKEN>` | Sets a custom access token/PIN |
+
+---
+
 ## 📸 Preview
 
 ### Dashboard

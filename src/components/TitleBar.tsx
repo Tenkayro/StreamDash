@@ -29,6 +29,7 @@ import titlebarLogo from "../assets/branding/streamdash-logo-titlebar.webp";
 import { LoadingIndicator } from "./ui";
 import { useAppStore } from "../stores/app-store";
 import { saveSetting } from "../services/native";
+import pkg from "../../package.json";
 import { useTranslation } from "react-i18next";
 
 function TitleAction({
@@ -173,6 +174,7 @@ export function TitleBar({ setup = false }: { setup?: boolean }) {
       : "RELEASE";
   useEffect(() => {
     if (isTauri()) void getVersion().then(setVersion);
+    else setVersion(pkg.version);
   }, []);
   useEffect(() => {
     if (!closeMenuOpen) return;

@@ -12,6 +12,7 @@ import {
   MonitorPlay,
   RadioTower,
   Settings,
+  Smartphone,
   Sparkles,
   Terminal,
   type LucideIcon,
@@ -46,6 +47,7 @@ export const navigationItems: NavigationItem[] = [
   { id: "goals", label: "goals", icon: Goal, group: "insights" },
   // Setup & configuration
   { id: "connections", label: "connections", icon: Link2, group: "system" },
+  { id: "host", label: "host", icon: Smartphone, group: "system" },
   { id: "settings", label: "settings", icon: Settings, group: "system" },
 ];
 

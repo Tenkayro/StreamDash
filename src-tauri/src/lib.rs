@@ -16,6 +16,7 @@ use tokio::sync::mpsc;
 use tokio_tungstenite::tungstenite::Message;
 
 mod spotify_overlay;
+mod web_host;
 
 static HTTP_CLIENT: std::sync::OnceLock<reqwest::Client> = std::sync::OnceLock::new();
 
@@ -1666,7 +1667,66 @@ fn reveal_main_window(app: &tauri::AppHandle) {
 /// flashes an empty surface before the logo is visible.
 #[tauri::command]
 fn reveal_window(app: tauri::AppHandle) {
+    if web_host::is_headless() {
+        return;
+    }
     reveal_main_window(&app);
+}
+
+#[tauri::command]
+fn web_host_status(host: tauri::State<'_, web_host::WebHostRuntime>) -> web_host::WebHostStatus {
+    host.status()
+}
+
+#[tauri::command]
+fn web_host_configure(
+    state: tauri::State<'_, AppState>,
+    host: tauri::State<'_, web_host::WebHostRuntime>,
+    enabled: bool,
+    port: u16,
+    require_auth: bool,
+    token: Option<String>,
+) -> Result<web_host::WebHostStatus, String> {
+    let status = host.configure(enabled, port, require_auth, token)?;
+    if let Ok(conn) = state.db.lock() {
+        let _ = conn.execute(
+            "INSERT OR REPLACE INTO settings (key, value) VALUES (?1, ?2)",
+            params!["webHostEnabled", serde_json::to_string(&status.enabled).unwrap_or_default()],
+        );
+        let _ = conn.execute(
+            "INSERT OR REPLACE INTO settings (key, value) VALUES (?1, ?2)",
+            params!["webHostPort", serde_json::to_string(&status.port).unwrap_or_default()],
+        );
+        let _ = conn.execute(
+            "INSERT OR REPLACE INTO settings (key, value) VALUES (?1, ?2)",
+            params!["webHostRequireAuth", serde_json::to_string(&status.require_auth).unwrap_or_default()],
+        );
+        let _ = conn.execute(
+            "INSERT OR REPLACE INTO settings (key, value) VALUES (?1, ?2)",
+            params!["webHostToken", serde_json::to_string(&status.token).unwrap_or_default()],
+        );
+    }
+    Ok(status)
+}
+
+#[tauri::command]
+fn web_host_regenerate_token(
+    state: tauri::State<'_, AppState>,
+    host: tauri::State<'_, web_host::WebHostRuntime>,
+) -> web_host::WebHostStatus {
+    let next = host.regenerate_token();
+    if let Ok(conn) = state.db.lock() {
+        let _ = conn.execute(
+            "INSERT OR REPLACE INTO settings (key, value) VALUES (?1, ?2)",
+            params!["webHostToken", serde_json::to_string(&next).unwrap_or_default()],
+        );
+    }
+    host.status()
+}
+
+#[tauri::command]
+fn web_host_publish_state(host: tauri::State<'_, web_host::WebHostRuntime>, snapshot: Value) {
+    host.publish_state(snapshot);
 }
 
 #[tauri::command]
@@ -1824,6 +1884,62 @@ pub fn run() {
                 .ok()
                 .map(|value| serde_json::from_str::<String>(&value).unwrap_or(value) != "classic")
                 .unwrap_or(true);
+            let cli_host = web_host::parse_cli_args();
+            let read_setting_str = |key: &str| -> Option<String> {
+                db.query_row("SELECT value FROM settings WHERE key = ?1", [key], |row| {
+                    row.get::<_, String>(0)
+                })
+                .ok()
+                .and_then(|raw| serde_json::from_str::<String>(&raw).ok().or(Some(raw)))
+            };
+            let host_enabled = cli_host.enable_host
+                || db
+                    .query_row(
+                        "SELECT value FROM settings WHERE key = 'webHostEnabled'",
+                        [],
+                        |row| row.get::<_, String>(0),
+                    )
+                    .ok()
+                    .and_then(|v| serde_json::from_str::<bool>(&v).ok())
+                    .unwrap_or(false);
+            let host_port = cli_host.port.unwrap_or_else(|| {
+                db.query_row(
+                    "SELECT value FROM settings WHERE key = 'webHostPort'",
+                    [],
+                    |row| row.get::<_, String>(0),
+                )
+                .ok()
+                .and_then(|v| serde_json::from_str::<u16>(&v).ok())
+                .unwrap_or(web_host::DEFAULT_HOST_PORT)
+            });
+            let host_require_auth = db
+                .query_row(
+                    "SELECT value FROM settings WHERE key = 'webHostRequireAuth'",
+                    [],
+                    |row| row.get::<_, String>(0),
+                )
+                .ok()
+                .and_then(|v| serde_json::from_str::<bool>(&v).ok())
+                .unwrap_or(true);
+            let host_token = cli_host
+                .token
+                .or_else(|| read_setting_str("webHostToken").filter(|s| !s.trim().is_empty()))
+                .unwrap_or_else(|| {
+                    let generated = web_host::generate_token();
+                    let _ = db.execute(
+                        "INSERT OR REPLACE INTO settings (key, value) VALUES ('webHostToken', ?1)",
+                        [serde_json::to_string(&generated).unwrap_or_default()],
+                    );
+                    generated
+                });
+            let web_host_runtime = web_host::WebHostRuntime::new(
+                app.handle().clone(),
+                host_enabled,
+                host_port,
+                host_require_auth,
+                host_token,
+            );
+            app.manage(web_host_runtime);
             app.manage(AppState { db: Mutex::new(db), history: Mutex::new(history) });
             let spotify_overlay =
                 spotify_overlay::start(17_842).map_err(std::io::Error::other)?;
@@ -1989,6 +2105,10 @@ pub fn run() {
             app_shutdown_ready,
             app_quit_complete,
             reveal_window,
+            web_host_status,
+            web_host_configure,
+            web_host_regenerate_token,
+            web_host_publish_state,
             tray_action,
             tray_configure,
             tray_set_tooltip,

@@ -672,19 +672,42 @@ export function ProCloudSection() {
             </div>
           )}
 
-          {twitchConnected && entitlements.pro && storageInfo && (
-            <div className="mt-3 rounded-xl border border-line bg-black/20 p-3.5 text-xs">
-              <div className="flex flex-wrap items-center justify-between gap-2">
-                <div className="flex items-center gap-2">
-                  <HardDrive size={14} className="text-accent" />
-                  <span className="font-semibold text-zinc-100">
-                    {t("profiles.cloud.storage.title")}
-                  </span>
+          {twitchConnected && entitlements.pro && storageInfo && (() => {
+            const nearLimit =
+              storageInfo.usedBytes >= storageInfo.quotaBytes * 0.75 ||
+              Boolean(cloudSync.historyError?.includes("storage_quota_exceeded"));
+            const showRequestAction = nearLimit || hasPendingStorageTicket || Boolean(latestStorageTicket);
+            const pct = Math.min(
+              100,
+              Math.max(
+                storageInfo.usedBytes > 0 ? 2 : 0,
+                Math.round((storageInfo.usedBytes / Math.max(1, storageInfo.quotaBytes)) * 100),
+              ),
+            );
+            return (
+              <div className="mt-2.5 rounded-lg border border-line/70 bg-black/20 px-3 py-2 text-xs">
+                <div className="flex flex-wrap items-center gap-2.5">
+                  <div className="flex items-center gap-1.5 text-zinc-300">
+                    <HardDrive size={13} className="text-zinc-400" />
+                    <span className="font-medium">{t("profiles.cloud.storage.title")}</span>
+                  </div>
+                  <div className="h-1.5 min-w-[90px] flex-1 overflow-hidden rounded-full bg-white/10">
+                    <div
+                      className={`h-full rounded-full transition-all ${
+                        storageInfo.usedBytes >= storageInfo.quotaBytes
+                          ? "bg-red-400"
+                          : nearLimit
+                            ? "bg-amber-400"
+                            : "bg-emerald-400"
+                      }`}
+                      style={{ width: `${pct}%` }}
+                    />
+                  </div>
                   <Badge
                     tone={
                       storageInfo.usedBytes >= storageInfo.quotaBytes
                         ? "red"
-                        : storageInfo.usedBytes >= storageInfo.quotaBytes * 0.75
+                        : nearLimit
                           ? "amber"
                           : "green"
                     }
@@ -700,66 +723,42 @@ export function ProCloudSection() {
                   {hasPendingStorageTicket && (
                     <Badge tone="amber">{t("settings.support.status.pending")}</Badge>
                   )}
-                </div>
-                <div className="flex items-center gap-1.5">
-                  <Button
+                  <button
                     type="button"
                     disabled={storageRefreshing || storageTicket?.loading}
                     onClick={() => void handleStorageRefresh()}
+                    title={t("settings.support.refresh")}
+                    aria-label={t("settings.support.refresh")}
+                    className="rounded-md p-1 text-zinc-400 transition hover:bg-white/10 hover:text-zinc-100 disabled:opacity-40"
                   >
                     <RefreshCw
                       size={12}
                       className={storageRefreshing || storageTicket?.loading ? "animate-spin" : ""}
                     />
-                    {t("settings.support.refresh")}
-                  </Button>
-                  <Button
-                    type="button"
-                    onClick={() => setStorageExpanded((prev) => !prev)}
-                  >
-                    {storageExpanded ? <ChevronUp size={12} /> : <ChevronDown size={12} />}
-                    {t("profiles.cloud.storage.requestButton")}
-                  </Button>
+                  </button>
+                  {showRequestAction && (
+                    <Button
+                      type="button"
+                      onClick={() => setStorageExpanded((prev) => !prev)}
+                    >
+                      {storageExpanded ? <ChevronUp size={12} /> : <ChevronDown size={12} />}
+                      {t("profiles.cloud.storage.requestButton")}
+                    </Button>
+                  )}
                 </div>
-              </div>
 
-              <div className="mt-2.5 h-1.5 w-full overflow-hidden rounded-full bg-white/10">
-                <div
-                  className={`h-full rounded-full transition-all ${
-                    storageInfo.usedBytes >= storageInfo.quotaBytes
-                      ? "bg-red-400"
-                      : storageInfo.usedBytes >= storageInfo.quotaBytes * 0.75
-                        ? "bg-amber-400"
-                        : "bg-emerald-400"
-                  }`}
-                  style={{
-                    width: `${Math.min(
-                      100,
-                      Math.max(
-                        storageInfo.usedBytes > 0 ? 2 : 0,
-                        Math.round((storageInfo.usedBytes / Math.max(1, storageInfo.quotaBytes)) * 100),
-                      ),
-                    )}%`,
-                  }}
-                />
-              </div>
+                {cloudSync.historyError && (
+                  <div className="mt-2 rounded-lg border border-amber-500/30 bg-amber-500/10 px-2.5 py-1.5 text-[11px] text-amber-200">
+                    {cloudSync.historyError.includes("storage_quota_exceeded")
+                      ? t("profiles.cloud.storage.quotaExceededToast")
+                      : cloudSync.historyError.includes("storage_pool_full")
+                        ? t("profiles.cloud.storage.poolFullToast")
+                        : cloudSync.historyError}
+                  </div>
+                )}
 
-              <p className="mt-2 text-[11px] text-zinc-400">
-                {t("profiles.cloud.storage.description")}
-              </p>
-
-              {cloudSync.historyError && (
-                <div className="mt-2 rounded-lg border border-amber-500/30 bg-amber-500/10 px-2.5 py-1.5 text-[11px] text-amber-200">
-                  {cloudSync.historyError.includes("storage_quota_exceeded")
-                    ? t("profiles.cloud.storage.quotaExceededToast")
-                    : cloudSync.historyError.includes("storage_pool_full")
-                      ? t("profiles.cloud.storage.poolFullToast")
-                      : cloudSync.historyError}
-                </div>
-              )}
-
-              {(storageExpanded || hasPendingStorageTicket) && (
-                <div className="mt-3 space-y-2.5 border-t border-line/70 pt-3">
+                {(storageExpanded || hasPendingStorageTicket) && (
+                  <div className="mt-2.5 space-y-2.5 border-t border-line/70 pt-2.5">
                   {latestStorageTicket && (
                     <div
                       className={`rounded-lg border p-2.5 text-[11px] ${
@@ -848,10 +847,11 @@ export function ProCloudSection() {
                       </div>
                     </form>
                   )}
-                </div>
-              )}
-            </div>
-          )}
+                  </div>
+                )}
+              </div>
+            );
+          })()}
 
           <div className="mt-2.5 flex items-center gap-1.5 text-[11px] text-zinc-500">
             <Info size={12} className="shrink-0" />

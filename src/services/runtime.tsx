@@ -58,6 +58,7 @@ import {
   secretSet,
   spotifyOverlayNative,
   twitchNative,
+  webHostNative,
 } from "./native";
 import {
   loadTwitchSnapshot,
@@ -1765,9 +1766,115 @@ export function RuntimeProvider({ children }: { children: ReactNode }) {
     if (isTauri()) await twitchNative.chatStop().catch(() => undefined);
   }, [buildLocalCloudPayload, buildSyncedProfiles, pushLocalToCloud, state]);
 
+  const [remoteAuthNeeded, setRemoteAuthNeeded] = useState(false);
+  const [remoteTokenInput, setRemoteTokenInput] = useState("");
+  const [remoteAuthError, setRemoteAuthError] = useState<string>();
+
+  const sendRemoteAction = async (type: string, payload: Record<string, unknown> = {}) => {
+    const token = sessionStorage.getItem("sd_remote_token") ?? "";
+    await fetch("/api/action", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        ...(token ? { "X-SD-Token": token } : {}),
+      },
+      body: JSON.stringify({ type, payload }),
+    });
+  };
+
+  const applyRemoteSnapshot = useCallback((snap: Record<string, unknown>) => {
+    if (!snap || typeof snap !== "object" || snap.ready !== true) return false;
+    useAppStore.setState((prev) => ({
+      ...prev,
+      ready: true,
+      ...(snap.settings ? { settings: snap.settings as typeof prev.settings } : {}),
+      ...(snap.stats ? { stats: snap.stats as typeof prev.stats } : {}),
+      ...(Array.isArray(snap.chatMessages) ? { chatMessages: snap.chatMessages as typeof prev.chatMessages } : {}),
+      ...(Array.isArray(snap.events) ? { events: snap.events as typeof prev.events } : {}),
+      ...(snap.obs ? { obs: snap.obs as typeof prev.obs } : {}),
+      ...(snap.giveaway ? { giveaway: snap.giveaway as typeof prev.giveaway } : {}),
+      ...(snap.twitch ? { twitch: snap.twitch as typeof prev.twitch } : {}),
+      ...(snap.twitchBot ? { twitchBot: snap.twitchBot as typeof prev.twitchBot } : {}),
+      ...(snap.streamElements ? { streamElements: snap.streamElements as typeof prev.streamElements } : {}),
+      ...(snap.tipeeStream ? { tipeeStream: snap.tipeeStream as typeof prev.tipeeStream } : {}),
+      ...(Array.isArray(snap.commands) ? { commands: snap.commands as typeof prev.commands } : {}),
+      ...(Array.isArray(snap.customVariables) ? { customVariables: snap.customVariables as typeof prev.customVariables } : {}),
+      ...(snap.chatAlerts ? { chatAlerts: snap.chatAlerts as typeof prev.chatAlerts } : {}),
+      ...(Array.isArray(snap.channelRewards) ? { channelRewards: snap.channelRewards as typeof prev.channelRewards } : {}),
+      ...(Array.isArray(snap.profiles) ? { profiles: snap.profiles as typeof prev.profiles } : {}),
+      ...(typeof snap.activeProfileId === "string" ? { activeProfileId: snap.activeProfileId } : {}),
+      ...(typeof snap.lastTwitchUserId === "string" ? { lastTwitchUserId: snap.lastTwitchUserId } : {}),
+      ...(typeof snap.profilesAutoSwitch === "boolean" ? { profilesAutoSwitch: snap.profilesAutoSwitch } : {}),
+      ...(typeof snap.cloudSyncEnabled === "boolean" ? { cloudSyncEnabled: snap.cloudSyncEnabled } : {}),
+      ...(snap.cloudSyncCheckpoints ? { cloudSyncCheckpoints: snap.cloudSyncCheckpoints as typeof prev.cloudSyncCheckpoints } : {}),
+      ...(snap.cloudSync ? { cloudSync: snap.cloudSync as typeof prev.cloudSync } : {}),
+      ...(snap.supportTicket ? { supportTicket: snap.supportTicket as typeof prev.supportTicket } : {}),
+      ...(snap.storageTicket ? { storageTicket: snap.storageTicket as typeof prev.storageTicket } : {}),
+      ...(snap.entitlements ? { entitlements: snap.entitlements as typeof prev.entitlements } : {}),
+    }));
+    return true;
+  }, []);
+
   useEffect(() => {
     let disposed = false;
     const unlisten: Array<() => void> = [];
+    let remoteSse: EventSource | undefined;
+
+    if (!isTauri()) {
+      const params = new URLSearchParams(window.location.search);
+      const urlToken = params.get("token");
+      if (urlToken) {
+        sessionStorage.setItem("sd_remote_token", urlToken);
+        window.history.replaceState({}, "", window.location.pathname);
+      }
+      const token = sessionStorage.getItem("sd_remote_token") ?? "";
+      const connectSse = (tok: string) => {
+        if (remoteSse) remoteSse.close();
+        const q = tok ? `?token=${encodeURIComponent(tok)}` : "";
+        remoteSse = new EventSource(`/api/events${q}`);
+        remoteSse.addEventListener("state", (ev) => {
+          try {
+            applyRemoteSnapshot(JSON.parse(ev.data) as Record<string, unknown>);
+          } catch {
+            // ignore
+          }
+        });
+      };
+      const fetchInitial = async () => {
+        if (disposed) return;
+        try {
+          const q = token ? `?token=${encodeURIComponent(token)}` : "";
+          const res = await fetch(`/api/state${q}`);
+          if (res.status === 401) {
+            if (!disposed) {
+              setRemoteAuthNeeded(true);
+              setReady(true);
+            }
+            return;
+          }
+          if (res.ok) {
+            const snap = (await res.json()) as Record<string, unknown>;
+            if (!disposed) {
+              setRemoteAuthNeeded(false);
+              const applied = applyRemoteSnapshot(snap);
+              connectSse(token);
+              if (applied) return;
+            }
+          }
+        } catch {
+          // ignore and retry
+        }
+        if (!disposed) {
+          window.setTimeout(() => void fetchInitial(), 1500);
+        }
+      };
+      void fetchInitial();
+      return () => {
+        disposed = true;
+        remoteSse?.close();
+      };
+    }
+
     (async () => {
       try {
         const {
@@ -1873,6 +1980,75 @@ export function RuntimeProvider({ children }: { children: ReactNode }) {
           await listen<string>("tray-navigate", (event) =>
             state().setPage(event.payload),
           ),
+          await listen<{ type?: string; payload?: Record<string, unknown> }>(
+            "web-host-action",
+            (event) => {
+              const actionType = event.payload?.type;
+              const data = event.payload?.payload ?? {};
+              if (actionType === "chat.send" && typeof data.message === "string") {
+                void sendChatMessage(data.message);
+              } else if (actionType === "obs.scene" && typeof data.scene === "string") {
+                void obsRef.current?.setScene(data.scene);
+              } else if (actionType === "obs.streaming") {
+                void obsRef.current?.setStreaming(Boolean(data.active));
+              } else if (actionType === "obs.recording") {
+                void obsRef.current?.setRecording(Boolean(data.active));
+              } else if (actionType === "obs.recordingPaused") {
+                void obsRef.current?.setRecordingPaused(Boolean(data.paused));
+              } else if (actionType === "obs.replayBuffer") {
+                void obsRef.current?.setReplayBuffer(Boolean(data.active));
+              } else if (actionType === "obs.replay") {
+                void obsRef.current?.saveReplayBuffer();
+              } else if (actionType === "obs.virtualCam") {
+                void obsRef.current?.setVirtualCam(Boolean(data.active));
+              } else if (actionType === "obs.mute" && typeof data.name === "string") {
+                void obsRef.current?.setMute(data.name, Boolean(data.muted));
+              } else if (actionType === "obs.volume" && typeof data.name === "string") {
+                void obsRef.current?.setVolume(data.name, Number(data.volume ?? 1));
+              } else if (actionType === "giveaway.toggle") {
+                state().setGiveaway({ running: Boolean(data.active) });
+              } else if (actionType === "giveaway.draw") {
+                const cur = state().giveaway;
+                if (cur.entries.length > 0) {
+                  const winner = cur.entries[Math.floor(Math.random() * cur.entries.length)];
+                  state().setGiveaway({ winner, running: false });
+                }
+              } else if (actionType === "giveaway.reset") {
+                state().setGiveaway({ running: false, entries: [], winner: undefined });
+              } else if (actionType === "reconnect") {
+                void reconnect();
+              } else if (actionType === "state.save" && typeof data.key === "string") {
+                const key = data.key;
+                const val = data.value;
+                void saveLocalState(key, val);
+                if (key === "commands" && Array.isArray(val)) state().setCommands(val as never);
+                else if (key === "customVariables" && Array.isArray(val)) state().setCustomVariables(val as never);
+                else if (key === "chatAlerts" && val && typeof val === "object") state().setChatAlerts(val as never);
+                else if (key === "channelRewards" && Array.isArray(val)) state().setChannelRewards(val as never);
+                else if (key === "giveaway" && val && typeof val === "object") state().setGiveaway(val as never);
+                else if (key === "profiles" && Array.isArray(val)) state().setProfiles(val as never);
+                else if (key === "activeProfileId" && typeof val === "string") state().setActiveProfileId(val);
+                else if (key in state().settings) state().setSettings({ [key]: val } as never);
+              } else if (actionType === "state.saveBatch" && data.entries && typeof data.entries === "object") {
+                const entries = data.entries as Record<string, unknown>;
+                void saveLocalStateBatch(entries);
+                const settingsPatch: Record<string, unknown> = {};
+                for (const [key, val] of Object.entries(entries)) {
+                  if (key === "commands" && Array.isArray(val)) state().setCommands(val as never);
+                  else if (key === "customVariables" && Array.isArray(val)) state().setCustomVariables(val as never);
+                  else if (key === "chatAlerts" && val && typeof val === "object") state().setChatAlerts(val as never);
+                  else if (key === "channelRewards" && Array.isArray(val)) state().setChannelRewards(val as never);
+                  else if (key === "giveaway" && val && typeof val === "object") state().setGiveaway(val as never);
+                  else if (key === "profiles" && Array.isArray(val)) state().setProfiles(val as never);
+                  else if (key === "activeProfileId" && typeof val === "string") state().setActiveProfileId(val);
+                  else if (key in state().settings) settingsPatch[key] = val;
+                }
+                if (Object.keys(settingsPatch).length > 0) {
+                  state().setSettings(settingsPatch as never);
+                }
+              }
+            },
+          ),
         );
       }
     })();
@@ -1885,7 +2061,52 @@ export function RuntimeProvider({ children }: { children: ReactNode }) {
       obsRef.current?.stop();
       chatRef.current?.stop();
     };
-  }, [reconnect, setChatMessages, setEvents, setReady, setSettings, state]);
+  }, [applyRemoteSnapshot, reconnect, setChatMessages, setEvents, setReady, setSettings, state]);
+
+  useEffect(() => {
+    if (!isTauri()) return;
+    let timer: number | undefined;
+    const publish = () => {
+      const s = useAppStore.getState();
+      if (!s.ready) return;
+      void webHostNative.publishState({
+        ready: true,
+        settings: s.settings,
+        stats: s.stats,
+        chatMessages: s.chatMessages.slice(-100),
+        events: s.events.slice(0, 200),
+        obs: s.obs,
+        giveaway: s.giveaway,
+        twitch: s.twitch,
+        twitchBot: s.twitchBot,
+        streamElements: s.streamElements,
+        tipeeStream: s.tipeeStream,
+        commands: s.commands,
+        customVariables: s.customVariables,
+        chatAlerts: s.chatAlerts,
+        channelRewards: s.channelRewards,
+        profiles: s.profiles,
+        activeProfileId: s.activeProfileId,
+        lastTwitchUserId: s.lastTwitchUserId,
+        profilesAutoSwitch: s.profilesAutoSwitch,
+        cloudSyncEnabled: s.cloudSyncEnabled,
+        cloudSyncCheckpoints: s.cloudSyncCheckpoints,
+        cloudSync: s.cloudSync,
+        supportTicket: s.supportTicket,
+        storageTicket: s.storageTicket,
+        entitlements: s.entitlements,
+      });
+    };
+    publish();
+    const unsub = useAppStore.subscribe(() => {
+      if (timer) window.clearTimeout(timer);
+      timer = window.setTimeout(publish, 150);
+    });
+    return () => {
+      unsub();
+      if (timer) window.clearTimeout(timer);
+    };
+  }, []);
 
   const connectTwitch = async () => {
     const attempt = ++twitchAuthAttemptRef.current;
@@ -2077,24 +2298,47 @@ export function RuntimeProvider({ children }: { children: ReactNode }) {
     }
   };
   const setObsScene = (scene: string) =>
-    obsAction((client) => client.setScene(scene));
+    !isTauri()
+      ? sendRemoteAction("obs.scene", { scene })
+      : obsAction((client) => client.setScene(scene));
   const setObsMute = (input: string, muted: boolean) =>
-    obsAction((client) => client.setMute(input, muted));
+    !isTauri()
+      ? sendRemoteAction("obs.mute", { name: input, muted })
+      : obsAction((client) => client.setMute(input, muted));
   const setObsVolume = (input: string, volume: number) =>
-    obsAction((client) => client.setVolume(input, volume));
+    !isTauri()
+      ? sendRemoteAction("obs.volume", { name: input, volume })
+      : obsAction((client) => client.setVolume(input, volume));
   const setObsStreaming = (active: boolean) =>
-    obsAction((client) => client.setStreaming(active));
+    !isTauri()
+      ? sendRemoteAction("obs.streaming", { active })
+      : obsAction((client) => client.setStreaming(active));
   const setObsRecording = (active: boolean) =>
-    obsAction((client) => client.setRecording(active));
+    !isTauri()
+      ? sendRemoteAction("obs.recording", { active })
+      : obsAction((client) => client.setRecording(active));
   const setObsRecordingPaused = (paused: boolean) =>
-    obsAction((client) => client.setRecordingPaused(paused));
+    !isTauri()
+      ? sendRemoteAction("obs.recordingPaused", { paused })
+      : obsAction((client) => client.setRecordingPaused(paused));
   const setObsReplayBuffer = (active: boolean) =>
-    obsAction((client) => client.setReplayBuffer(active));
+    !isTauri()
+      ? sendRemoteAction("obs.replayBuffer", { active })
+      : obsAction((client) => client.setReplayBuffer(active));
   const saveObsReplayBuffer = () =>
-    obsAction((client) => client.saveReplayBuffer());
+    !isTauri()
+      ? sendRemoteAction("obs.replay")
+      : obsAction((client) => client.saveReplayBuffer());
   const setObsVirtualCam = (active: boolean) =>
-    obsAction((client) => client.setVirtualCam(active));
+    !isTauri()
+      ? sendRemoteAction("obs.virtualCam", { active })
+      : obsAction((client) => client.setVirtualCam(active));
   const sendChatMessage = async (text: string) => {
+    if (!isTauri()) {
+      const trimmed = text.trim();
+      if (trimmed) await sendRemoteAction("chat.send", { message: trimmed.slice(0, 500) });
+      return;
+    }
     const current = state();
     const resolved = (
       await resolveTemplateWithSong(text, {
@@ -2897,8 +3141,12 @@ export function RuntimeProvider({ children }: { children: ReactNode }) {
 
   const refreshProEntitlements = async () => {
     const current = state();
+    if (!isTauri()) {
+      void sendRemoteAction("pro.refresh");
+      return current.entitlements;
+    }
     const userId = current.twitch.userId;
-    if (!isTauri() || !userId) {
+    if (!userId) {
       const freeState = { tier: "free" as const, pro: false, features: [] };
       current.setEntitlements(freeState);
       return freeState;
@@ -2950,8 +3198,9 @@ export function RuntimeProvider({ children }: { children: ReactNode }) {
 
   const refreshSupportTicket = async (force = false) => {
     const current = state();
+    if (!isTauri()) return current.supportTicket;
     const userId = current.twitch.userId;
-    if (!isTauri() || !userId) {
+    if (!userId) {
       current.setSupportTicket(undefined);
       return undefined;
     }
@@ -3023,8 +3272,9 @@ export function RuntimeProvider({ children }: { children: ReactNode }) {
 
   const refreshStorageTicket = async (force = false) => {
     const current = state();
+    if (!isTauri()) return current.storageTicket;
     const userId = current.twitch.userId;
-    if (!isTauri() || !userId) {
+    if (!userId) {
       current.setStorageTicket(undefined);
       return undefined;
     }
@@ -3061,6 +3311,59 @@ export function RuntimeProvider({ children }: { children: ReactNode }) {
     state().setCloudSync({ storageInfo: updated.storage });
     toast.success(i18n.t("profiles.cloud.storage.requestSuccess"));
   };
+
+  if (!isTauri() && remoteAuthNeeded) {
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-[#0b0c0f] p-4 text-zinc-100">
+        <form
+          onSubmit={async (e) => {
+            e.preventDefault();
+            setRemoteAuthError(undefined);
+            const tok = remoteTokenInput.trim();
+            if (!tok) return;
+            try {
+              const res = await fetch(`/api/state?token=${encodeURIComponent(tok)}`);
+              if (res.status === 401) {
+                setRemoteAuthError(i18n.t("host.invalidToken"));
+                return;
+              }
+              if (res.ok) {
+                sessionStorage.setItem("sd_remote_token", tok);
+                window.location.reload();
+              }
+            } catch {
+              setRemoteAuthError(i18n.t("host.configError"));
+            }
+          }}
+          className="w-full max-w-sm space-y-4 rounded-2xl border border-white/10 bg-[#14161c] p-6 shadow-2xl"
+        >
+          <div className="space-y-1">
+            <h1 className="text-base font-semibold">{i18n.t("host.title")}</h1>
+            <p className="text-xs text-zinc-400">{i18n.t("host.authPrompt")}</p>
+          </div>
+          <input
+            type="password"
+            className="input w-full font-mono text-sm"
+            placeholder={i18n.t("host.tokenLabel")}
+            value={remoteTokenInput}
+            onChange={(e) => setRemoteTokenInput(e.target.value)}
+            autoFocus
+          />
+          {remoteAuthError && (
+            <div className="rounded-lg border border-red-500/30 bg-red-500/10 px-3 py-2 text-xs text-red-200">
+              {remoteAuthError}
+            </div>
+          )}
+          <button
+            type="submit"
+            className="w-full rounded-xl bg-accent px-4 py-2.5 text-sm font-semibold text-white transition hover:brightness-110"
+          >
+            {i18n.t("host.connectButton")}
+          </button>
+        </form>
+      </div>
+    );
+  }
 
   return (
     <RuntimeContext.Provider
