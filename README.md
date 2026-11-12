@@ -64,17 +64,27 @@ Want your setup available anywhere without manual file transfers? **StreamDash P
 
 ### Dashboard
 
-<img width="1327" alt="StreamDash Dashboard" src="https://github.com/user-attachments/assets/8122f3ad-aed2-4ac8-a670-a812cc7db5ba" />
+![StreamDash Dashboard](docs/screenshots/dashboard.png)
 
-### Stream
+### Stream Management
 
-<img width="1335" alt="StreamDash Stream" src="https://github.com/user-attachments/assets/72049d58-6ec3-4123-b2e6-140c676f4a89" />
+![StreamDash Stream Management](docs/screenshots/stream.png)
 
-### Chat & Moderation
+### Live Chat
 
-<img width="1335" alt="StreamDash Chat" src="https://github.com/user-attachments/assets/f08ad1fa-6a36-43ea-925b-c151257ce7d6" />
+![StreamDash Live Chat](docs/screenshots/chat.png)
 
-<img width="759" alt="StreamDash Moderation" src="https://github.com/user-attachments/assets/621960a1-f0e0-4bed-858b-c15fe8711864" />
+### Giveaways
+
+![StreamDash Giveaways](docs/screenshots/giveaways.png)
+
+### Chat Alerts
+
+![StreamDash Chat Alerts](docs/screenshots/chat-alerts.png)
+
+### Goals & Progress Tracking
+
+![StreamDash Goals](docs/screenshots/goals.png)
 
 ---
 
