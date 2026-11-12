@@ -423,6 +423,56 @@ fn event_insert(
 }
 
 #[tauri::command]
+fn history_merge_events(
+    state: tauri::State<'_, AppState>,
+    events: Vec<ActivityRecord>,
+    max_events: Option<u32>,
+) -> Result<usize, String> {
+    if events.is_empty() {
+        return Ok(0);
+    }
+    let mut conn = state.history.lock().map_err(|_| "Database lock failed")?;
+    let tx = conn.transaction().map_err(|e| e.to_string())?;
+    let now = now_epoch();
+    let mut inserted = 0usize;
+    {
+        let mut stmt = tx.prepare(
+            "INSERT OR IGNORE INTO activity_events
+             (id,source,event_type,username,display_name,timestamp,amount,currency,message,tier,gift_count,bits,viewer_count,metadata,created_at)
+             VALUES (?1,?2,?3,?4,?5,?6,?7,?8,?9,?10,?11,?12,?13,?14,?15)",
+        ).map_err(|e| e.to_string())?;
+        for event in &events {
+            let changed = stmt.execute(params![
+                event.id,
+                event.source,
+                event.event_type,
+                event.username,
+                event.display_name,
+                event.timestamp,
+                event.amount,
+                event.currency,
+                event.message,
+                event.tier,
+                event.gift_count,
+                event.bits,
+                event.viewer_count,
+                event.metadata.to_string(),
+                now
+            ]).map_err(|e| e.to_string())?;
+            inserted += changed;
+        }
+    }
+    let keep = max_events.unwrap_or(50_000).clamp(100, 50_000);
+    tx.execute(
+        "DELETE FROM activity_events WHERE id IN (SELECT id FROM activity_events ORDER BY timestamp DESC LIMIT -1 OFFSET ?1)",
+        [keep],
+    )
+    .map_err(|e| e.to_string())?;
+    tx.commit().map_err(|e| e.to_string())?;
+    Ok(inserted)
+}
+
+#[tauri::command]
 fn events_clear(state: tauri::State<'_, AppState>) -> Result<(), String> {
     state
         .history
@@ -1370,6 +1420,87 @@ async fn support_submit_key_reset(client_id: String, message: String) -> Result<
     Ok(body)
 }
 
+#[tauri::command]
+async fn history_sync_meta(client_id: String) -> Result<Value, String> {
+    let (status, body) =
+        cloud_sync_send(&client_id, reqwest::Method::GET, "/v1/history/meta", None).await?;
+    if !(200..300).contains(&status) {
+        return Err(cloud_sync_error(status, &body));
+    }
+    Ok(body)
+}
+
+#[tauri::command]
+async fn history_sync_pull(client_id: String) -> Result<Value, String> {
+    let (status, body) =
+        cloud_sync_send(&client_id, reqwest::Method::GET, "/v1/history", None).await?;
+    if !(200..300).contains(&status) {
+        return Err(cloud_sync_error(status, &body));
+    }
+    Ok(body)
+}
+
+#[tauri::command]
+async fn history_sync_push(
+    client_id: String,
+    payload: Value,
+    expected_revision: Option<i64>,
+) -> Result<Value, String> {
+    let body_req = json!({
+        "payload": payload,
+        "expectedRevision": expected_revision,
+    });
+    let (status, body) = cloud_sync_send(
+        &client_id,
+        reqwest::Method::PUT,
+        "/v1/history",
+        Some(&body_req),
+    )
+    .await?;
+    if !(200..300).contains(&status) {
+        return Err(cloud_sync_error(status, &body));
+    }
+    Ok(body)
+}
+
+#[tauri::command]
+async fn support_storage_status(client_id: String) -> Result<Value, String> {
+    let (status, body) = cloud_sync_send(
+        &client_id,
+        reqwest::Method::GET,
+        "/v1/support/storage-status",
+        None,
+    )
+    .await?;
+    if !(200..300).contains(&status) {
+        return Err(cloud_sync_error(status, &body));
+    }
+    Ok(body)
+}
+
+#[tauri::command]
+async fn support_storage_request(
+    client_id: String,
+    requested_mb: u32,
+    message: String,
+) -> Result<Value, String> {
+    let payload = json!({
+        "requestedMb": requested_mb,
+        "message": message,
+    });
+    let (status, body) = cloud_sync_send(
+        &client_id,
+        reqwest::Method::POST,
+        "/v1/support/storage-request",
+        Some(&payload),
+    )
+    .await?;
+    if !(200..300).contains(&status) {
+        return Err(cloud_sync_error(status, &body));
+    }
+    Ok(body)
+}
+
 #[derive(Default)]
 struct ChatIrc {
     sender: Mutex<Option<mpsc::UnboundedSender<String>>>,
@@ -1839,10 +1970,16 @@ pub fn run() {
             cloud_sync_pull,
             cloud_sync_push,
             cloud_sync_delete,
+            history_sync_meta,
+            history_sync_pull,
+            history_sync_push,
+            history_merge_events,
             pro_entitlements,
             pro_activate_license,
             support_ticket_status,
             support_submit_key_reset,
+            support_storage_status,
+            support_storage_request,
             twitch_chat_start,
             twitch_chat_send,
             twitch_chat_stop,

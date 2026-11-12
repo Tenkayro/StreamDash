@@ -387,6 +387,48 @@ export interface CloudSyncConflict {
   remoteBundle?: ProfileExportBundle
 }
 
+export interface StorageQuotaInfo {
+  usedBytes: number
+  quotaBytes: number
+  customQuotaBytes?: number | null
+  defaultQuotaBytes: number
+  effectiveDefaultQuotaBytes: number
+  globalUsedBytes: number
+  globalPoolMaxBytes: number
+  globalSoftThrottled: boolean
+  globalPoolFull: boolean
+  historyRevision: number
+  historyUpdatedAt: number
+  historyEventCount?: number
+}
+
+export interface StorageQuotaTicket {
+  id: number
+  twitchUserId: string
+  twitchLogin: string
+  usedBytes: number
+  currentQuotaBytes: number
+  requestedMb: number
+  grantedMb?: number | null
+  userMessage: string
+  status: 'pending' | 'approved' | 'rejected'
+  adminNote?: string
+  decidedBy?: string
+  createdAt: number
+  decidedAt?: number | null
+  updatedAt: number
+}
+
+export interface StorageTicketState {
+  storage: StorageQuotaInfo
+  canSubmit: boolean
+  blockedReason?: 'ticket_already_pending' | 'support_cooldown' | 'max_quota_reached'
+  cooldownUntil?: number
+  latestTicket?: StorageQuotaTicket | null
+  loading?: boolean
+  error?: string
+}
+
 export interface CloudSyncState {
   phase: 'idle' | 'syncing' | 'pending' | 'synced' | 'conflict' | 'error'
   lastSyncedAt?: number
@@ -396,6 +438,9 @@ export interface CloudSyncState {
   remoteMeta?: CloudSyncRemoteMeta
   conflict?: CloudSyncConflict
   error?: string
+  storageInfo?: StorageQuotaInfo
+  historyLastSyncedAt?: number
+  historyError?: string
 }
 
 export interface SupportResetTicket {

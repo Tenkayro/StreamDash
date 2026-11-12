@@ -4,6 +4,7 @@ import type {
   ProEntitlements,
   ProfileExportBundle,
   ProfileExportSections,
+  StorageTicketState,
   SupportTicketState,
 } from "../types";
 
@@ -97,6 +98,8 @@ export interface RuntimeValue {
   activateProLicense: (licenseKey: string) => Promise<ProEntitlements>;
   refreshSupportTicket: (force?: boolean) => Promise<SupportTicketState | undefined>;
   submitKeyResetTicket: (message: string) => Promise<void>;
+  refreshStorageTicket: (force?: boolean) => Promise<StorageTicketState | undefined>;
+  submitStorageRequestTicket: (requestedMb: number, message: string) => Promise<void>;
   reconnect: () => Promise<void>;
   shutdown: () => Promise<void>;
 }

@@ -11,6 +11,7 @@ import {
   Copy,
   Crown,
   ExternalLink,
+  HardDrive,
   Info,
   KeyRound,
   LifeBuoy,
@@ -71,6 +72,7 @@ export function ProCloudSection() {
   const cloudSyncCheckpoints = useAppStore((s) => s.cloudSyncCheckpoints);
   const cloudSync = useAppStore((s) => s.cloudSync);
   const supportTicket = useAppStore((s) => s.supportTicket);
+  const storageTicket = useAppStore((s) => s.storageTicket);
   const setPage = useAppStore((s) => s.setPage);
 
   const [licenseKey, setLicenseKey] = useState("");
@@ -88,7 +90,52 @@ export function ProCloudSection() {
   const [resetError, setResetError] = useState<string>();
   const [dismissedTickets, setDismissedTickets] = useState<Record<string, string>>({});
 
+  const [storageExpanded, setStorageExpanded] = useState(false);
+  const [storageRequestMb, setStorageRequestMb] = useState<number>(50);
+  const [storageMessage, setStorageMessage] = useState("");
+  const [storageSubmitting, setStorageSubmitting] = useState(false);
+  const [storageRefreshing, setStorageRefreshing] = useState(false);
+  const [storageError, setStorageError] = useState<string>();
+
   const twitchConnected = twitch.phase === "connected" && Boolean(twitch.userId);
+  const storageInfo = storageTicket?.storage ?? cloudSync.storageInfo;
+  const latestStorageTicket = storageTicket?.latestTicket ?? undefined;
+  const hasPendingStorageTicket = latestStorageTicket?.status === "pending";
+
+  useEffect(() => {
+    if (twitchConnected && entitlements.pro && !storageTicket) {
+      void runtime.refreshStorageTicket(false);
+    }
+  }, [twitchConnected, entitlements.pro, storageTicket, runtime]);
+
+  const handleStorageRefresh = async () => {
+    setStorageRefreshing(true);
+    setStorageError(undefined);
+    try {
+      await runtime.refreshStorageTicket(true);
+    } finally {
+      setStorageRefreshing(false);
+    }
+  };
+
+  const handleStorageSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    const trimmed = storageMessage.trim();
+    if (trimmed.length < 10) {
+      setStorageError(t("settings.support.errors.messageTooShort"));
+      return;
+    }
+    setStorageSubmitting(true);
+    setStorageError(undefined);
+    try {
+      await runtime.submitStorageRequestTicket(storageRequestMb, trimmed);
+      setStorageMessage("");
+    } catch (err) {
+      setStorageError(mapSupportError(errorMessage(err), t));
+    } finally {
+      setStorageSubmitting(false);
+    }
+  };
   const latest = supportTicket?.latestTicket ?? undefined;
   const hasPending = latest?.status === "pending";
   const ticketFingerprint = latest
@@ -622,6 +669,187 @@ export function ProCloudSection() {
                   {t("profiles.cloud.keepLocal")}
                 </Button>
               </div>
+            </div>
+          )}
+
+          {twitchConnected && entitlements.pro && storageInfo && (
+            <div className="mt-3 rounded-xl border border-line bg-black/20 p-3.5 text-xs">
+              <div className="flex flex-wrap items-center justify-between gap-2">
+                <div className="flex items-center gap-2">
+                  <HardDrive size={14} className="text-accent" />
+                  <span className="font-semibold text-zinc-100">
+                    {t("profiles.cloud.storage.title")}
+                  </span>
+                  <Badge
+                    tone={
+                      storageInfo.usedBytes >= storageInfo.quotaBytes
+                        ? "red"
+                        : storageInfo.usedBytes >= storageInfo.quotaBytes * 0.75
+                          ? "amber"
+                          : "green"
+                    }
+                  >
+                    {t("profiles.cloud.storage.usageBadge", {
+                      used: (storageInfo.usedBytes / (1024 * 1024)).toFixed(2),
+                      quota: Math.round(storageInfo.quotaBytes / (1024 * 1024)),
+                    })}
+                  </Badge>
+                  {storageInfo.globalSoftThrottled && !storageInfo.customQuotaBytes && (
+                    <Badge tone="amber">{t("profiles.cloud.storage.throttledBadge")}</Badge>
+                  )}
+                  {hasPendingStorageTicket && (
+                    <Badge tone="amber">{t("settings.support.status.pending")}</Badge>
+                  )}
+                </div>
+                <div className="flex items-center gap-1.5">
+                  <Button
+                    type="button"
+                    disabled={storageRefreshing || storageTicket?.loading}
+                    onClick={() => void handleStorageRefresh()}
+                  >
+                    <RefreshCw
+                      size={12}
+                      className={storageRefreshing || storageTicket?.loading ? "animate-spin" : ""}
+                    />
+                    {t("settings.support.refresh")}
+                  </Button>
+                  <Button
+                    type="button"
+                    onClick={() => setStorageExpanded((prev) => !prev)}
+                  >
+                    {storageExpanded ? <ChevronUp size={12} /> : <ChevronDown size={12} />}
+                    {t("profiles.cloud.storage.requestButton")}
+                  </Button>
+                </div>
+              </div>
+
+              <div className="mt-2.5 h-1.5 w-full overflow-hidden rounded-full bg-white/10">
+                <div
+                  className={`h-full rounded-full transition-all ${
+                    storageInfo.usedBytes >= storageInfo.quotaBytes
+                      ? "bg-red-400"
+                      : storageInfo.usedBytes >= storageInfo.quotaBytes * 0.75
+                        ? "bg-amber-400"
+                        : "bg-emerald-400"
+                  }`}
+                  style={{
+                    width: `${Math.min(
+                      100,
+                      Math.max(
+                        storageInfo.usedBytes > 0 ? 2 : 0,
+                        Math.round((storageInfo.usedBytes / Math.max(1, storageInfo.quotaBytes)) * 100),
+                      ),
+                    )}%`,
+                  }}
+                />
+              </div>
+
+              <p className="mt-2 text-[11px] text-zinc-400">
+                {t("profiles.cloud.storage.description")}
+              </p>
+
+              {cloudSync.historyError && (
+                <div className="mt-2 rounded-lg border border-amber-500/30 bg-amber-500/10 px-2.5 py-1.5 text-[11px] text-amber-200">
+                  {cloudSync.historyError.includes("storage_quota_exceeded")
+                    ? t("profiles.cloud.storage.quotaExceededToast")
+                    : cloudSync.historyError.includes("storage_pool_full")
+                      ? t("profiles.cloud.storage.poolFullToast")
+                      : cloudSync.historyError}
+                </div>
+              )}
+
+              {(storageExpanded || hasPendingStorageTicket) && (
+                <div className="mt-3 space-y-2.5 border-t border-line/70 pt-3">
+                  {latestStorageTicket && (
+                    <div
+                      className={`rounded-lg border p-2.5 text-[11px] ${
+                        latestStorageTicket.status === "approved"
+                          ? "border-emerald-500/30 bg-emerald-500/8"
+                          : latestStorageTicket.status === "rejected"
+                            ? "border-red-500/30 bg-red-500/8"
+                            : "border-amber-500/30 bg-amber-500/8"
+                      }`}
+                    >
+                      <div className="flex flex-wrap items-center justify-between gap-2 font-semibold">
+                        <span>
+                          {t("profiles.cloud.storage.ticketHeader", {
+                            id: latestStorageTicket.id,
+                            mb: latestStorageTicket.requestedMb,
+                          })}
+                        </span>
+                        <Badge
+                          tone={
+                            latestStorageTicket.status === "approved"
+                              ? "green"
+                              : latestStorageTicket.status === "rejected"
+                                ? "red"
+                                : "amber"
+                          }
+                        >
+                          {t(`settings.support.status.${latestStorageTicket.status}`)}
+                        </Badge>
+                      </div>
+                      {latestStorageTicket.adminNote && (
+                        <div className="mt-1 text-zinc-300">
+                          {t("settings.support.adminNote")}: {latestStorageTicket.adminNote}
+                        </div>
+                      )}
+                    </div>
+                  )}
+
+                  {storageTicket?.canSubmit && (
+                    <form onSubmit={(e) => void handleStorageSubmit(e)} className="space-y-2.5">
+                      <div className="flex flex-wrap items-center gap-2">
+                        <span className="text-[11px] font-medium text-zinc-300">
+                          {t("profiles.cloud.storage.selectTargetLabel")}
+                        </span>
+                        {[25, 50, 100].map((addMb) => {
+                          const currentMb = Math.round(storageInfo.quotaBytes / (1024 * 1024));
+                          const targetMb = Math.min(500, currentMb + addMb);
+                          const active = storageRequestMb === targetMb;
+                          return (
+                            <Button
+                              key={addMb}
+                              type="button"
+                              variant={active ? "primary" : "default"}
+                              onClick={() => setStorageRequestMb(targetMb)}
+                            >
+                              +{addMb} MB ({targetMb} MB)
+                            </Button>
+                          );
+                        })}
+                      </div>
+                      <textarea
+                        className="input min-h-[68px] w-full py-2 text-xs"
+                        placeholder={t("profiles.cloud.storage.messagePlaceholder")}
+                        value={storageMessage}
+                        onChange={(e) => {
+                          setStorageMessage(e.target.value);
+                          if (storageError) setStorageError(undefined);
+                        }}
+                        maxLength={500}
+                      />
+                      {storageError && (
+                        <div className="rounded-lg border border-red-500/30 bg-red-500/10 px-2.5 py-1.5 text-[11px] text-red-200">
+                          {storageError}
+                        </div>
+                      )}
+                      <div className="flex justify-end">
+                        <Button
+                          type="submit"
+                          variant="primary"
+                          disabled={storageSubmitting || storageMessage.trim().length < 10}
+                        >
+                          <Send size={12} />
+                          {storageSubmitting
+                            ? t("settings.support.submitting")
+                            : t("profiles.cloud.storage.submitButton")}
+                        </Button>
+                      </div>
+                    </form>
+                  )}
+                </div>
+              )}
             </div>
           )}
 

@@ -4,8 +4,12 @@ import type {
   AppSettings,
   ChatMessage,
   CloudSyncRemoteMeta,
+  DashboardStats,
   ProEntitlements,
   ProfileExportBundle,
+  StorageQuotaInfo,
+  StorageQuotaTicket,
+  StorageTicketState,
   SupportResetTicket,
   SupportTicketState,
   TwitchSession,
@@ -23,6 +27,12 @@ export async function saveEvent(
 }
 export async function clearEvents() {
   if (isTauri()) await invoke("events_clear");
+}
+export async function mergeEvents(
+  events: ActivityEvent[],
+  maxEvents = 50_000,
+): Promise<number> {
+  return isTauri() ? invoke("history_merge_events", { events, maxEvents }) : 0;
 }
 export async function loadChatMessages(limit = 1000): Promise<ChatMessage[]> {
   return isTauri() ? invoke("chat_messages_list", { limit }) : [];
@@ -277,4 +287,89 @@ export const supportNative = {
           message,
         })
       : Promise.reject(new Error("Support tickets require the desktop app")),
+  storageStatus: (clientId: string): Promise<StorageTicketState> =>
+    isTauri()
+      ? invoke<StorageTicketState>("support_storage_status", { clientId })
+      : Promise.reject(new Error("Storage status requires the desktop app")),
+  submitStorageRequest: (
+    clientId: string,
+    requestedMb: number,
+    message: string,
+  ): Promise<{ ok: boolean; ticket: StorageQuotaTicket; storage: StorageQuotaInfo }> =>
+    isTauri()
+      ? invoke<{ ok: boolean; ticket: StorageQuotaTicket; storage: StorageQuotaInfo }>(
+          "support_storage_request",
+          {
+            clientId,
+            requestedMb,
+            message,
+          },
+        )
+      : Promise.reject(new Error("Storage requests require the desktop app")),
+};
+
+export interface CloudHistoryPayload {
+  version: number;
+  exportedAt: number;
+  events: ActivityEvent[];
+  stats: DashboardStats;
+}
+
+export interface CloudHistoryMetaResponse {
+  exists: boolean;
+  revision: number;
+  payloadSha256?: string;
+  rawBytes?: number;
+  compressedBytes?: number;
+  eventCount?: number;
+  updatedAt?: number;
+  storage?: StorageQuotaInfo;
+}
+
+export interface CloudHistoryPullResponse {
+  exists: boolean;
+  revision: number;
+  payloadSha256?: string;
+  rawBytes?: number;
+  compressedBytes?: number;
+  eventCount?: number;
+  updatedAt?: number;
+  payload?: CloudHistoryPayload;
+  storage?: StorageQuotaInfo;
+}
+
+export interface CloudHistoryPushResponse {
+  ok: boolean;
+  revision: number;
+  payloadSha256: string;
+  rawBytes: number;
+  compressedBytes: number;
+  eventCount: number;
+  updatedAt: number;
+  storage?: StorageQuotaInfo;
+}
+
+export const historySyncNative = {
+  meta: (clientId: string): Promise<CloudHistoryMetaResponse> =>
+    isTauri()
+      ? invoke<CloudHistoryMetaResponse>("history_sync_meta", { clientId })
+      : Promise.resolve({ exists: false, revision: 0 }),
+  pull: (clientId: string): Promise<CloudHistoryPullResponse> =>
+    isTauri()
+      ? invoke<CloudHistoryPullResponse>("history_sync_pull", { clientId })
+      : Promise.resolve({ exists: false, revision: 0 }),
+  push: (
+    clientId: string,
+    params: {
+      payload: CloudHistoryPayload;
+      expectedRevision?: number;
+    },
+  ): Promise<CloudHistoryPushResponse> =>
+    isTauri()
+      ? invoke<CloudHistoryPushResponse>("history_sync_push", {
+          clientId,
+          payload: params.payload,
+          expectedRevision: params.expectedRevision,
+        })
+      : Promise.reject(new Error("Cloud history sync requires the desktop app")),
 };

@@ -40,10 +40,12 @@ import {
 } from "../lib/profiles";
 import {
   cloudSyncNative,
+  historySyncNative,
   importHistoryBatch,
   loadChatMessages,
   loadEvents,
   loadSettings,
+  mergeEvents,
   proNative,
   saveChatMessage,
   supportNative,
@@ -925,6 +927,78 @@ export function RuntimeProvider({ children }: { children: ReactNode }) {
     [applySnapshotAndPersist, buildSyncedProfiles, setCloudSyncCheckpoint, state],
   );
 
+  const syncHistoryWithCloud = useCallback(
+    async (userId: string, mode: "smart" | "push" | "pull" = "smart") => {
+      if (!isTauri() || !userId || !state().entitlements.pro) return;
+      try {
+        const meta = await historySyncNative.meta(TWITCH_CLIENT_ID);
+        if (meta.storage) {
+          state().setCloudSync({ storageInfo: meta.storage, historyError: undefined });
+        }
+
+        if (mode === "pull" || (mode === "smart" && meta.exists)) {
+          const pulled = await historySyncNative.pull(TWITCH_CLIENT_ID);
+          if (pulled.payload?.events?.length) {
+            const inserted = await mergeEvents(pulled.payload.events, 50_000);
+            if (inserted > 0) {
+              const refreshed = await loadEvents(5000);
+              state().setEvents(refreshed);
+            }
+          }
+          if (pulled.payload?.stats) {
+            const cur = state().stats;
+            const rem = pulled.payload.stats;
+            const mergedStats = {
+              ...cur,
+              followers: Math.max(cur.followers ?? 0, rem.followers ?? 0) || undefined,
+              subscribers: Math.max(cur.subscribers ?? 0, rem.subscribers ?? 0) || undefined,
+              viewers: cur.viewers ?? rem.viewers,
+              donations: Math.max(cur.donations ?? 0, rem.donations ?? 0),
+              donationCurrency: cur.donationCurrency || rem.donationCurrency,
+              bits: Math.max(cur.bits ?? 0, rem.bits ?? 0),
+              startedAt: cur.startedAt || rem.startedAt,
+              title: cur.title || rem.title,
+              category: cur.category || rem.category,
+            };
+            state().setStats(mergedStats);
+            await saveLocalState("cachedStats", mergedStats);
+          }
+          state().setCloudSync({
+            storageInfo: pulled.storage ?? meta.storage,
+            historyLastSyncedAt: Date.now(),
+            historyError: undefined,
+          });
+        }
+
+        if (mode === "push" || mode === "smart") {
+          const events = await loadEvents(50_000);
+          const pushed = await historySyncNative.push(TWITCH_CLIENT_ID, {
+            payload: {
+              version: 1,
+              exportedAt: Date.now(),
+              events,
+              stats: state().stats,
+            },
+          });
+          state().setCloudSync({
+            storageInfo: pushed.storage,
+            historyLastSyncedAt: Date.now(),
+            historyError: undefined,
+          });
+        }
+      } catch (err) {
+        const msg = errorMessage(err);
+        state().setCloudSync({ historyError: msg });
+        if (msg.includes("storage_quota_exceeded")) {
+          toast.warning(i18n.t("profiles.cloud.storage.quotaExceededToast"));
+        } else if (msg.includes("storage_pool_full")) {
+          toast.warning(i18n.t("profiles.cloud.storage.poolFullToast"));
+        }
+      }
+    },
+    [state],
+  );
+
   const pushLocalToCloud = useCallback(
     async (
       userId: string,
@@ -1075,6 +1149,7 @@ export function RuntimeProvider({ children }: { children: ReactNode }) {
             toast.success(
               i18n.t("profiles.cloud.restoredToast", { account: accountLogin }),
             );
+            if (!options?.manual) void syncHistoryWithCloud(userId, "smart");
             return "pulled";
           }
 
@@ -1109,6 +1184,7 @@ export function RuntimeProvider({ children }: { children: ReactNode }) {
             conflict: undefined,
             error: undefined,
           });
+          if (!options?.manual) void syncHistoryWithCloud(userId, "smart");
           return "noop";
         }
 
@@ -1117,6 +1193,9 @@ export function RuntimeProvider({ children }: { children: ReactNode }) {
             expectedRevision: checkpoint.revision,
             notifyConflict: true,
           });
+          if (pushResult === "synced" && !options?.manual) {
+            void syncHistoryWithCloud(userId, "smart");
+          }
           return pushResult === "synced" ? "pushed" : "conflict";
         }
 
@@ -1129,6 +1208,7 @@ export function RuntimeProvider({ children }: { children: ReactNode }) {
         if (!localDirty) {
           await applyPulledCloudBundle(userId, pulled.bundle, pulled.meta, false);
           toast.info(i18n.t("profiles.cloud.updatedFromCloudToast"));
+          if (!options?.manual) void syncHistoryWithCloud(userId, "smart");
           return "pulled";
         }
 
@@ -2587,8 +2667,10 @@ export function RuntimeProvider({ children }: { children: ReactNode }) {
         });
         state().setCloudSync({ cooldownUntil: until });
         if (outcome === "noop") {
+          await syncHistoryWithCloud(userId, "smart");
           toast.info(i18n.t("profiles.cloud.alreadyUpToDate"));
         } else if (outcome === "pushed" || outcome === "pulled") {
+          await syncHistoryWithCloud(userId, "smart");
           toast.success(i18n.t("profiles.cloud.syncSuccess"));
         }
         return;
@@ -2660,6 +2742,7 @@ export function RuntimeProvider({ children }: { children: ReactNode }) {
         });
         state().setCloudSync({ cooldownUntil: until });
         if (status === "synced") {
+          await syncHistoryWithCloud(userId, "push");
           toast.success(i18n.t("profiles.cloud.uploadSuccess"));
         }
         return;
@@ -2737,6 +2820,7 @@ export function RuntimeProvider({ children }: { children: ReactNode }) {
         pulled.meta,
         Boolean(options?.merge),
       );
+      await syncHistoryWithCloud(userId, "pull");
       const until = cloudSyncLimiter.recordManualOutcome({ serverWork: true });
       state().setCloudSync({ cooldownUntil: until });
       toast.success(i18n.t("profiles.cloud.downloadSuccess"));
@@ -2937,6 +3021,47 @@ export function RuntimeProvider({ children }: { children: ReactNode }) {
     toast.success(i18n.t("settings.support.submitSuccess"));
   };
 
+  const refreshStorageTicket = async (force = false) => {
+    const current = state();
+    const userId = current.twitch.userId;
+    if (!isTauri() || !userId) {
+      current.setStorageTicket(undefined);
+      return undefined;
+    }
+    current.setStorageTicket({ loading: true, error: undefined });
+    try {
+      const next = await supportNative.storageStatus(TWITCH_CLIENT_ID);
+      if (state().twitch.userId !== userId) return undefined;
+      state().setStorageTicket({ ...next, loading: false, error: undefined });
+      state().setCloudSync({ storageInfo: next.storage });
+      return next;
+    } catch (error) {
+      const msg = errorMessage(error);
+      state().setStorageTicket({ loading: false, error: msg });
+      if (force) {
+        toast.error(i18n.t("profiles.cloud.storage.loadError"), { description: msg });
+      }
+      return undefined;
+    }
+  };
+
+  const submitStorageRequestTicket = async (requestedMb: number, message: string) => {
+    const current = state();
+    const userId = current.twitch.userId;
+    if (!isTauri() || !userId) {
+      throw new Error(i18n.t("stream.notConnected"));
+    }
+    const trimmed = message.trim();
+    if (trimmed.length < 10) {
+      throw new Error("message_too_short");
+    }
+    await supportNative.submitStorageRequest(TWITCH_CLIENT_ID, requestedMb, trimmed);
+    const updated = await supportNative.storageStatus(TWITCH_CLIENT_ID);
+    state().setStorageTicket({ ...updated, loading: false, error: undefined });
+    state().setCloudSync({ storageInfo: updated.storage });
+    toast.success(i18n.t("profiles.cloud.storage.requestSuccess"));
+  };
+
   return (
     <RuntimeContext.Provider
       value={{
@@ -2989,6 +3114,8 @@ export function RuntimeProvider({ children }: { children: ReactNode }) {
         activateProLicense,
         refreshSupportTicket,
         submitKeyResetTicket,
+        refreshStorageTicket,
+        submitStorageRequestTicket,
         reconnect,
         shutdown,
       }}

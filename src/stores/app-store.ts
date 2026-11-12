@@ -27,6 +27,7 @@ import type {
   GiveawayState,
   ObsSnapshot,
   ProEntitlements,
+  StorageTicketState,
   SupportTicketState,
   UserProfile,
 } from "../types";
@@ -133,6 +134,8 @@ interface AppStore {
   setEntitlements: (patch: Partial<ProEntitlements> | ProEntitlements) => void;
   supportTicket?: SupportTicketState;
   setSupportTicket: (patch?: Partial<SupportTicketState> | SupportTicketState) => void;
+  storageTicket?: StorageTicketState;
+  setStorageTicket: (patch?: Partial<StorageTicketState> | StorageTicketState) => void;
 }
 export const useAppStore = create<AppStore>((set) => ({
   searchTarget: undefined,
@@ -613,5 +616,15 @@ export const useAppStore = create<AppStore>((set) => ({
         canSubmit: false,
       };
       return { supportTicket: { ...prev, ...patch } };
+    }),
+  storageTicket: undefined,
+  setStorageTicket: (patch) =>
+    set((s) => {
+      if (!patch) return { storageTicket: undefined };
+      if ("storage" in patch && patch.storage && "canSubmit" in patch) {
+        return { storageTicket: { ...(patch as StorageTicketState) } };
+      }
+      if (!s.storageTicket) return {};
+      return { storageTicket: { ...s.storageTicket, ...patch } };
     }),
 }));
