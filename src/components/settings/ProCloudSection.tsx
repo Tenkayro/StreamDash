@@ -1,4 +1,3 @@
-import { openUrl } from "@tauri-apps/plugin-opener";
 import {
   AlertTriangle,
   CheckCircle2,
@@ -28,7 +27,7 @@ import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { toast } from "sonner";
 import { Badge, Button, Card, Toggle } from "../ui";
-import { PAYHIP_PRO_URL, mapProError } from "../../lib/pro";
+import { mapProError, openProPurchasePage } from "../../lib/pro";
 import { parseRateLimitWaitSeconds } from "../../lib/cloud-sync-limiter";
 import { errorMessage } from "../../lib/utils";
 import { useRuntime } from "../../services/runtime-context";
@@ -315,7 +314,7 @@ export function ProCloudSection() {
                   <Button
                     type="button"
                     variant="primary"
-                    onClick={() => void openUrl(PAYHIP_PRO_URL)}
+                    onClick={() => void openProPurchasePage()}
                   >
                     <ExternalLink size={13} />
                     {t("pro.getProButton")}

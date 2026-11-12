@@ -1,4 +1,26 @@
-export const PAYHIP_PRO_URL = "https://store.tenkayro.de/b/siOJA";
+import { openUrl } from "@tauri-apps/plugin-opener";
+
+export const PRO_PURCHASE_URLS = [
+  "https://tenkayro.de/app/streamdash/pro/",
+  "https://tenkayro.de/streamdash/pro/",
+  "https://store.tenkayro.de/b/siOJA",
+] as const;
+
+export const PAYHIP_PRO_URL = PRO_PURCHASE_URLS[0];
+
+/**
+ * Opens the StreamDash Pro purchase page with automatic fallbacks if opening a URL fails.
+ */
+export async function openProPurchasePage(): Promise<void> {
+  for (const url of PRO_PURCHASE_URLS) {
+    try {
+      await openUrl(url);
+      return;
+    } catch {
+      // Try next fallback URL.
+    }
+  }
+}
 
 export function mapProError(rawError: string, t: (key: string) => string): string {
   const code = rawError.trim().toLowerCase();

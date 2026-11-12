@@ -1,4 +1,3 @@
-import { openUrl } from "@tauri-apps/plugin-opener";
 import {
   CheckCircle2,
   Cloud,
@@ -16,7 +15,7 @@ import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { toast } from "sonner";
 import { Badge, Button, Card } from "./ui";
-import { PAYHIP_PRO_URL, mapProError } from "../lib/pro";
+import { mapProError, openProPurchasePage } from "../lib/pro";
 import { errorMessage } from "../lib/utils";
 import { useRuntime } from "../services/runtime-context";
 import { useAppStore } from "../stores/app-store";
@@ -242,7 +241,7 @@ function ProModalContent({ onClose }: { onClose: () => void }) {
                 <Button
                   type="button"
                   variant="primary"
-                  onClick={() => void openUrl(PAYHIP_PRO_URL)}
+                  onClick={() => void openProPurchasePage()}
                 >
                   <ExternalLink size={13} />
                   {t("pro.getProButton")}
