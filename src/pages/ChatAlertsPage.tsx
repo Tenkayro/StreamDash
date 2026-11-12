@@ -1,4 +1,4 @@
-import { BellRing, Info, RotateCcw } from "lucide-react";
+import { BellRing, Braces, Info, RotateCcw } from "lucide-react";
 import { useState } from "react";
 import { toast } from "sonner";
 import { useTranslation } from "react-i18next";
@@ -62,6 +62,7 @@ export function ChatAlertsPage() {
   const { t } = useTranslation();
   const chatAlerts = useAppStore((s) => s.chatAlerts);
   const setChatAlerts = useAppStore((s) => s.setChatAlerts);
+  const setPage = useAppStore((s) => s.setPage);
   const [tab, setTab] = useState<AlertTab>("subscriptions");
 
   const updateAlert = <K extends keyof ChatAlertsConfig>(
@@ -132,16 +133,22 @@ export function ChatAlertsPage() {
           </Badge>
         }
         actions={
-          <Button
-            variant="default"
-            onClick={() => {
-              setChatAlerts(defaultChatAlerts);
-              toast.success(t("chatAlerts.resetSuccess"));
-            }}
-          >
-            <RotateCcw size={14} />
-            {t("common.reset")}
-          </Button>
+          <div className="flex items-center gap-2">
+            <Button onClick={() => setPage("variables")}>
+              <Braces size={14} />
+              {t("nav.variables")}
+            </Button>
+            <Button
+              variant="default"
+              onClick={() => {
+                setChatAlerts(defaultChatAlerts);
+                toast.success(t("chatAlerts.resetSuccess"));
+              }}
+            >
+              <RotateCcw size={14} />
+              {t("common.reset")}
+            </Button>
+          </div>
         }
       />
 

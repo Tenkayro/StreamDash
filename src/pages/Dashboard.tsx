@@ -1,24 +1,42 @@
 import {
   Activity,
+  Braces,
   Clock3,
+  Copy,
   Eye,
   EyeOff,
+  Flag,
+  Gift,
   Globe2,
   GripVertical,
+  Hash,
   Heart,
   LayoutGrid,
   Link2,
+  MessageSquare,
+  Minus,
   MonitorPlay,
   MoveDiagonal2,
+  Play,
   Plus,
   Radio,
+  RefreshCw,
   RotateCcw,
+  Send,
   Settings2,
+  Shuffle,
   Sparkles,
+  Square,
   Star,
   Target,
+  Terminal,
   Trash2,
+  Trophy,
+  Users,
   Wallet,
+  Zap,
+  ZoomIn,
+  ZoomOut,
   type LucideIcon,
 } from "lucide-react";
 import {
@@ -33,7 +51,10 @@ import {
 import { flushSync } from "react-dom";
 import { toast } from "sonner";
 import { useAppStore, defaultDashboardWidgets } from "../stores/app-store";
-import { saveSetting } from "../services/native";
+import { saveSetting, twitchNative } from "../services/native";
+import { TWITCH_CLIENT_ID } from "../services/twitch/config";
+import { useRuntime } from "../services/runtime-context";
+import { resolveLanguage } from "../i18n";
 import { ActivityFeed } from "../components/ActivityFeed";
 import { TwitchPlayer } from "../components/TwitchPlayer";
 import { ObsWidget } from "../components/ObsCard";
@@ -43,8 +64,9 @@ import {
   Card,
   LoadingIndicator,
   PageHeader,
+  Toggle,
 } from "../components/ui";
-import { cn, money } from "../lib/utils";
+import { cn, errorMessage, money } from "../lib/utils";
 import type {
   ConnectionState,
   DashboardBrowserSource,
@@ -52,6 +74,7 @@ import type {
   DashboardWidgetDimensions,
   DashboardWidgetId,
   DashboardWidgetWidth,
+  GiveawayEntry,
 } from "../types";
 import { useTranslation } from "react-i18next";
 
@@ -90,11 +113,61 @@ const widgetCatalog: WidgetCatalogEntry[] = [
     label: "Event count",
     description: "Stored activity total",
   },
-    {
-      id: "activitys",
-      label: "Recent activity",
-      description: "Latest events at a glance",
-    },
+  {
+    id: "raids",
+    label: "Raids",
+    description: "Recorded raids and latest raider",
+  },
+  {
+    id: "giftSubs",
+    label: "Gifted Subs",
+    description: "Total gifted subscriptions",
+  },
+  {
+    id: "chatActivity",
+    label: "Chat Messages",
+    description: "Stored messages in live chat",
+  },
+  {
+    id: "giveawayCount",
+    label: "Giveaway Entries",
+    description: "Current giveaway participants",
+  },
+  {
+    id: "activitys",
+    label: "Recent activity",
+    description: "Latest events at a glance",
+  },
+  {
+    id: "chat",
+    label: "Live Chat",
+    description: "Read and send chat messages on the dashboard",
+  },
+  {
+    id: "quickActions",
+    label: "Quick Actions",
+    description: "Stream markers, shortcuts, and deck controls",
+  },
+  {
+    id: "customCounters",
+    label: "Custom Counters",
+    description: "Adjust custom counters and variables live",
+  },
+  {
+    id: "giveaway",
+    label: "Giveaway Control",
+    description: "Start giveaways and draw winners",
+  },
+  {
+    id: "commands",
+    label: "Chat Commands",
+    description: "Toggle commands and view usage counts",
+  },
+  {
+    id: "channelPoints",
+    label: "Channel Points",
+    description: "Pause or resume custom Twitch rewards",
+  },
   {
     id: "streamDetails",
     label: "Stream details",
@@ -113,6 +186,7 @@ const widgetCatalog: WidgetCatalogEntry[] = [
   },
   { id: "obs", label: "OBS", description: "Status, scene and audio" },
 ];
+
 const metricWidgetIds = new Set<DashboardItemId>([
   "followers",
   "subscribers",
@@ -122,7 +196,43 @@ const metricWidgetIds = new Set<DashboardItemId>([
   "donations",
   "status",
   "eventCount",
+  "raids",
+  "giftSubs",
+  "chatActivity",
+  "giveawayCount",
 ]);
+
+const cockpitPresetWidgets: DashboardItemId[] = [
+  "viewers",
+  "followers",
+  "subscribers",
+  "duration",
+  "status",
+  "chatActivity",
+  "chat",
+  "activitys",
+  "quickActions",
+  "customCounters",
+  "streamDetails",
+  "obs",
+];
+
+const metricsPresetWidgets: DashboardItemId[] = [
+  "followers",
+  "subscribers",
+  "viewers",
+  "duration",
+  "bits",
+  "donations",
+  "status",
+  "eventCount",
+  "raids",
+  "giftSubs",
+  "chatActivity",
+  "giveawayCount",
+  "activitys",
+  "goals",
+];
 
 function Metric({
   label,
@@ -143,7 +253,9 @@ function Metric({
     <Card className="metric-card flex min-h-0 flex-col">
       <div className="flex items-center justify-between">
         <span className="text-[11px] font-medium text-muted">{label}</span>
-        <span className="metric-icon"><Icon size={14} /></span>
+        <span className="metric-icon">
+          <Icon size={14} />
+        </span>
       </div>
       <div className="metric-value mt-auto pt-2 font-semibold tracking-[-.03em]">
         {loading ? (
@@ -160,6 +272,7 @@ function Metric({
     </Card>
   );
 }
+
 function duration(since?: string) {
   if (!since) return "—";
   const seconds = Math.max(
@@ -168,6 +281,7 @@ function duration(since?: string) {
   );
   return `${Math.floor(seconds / 3600)}h ${Math.floor((seconds % 3600) / 60)}m`;
 }
+
 function connectionTone(state: ConnectionState) {
   return state.phase === "connected"
     ? "bg-emerald-400"
@@ -177,6 +291,7 @@ function connectionTone(state: ConnectionState) {
         ? "bg-red-400"
         : "bg-zinc-600";
 }
+
 function isBrowserWidget(id: DashboardItemId): id is `browser:${string}` {
   return id.startsWith("browser:");
 }
@@ -189,10 +304,38 @@ function sourceHostname(url: string) {
   }
 }
 
+function pickWeightedGiveawayWinner(
+  entries: GiveawayEntry[],
+  subscriberLuck: number,
+  currentWinnerLogin?: string,
+): GiveawayEntry | undefined {
+  if (!entries.length) return undefined;
+  const pool =
+    entries.length > 1 && currentWinnerLogin
+      ? entries.filter((entry) => entry.login !== currentWinnerLogin)
+      : entries;
+  const weighted: Array<{ entry: GiveawayEntry; weight: number }> = pool.map(
+    (entry) => ({
+      entry,
+      weight: entry.subscriber ? Math.max(1, subscriberLuck) : 1,
+    }),
+  );
+  const totalWeight = weighted.reduce((sum, item) => sum + item.weight, 0);
+  let cursor = Math.random() * totalWeight;
+  for (const item of weighted) {
+    cursor -= item.weight;
+    if (cursor <= 0) return item.entry;
+  }
+  return weighted[weighted.length - 1]?.entry;
+}
+
 function DashboardWidget({
   id,
   editing,
   label,
+  width,
+  showWidthControls,
+  onWidthChange,
   onHide,
   onDelete,
   onMoveStart,
@@ -202,6 +345,9 @@ function DashboardWidget({
   id: DashboardItemId;
   editing: boolean;
   label: string;
+  width: DashboardWidgetWidth;
+  showWidthControls?: boolean;
+  onWidthChange?: (nextWidth: DashboardWidgetWidth) => void;
   onHide: () => void;
   onDelete?: () => void;
   onMoveStart: (event: ReactPointerEvent<HTMLButtonElement>) => void;
@@ -219,6 +365,31 @@ function DashboardWidget({
     >
       {editing && (
         <div className="absolute -top-2 right-2 z-20 flex items-center rounded-md border border-line bg-raised shadow-lg">
+          {showWidthControls && onWidthChange && (
+            <div className="flex items-center border-r border-line px-1">
+              {(
+                [
+                  ["single", "1x"],
+                  ["wide", "2x"],
+                  ["full", "Full"],
+                ] as const
+              ).map(([w, text]) => (
+                <button
+                  key={w}
+                  type="button"
+                  onClick={() => onWidthChange(w)}
+                  className={cn(
+                    "rounded px-1.5 py-0.5 text-[9.5px] font-semibold transition",
+                    width === w
+                      ? "bg-accent-soft text-accent"
+                      : "text-zinc-500 hover:text-zinc-200",
+                  )}
+                >
+                  {text}
+                </button>
+              ))}
+            </div>
+          )}
           <button
             type="button"
             title={t("dashboard.moveWidget", { label })}
@@ -271,6 +442,12 @@ function defaultWidgetDimensions(
 ): DashboardWidgetDimensions {
   if (metricWidgetIds.has(id)) return { width: "single", height: 96 };
   if (id === "activitys") return { width: "wide", height: 288 };
+  if (id === "chat") return { width: "wide", height: 288 };
+  if (id === "quickActions") return { width: "single", height: 224 };
+  if (id === "customCounters") return { width: "single", height: 224 };
+  if (id === "giveaway") return { width: "single", height: 232 };
+  if (id === "commands") return { width: "single", height: 232 };
+  if (id === "channelPoints") return { width: "single", height: 232 };
   if (id === "streamDetails") return { width: "single", height: 224 };
   if (id === "livePreview") return { width: "full", height: 384 };
   if (id === "goals") return { width: "single", height: 208 };
@@ -285,82 +462,158 @@ function widgetLayoutClass(width: DashboardWidgetWidth) {
   return "";
 }
 
-function HiddenWidgets({
+function CustomizeToolbar({
   widgets,
+  zoom,
   onShow,
+  onShowAll,
+  onApplyPreset,
+  onZoomChange,
   onAddBrowser,
   onDeleteBrowser,
   onReset,
 }: {
   widgets: WidgetCatalogEntry[];
+  zoom: number;
   onShow: (id: DashboardItemId) => void;
+  onShowAll: () => void;
+  onApplyPreset: (preset: "standard" | "cockpit" | "metrics") => void;
+  onZoomChange: (nextZoom: number) => void;
   onAddBrowser: () => void;
   onDeleteBrowser: (id: DashboardItemId) => void;
   onReset: () => void;
 }) {
   const { t } = useTranslation();
   return (
-    <div
-      className="card mb-2 flex min-h-10 items-center gap-2 border-dashed px-2.5 py-1.5 transition"
-    >
-      <div className="flex shrink-0 items-center gap-2 text-[11px] font-medium text-zinc-500">
-        <EyeOff size={13} />
-        {t("dashboard.hidden")}{" "}
-        <span className="rounded bg-white/5 px-1.5 py-0.5 text-[9px] tabular-nums text-zinc-600">
-          {widgets.length}
-        </span>
-      </div>
-      <div className="flex min-w-0 flex-1 flex-wrap gap-1.5">
-        {widgets.length ? (
-          widgets.map((widget) => (
-            <div
-              key={widget.id}
-              className="inline-flex h-7 overflow-hidden rounded-md border border-line bg-black/15"
+    <div className="card mb-2.5 space-y-2 border-dashed p-2.5 transition">
+      {/* Top row: Presets + Zoom + Actions */}
+      <div className="flex flex-wrap items-center justify-between gap-2 border-b border-line pb-2">
+        <div className="flex flex-wrap items-center gap-1.5">
+          <span className="text-[10.5px] font-semibold uppercase tracking-wider text-muted">
+            {t("dashboard.presets.label")}:
+          </span>
+          {(["standard", "cockpit", "metrics"] as const).map((preset) => (
+            <button
+              key={preset}
+              type="button"
+              onClick={() => onApplyPreset(preset)}
+              className="rounded-md border border-line bg-white/3 px-2 py-1 text-[10.5px] font-medium text-zinc-300 transition hover:border-accent/40 hover:text-accent"
             >
-              <button
-                title={t("dashboard.showWidget", { label: widget.label, description: widget.description })}
-                onClick={() => onShow(widget.id)}
-                className="inline-flex items-center gap-1.5 px-2 text-[10px] text-zinc-500 transition hover:text-zinc-200"
+              {t(`dashboard.presets.${preset}`)}
+            </button>
+          ))}
+        </div>
+
+        <div className="flex flex-wrap items-center gap-1.5">
+          <div className="inline-flex items-center rounded-md border border-line bg-black/20 p-0.5">
+            <button
+              type="button"
+              onClick={() => onZoomChange(Math.max(50, zoom - 10))}
+              title={t("dashboard.zoomOut")}
+              className="grid size-6 place-items-center rounded text-zinc-400 hover:bg-white/5 hover:text-zinc-100"
+            >
+              <ZoomOut size={12} />
+            </button>
+            <button
+              type="button"
+              onClick={() => onZoomChange(100)}
+              className="px-2 font-mono text-[10px] font-semibold tabular-nums text-zinc-300 hover:text-accent"
+            >
+              {zoom}%
+            </button>
+            <button
+              type="button"
+              onClick={() => onZoomChange(Math.min(150, zoom + 10))}
+              title={t("dashboard.zoomIn")}
+              className="grid size-6 place-items-center rounded text-zinc-400 hover:bg-white/5 hover:text-zinc-100"
+            >
+              <ZoomIn size={12} />
+            </button>
+          </div>
+
+          {widgets.length > 0 && (
+            <button
+              type="button"
+              onClick={onShowAll}
+              className="inline-flex h-7 items-center gap-1.5 rounded-md border border-line bg-black/15 px-2 text-[10px] text-zinc-400 transition hover:border-white/25 hover:text-zinc-200"
+            >
+              <Eye size={11} />
+              {t("dashboard.showAll")}
+            </button>
+          )}
+
+          <button
+            type="button"
+            title={t("dashboard.addBrowserSource")}
+            onClick={onAddBrowser}
+            className="inline-flex h-7 shrink-0 items-center gap-1.5 rounded-md border border-line bg-black/15 px-2 text-[10px] text-zinc-400 transition hover:border-accent/50 hover:text-accent"
+          >
+            <Plus size={11} />
+            {t("dashboard.browserSource")}
+          </button>
+
+          <button
+            type="button"
+            title={t("dashboard.resetDashboard")}
+            aria-label={t("dashboard.resetDashboard")}
+            onClick={onReset}
+            className="grid size-7 shrink-0 place-items-center rounded-md border border-line bg-black/15 text-zinc-400 hover:bg-white/5 hover:text-zinc-200"
+          >
+            <RotateCcw size={12} />
+          </button>
+        </div>
+      </div>
+
+      {/* Bottom row: Hidden widgets */}
+      <div className="flex min-h-7 items-center gap-2">
+        <div className="flex shrink-0 items-center gap-1.5 text-[11px] font-medium text-zinc-500">
+          <EyeOff size={12} />
+          {t("dashboard.hidden")}{" "}
+          <span className="rounded bg-white/5 px-1.5 py-0.5 text-[9px] tabular-nums text-zinc-500">
+            {widgets.length}
+          </span>
+        </div>
+        <div className="flex min-w-0 flex-1 flex-wrap gap-1.5">
+          {widgets.length ? (
+            widgets.map((widget) => (
+              <div
+                key={widget.id}
+                className="inline-flex h-6.5 overflow-hidden rounded-md border border-line bg-black/20"
               >
-                <Eye size={11} />
-                {widget.label}
-              </button>
-              {isBrowserWidget(widget.id) && (
                 <button
                   type="button"
-                  title={t("dashboard.deleteWidget", { label: widget.label })}
-                  aria-label={t("dashboard.deleteWidget", { label: widget.label })}
-                  onClick={() => onDeleteBrowser(widget.id)}
-                  className="grid w-7 place-items-center border-l border-line text-zinc-600 hover:bg-red-400/10 hover:text-red-300"
+                  title={t("dashboard.showWidget", {
+                    label: widget.label,
+                    description: widget.description,
+                  })}
+                  onClick={() => onShow(widget.id)}
+                  className="inline-flex items-center gap-1.5 px-2 text-[10px] text-zinc-400 transition hover:text-zinc-100"
                 >
-                  <Trash2 size={11} />
+                  <Plus size={10} className="text-accent" />
+                  {widget.label}
                 </button>
-              )}
-            </div>
-          ))
-        ) : (
-          <span className="text-[10px] text-zinc-700">
-            {t("dashboard.hiddenHint")}
-          </span>
-        )}
+                {isBrowserWidget(widget.id) && (
+                  <button
+                    type="button"
+                    title={t("dashboard.deleteWidget", { label: widget.label })}
+                    aria-label={t("dashboard.deleteWidget", {
+                      label: widget.label,
+                    })}
+                    onClick={() => onDeleteBrowser(widget.id)}
+                    className="grid w-6 place-items-center border-l border-line text-zinc-600 hover:bg-red-400/10 hover:text-red-300"
+                  >
+                    <Trash2 size={10} />
+                  </button>
+                )}
+              </div>
+            ))
+          ) : (
+            <span className="text-[10px] text-zinc-600">
+              {t("dashboard.hiddenHint")}
+            </span>
+          )}
+        </div>
       </div>
-      <button
-        type="button"
-        title={t("dashboard.addBrowserSource")}
-        onClick={onAddBrowser}
-        className="inline-flex h-7 shrink-0 items-center gap-1.5 rounded-md border border-line bg-black/15 px-2 text-[10px] text-zinc-400 transition hover:border-accent/50 hover:text-accent"
-      >
-        <Plus size={11} />
-        {t("dashboard.browserSource")}
-      </button>
-      <button
-        title={t("dashboard.resetDashboard")}
-        aria-label={t("dashboard.resetDashboard")}
-        onClick={onReset}
-        className="grid size-7 shrink-0 place-items-center rounded-md text-zinc-600 hover:bg-white/5 hover:text-zinc-300"
-      >
-        <RotateCcw size={13} />
-      </button>
     </div>
   );
 }
@@ -435,6 +688,7 @@ function BrowserSourceForm({
 
 export function Dashboard() {
   const { t, i18n } = useTranslation();
+  const runtime = useRuntime();
   const {
     stats,
     events,
@@ -444,13 +698,28 @@ export function Dashboard() {
     streamElements,
     tipeeStream,
     obs,
+    chat,
+    chatMessages,
+    giveaway,
+    commands,
+    channelRewards,
+    customVariables,
     statsLoading,
     setPage,
     setSettings,
+    setGiveaway,
+    clearChat,
+    toggleCommand,
+    upsertChannelReward,
+    adjustCustomCounter,
   } = useAppStore();
+
   const [, tick] = useState(0);
   const [editing, setEditing] = useState(false);
   const [addingBrowserSource, setAddingBrowserSource] = useState(false);
+  const [quickChatText, setQuickChatText] = useState("");
+  const [sendingQuickChat, setSendingQuickChat] = useState(false);
+  const [creatingMarker, setCreatingMarker] = useState(false);
   const [draggedWidget, setDraggedWidget] = useState<DashboardItemId | null>(
     null,
   );
@@ -459,10 +728,23 @@ export function Dashboard() {
   const zoomSaveTimer = useRef<ReturnType<typeof setTimeout> | undefined>(
     undefined,
   );
+
   useEffect(() => {
     const id = setInterval(() => tick((x) => x + 1), 30_000);
     return () => clearInterval(id);
   }, []);
+
+  const setZoomLevel = (nextZoom: number) => {
+    const clamped = Math.max(50, Math.min(150, nextZoom));
+    useAppStore.getState().setSettings({ dashboardZoom: clamped });
+    clearTimeout(zoomSaveTimer.current);
+    zoomSaveTimer.current = setTimeout(() => {
+      void saveSetting("dashboardZoom", clamped).catch(() =>
+        toast.error(t("dashboard.zoomSaveError")),
+      );
+    }, 200);
+  };
+
   useEffect(() => {
     const dashboard = dashboardRef.current;
     if (!dashboard) return;
@@ -475,13 +757,7 @@ export function Dashboard() {
         Math.min(150, current + (event.deltaY < 0 ? 10 : -10)),
       );
       if (next === current) return;
-      useAppStore.getState().setSettings({ dashboardZoom: next });
-      clearTimeout(zoomSaveTimer.current);
-      zoomSaveTimer.current = setTimeout(() => {
-        void saveSetting("dashboardZoom", next).catch(() =>
-          toast.error(t("dashboard.zoomSaveError")),
-        );
-      }, 200);
+      setZoomLevel(next);
     };
     const handleKeyDown = (event: KeyboardEvent) => {
       if (event.key === "Control")
@@ -505,6 +781,7 @@ export function Dashboard() {
       clearTimeout(zoomSaveTimer.current);
     };
   }, [t]);
+
   const connected = [twitch, streamElements, tipeeStream].some(
     (service) => service.phase === "connected",
   );
@@ -549,6 +826,7 @@ export function Dashboard() {
     () => availableWidgets.filter((widget) => !widgets.includes(widget.id)),
     [availableWidgets, widgets],
   );
+
   const updateWidgets = (next: DashboardItemId[]) => {
     setSettings({ dashboardWidgets: next });
     void saveSetting("dashboardWidgets", next).catch(() =>
@@ -558,6 +836,115 @@ export function Dashboard() {
   const hideWidget = (id: DashboardItemId) =>
     updateWidgets(widgets.filter((widget) => widget !== id));
   const showWidget = (id: DashboardItemId) => updateWidgets([...widgets, id]);
+  const showAllWidgets = () =>
+    updateWidgets(availableWidgets.map((w) => w.id));
+
+  const applyPreset = (preset: "standard" | "cockpit" | "metrics") => {
+    const next =
+      preset === "cockpit"
+        ? cockpitPresetWidgets
+        : preset === "metrics"
+          ? metricsPresetWidgets
+          : defaultDashboardWidgets;
+    setSettings({
+      dashboardWidgets: next,
+      dashboardWidgetDimensions: {},
+    });
+    void Promise.all([
+      saveSetting("dashboardWidgets", next),
+      saveSetting("dashboardWidgetDimensions", {}),
+    ]).catch(() => toast.error(t("dashboard.layoutSaveError")));
+  };
+
+  const setWidgetWidth = (id: DashboardItemId, width: DashboardWidgetWidth) => {
+    const current = dimensionsFor(id);
+    const next = {
+      ...settings.dashboardWidgetDimensions,
+      [id]: { width, height: current.height },
+    };
+    setSettings({ dashboardWidgetDimensions: next });
+    void saveSetting("dashboardWidgetDimensions", next).catch(() =>
+      toast.error(t("dashboard.sizeSaveError")),
+    );
+  };
+
+  const handleCreateStreamMarker = async () => {
+    if (!twitch.userId || twitch.phase !== "connected") {
+      toast.error(t("stream.notConnected"));
+      return;
+    }
+    if (!stats.live) {
+      toast.error(t("dashboard.quickActions.markerOfflineError"));
+      return;
+    }
+    setCreatingMarker(true);
+    try {
+      await twitchNative.helixPost(TWITCH_CLIENT_ID, "streams/markers", [], {
+        user_id: twitch.userId,
+        description: "StreamDash Marker",
+      });
+      toast.success(t("dashboard.quickActions.markerSuccess"));
+    } catch (error) {
+      toast.error(t("stream.markerError"), {
+        description: errorMessage(error),
+      });
+    } finally {
+      setCreatingMarker(false);
+    }
+  };
+
+  const handleQuickChatSubmit = async (event: FormEvent) => {
+    event.preventDefault();
+    const msg = quickChatText.trim();
+    if (!msg || sendingQuickChat) return;
+    setSendingQuickChat(true);
+    try {
+      await runtime.sendChatMessage(msg);
+      setQuickChatText("");
+    } catch (error) {
+      toast.error(t("chat.sendError"), {
+        description: errorMessage(error),
+      });
+    } finally {
+      setSendingQuickChat(false);
+    }
+  };
+
+  const handleToggleGiveaway = () => {
+    const nextRunning = !giveaway.running;
+    setGiveaway({ running: nextRunning });
+    if (nextRunning && giveaway.chatAnnouncements && twitch.phase === "connected") {
+      const lng = resolveLanguage(settings.language);
+      const phrase = giveaway.keyword.trim() || "!enter";
+      const announcement =
+        giveaway.type === "keyword"
+          ? i18n.t("giveaways.startAnnouncementKeyword", {
+              lng,
+              keyword: phrase,
+            })
+          : i18n.t("giveaways.startAnnouncementActive", { lng });
+      void runtime.sendBotChatMessage(announcement).catch(() => undefined);
+    }
+  };
+
+  const handleDrawGiveawayWinner = () => {
+    const chosen = pickWeightedGiveawayWinner(
+      giveaway.entries,
+      giveaway.subscriberLuck,
+      giveaway.winner?.login,
+    );
+    if (!chosen) return;
+    setGiveaway({ winner: chosen });
+    if (giveaway.chatAnnouncements && twitch.phase === "connected") {
+      const lng = resolveLanguage(settings.language);
+      const announcement = i18n.t("giveaways.winnerAnnouncement", {
+        lng,
+        user: chosen.displayName,
+      });
+      void runtime.sendBotChatMessage(announcement).catch(() => undefined);
+    }
+  };
+
   const startWidgetMove = (
     event: ReactPointerEvent<HTMLButtonElement>,
     id: DashboardItemId,
@@ -649,6 +1036,7 @@ export function Dashboard() {
     window.addEventListener("pointerup", finish);
     window.addEventListener("pointercancel", cancel);
   };
+
   const dimensionsFor = (id: DashboardItemId): DashboardWidgetDimensions => {
     const fallback = defaultWidgetDimensions(id);
     const saved = settings.dashboardWidgetDimensions[id];
@@ -663,6 +1051,7 @@ export function Dashboard() {
       height: Math.max(80, Math.min(720, saved.height)),
     };
   };
+
   const startWidgetResize = (
     event: ReactPointerEvent<HTMLButtonElement>,
     id: DashboardItemId,
@@ -818,6 +1207,7 @@ export function Dashboard() {
     window.addEventListener("pointerup", finish);
     window.addEventListener("pointercancel", cancel);
   };
+
   const resetDashboard = () => {
     setSettings({
       dashboardWidgets: defaultDashboardWidgets,
@@ -828,6 +1218,7 @@ export function Dashboard() {
       saveSetting("dashboardWidgetDimensions", {}),
     ]).catch(() => toast.error(t("dashboard.resetError")));
   };
+
   const addBrowserSource = (name: string, url: string) => {
     const source: DashboardBrowserSource = {
       id: crypto.randomUUID(),
@@ -836,10 +1227,7 @@ export function Dashboard() {
     };
     const sources = [...settings.dashboardBrowserSources, source];
     const widgetId: DashboardItemId = `browser:${source.id}`;
-    const nextWidgets: DashboardItemId[] = [
-      ...widgets,
-      widgetId,
-    ];
+    const nextWidgets: DashboardItemId[] = [...widgets, widgetId];
     setSettings({
       dashboardBrowserSources: sources,
       dashboardWidgets: nextWidgets,
@@ -850,6 +1238,7 @@ export function Dashboard() {
       saveSetting("dashboardWidgets", nextWidgets),
     ]).catch(() => toast.error(t("dashboard.sourceSaveError")));
   };
+
   const deleteBrowserSource = (id: DashboardItemId) => {
     if (!isBrowserWidget(id)) return;
     const sourceId = id.slice("browser:".length);
@@ -870,6 +1259,30 @@ export function Dashboard() {
       saveSetting("dashboardWidgetDimensions", dimensions),
     ]).catch(() => toast.error(t("dashboard.sourceDeleteError")));
   };
+
+  const raidEvents = useMemo(
+    () => events.filter((e) => e.eventType === "raid"),
+    [events],
+  );
+  const giftSubTotal = useMemo(
+    () =>
+      events.reduce(
+        (total, event) =>
+          total +
+          (event.eventType === "community_gift"
+            ? (event.giftCount ?? 1)
+            : event.eventType === "gift_subscription"
+              ? 1
+              : 0),
+        0,
+      ),
+    [events],
+  );
+  const activeChatMessages = useMemo(
+    () => chatMessages.filter((m) => !m.deleted),
+    [chatMessages],
+  );
+
   const metric = (id: DashboardWidgetId) => {
     if (id === "followers")
       return (
@@ -938,6 +1351,51 @@ export function Dashboard() {
           icon={Radio}
         />
       );
+    if (id === "raids")
+      return (
+        <Metric
+          label={t("dashboard.widgets.raids.label")}
+          value={raidEvents.length.toLocaleString(i18n.language)}
+          note={
+            raidEvents[0]
+              ? `${raidEvents[0].displayName || raidEvents[0].username} (${raidEvents[0].viewerCount ?? 0})`
+              : undefined
+          }
+          icon={Users}
+        />
+      );
+    if (id === "giftSubs")
+      return (
+        <Metric
+          label={t("dashboard.widgets.giftSubs.label")}
+          value={giftSubTotal.toLocaleString(i18n.language)}
+          icon={Gift}
+        />
+      );
+    if (id === "chatActivity")
+      return (
+        <Metric
+          label={t("dashboard.widgets.chatActivity.label")}
+          value={activeChatMessages.length.toLocaleString(i18n.language)}
+          note={t(`connectionPhases.${chat.phase}`)}
+          icon={MessageSquare}
+        />
+      );
+    if (id === "giveawayCount")
+      return (
+        <Metric
+          label={t("dashboard.widgets.giveawayCount.label")}
+          value={giveaway.entries.length.toLocaleString(i18n.language)}
+          note={
+            giveaway.winner
+              ? `🏆 ${giveaway.winner.displayName}`
+              : giveaway.running
+                ? t("giveaways.running")
+                : t("giveaways.stopped")
+          }
+          icon={Trophy}
+        />
+      );
     return (
       <Metric
         label={t("dashboard.activityEvents")}
@@ -946,6 +1404,7 @@ export function Dashboard() {
       />
     );
   };
+
   const renderWidget = (id: DashboardItemId) => {
     if (isBrowserWidget(id)) {
       const source = settings.dashboardBrowserSources.find(
@@ -976,22 +1435,18 @@ export function Dashboard() {
         </Card>
       );
     }
-    if (
-      ![
-        "activitys",
-        "streamDetails",
-        "livePreview",
-        "goals",
-        "connections",
-        "obs",
-      ].includes(id)
-    )
+
+    if (metricWidgetIds.has(id)) {
       return metric(id as DashboardWidgetId);
+    }
+
     if (id === "activitys")
       return (
         <Card className="overflow-hidden">
           <div className="flex items-center justify-between border-b border-line px-4 py-3">
-            <h2 className="text-xs font-semibold">{t("dashboard.recentActivity")}</h2>
+            <h2 className="text-xs font-semibold">
+              {t("dashboard.recentActivity")}
+            </h2>
             <button
               className="text-[11px] text-accent hover:brightness-125"
               onClick={() => setPage("activitys")}
@@ -1006,11 +1461,425 @@ export function Dashboard() {
           />
         </Card>
       );
+
+    if (id === "chat") {
+      const recentChat = activeChatMessages.slice(-25);
+      return (
+        <Card className="flex flex-col overflow-hidden">
+          <div className="flex shrink-0 items-center justify-between border-b border-line px-4 py-2.5">
+            <div className="flex items-center gap-2 text-xs font-semibold">
+              <MessageSquare size={14} className="text-accent" />
+              {t("dashboard.widgets.chat.label")}
+              <span
+                className={cn(
+                  "size-1.5 rounded-full",
+                  connectionTone(chat),
+                )}
+              />
+            </div>
+            <button
+              type="button"
+              onClick={() => setPage("chat")}
+              className="text-[11px] text-accent hover:brightness-125"
+            >
+              {t("dashboard.open")}
+            </button>
+          </div>
+          <div className="min-h-0 flex-1 space-y-1.5 overflow-y-auto px-3.5 py-2.5 text-xs">
+            {recentChat.length === 0 ? (
+              <div className="grid h-full place-items-center text-center text-[11px] text-muted">
+                {t("chat.waitingFirstMessage")}
+              </div>
+            ) : (
+              recentChat.map((msg) => (
+                <div key={msg.id} className="leading-relaxed wrap-break-word">
+                  {settings.chatTimestamps && (
+                    <span className="mr-1.5 font-mono text-[10px] text-zinc-600">
+                      {new Date(msg.timestamp).toLocaleTimeString(
+                        i18n.language,
+                        {
+                          hour: "2-digit",
+                          minute: "2-digit",
+                        },
+                      )}
+                    </span>
+                  )}
+                  <span
+                    className="font-semibold"
+                    style={{ color: msg.color || "#fb923c" }}
+                  >
+                    {msg.displayName}:
+                  </span>{" "}
+                  <span className="text-zinc-200">{msg.text}</span>
+                </div>
+              ))
+            )}
+          </div>
+          <form
+            onSubmit={handleQuickChatSubmit}
+            className="flex shrink-0 items-center gap-1.5 border-t border-line p-2"
+          >
+            <input
+              className="input h-7 flex-1 text-xs"
+              value={quickChatText}
+              onChange={(event) => setQuickChatText(event.target.value)}
+              placeholder={
+                twitch.phase === "connected"
+                  ? t("giveaways.chatPlaceholder")
+                  : t("stream.notConnected")
+              }
+              disabled={twitch.phase !== "connected" || sendingQuickChat}
+            />
+            <Button
+              type="submit"
+              variant="primary"
+              disabled={
+                twitch.phase !== "connected" ||
+                !quickChatText.trim() ||
+                sendingQuickChat
+              }
+              className="h-7 px-2.5"
+            >
+              <Send size={12} />
+            </Button>
+          </form>
+        </Card>
+      );
+    }
+
+    if (id === "quickActions") {
+      return (
+        <Card className="flex flex-col p-4">
+          <div className="mb-3 flex items-center justify-between">
+            <div className="flex items-center gap-2 text-xs font-semibold">
+              <Zap size={14} className="text-accent" />
+              {t("dashboard.widgets.quickActions.label")}
+            </div>
+            <button
+              type="button"
+              onClick={() => setPage("variables")}
+              className="text-[11px] text-accent hover:brightness-125"
+            >
+              {t("nav.variables")}
+            </button>
+          </div>
+          <div className="grid min-h-0 flex-1 grid-cols-2 gap-2">
+            <button
+              type="button"
+              disabled={creatingMarker}
+              onClick={() => void handleCreateStreamMarker()}
+              className="flex items-center gap-2 rounded-xl border border-line bg-white/2 px-3 py-2 text-left text-xs font-medium text-zinc-200 transition hover:border-accent/40 hover:bg-accent-soft hover:text-accent disabled:opacity-50"
+            >
+              <Flag size={13} className="shrink-0 text-accent" />
+              <span className="truncate">{t("stream.addMarker")}</span>
+            </button>
+            <button
+              type="button"
+              onClick={handleToggleGiveaway}
+              className="flex items-center gap-2 rounded-xl border border-line bg-white/2 px-3 py-2 text-left text-xs font-medium text-zinc-200 transition hover:border-accent/40 hover:bg-accent-soft hover:text-accent"
+            >
+              <Gift size={13} className="shrink-0 text-accent" />
+              <span className="truncate">
+                {giveaway.running
+                  ? t("dashboard.quickActions.stopGiveaway")
+                  : t("dashboard.quickActions.startGiveaway")}
+              </span>
+            </button>
+            <button
+              type="button"
+              onClick={() => {
+                if (!twitch.account) {
+                  toast.error(t("stream.notConnected"));
+                  return;
+                }
+                void navigator.clipboard.writeText(
+                  `https://twitch.tv/${twitch.account}`,
+                );
+                toast.success(t("dashboard.quickActions.channelCopied"));
+              }}
+              className="flex items-center gap-2 rounded-xl border border-line bg-white/2 px-3 py-2 text-left text-xs font-medium text-zinc-200 transition hover:border-accent/40 hover:bg-accent-soft hover:text-accent"
+            >
+              <Copy size={13} className="shrink-0 text-accent" />
+              <span className="truncate">
+                {t("dashboard.quickActions.copyChannel")}
+              </span>
+            </button>
+            <button
+              type="button"
+              onClick={() => {
+                clearChat();
+                toast.success(t("dashboard.quickActions.chatCleared"));
+              }}
+              className="flex items-center gap-2 rounded-xl border border-line bg-white/2 px-3 py-2 text-left text-xs font-medium text-zinc-200 transition hover:border-accent/40 hover:bg-accent-soft hover:text-accent"
+            >
+              <Trash2 size={13} className="shrink-0 text-accent" />
+              <span className="truncate">
+                {t("dashboard.quickActions.clearChat")}
+              </span>
+            </button>
+            <button
+              type="button"
+              onClick={() => {
+                void runtime.reconnect();
+                toast.success(t("dashboard.quickActions.reconnecting"));
+              }}
+              className="flex items-center gap-2 rounded-xl border border-line bg-white/2 px-3 py-2 text-left text-xs font-medium text-zinc-200 transition hover:border-accent/40 hover:bg-accent-soft hover:text-accent"
+            >
+              <RefreshCw size={13} className="shrink-0 text-accent" />
+              <span className="truncate">
+                {t("dashboard.quickActions.reconnect")}
+              </span>
+            </button>
+            <button
+              type="button"
+              onClick={() => setPage("variables")}
+              className="flex items-center gap-2 rounded-xl border border-line bg-white/2 px-3 py-2 text-left text-xs font-medium text-zinc-200 transition hover:border-accent/40 hover:bg-accent-soft hover:text-accent"
+            >
+              <Braces size={13} className="shrink-0 text-accent" />
+              <span className="truncate">{t("nav.variables")}</span>
+            </button>
+          </div>
+        </Card>
+      );
+    }
+
+    if (id === "customCounters") {
+      const counters = customVariables.filter((v) => v.type === "counter");
+      return (
+        <Card className="flex flex-col p-4">
+          <div className="mb-3 flex items-center justify-between">
+            <div className="flex items-center gap-2 text-xs font-semibold">
+              <Hash size={14} className="text-accent" />
+              {t("dashboard.widgets.customCounters.label")}
+            </div>
+            <button
+              type="button"
+              onClick={() => setPage("variables")}
+              className="text-[11px] text-accent hover:brightness-125"
+            >
+              {t("dashboard.manage")}
+            </button>
+          </div>
+          <div className="min-h-0 flex-1 space-y-2 overflow-y-auto">
+            {counters.length === 0 ? (
+              <div className="py-6 text-center text-[11px] text-muted">
+                {t("variables.noCustomVariables")}
+              </div>
+            ) : (
+              counters.map((item) => (
+                <div
+                  key={item.id}
+                  className="flex items-center justify-between gap-2 rounded-xl border border-line bg-white/2 px-3 py-2"
+                >
+                  <div className="min-w-0">
+                    <div className="truncate font-mono text-xs font-semibold text-accent">
+                      {`$(${item.name})`}
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-1.5">
+                    <span className="mr-1 font-mono text-sm font-bold tabular-nums text-zinc-100">
+                      {item.value}
+                    </span>
+                    <button
+                      type="button"
+                      onClick={() => adjustCustomCounter(item.id, -1)}
+                      className="grid size-6 place-items-center rounded-md border border-line bg-black/25 text-zinc-300 hover:border-white/25 hover:text-white"
+                    >
+                      <Minus size={11} />
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => adjustCustomCounter(item.id, 1)}
+                      className="grid size-6 place-items-center rounded-md border border-accent/35 bg-accent-soft text-accent hover:border-accent"
+                    >
+                      <Plus size={11} />
+                    </button>
+                  </div>
+                </div>
+              ))
+            )}
+          </div>
+        </Card>
+      );
+    }
+
+    if (id === "giveaway") {
+      return (
+        <Card className="flex flex-col p-4">
+          <div className="mb-3 flex items-center justify-between">
+            <div className="flex items-center gap-2 text-xs font-semibold">
+              <Gift size={14} className="text-accent" />
+              {t("nav.giveaways")}
+            </div>
+            <div className="flex items-center gap-2">
+              <Badge tone={giveaway.running ? "green" : "neutral"}>
+                {giveaway.running
+                  ? t("giveaways.running")
+                  : t("giveaways.stopped")}
+              </Badge>
+              <button
+                type="button"
+                onClick={() => setPage("giveaways")}
+                className="text-[11px] text-accent hover:brightness-125"
+              >
+                {t("dashboard.open")}
+              </button>
+            </div>
+          </div>
+          <div className="grid grid-cols-2 gap-2 rounded-xl border border-line bg-white/2 p-2.5 text-xs">
+            <div>
+              <div className="text-[10px] text-muted">
+                {t("giveaways.users")}
+              </div>
+              <div className="mt-0.5 text-sm font-bold tabular-nums text-zinc-100">
+                {giveaway.entries.length}
+              </div>
+            </div>
+            <div>
+              <div className="text-[10px] text-muted">
+                {t("giveaways.winnerTitle")}
+              </div>
+              <div className="mt-0.5 truncate text-xs font-semibold text-accent">
+                {giveaway.winner?.displayName ?? "—"}
+              </div>
+            </div>
+          </div>
+          <div className="mt-auto flex items-center gap-2 pt-3">
+            <Button
+              variant={giveaway.running ? "default" : "primary"}
+              onClick={handleToggleGiveaway}
+              className="flex-1 justify-center"
+            >
+              {giveaway.running ? <Square size={12} /> : <Play size={12} />}
+              {giveaway.running
+                ? t("dashboard.quickActions.stopGiveaway")
+                : t("dashboard.quickActions.startGiveaway")}
+            </Button>
+            <Button
+              onClick={handleDrawGiveawayWinner}
+              disabled={giveaway.entries.length === 0}
+              className="flex-1 justify-center"
+            >
+              <Shuffle size={12} />
+              {t("giveaways.rollIt")}
+            </Button>
+          </div>
+        </Card>
+      );
+    }
+
+    if (id === "commands") {
+      return (
+        <Card className="flex flex-col p-4">
+          <div className="mb-3 flex items-center justify-between">
+            <div className="flex items-center gap-2 text-xs font-semibold">
+              <Terminal size={14} className="text-accent" />
+              {t("nav.commands")}
+            </div>
+            <button
+              type="button"
+              onClick={() => setPage("commands")}
+              className="text-[11px] text-accent hover:brightness-125"
+            >
+              {t("dashboard.manage")}
+            </button>
+          </div>
+          <div className="min-h-0 flex-1 space-y-1.5 overflow-y-auto">
+            {commands.slice(0, 6).map((cmd) => {
+              const trigger = cmd.usePrefix ? `!${cmd.name}` : cmd.name;
+              return (
+                <div
+                  key={cmd.id}
+                  className="flex items-center justify-between gap-2 rounded-lg border border-line bg-white/2 px-2.5 py-1.5 text-xs"
+                >
+                  <div className="min-w-0 flex-1">
+                    <span className="font-mono font-semibold text-zinc-100">
+                      {trigger}
+                    </span>
+                    {cmd.usageCount ? (
+                      <span className="ml-2 text-[10px] text-muted">
+                        ×{cmd.usageCount}
+                      </span>
+                    ) : null}
+                  </div>
+                  <Toggle
+                    value={cmd.enabled}
+                    onChange={(enabled) => toggleCommand(cmd.id, enabled)}
+                    label={trigger}
+                  />
+                </div>
+              );
+            })}
+          </div>
+        </Card>
+      );
+    }
+
+    if (id === "channelPoints") {
+      return (
+        <Card className="flex flex-col p-4">
+          <div className="mb-3 flex items-center justify-between">
+            <div className="flex items-center gap-2 text-xs font-semibold">
+              <Sparkles size={14} className="text-accent" />
+              {t("nav.channelPoints")}
+            </div>
+            <button
+              type="button"
+              onClick={() => setPage("channelPoints")}
+              className="text-[11px] text-accent hover:brightness-125"
+            >
+              {t("dashboard.manage")}
+            </button>
+          </div>
+          <div className="min-h-0 flex-1 space-y-1.5 overflow-y-auto">
+            {channelRewards.length === 0 ? (
+              <div className="py-6 text-center text-[11px] text-muted">
+                {t("channelPoints.emptyTitle")}
+              </div>
+            ) : (
+              channelRewards.slice(0, 5).map((reward) => (
+                <div
+                  key={reward.id}
+                  className="flex items-center justify-between gap-2 rounded-lg border border-line bg-white/2 px-2.5 py-1.5 text-xs"
+                >
+                  <div className="flex min-w-0 items-center gap-2">
+                    <span
+                      className="size-2.5 shrink-0 rounded-full"
+                      style={{ backgroundColor: reward.backgroundColor }}
+                    />
+                    <span className="truncate font-medium text-zinc-100">
+                      {reward.title}
+                    </span>
+                    <span className="shrink-0 text-[10px] text-muted">
+                      {reward.cost.toLocaleString(i18n.language)}
+                    </span>
+                  </div>
+                  <Toggle
+                    value={reward.enabled && !reward.paused}
+                    onChange={(active) =>
+                      upsertChannelReward({
+                        ...reward,
+                        enabled: active,
+                        paused: !active,
+                      })
+                    }
+                    label={reward.title}
+                  />
+                </div>
+              ))
+            )}
+          </div>
+        </Card>
+      );
+    }
+
     if (id === "streamDetails")
       return (
-        <Card className="p-4">
+        <Card className="flex flex-col p-4">
           <div className="flex items-center justify-between">
-            <h2 className="text-xs font-semibold">{t("dashboard.streamDetails")}</h2>
+            <h2 className="text-xs font-semibold">
+              {t("dashboard.streamDetails")}
+            </h2>
             <button
               className="text-[11px] text-accent hover:brightness-125"
               onClick={() => setPage("stream")}
@@ -1020,7 +1889,9 @@ export function Dashboard() {
           </div>
           <div className="mt-4 space-y-4">
             <div>
-              <div className="text-[10px] text-muted">{t("dashboard.streamTitle")}</div>
+              <div className="text-[10px] text-muted">
+                {t("dashboard.streamTitle")}
+              </div>
               <div className="mt-1 text-xs">
                 {statsLoading ? (
                   <LoadingIndicator className="h-3.5 w-4/5" />
@@ -1030,7 +1901,9 @@ export function Dashboard() {
               </div>
             </div>
             <div>
-              <div className="text-[10px] text-muted">{t("stream.category")}</div>
+              <div className="text-[10px] text-muted">
+                {t("stream.category")}
+              </div>
               <div className="mt-1 text-xs">
                 {statsLoading ? (
                   <LoadingIndicator className="h-3.5 w-24" />
@@ -1042,6 +1915,7 @@ export function Dashboard() {
           </div>
         </Card>
       );
+
     if (id === "livePreview")
       return (
         <Card className="flex flex-col overflow-hidden">
@@ -1062,18 +1936,8 @@ export function Dashboard() {
           </div>
         </Card>
       );
+
     if (id === "goals") {
-      const raidCount = events.filter((event) => event.eventType === "raid").length;
-      const giftSubscriptionCount = events.reduce(
-        (total, event) =>
-          total +
-          (event.eventType === "community_gift"
-            ? (event.giftCount ?? 1)
-            : event.eventType === "gift_subscription"
-              ? 1
-              : 0),
-        0,
-      );
       const goals = [
         {
           label: t("dashboard.followers"),
@@ -1101,13 +1965,13 @@ export function Dashboard() {
         },
         {
           label: t("goals.raids"),
-          value: raidCount,
+          value: raidEvents.length,
           target: settings.goals.raids,
           loading: false,
         },
         {
           label: t("goals.giftSubscriptions"),
-          value: giftSubscriptionCount,
+          value: giftSubTotal,
           target: settings.goals.giftSubscriptions,
           loading: false,
         },
@@ -1146,7 +2010,9 @@ export function Dashboard() {
                       <LoadingIndicator className="h-2.5 w-10" />
                     ) : (
                       <span>
-                        {goal.target ? `${Math.round(percent)}%` : t("goals.noTarget")}
+                        {goal.target
+                          ? `${Math.round(percent)}%`
+                          : t("goals.noTarget")}
                       </span>
                     )}
                   </div>
@@ -1176,7 +2042,9 @@ export function Dashboard() {
         </Card>
       );
     }
+
     if (id === "obs") return <ObsWidget />;
+
     return (
       <Card className="p-4">
         <div className="mb-3 flex items-center justify-between">
@@ -1224,6 +2092,7 @@ export function Dashboard() {
       </Card>
     );
   };
+
   const zoom = Math.max(50, Math.min(150, settings.dashboardZoom || 100));
   const displayedWidgets = dragOrder ?? widgets;
   const visibleMetricWidgets = displayedWidgets.filter((id) =>
@@ -1232,6 +2101,7 @@ export function Dashboard() {
   const visibleContentWidgets = displayedWidgets.filter(
     (id) => !metricWidgetIds.has(id),
   );
+
   return (
     <div
       ref={dashboardRef}
@@ -1258,7 +2128,11 @@ export function Dashboard() {
             <Badge
               tone={stats.live ? "green" : connected ? "neutral" : "amber"}
             >
-              {stats.live ? t("stream.live") : connected ? t("stream.offline") : t("connectionPhases.disconnected")}
+              {stats.live
+                ? t("stream.live")
+                : connected
+                  ? t("stream.offline")
+                  : t("connectionPhases.disconnected")}
             </Badge>
           )
         }
@@ -1270,9 +2144,13 @@ export function Dashboard() {
         />
       )}
       {editing && (
-        <HiddenWidgets
+        <CustomizeToolbar
           widgets={hiddenWidgets}
+          zoom={zoom}
           onShow={showWidget}
+          onShowAll={showAllWidgets}
+          onApplyPreset={applyPreset}
+          onZoomChange={setZoomLevel}
           onAddBrowser={() => setAddingBrowserSource(true)}
           onDeleteBrowser={deleteBrowserSource}
           onReset={resetDashboard}
@@ -1306,6 +2184,7 @@ export function Dashboard() {
                   id={id}
                   editing={editing}
                   label={label}
+                  width={dimensions.width}
                   onHide={() => hideWidget(id)}
                   onMoveStart={(event) => startWidgetMove(event, id)}
                   onResizeStart={(event) => startWidgetResize(event, id)}
@@ -1348,6 +2227,9 @@ export function Dashboard() {
                   id={id}
                   editing={editing}
                   label={label}
+                  width={dimensions.width}
+                  showWidthControls
+                  onWidthChange={(w) => setWidgetWidth(id, w)}
                   onHide={() => hideWidget(id)}
                   onMoveStart={(event) => startWidgetMove(event, id)}
                   onResizeStart={(event) => startWidgetResize(event, id)}

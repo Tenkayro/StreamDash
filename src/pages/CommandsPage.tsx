@@ -1,5 +1,6 @@
 import {
   ArrowUpDown,
+  Braces,
   Info,
   Pencil,
   Plus,
@@ -91,6 +92,7 @@ export function CommandsPage() {
   const deleteCommand = useAppStore((s) => s.deleteCommand);
   const toggleCommand = useAppStore((s) => s.toggleCommand);
   const twitch = useAppStore((s) => s.twitch);
+  const setPage = useAppStore((s) => s.setPage);
 
   const [tab, setTab] = useState<CommandListTab>("custom");
   const [search, setSearch] = useState("");
@@ -313,10 +315,16 @@ export function CommandsPage() {
         title={t("commands.title")}
         description={t("pageDescriptions.commands")}
         actions={
-          <Button variant="primary" onClick={openCreate}>
-            <Plus size={15} />
-            {t("commands.create")}
-          </Button>
+          <div className="flex items-center gap-2">
+            <Button onClick={() => setPage("variables")}>
+              <Braces size={14} />
+              {t("nav.variables")}
+            </Button>
+            <Button variant="primary" onClick={openCreate}>
+              <Plus size={15} />
+              {t("commands.create")}
+            </Button>
+          </div>
         }
       />
 

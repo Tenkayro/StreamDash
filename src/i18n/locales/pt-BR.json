@@ -284,9 +284,70 @@
       "activitys": {
         "description": "Eventos mais recentes em resumo",
         "label": "Atividade recente"
+      },
+      "raids": {
+        "description": "Raids registradas e último raider",
+        "label": "Raids"
+      },
+      "giftSubs": {
+        "description": "Total de inscrições presenteadas",
+        "label": "Subs presenteadas"
+      },
+      "chatActivity": {
+        "description": "Mensagens do chat salvas",
+        "label": "Mensagens do chat"
+      },
+      "giveawayCount": {
+        "description": "Participantes atuais",
+        "label": "Participantes do sorteio"
+      },
+      "chat": {
+        "description": "Leia e envie mensagens",
+        "label": "Chat ao vivo"
+      },
+      "quickActions": {
+        "description": "Marcadores, sorteio e atalhos",
+        "label": "Ações rápidas"
+      },
+      "customCounters": {
+        "description": "Ajuste seus contadores ao vivo",
+        "label": "Contadores"
+      },
+      "giveaway": {
+        "description": "Inicie sorteios e escolha vencedores",
+        "label": "Controle do sorteio"
+      },
+      "commands": {
+        "description": "Ative comandos e veja o uso",
+        "label": "Comandos do chat"
+      },
+      "channelPoints": {
+        "description": "Pause ou retome recompensas",
+        "label": "Pontos do canal"
       }
     },
-    "zoomSaveError": "Não foi possível salvar o zoom do painel"
+    "zoomSaveError": "Não foi possível salvar o zoom do painel",
+    "presets": {
+      "label": "Predefinições",
+      "standard": "Padrão",
+      "cockpit": "Cockpit ao vivo",
+      "metrics": "Métricas"
+    },
+    "zoomIn": "Aumentar zoom",
+    "zoomOut": "Diminuir zoom",
+    "showAll": "Mostrar tudo",
+    "quickActions": {
+      "markerOfflineError": "Marcadores só podem ser criados ao vivo",
+      "markerSuccess": "Marcador criado",
+      "channelCopied": "Link do canal copiado",
+      "copyChannel": "Copiar link do canal",
+      "chatCleared": "Visualização local do chat limpa",
+      "clearChat": "Limpar visualização do chat",
+      "reconnecting": "Reconectando todos os serviços…",
+      "reconnect": "Reconectar",
+      "startGiveaway": "Iniciar sorteio",
+      "stopGiveaway": "Parar sorteio"
+    }
   },
   "events": {
     "channel_point": "Resgate",
@@ -500,7 +561,8 @@
     "obs": "Controle cenas, áudio, transmissão, gravação e saídas do OBS em um só lugar.",
     "settings": "Ajuste aparência, comportamento, notificações e dados.",
     "statistics": "Entenda tendências com base nos eventos armazenados.",
-    "activitys": "Revise o feed de atividades, doações e eventos da stream em um só lugar."
+    "activitys": "Revise o feed de atividades, doações e eventos da stream em um só lugar.",
+    "variables": "Variáveis centrais para comandos, alertas de chat e mais — com valores ao vivo e contadores próprios."
   },
   "nav": {
     "activity": "Atividade",
@@ -523,7 +585,8 @@
     "settings": "Configurações",
     "statistics": "Estatísticas",
     "stream": "Transmissão",
-    "activitys": "Activitys"
+    "activitys": "Activitys",
+    "variables": "Variáveis"
   },
   "channelPoints": {
     "backgroundColor": "Cor de fundo",
@@ -1061,7 +1124,102 @@
       "notifications": "alertas notificações doações raids presentes",
       "events": "eventos filtros histórico",
       "data": "armazenamento banco de dados backup exportar importar",
-      "activitys": "eventos histórico seguidores inscrições raids bits gorjetas dinheiro doadores pagamentos eventos caixa moderação concluídos"
+      "activitys": "eventos histórico seguidores inscrições raids bits gorjetas dinheiro doadores pagamentos eventos caixa moderação concluídos",
+      "variables": "variáveis marcadores tokens contadores valores modelos"
+    }
+  },
+  "variables": {
+    "copied": "{{token}} copiado",
+    "customNameRequired": "Digite um nome de variável",
+    "customSaved": "{{token}} salvo",
+    "totalCount_one": "{{count}} variável",
+    "totalCount_other": "{{count}} variáveis",
+    "playgroundTitle": "Testar modelo",
+    "syntaxHint": "Sintaxe: $(nome) ou {nome}",
+    "playgroundPlaceholder": "Digite uma mensagem com variáveis…",
+    "liveOutput": "Prévia ao vivo",
+    "copyTemplate": "Copiar modelo",
+    "searchPlaceholder": "Buscar variáveis…",
+    "columns": {
+      "variable": "Variável",
+      "description": "Descrição",
+      "liveValue": "Valor atual",
+      "action": "Ação"
+    },
+    "emptyTitle": "Nenhuma variável encontrada",
+    "emptyDescription": "Tente outro termo ou categoria.",
+    "clickToCopy": "Clique para copiar",
+    "insertIntoPlayground": "Inserir no modelo de teste",
+    "customTitle": "Variáveis próprias",
+    "customSubtitle": "Seus contadores e textos, utilizáveis em todo lugar como $(nome).",
+    "typeCounter": "Contador",
+    "typeText": "Texto",
+    "customNamePlaceholder": "nome",
+    "customValuePlaceholder": "Valor",
+    "addCustom": "Adicionar variável",
+    "noCustomVariables": "Nenhuma variável própria ainda",
+    "resetCounter": "Zerar contador",
+    "fallbackChannel": "Streamer",
+    "categories": {
+      "all": "Todas",
+      "stream": "Transmissão",
+      "stats": "Estatísticas",
+      "user": "Usuário e comando",
+      "events": "Eventos",
+      "tools": "Metas e sorteio",
+      "utility": "Utilitários"
+    },
+    "items": {
+      "channel": "Nome do seu canal",
+      "title": "Título atual",
+      "game": "Categoria / jogo atual",
+      "status": "Ao vivo ou offline",
+      "uptime": "Duração da transmissão",
+      "viewers": "Espectadores atuais",
+      "bot": "Nome da conta bot (ou canal)",
+      "followers": "Número de seguidores",
+      "subscribers": "Número de inscritos",
+      "bitsTotal": "Total de bits",
+      "donationsTotal": "Total de doações",
+      "raidsCount": "Número de raids",
+      "giftsCount": "Subs presenteadas",
+      "eventsCount": "Eventos salvos",
+      "chatMessages": "Mensagens salvas",
+      "commandsCount": "Comandos ativos",
+      "count": "Quantas vezes este comando foi usado",
+      "user": "Usuário que acionou",
+      "userLogin": "Login do usuário",
+      "touser": "Primeiro argumento sem @ (ou o usuário)",
+      "query": "Tudo após o comando",
+      "arg1": "Primeiro argumento",
+      "arg2": "Segundo argumento",
+      "lastFollower": "Último seguidor",
+      "lastSub": "Último inscrito",
+      "lastResub": "Última reinscrição",
+      "lastGifter": "Último a presentear subs",
+      "lastCheer": "Último cheer com bits",
+      "lastRaider": "Último raider com espectadores",
+      "lastDonation": "Última doação",
+      "lastRedemption": "Último resgate de pontos",
+      "months": "Meses de inscrição (alertas)",
+      "recipient": "Destinatário do presente (alertas)",
+      "amount": "Quantidade presenteada (alertas)",
+      "bits": "Bits enviados (alertas)",
+      "tier": "Nível da inscrição (alertas)",
+      "goalFollowers": "Progresso da meta de seguidores",
+      "goalSubscribers": "Progresso da meta de inscritos",
+      "goalDonations": "Progresso da meta de doações",
+      "goalBits": "Progresso da meta de bits",
+      "giveawayStatus": "Status do sorteio",
+      "giveawayKeyword": "Palavra-chave do sorteio",
+      "giveawayEntries": "Participantes do sorteio",
+      "giveawayWinner": "Último vencedor",
+      "song": "Música atual do Spotify",
+      "obsScene": "Cena atual do OBS",
+      "obsFps": "FPS atual do OBS",
+      "time": "Hora atual",
+      "date": "Data atual",
+      "random": "Número aleatório, ex. $(random.1-6)"
     }
   }
 }

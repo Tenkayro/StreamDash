@@ -64,7 +64,31 @@ export interface DashboardStats {
   category?: string
 }
 
-export type DashboardWidgetId = 'followers' | 'subscribers' | 'viewers' | 'duration' | 'bits' | 'donations' | 'status' | 'eventCount' | 'activitys' | 'streamDetails' | 'livePreview' | 'goals' | 'connections' | 'obs'
+export type DashboardWidgetId =
+  | 'followers'
+  | 'subscribers'
+  | 'viewers'
+  | 'duration'
+  | 'bits'
+  | 'donations'
+  | 'status'
+  | 'eventCount'
+  | 'raids'
+  | 'giftSubs'
+  | 'chatActivity'
+  | 'giveawayCount'
+  | 'activitys'
+  | 'streamDetails'
+  | 'livePreview'
+  | 'goals'
+  | 'connections'
+  | 'obs'
+  | 'chat'
+  | 'quickActions'
+  | 'giveaway'
+  | 'commands'
+  | 'channelPoints'
+  | 'customCounters'
 export type DashboardItemId = DashboardWidgetId | `browser:${string}`
 export type DashboardWidgetWidth = 'single' | 'wide' | 'full'
 export interface DashboardWidgetDimensions { width: DashboardWidgetWidth; height: number }
@@ -205,7 +229,18 @@ export interface ChatCommand {
   expiryAction: CommandExpiryAction
   expiresInSeconds: number
   expiresAt?: number
+  usageCount?: number
   createdAt: number
+}
+
+export type CustomVariableType = 'text' | 'counter'
+
+export interface CustomVariable {
+  id: string
+  name: string
+  type: CustomVariableType
+  value: string
+  updatedAt: number
 }
 
 export interface ChannelPointReward {

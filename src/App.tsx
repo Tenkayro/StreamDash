@@ -45,6 +45,10 @@ const pageLoaders = {
     import("./pages/ChatAlertsPage").then((module) => ({
       default: module.ChatAlertsPage,
     })),
+  variables: () =>
+    import("./pages/VariablesPage").then((module) => ({
+      default: module.VariablesPage,
+    })),
   channelPoints: () =>
     import("./pages/ChannelPointsPage").then((module) => ({
       default: module.ChannelPointsPage,
@@ -81,6 +85,7 @@ const ChatPage = lazy(pageLoaders.chat);
 const ActivityPage = lazy(pageLoaders.activitys);
 const CommandsPage = lazy(pageLoaders.commands);
 const ChatAlertsPage = lazy(pageLoaders.chatAlerts);
+const VariablesPage = lazy(pageLoaders.variables);
 const ChannelPointsPage = lazy(pageLoaders.channelPoints);
 const GiveawaysPage = lazy(pageLoaders.giveaways);
 const LivePreview = lazy(pageLoaders.livePreview);
@@ -99,6 +104,7 @@ const pages: Record<string, React.ComponentType> = {
   donations: ActivityPage,
   commands: CommandsPage,
   chatAlerts: ChatAlertsPage,
+  variables: VariablesPage,
   channelPoints: ChannelPointsPage,
   giveaways: GiveawaysPage,
   livePreview: LivePreview,
@@ -247,6 +253,7 @@ export default function App() {
     "chat",
     "commands",
     "chatAlerts",
+    "variables",
     "channelPoints",
     "giveaways",
     "livePreview",

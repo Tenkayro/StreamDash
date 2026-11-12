@@ -50,12 +50,14 @@ import type {
   ChatMessage,
   ChatUserProfile,
   CommandRole,
+  CustomVariable,
   DashboardStats,
   GiveawayState,
   GoalMetric,
 } from "../types";
 import { RuntimeContext, type DeviceAuth } from "./runtime-context";
 import i18n, { resolveLanguage } from "../i18n";
+import { resolveVariables } from "../lib/variables";
 
 type Bootstrap = {
   settings: Partial<AppSettings>;
@@ -64,6 +66,7 @@ type Bootstrap = {
   commands?: ChatCommand[];
   channelRewards?: ChannelPointReward[];
   chatAlerts?: Partial<ChatAlertsConfig>;
+  customVariables?: CustomVariable[];
   events: ActivityEvent[];
   chatMessages: ChatMessage[];
 };
@@ -79,6 +82,7 @@ function loadBootstrap() {
       commands,
       channelRewards,
       chatAlerts,
+      customVariables,
       ...restSettings
     } = raw as Partial<AppSettings> & {
       giveaway?: Partial<GiveawayState>;
@@ -86,6 +90,7 @@ function loadBootstrap() {
       commands?: ChatCommand[];
       channelRewards?: ChannelPointReward[];
       chatAlerts?: Partial<ChatAlertsConfig>;
+      customVariables?: CustomVariable[];
     };
     const settings: Partial<AppSettings> = { ...restSettings };
     if (typeof settings.onboardingCompleted !== "boolean") {
@@ -116,6 +121,7 @@ function loadBootstrap() {
       commands,
       channelRewards,
       chatAlerts,
+      customVariables,
       events,
       chatMessages,
     };
@@ -317,14 +323,17 @@ export function RuntimeProvider({ children }: { children: ReactNode }) {
             snapshot.category !== prevCategory &&
             current.chatAlerts.gameChange.enabled
           ) {
-            const msg = current.chatAlerts.gameChange.message
-              .replace(
-                /\$\(channel\.display_name\)|\$\(channel\)|\{channel\}/gi,
-                channelName,
-              )
-              .replace(/\$\(game\)|\{game\}/gi, snapshot.category)
-              .replace(/\$\(title\)|\{title\}/gi, snapshot.title ?? prevTitle ?? "")
-              .trim();
+            const msg = resolveVariables(
+              current.chatAlerts.gameChange.message,
+              {
+                state: current,
+                user: channelName,
+                alertData: {
+                  game: snapshot.category,
+                  title: snapshot.title ?? prevTitle ?? "",
+                },
+              },
+            ).trim();
             if (msg) void sendCommandReply(msg.slice(0, 480)).catch(() => undefined);
           }
           if (
@@ -333,14 +342,17 @@ export function RuntimeProvider({ children }: { children: ReactNode }) {
             snapshot.title !== prevTitle &&
             current.chatAlerts.titleChange.enabled
           ) {
-            const msg = current.chatAlerts.titleChange.message
-              .replace(
-                /\$\(channel\.display_name\)|\$\(channel\)|\{channel\}/gi,
-                channelName,
-              )
-              .replace(/\$\(game\)|\{game\}/gi, snapshot.category ?? prevCategory ?? "")
-              .replace(/\$\(title\)|\{title\}/gi, snapshot.title)
-              .trim();
+            const msg = resolveVariables(
+              current.chatAlerts.titleChange.message,
+              {
+                state: current,
+                user: channelName,
+                alertData: {
+                  game: snapshot.category ?? prevCategory ?? "",
+                  title: snapshot.title,
+                },
+              },
+            ).trim();
             if (msg) void sendCommandReply(msg.slice(0, 480)).catch(() => undefined);
           }
         }
@@ -400,7 +412,6 @@ export function RuntimeProvider({ children }: { children: ReactNode }) {
 
       const alerts = current.chatAlerts;
       const user = event.displayName || event.username || i18n.t("runtime.someone");
-      const channelName = current.twitch.account || "";
       const gameName = current.stats.category || "";
       const streamTitle = current.stats.title || "";
       const months = Number(event.metadata?.months ?? 1);
@@ -446,20 +457,28 @@ export function RuntimeProvider({ children }: { children: ReactNode }) {
       }
 
       if (alertTemplate && current.twitch.phase === "connected") {
-        const formatted = alertTemplate
-          .replace(/\$\(user\)|\{user\}/gi, user)
-          .replace(/\$\(months\)|\{months\}/gi, String(months))
-          .replace(/\$\(recipient\)|\{recipient\}/gi, recipient || user)
-          .replace(/\$\(amount\)|\{amount\}/gi, String(event.giftCount ?? 1))
-          .replace(/\$\(viewers\)|\{viewers\}/gi, String(event.viewerCount ?? 0))
-          .replace(/\$\(bits\)|\{bits\}/gi, String(event.bits ?? 0))
-          .replace(
-            /\$\(channel\.display_name\)|\$\(channel\)|\{channel\}/gi,
-            channelName,
-          )
-          .replace(/\$\(game\)|\{game\}/gi, gameName)
-          .replace(/\$\(title\)|\{title\}/gi, streamTitle)
-          .trim();
+        const tierLabel = isPrime
+          ? "Prime Gaming"
+          : tier === "3000"
+            ? "Tier 3"
+            : tier === "2000"
+              ? "Tier 2"
+              : "Tier 1";
+        const formatted = resolveVariables(alertTemplate, {
+          state: state(),
+          user,
+          userLogin: event.username || user,
+          alertData: {
+            months,
+            recipient: recipient || user,
+            amount: event.giftCount ?? event.amount ?? 1,
+            bits: event.bits ?? 0,
+            viewers: event.viewerCount,
+            tier: tierLabel,
+            game: gameName,
+            title: streamTitle,
+          },
+        }).trim();
         if (formatted) {
           void sendCommandReply(formatted.slice(0, 480)).catch(() => undefined);
         }
@@ -665,26 +684,44 @@ export function RuntimeProvider({ children }: { children: ReactNode }) {
 
             commandGlobalCooldownsRef.current.set(cmd.id, now);
             commandUserCooldownsRef.current.set(userKey, now);
+            const usageCount = current.incrementCommandUsage(cmd.id);
 
-            const dispatchResponse = (rawResponse: string) => {
+            const dispatchResponse = async (rawResponse: string) => {
               const user = message.displayName || message.login;
-              const interpolated = rawResponse
-                .replace(/\{user\}|\$\(user\)/gi, user)
-                .replace(/\{channel\}|\$\(channel\)/gi, current.twitch.account ?? "")
-                .replace(/\{game\}|\$\(game\)/gi, current.stats.category ?? "")
-                .replace(/\{title\}|\$\(title\)/gi, current.stats.title ?? "")
-                .trim();
-              if (!interpolated) return Promise.resolve();
+              let songText: string | undefined;
+              if (/\$\((?:spotify\.)?song\)|\{song\}/i.test(rawResponse)) {
+                try {
+                  const song = await spotifyOverlayNative.status();
+                  if (song.available && song.title) {
+                    songText = song.artist
+                      ? `${song.artist} — ${song.title}`
+                      : song.title;
+                  }
+                } catch {
+                  /* ignore spotify error */
+                }
+              }
+              const interpolated = resolveVariables(rawResponse, {
+                state: state(),
+                user,
+                userLogin: message.login,
+                rawMessageText: rawText,
+                commandCount: usageCount,
+                songText,
+              }).trim();
+              if (!interpolated) return;
               if (cmd.responseType === "mention") {
                 const text = interpolated.startsWith(`@${user}`)
                   ? interpolated
                   : `@${user} ${interpolated}`;
-                return sendCommandReply(text.slice(0, 480));
+                await sendCommandReply(text.slice(0, 480));
+                return;
               }
               if (cmd.responseType === "reply" || cmd.responseType === "whisper") {
-                return sendCommandReply(interpolated.slice(0, 480), message.id);
+                await sendCommandReply(interpolated.slice(0, 480), message.id);
+                return;
               }
-              return sendCommandReply(interpolated.slice(0, 480));
+              await sendCommandReply(interpolated.slice(0, 480));
             };
 
             if (cmd.builtIn && cmd.id === "builtin-song") {
@@ -871,6 +908,7 @@ export function RuntimeProvider({ children }: { children: ReactNode }) {
           commands,
           channelRewards,
           chatAlerts,
+          customVariables,
           events,
           chatMessages,
         } = await loadBootstrap();
@@ -886,6 +924,9 @@ export function RuntimeProvider({ children }: { children: ReactNode }) {
         }
         if (chatAlerts && typeof chatAlerts === "object") {
           state().setChatAlerts(chatAlerts);
+        }
+        if (Array.isArray(customVariables)) {
+          state().setCustomVariables(customVariables);
         }
         if (giveaway && typeof giveaway === "object") {
           state().setGiveaway({

@@ -284,9 +284,70 @@
       "activitys": {
         "description": "Latest events at a glance",
         "label": "Recent activity"
+      },
+      "raids": {
+        "description": "Recorded raids and latest raider",
+        "label": "Raids"
+      },
+      "giftSubs": {
+        "description": "Total gifted subscriptions",
+        "label": "Gifted subs"
+      },
+      "chatActivity": {
+        "description": "Stored live chat messages",
+        "label": "Chat messages"
+      },
+      "giveawayCount": {
+        "description": "Current giveaway participants",
+        "label": "Giveaway entries"
+      },
+      "chat": {
+        "description": "Read and send chat messages",
+        "label": "Live chat"
+      },
+      "quickActions": {
+        "description": "Markers, giveaway and shortcuts",
+        "label": "Quick actions"
+      },
+      "customCounters": {
+        "description": "Adjust your own counters live",
+        "label": "Counters"
+      },
+      "giveaway": {
+        "description": "Start giveaways and draw winners",
+        "label": "Giveaway control"
+      },
+      "commands": {
+        "description": "Toggle commands and see usage",
+        "label": "Chat commands"
+      },
+      "channelPoints": {
+        "description": "Pause or resume rewards",
+        "label": "Channel points"
       }
     },
-    "zoomSaveError": "Dashboard zoom could not be saved"
+    "zoomSaveError": "Dashboard zoom could not be saved",
+    "presets": {
+      "label": "Presets",
+      "standard": "Standard",
+      "cockpit": "Live cockpit",
+      "metrics": "Metrics"
+    },
+    "zoomIn": "Zoom in",
+    "zoomOut": "Zoom out",
+    "showAll": "Show all",
+    "quickActions": {
+      "markerOfflineError": "Stream markers can only be created while live",
+      "markerSuccess": "Stream marker created",
+      "channelCopied": "Channel link copied",
+      "copyChannel": "Copy channel link",
+      "chatCleared": "Local chat view cleared",
+      "clearChat": "Clear chat view",
+      "reconnecting": "Reconnecting all services…",
+      "reconnect": "Reconnect",
+      "startGiveaway": "Start giveaway",
+      "stopGiveaway": "Stop giveaway"
+    }
   },
   "events": {
     "channel_point": "Redemption",
@@ -500,7 +561,8 @@
     "obs": "Control scenes, audio, streaming, recording and OBS outputs in one place.",
     "settings": "Adjust appearance, behavior, notifications and data.",
     "statistics": "Understand activity trends from your stored events.",
-    "activitys": "Review your event feed, donations and stream events in one place."
+    "activitys": "Review your event feed, donations and stream events in one place.",
+    "variables": "Central variables for commands, chat alerts and more — with live values and your own counters."
   },
   "nav": {
     "activity": "Activity",
@@ -523,7 +585,8 @@
     "settings": "Settings",
     "statistics": "Statistics",
     "stream": "Stream",
-    "activitys": "Activitys"
+    "activitys": "Activitys",
+    "variables": "Variables"
   },
   "channelPoints": {
     "backgroundColor": "Background color",
@@ -1061,7 +1124,102 @@
       "notifications": "alerts notifications donations raids gifts",
       "events": "events filters history",
       "data": "storage database backup export import",
-      "activitys": "events history followers subscriptions raids bits tips money donors payments events inbox moderation done"
+      "activitys": "events history followers subscriptions raids bits tips money donors payments events inbox moderation done",
+      "variables": "variables placeholders tokens counters custom values templates"
+    }
+  },
+  "variables": {
+    "copied": "{{token}} copied",
+    "customNameRequired": "Enter a variable name",
+    "customSaved": "{{token}} saved",
+    "totalCount_one": "{{count}} variable",
+    "totalCount_other": "{{count}} variables",
+    "playgroundTitle": "Test template",
+    "syntaxHint": "Syntax: $(name) or {name}",
+    "playgroundPlaceholder": "Type a message with variables…",
+    "liveOutput": "Live preview",
+    "copyTemplate": "Copy template",
+    "searchPlaceholder": "Search variables…",
+    "columns": {
+      "variable": "Variable",
+      "description": "Description",
+      "liveValue": "Current value",
+      "action": "Action"
+    },
+    "emptyTitle": "No variables found",
+    "emptyDescription": "Try a different search term or category.",
+    "clickToCopy": "Click to copy",
+    "insertIntoPlayground": "Insert into test template",
+    "customTitle": "Custom variables",
+    "customSubtitle": "Your own counters and texts — usable everywhere as $(name).",
+    "typeCounter": "Counter",
+    "typeText": "Text",
+    "customNamePlaceholder": "name",
+    "customValuePlaceholder": "Value",
+    "addCustom": "Add variable",
+    "noCustomVariables": "No custom variables yet",
+    "resetCounter": "Reset counter",
+    "fallbackChannel": "Streamer",
+    "categories": {
+      "all": "All",
+      "stream": "Stream",
+      "stats": "Stats",
+      "user": "User & command",
+      "events": "Events",
+      "tools": "Goals & giveaway",
+      "utility": "Utility"
+    },
+    "items": {
+      "channel": "Your channel name",
+      "title": "Current stream title",
+      "game": "Current category / game",
+      "status": "Live or offline",
+      "uptime": "Stream uptime",
+      "viewers": "Current viewers",
+      "bot": "Bot account name (or channel)",
+      "followers": "Follower count",
+      "subscribers": "Subscriber count",
+      "bitsTotal": "Total collected bits",
+      "donationsTotal": "Total donations",
+      "raidsCount": "Number of raids",
+      "giftsCount": "Number of gifted subs",
+      "eventsCount": "Stored activity events",
+      "chatMessages": "Stored chat messages",
+      "commandsCount": "Active commands",
+      "count": "How often this command was used",
+      "user": "Name of the user who triggered it",
+      "userLogin": "Login name of the user",
+      "touser": "First argument without @ (or the user)",
+      "query": "Everything after the command",
+      "arg1": "First argument",
+      "arg2": "Second argument",
+      "lastFollower": "Latest follower",
+      "lastSub": "Latest subscriber",
+      "lastResub": "Latest resubscriber",
+      "lastGifter": "Latest sub gifter",
+      "lastCheer": "Latest cheer with bits",
+      "lastRaider": "Latest raider with viewers",
+      "lastDonation": "Latest donation",
+      "lastRedemption": "Latest channel point redemption",
+      "months": "Subscription months (alerts)",
+      "recipient": "Gift recipient (alerts)",
+      "amount": "Gift amount (alerts)",
+      "bits": "Cheered bits (alerts)",
+      "tier": "Subscription tier (alerts)",
+      "goalFollowers": "Follower goal progress",
+      "goalSubscribers": "Subscriber goal progress",
+      "goalDonations": "Donation goal progress",
+      "goalBits": "Bits goal progress",
+      "giveawayStatus": "Giveaway status",
+      "giveawayKeyword": "Giveaway keyword",
+      "giveawayEntries": "Giveaway entries",
+      "giveawayWinner": "Last giveaway winner",
+      "song": "Currently playing Spotify song",
+      "obsScene": "Current OBS scene",
+      "obsFps": "Current OBS FPS",
+      "time": "Current time",
+      "date": "Current date",
+      "random": "Random number, e.g. $(random.1-6)"
     }
   }
 }

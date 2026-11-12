@@ -10,6 +10,7 @@ import type {
   ChatEmote,
   ChatMessage,
   ConnectionState,
+  CustomVariable,
   DashboardStats,
   DashboardItemId,
   GiveawayEntry,
@@ -203,6 +204,22 @@ export const defaultChatAlerts: ChatAlertsConfig = {
       '$(channel.display_name) changed their title to "$(title)"! PogChamp',
   },
 };
+export const defaultCustomVariables: CustomVariable[] = [
+  {
+    id: "var-deaths",
+    name: "deaths",
+    type: "counter",
+    value: "0",
+    updatedAt: 0,
+  },
+  {
+    id: "var-wins",
+    name: "wins",
+    type: "counter",
+    value: "0",
+    updatedAt: 0,
+  },
+];
 interface AppStore {
   searchTarget?: SearchTarget;
   setSearchTarget: (target?: SearchTarget) => void;
@@ -259,12 +276,18 @@ interface AppStore {
   upsertCommand: (command: ChatCommand) => void;
   deleteCommand: (id: string) => void;
   toggleCommand: (id: string, enabled: boolean) => void;
+  incrementCommandUsage: (id: string) => number;
   channelRewards: ChannelPointReward[];
   setChannelRewards: (rewards: ChannelPointReward[]) => void;
   upsertChannelReward: (reward: ChannelPointReward) => void;
   deleteChannelReward: (id: string) => void;
   chatAlerts: ChatAlertsConfig;
   setChatAlerts: (patch: Partial<ChatAlertsConfig>) => void;
+  customVariables: CustomVariable[];
+  setCustomVariables: (vars: CustomVariable[]) => void;
+  upsertCustomVariable: (variable: CustomVariable) => void;
+  deleteCustomVariable: (id: string) => void;
+  adjustCustomCounter: (id: string, delta: number, reset?: boolean) => void;
 }
 export const useAppStore = create<AppStore>((set) => ({
   searchTarget: undefined,
@@ -587,6 +610,21 @@ export const useAppStore = create<AppStore>((set) => ({
       }
       return { commands: nextCommands };
     }),
+  incrementCommandUsage: (id) => {
+    let nextCount = 1;
+    set((s) => {
+      const nextCommands = s.commands.map((item) => {
+        if (item.id !== id) return item;
+        nextCount = (item.usageCount ?? 0) + 1;
+        return { ...item, usageCount: nextCount };
+      });
+      if (s.ready) {
+        void saveLocalState("commands", nextCommands).catch(() => undefined);
+      }
+      return { commands: nextCommands };
+    });
+    return nextCount;
+  },
   channelRewards: [],
   setChannelRewards: (channelRewards) =>
     set((s) => {
@@ -628,5 +666,68 @@ export const useAppStore = create<AppStore>((set) => ({
         void saveLocalState("chatAlerts", nextAlerts).catch(() => undefined);
       }
       return { chatAlerts: nextAlerts };
+    }),
+  customVariables: defaultCustomVariables,
+  setCustomVariables: (customVariables) => set({ customVariables }),
+  upsertCustomVariable: (variable) =>
+    set((s) => {
+      const cleanName = variable.name
+        .trim()
+        .replace(/^\$\(|\)$|^\{|\}$/g, "")
+        .replace(/^custom\./i, "")
+        .replace(/[^a-zA-Z0-9_.-]/g, "")
+        .toLowerCase();
+      if (!cleanName) return s;
+      const normalized: CustomVariable = {
+        ...variable,
+        name: cleanName,
+        updatedAt: Date.now(),
+      };
+      const exists = s.customVariables.some(
+        (item) => item.id === normalized.id || item.name === cleanName,
+      );
+      const nextVariables = exists
+        ? s.customVariables.map((item) =>
+            item.id === normalized.id || item.name === cleanName
+              ? { ...normalized, id: item.id }
+              : item,
+          )
+        : [...s.customVariables, normalized];
+      if (s.ready) {
+        void saveLocalState("customVariables", nextVariables).catch(
+          () => undefined,
+        );
+      }
+      return { customVariables: nextVariables };
+    }),
+  deleteCustomVariable: (id) =>
+    set((s) => {
+      const nextVariables = s.customVariables.filter((item) => item.id !== id);
+      if (s.ready) {
+        void saveLocalState("customVariables", nextVariables).catch(
+          () => undefined,
+        );
+      }
+      return { customVariables: nextVariables };
+    }),
+  adjustCustomCounter: (id, delta, reset = false) =>
+    set((s) => {
+      const nextVariables = s.customVariables.map((item) => {
+        if (item.id !== id) return item;
+        const currentNum = Number.parseInt(item.value, 10) || 0;
+        const nextNum = reset ? 0 : currentNum + delta;
+        return {
+          ...item,
+          type: "counter" as const,
+          value: String(nextNum),
+          updatedAt: Date.now(),
+        };
+      });
+      if (s.ready) {
+        void saveLocalState("customVariables", nextVariables).catch(
+          () => undefined,
+        );
+      }
+      return { customVariables: nextVariables };
     }),
 }));
