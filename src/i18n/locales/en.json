@@ -1,4 +1,17 @@
 {
+  "crash": {
+    "title": "Unexpected error",
+    "fatalTitle": "StreamDash ran into a problem",
+    "pageTitle": "This page ran into a problem",
+    "description": "You can copy or save the crash details below, dismiss this dialog, or reload StreamDash.",
+    "technicalDetails": "Technical details & crash log",
+    "copyReport": "Copy report",
+    "copied": "Copied",
+    "saveLog": "Save log",
+    "dismiss": "Dismiss",
+    "retrySection": "Retry page",
+    "reloadApp": "Reload app"
+  },
   "network": {
     "offlineBadge": "Offline",
     "offlineTooltip": "No internet connection. Click to retry.",

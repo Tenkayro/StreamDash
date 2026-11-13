@@ -1,4 +1,17 @@
 {
+  "crash": {
+    "title": "Unerwarteter Fehler",
+    "fatalTitle": "In StreamDash ist ein Problem aufgetreten",
+    "pageTitle": "Auf dieser Seite ist ein Fehler aufgetreten",
+    "description": "Du kannst den Crash-Bericht unten kopieren oder als Log-Datei speichern, das Fenster schließen oder StreamDash neu laden.",
+    "technicalDetails": "Technische Details & Crash-Log",
+    "copyReport": "Bericht kopieren",
+    "copied": "Kopiert",
+    "saveLog": "Log speichern",
+    "dismiss": "Schließen",
+    "retrySection": "Seite neu laden",
+    "reloadApp": "App neu laden"
+  },
   "network": {
     "offlineBadge": "Offline",
     "offlineTooltip": "Keine Internetverbindung. Klicken zum Erneut-Prüfen.",

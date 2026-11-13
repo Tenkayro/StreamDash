@@ -1,4 +1,17 @@
 {
+  "crash": {
+    "title": "Erro inesperado",
+    "fatalTitle": "O StreamDash encontrou um problema",
+    "pageTitle": "Esta página encontrou um problema",
+    "description": "Você pode copiar ou salvar os detalhes abaixo, fechar este aviso ou recarregar o StreamDash.",
+    "technicalDetails": "Detalhes técnicos e log de erro",
+    "copyReport": "Copiar relatório",
+    "copied": "Copiado",
+    "saveLog": "Salvar log",
+    "dismiss": "Fechar",
+    "retrySection": "Tentar página novamente",
+    "reloadApp": "Recarregar app"
+  },
   "network": {
     "offlineBadge": "Offline",
     "offlineTooltip": "Sem conexão com a internet. Clique para tentar novamente.",

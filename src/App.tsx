@@ -14,6 +14,7 @@ import { resolveLanguage } from "./i18n";
 import { SetupWizard } from "./components/SetupWizard";
 import { useRuntime } from "./services/runtime-context";
 import { AppContextMenu } from "./components/AppContextMenu";
+import { CrashBoundary } from "./components/CrashHandler";
 
 const CommandPalette = lazy(() =>
   import("./components/CommandPalette").then((module) => ({
@@ -334,9 +335,11 @@ export default function App() {
                 }
                 className={`app-content mx-auto w-full ${isFullWidthPage ? "max-w-none" : widths[settings.contentWidth]} ${isViewportPage ? "flex h-full min-h-0 flex-col" : ""} pb-16 md:pb-0 ${settings.uiDensity === "compact" ? "p-3 lg:p-4" : "p-3 sm:p-4 xl:p-5"}`}
               >
-                <Suspense fallback={loading}>
-                  <Page />
-                </Suspense>
+                <CrashBoundary resetKey={page}>
+                  <Suspense fallback={loading}>
+                    <Page />
+                  </Suspense>
+                </CrashBoundary>
               </div>
             </main>
             {!isViewportPage && (
