@@ -20,6 +20,9 @@
   --app-accent: var(--accent-violet);
   --app-accent-soft: var(--accent-violet-soft);
   --app-accent-border: var(--accent-violet-border);
+  --app-accent-glow: color-mix(in oklch, var(--app-accent) 42%, transparent);
+  --app-accent-hover: color-mix(in oklch, var(--app-accent), var(--color-ink-strong) 10%);
+  --app-accent-edge: color-mix(in oklch, var(--app-accent) 22%, var(--color-rule));
 
   --color-canvas: oklch(14.5% 0.013 268);
   --color-panel: oklch(18.5% 0.015 268);
@@ -91,10 +94,32 @@
   --color-obs-stage: var(--color-obs-stage);
 }
 
+@utility glass-panel {
+  border: 1px solid var(--color-rule);
+  background: color-mix(in oklch, var(--color-panel) 84%, transparent);
+  backdrop-filter: blur(16px);
+  box-shadow: var(--shadow-card);
+}
+
+@utility accent-glow {
+  box-shadow: 0 10px 28px -12px var(--app-accent-glow), var(--dusk-edge);
+}
+
+@utility card-hover {
+  transition: border-color 180ms var(--ease-out), box-shadow 180ms var(--ease-out), transform 180ms var(--ease-out);
+  &:hover {
+    border-color: var(--app-accent-edge);
+    box-shadow: var(--dusk-edge), 0 16px 32px -18px var(--app-accent-glow);
+  }
+}
+
 [data-accent="violet"] {
   --app-accent: var(--accent-violet);
   --app-accent-soft: var(--accent-violet-soft);
   --app-accent-border: var(--accent-violet-border);
+  --app-accent-glow: color-mix(in oklch, var(--app-accent) 42%, transparent);
+  --app-accent-hover: color-mix(in oklch, var(--app-accent), var(--color-ink-strong) 10%);
+  --app-accent-edge: color-mix(in oklch, var(--app-accent) 22%, var(--color-rule));
 }
 
 [data-accent="blue"] {
@@ -235,7 +260,7 @@ a:focus-visible,
   --thumb-width: 4;
   --thumb-width-active: 6;
   --track-color: transparent;
-  --track-color-active: rgba(255, 255, 255, 0.06);
+  --track-color-active: color-mix(in oklch, var(--app-accent-soft) 55%, transparent);
   --track-width: 4;
   --track-width-active: 6;
 }
@@ -266,11 +291,12 @@ a:focus-visible,
 }
 
 .curved-scrollbar-thumb:hover {
-  stroke: var(--color-scroll-thumb-hover);
+  stroke: color-mix(in oklch, var(--app-accent) 48%, var(--color-scroll-thumb-hover));
 }
 
 .curved-scrollbar-thumb:active {
   stroke: var(--thumb-color-active);
+  filter: drop-shadow(0 0 6px var(--app-accent-glow));
   cursor: grabbing;
 }
 
@@ -381,6 +407,7 @@ a:focus-visible,
   background: linear-gradient(180deg, var(--color-panel-hi), var(--color-panel));
   border-radius: 12px;
   box-shadow: var(--shadow-card);
+  transition: border-color 180ms var(--ease-out), box-shadow 180ms var(--ease-out);
 }
 
 .button {
@@ -417,8 +444,9 @@ a:focus-visible,
 }
 
 .button-primary:hover:not(:disabled) {
-  background: color-mix(in oklch, var(--app-accent), var(--color-ink-strong) 10%);
+  background: var(--app-accent-hover);
   border-color: color-mix(in oklch, var(--app-accent), var(--color-ink-strong) 14%);
+  box-shadow: 0 8px 22px -10px var(--app-accent-glow), var(--shadow-control);
 }
 
 .button.border-transparent.bg-transparent {
