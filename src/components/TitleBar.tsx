@@ -3,7 +3,6 @@ import { invoke } from "@tauri-apps/api/core";
 import { getCurrentWindow } from "@tauri-apps/api/window";
 import { openUrl } from "@tauri-apps/plugin-opener";
 import { openDevToolsWindow } from "../lib/dev-bridge";
-import { useDemoStore } from "../lib/demo-runner";
 import {
   Bug,
   Crown,
@@ -175,7 +174,23 @@ export function TitleBar({ setup = false }: { setup?: boolean }) {
     setSettings({ dashboardZoom: clamped });
     void saveSetting("dashboardZoom", clamped);
   };
-  const demoActive = useDemoStore((s) => s.active);
+  const [demoActive, setDemoActive] = useState(false);
+  useEffect(() => {
+    if (!import.meta.env.DEV) return;
+    let unsubscribe: (() => void) | undefined;
+    let mounted = true;
+    void import("../lib/demo-runner").then(({ useDemoStore }) => {
+      if (!mounted) return;
+      setDemoActive(useDemoStore.getState().active);
+      unsubscribe = useDemoStore.subscribe((state) => {
+        setDemoActive(state.active);
+      });
+    });
+    return () => {
+      mounted = false;
+      unsubscribe?.();
+    };
+  }, []);
   const channel = import.meta.env.DEV && !demoActive
     ? "DEV"
     : updater.channel === "store"
