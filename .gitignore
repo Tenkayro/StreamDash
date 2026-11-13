@@ -14,3 +14,4 @@ AGENTS.md
 .manim/
 .env
 .server
+.dev-data/

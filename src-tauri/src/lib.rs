@@ -1871,8 +1871,30 @@ async fn store_update_available() -> Result<bool, String> {
     Err("Microsoft Store updates are only available on Windows".into())
 }
 
+fn dev_data_root() -> PathBuf {
+    let manifest_dir = PathBuf::from(env!("CARGO_MANIFEST_DIR"));
+    manifest_dir
+        .parent()
+        .unwrap_or(manifest_dir.as_path())
+        .join(".dev-data")
+}
+
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
+    if cfg!(debug_assertions) {
+        let dev_root = std::env::var_os("STREAMDASH_DATA_DIR")
+            .filter(|v| !v.is_empty())
+            .map(PathBuf::from)
+            .unwrap_or_else(dev_data_root);
+        let webview_dir = dev_root.join("webview");
+        let _ = std::fs::create_dir_all(&webview_dir);
+        if std::env::var_os("WEBVIEW2_USER_DATA_FOLDER").is_none() {
+            // SAFETY: Executed at the very start of `run()` before Tauri/WebView2 spawns worker threads.
+            unsafe {
+                std::env::set_var("WEBVIEW2_USER_DATA_FOLDER", &webview_dir);
+            }
+        }
+    }
     tauri::Builder::default()
         .manage(ChatIrc::default())
         .plugin(tauri_plugin_opener::init())
@@ -1885,7 +1907,14 @@ pub fn run() {
         .setup(|app| {
             let custom_data_dir = std::env::var_os("STREAMDASH_DATA_DIR")
                 .filter(|v| !v.is_empty())
-                .map(PathBuf::from);
+                .map(PathBuf::from)
+                .or_else(|| {
+                    if cfg!(debug_assertions) {
+                        Some(dev_data_root())
+                    } else {
+                        None
+                    }
+                });
             let is_temp_profile = custom_data_dir.is_some();
             let data_directory = match custom_data_dir {
                 Some(dir) => {
@@ -1972,8 +2001,16 @@ pub fn run() {
                 spotify_overlay::start(17_842).map_err(std::io::Error::other)?;
             app.manage(spotify_overlay);
             if cfg!(debug_assertions) {
+                let log_dir = data_directory.join("logs");
+                let _ = std::fs::create_dir_all(&log_dir);
                 app.handle().plugin(
                     tauri_plugin_log::Builder::default()
+                        .target(tauri_plugin_log::Target::new(
+                            tauri_plugin_log::TargetKind::Folder {
+                                path: log_dir,
+                                file_name: None,
+                            },
+                        ))
                         .level(log::LevelFilter::Info)
                         .build(),
                 )?;
