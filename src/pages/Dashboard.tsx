@@ -239,6 +239,7 @@ function Metric({
   value,
   note,
   icon: Icon,
+  tone = "default",
   loading = false,
   loadingWidth = "w-14",
 }: {
@@ -246,18 +247,45 @@ function Metric({
   value: string;
   note?: string;
   icon: LucideIcon;
+  tone?: "default" | "emerald" | "amber" | "violet";
   loading?: boolean;
   loadingWidth?: string;
 }) {
+  const cardTone =
+    tone === "emerald"
+      ? "border-emerald-500/25 bg-linear-to-br from-emerald-500/10 via-emerald-500/3 to-transparent"
+      : tone === "amber"
+        ? "border-amber-400/25 bg-linear-to-br from-amber-400/10 via-amber-400/3 to-transparent"
+        : tone === "violet"
+          ? "border-violet-400/25 bg-linear-to-br from-violet-500/10 via-violet-500/3 to-transparent"
+          : "";
+  const iconTone =
+    tone === "emerald"
+      ? "!bg-emerald-500/15 !text-emerald-300"
+      : tone === "amber"
+        ? "!bg-amber-400/15 !text-amber-300"
+        : tone === "violet"
+          ? "!bg-violet-500/15 !text-violet-300"
+          : "";
+  const valueTone =
+    tone === "emerald"
+      ? "text-emerald-300"
+      : tone === "amber"
+        ? "text-amber-200"
+        : tone === "violet"
+          ? "text-violet-200"
+          : "";
   return (
-    <Card className="metric-card flex min-h-0 flex-col">
+    <Card className={`metric-card flex min-h-0 flex-col ${cardTone}`}>
       <div className="flex items-center justify-between gap-2">
         <span className="text-[11px] font-medium text-muted">{label}</span>
-        <span className="metric-icon">
+        <span className={`metric-icon ${iconTone}`}>
           <Icon size={14} aria-hidden="true" />
         </span>
       </div>
-      <div className="metric-value mt-auto pt-2 font-semibold tracking-[-.03em]">
+      <div
+        className={`metric-value mt-auto pt-2 font-semibold tracking-[-.03em] ${valueTone}`}
+      >
         {loading ? (
           <LoadingIndicator className={`h-6 ${loadingWidth}`} />
         ) : (
@@ -1385,6 +1413,7 @@ export function Dashboard() {
           loading={statsLoading}
           loadingWidth="w-10"
           icon={Star}
+          tone="violet"
         />
       );
     if (id === "viewers")
@@ -1413,6 +1442,7 @@ export function Dashboard() {
           label={t("dashboard.bitsCollected")}
           value={stats.bits.toLocaleString(i18n.language)}
           icon={Sparkles}
+          tone="amber"
         />
       );
     if (id === "donations")
@@ -1421,6 +1451,7 @@ export function Dashboard() {
           label={t("dashboard.donations")}
           value={money(stats.donations, stats.donationCurrency)}
           icon={Wallet}
+          tone="emerald"
         />
       );
     if (id === "status")

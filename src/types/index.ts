@@ -291,8 +291,11 @@ export interface ChatAlertsConfig {
   massGiftTier3: ChatAlertItem
   raid: ChatAlertThresholdItem
   bits: ChatAlertThresholdItem
+  donation: ChatAlertThresholdItem
   follower: ChatAlertItem
+  channelPoint: ChatAlertItem
   goLive: ChatAlertItem
+  goOffline: ChatAlertItem
   gameChange: ChatAlertItem
   titleChange: ChatAlertItem
 }

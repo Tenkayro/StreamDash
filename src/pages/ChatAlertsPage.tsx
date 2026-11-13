@@ -66,8 +66,13 @@ export function ChatAlertsPage() {
     setChatAlerts({ [key]: value });
   };
 
+  const donationAlert = chatAlerts.donation ?? defaultChatAlerts.donation;
+  const channelPointAlert =
+    chatAlerts.channelPoint ?? defaultChatAlerts.channelPoint;
+  const goOfflineAlert = chatAlerts.goOffline ?? defaultChatAlerts.goOffline;
+
   const activeCount = Object.values(chatAlerts).filter(
-    (item) => item.enabled,
+    (item) => item?.enabled,
   ).length;
 
   const tabs: Array<{ id: AlertTab; label: string; count: number }> = [
@@ -100,15 +105,20 @@ export function ChatAlertsPage() {
     {
       id: "engagement",
       label: t("chatAlerts.tabs.engagement"),
-      count: [chatAlerts.raid, chatAlerts.bits, chatAlerts.follower].filter(
-        (a) => a.enabled,
-      ).length,
+      count: [
+        donationAlert,
+        chatAlerts.raid,
+        chatAlerts.bits,
+        chatAlerts.follower,
+        channelPointAlert,
+      ].filter((a) => a.enabled).length,
     },
     {
       id: "stream",
       label: t("chatAlerts.tabs.stream"),
       count: [
         chatAlerts.goLive,
+        goOfflineAlert,
         chatAlerts.gameChange,
         chatAlerts.titleChange,
       ].filter((a) => a.enabled).length,
@@ -288,6 +298,49 @@ export function ChatAlertsPage() {
 
         {tab === "engagement" && (
           <div className="grid grid-cols-1 gap-3 lg:grid-cols-2">
+            <Card className="border-emerald-500/25 bg-linear-to-br from-emerald-500/8 via-emerald-500/2 to-transparent p-4 lg:col-span-2">
+              <div className="mb-3 border-b border-emerald-500/20 pb-2 text-xs font-semibold tracking-tight text-emerald-200">
+                {t("chatAlerts.donationAlerts")}
+              </div>
+              <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
+                <AlertItemEditor
+                  title={t("channelPoints.enabled")}
+                  item={donationAlert}
+                  onChange={(val) =>
+                    updateAlert("donation", {
+                      ...donationAlert,
+                      ...val,
+                    })
+                  }
+                />
+                <div>
+                  <label
+                    htmlFor="donation-min-amount"
+                    className="mb-1 block text-xs font-semibold text-zinc-200"
+                  >
+                    {t("chatAlerts.minimumDonation")}
+                  </label>
+                  <input
+                    id="donation-min-amount"
+                    type="number"
+                    min={0}
+                    step="0.5"
+                    className="input w-full tabular-nums"
+                    value={donationAlert.minimum}
+                    onChange={(event) =>
+                      updateAlert("donation", {
+                        ...donationAlert,
+                        minimum: Math.max(0, Number(event.target.value) || 0),
+                      })
+                    }
+                  />
+                  <p className="mt-1 text-[11px] text-muted">
+                    {t("chatAlerts.minimumDonationHint")}
+                  </p>
+                </div>
+              </div>
+            </Card>
+
             <Card className="p-4">
               <div className="mb-3 border-b border-line pb-2 text-xs font-semibold tracking-tight text-zinc-200">
                 {t("chatAlerts.raidAlerts")}
@@ -388,7 +441,7 @@ export function ChatAlertsPage() {
               </div>
             </Card>
 
-            <Card className="p-4 lg:col-span-2">
+            <Card className="p-4">
               <div className="mb-3 border-b border-line pb-2 text-xs font-semibold tracking-tight text-zinc-200">
                 {t("chatAlerts.followerAlerts")}
               </div>
@@ -396,6 +449,17 @@ export function ChatAlertsPage() {
                 title={t("channelPoints.enabled")}
                 item={chatAlerts.follower}
                 onChange={(val) => updateAlert("follower", val)}
+              />
+            </Card>
+
+            <Card className="p-4">
+              <div className="mb-3 border-b border-line pb-2 text-xs font-semibold tracking-tight text-zinc-200">
+                {t("chatAlerts.channelPointAlerts")}
+              </div>
+              <AlertItemEditor
+                title={t("channelPoints.enabled")}
+                item={channelPointAlert}
+                onChange={(val) => updateAlert("channelPoint", val)}
               />
             </Card>
           </div>
@@ -406,11 +470,16 @@ export function ChatAlertsPage() {
             <div className="mb-3 border-b border-line pb-2 text-xs font-semibold tracking-tight text-zinc-200">
               {t("chatAlerts.streamAlerts")}
             </div>
-            <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
+            <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
               <AlertItemEditor
                 title={t("chatAlerts.goLive")}
                 item={chatAlerts.goLive}
                 onChange={(val) => updateAlert("goLive", val)}
+              />
+              <AlertItemEditor
+                title={t("chatAlerts.goOffline")}
+                item={goOfflineAlert}
+                onChange={(val) => updateAlert("goOffline", val)}
               />
               <AlertItemEditor
                 title={t("chatAlerts.gameChanges")}

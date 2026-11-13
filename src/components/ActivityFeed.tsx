@@ -11,6 +11,7 @@ import {
 import { formatDistanceToNow } from "date-fns";
 import type { ActivityEvent } from "../types";
 import { money } from "../lib/utils";
+import { getSupportPresentation } from "../lib/support-style";
 import { EmptyState } from "./ui";
 import { useTranslation } from "react-i18next";
 import { de, enUS, es, fr, ptBR } from "date-fns/locale";
@@ -71,6 +72,14 @@ export function ActivityFeed({
         else if (event.viewerCount)
           detail = t("activity.viewers", { count: event.viewerCount });
         const canOpenUser = Boolean(event.username && onUser);
+        const support = getSupportPresentation(event);
+        const pillText = support.isMonetized
+          ? support.tierTag && event.giftCount
+            ? `${support.tierTag} · ×${event.giftCount}`
+            : support.tierTag && event.eventType !== "donation" && event.eventType !== "cheer"
+              ? support.tierTag
+              : detail
+          : detail;
         return (
           <div
             key={event.id}
@@ -89,7 +98,7 @@ export function ActivityFeed({
                 onUser?.(event.username);
               }
             }}
-            className={`event-enter flex gap-3 border-b border-line/70 px-4 transition-colors ${compact ? "py-2.5" : "py-3.5"} ${canOpenUser ? "cursor-pointer outline-none hover:bg-white/2.5 focus-visible:bg-accent-soft" : ""} last:border-0`}
+            className={`event-enter flex gap-3 border-b border-line/70 px-4 transition-colors ${compact ? "py-2.5" : "py-3.5"} ${support.isMonetized ? support.rowClass : ""} ${canOpenUser ? "cursor-pointer outline-none hover:bg-white/2.5 focus-visible:bg-accent-soft" : ""} last:border-0`}
           >
             <div
               className={`mt-0.5 grid size-8 shrink-0 place-items-center rounded-lg ${color}`}
@@ -97,9 +106,19 @@ export function ActivityFeed({
               <Icon size={15} />
             </div>
             <div className="min-w-0 flex-1">
-              <div className="flex items-baseline gap-2">
-                <span className="truncate text-sm font-medium">{who}</span>
-                <span className="text-xs text-muted">{detail}</span>
+              <div className="flex items-center justify-between gap-2">
+                <span className={`truncate text-sm font-medium ${support.nameClass}`}>
+                  {who}
+                </span>
+                {support.isMonetized ? (
+                  <span
+                    className={`shrink-0 rounded-full px-2 py-0.5 text-[11px] tabular-nums ${support.badgeClass}`}
+                  >
+                    {pillText}
+                  </span>
+                ) : (
+                  <span className="shrink-0 text-xs text-muted">{detail}</span>
+                )}
               </div>
               {event.message && (
                 <p className="mt-1 truncate text-xs text-zinc-500">

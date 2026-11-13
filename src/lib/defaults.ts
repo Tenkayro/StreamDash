@@ -178,14 +178,27 @@ export const defaultChatAlerts: ChatAlertsConfig = {
     message: "$(user) just cheered $(bits) bits! PogChamp",
     minimum: 100,
   },
+  donation: {
+    enabled: false,
+    message: "$(user) just donated $(amount)! Thank you so much! PogChamp",
+    minimum: 1,
+  },
   follower: {
     enabled: false,
     message: "$(user) just followed the stream! bleedPurple",
+  },
+  channelPoint: {
+    enabled: false,
+    message: "$(user) redeemed $(title)! bleedPurple",
   },
   goLive: {
     enabled: false,
     message:
       "$(channel.display_name) just went live! They're playing $(game)! PogChamp",
+  },
+  goOffline: {
+    enabled: false,
+    message: "$(channel.display_name) just went offline. Thanks for watching!",
   },
   gameChange: {
     enabled: false,

@@ -598,10 +598,26 @@ export function RuntimeProvider({ children }: { children: ReactNode }) {
         (event.bits ?? 0) >= alerts.bits.minimum
       ) {
         alertTemplate = alerts.bits.message;
+      } else if (
+        event.eventType === "donation" &&
+        alerts.donation?.enabled &&
+        (event.amount ?? 0) >= (alerts.donation.minimum ?? 0)
+      ) {
+        alertTemplate = alerts.donation.message;
       } else if (event.eventType === "follow" && alerts.follower.enabled) {
         alertTemplate = alerts.follower.message;
+      } else if (
+        event.eventType === "channel_point" &&
+        alerts.channelPoint?.enabled
+      ) {
+        alertTemplate = alerts.channelPoint.message;
       } else if (event.eventType === "stream_online" && alerts.goLive.enabled) {
         alertTemplate = alerts.goLive.message;
+      } else if (
+        event.eventType === "stream_offline" &&
+        alerts.goOffline?.enabled
+      ) {
+        alertTemplate = alerts.goOffline.message;
       }
 
       if (alertTemplate && current.twitch.phase === "connected") {
@@ -612,6 +628,10 @@ export function RuntimeProvider({ children }: { children: ReactNode }) {
             : tier === "2000"
               ? "Tier 2"
               : "Tier 1";
+        const rewardTitle =
+          typeof event.metadata?.rewardTitle === "string"
+            ? event.metadata.rewardTitle
+            : undefined;
         const formatted = resolveVariables(alertTemplate, {
           state: state(),
           user,
@@ -619,12 +639,18 @@ export function RuntimeProvider({ children }: { children: ReactNode }) {
           alertData: {
             months,
             recipient: recipient || user,
-            amount: event.giftCount ?? event.amount ?? 1,
+            amount:
+              event.eventType === "donation"
+                ? money(event.amount ?? 0, event.currency)
+                : (event.giftCount ?? event.amount ?? 1),
             bits: event.bits ?? 0,
             viewers: event.viewerCount,
             tier: tierLabel,
             game: gameName,
-            title: streamTitle,
+            title:
+              event.eventType === "channel_point"
+                ? rewardTitle || event.message || streamTitle
+                : streamTitle,
           },
         }).trim();
         if (formatted) {
