@@ -20,7 +20,7 @@ export function DemoOverlay() {
 
     if (shell) shell.style.overflow = "hidden";
     workspace.style.transition =
-      "transform 750ms cubic-bezier(0.22, 1, 0.36, 1), transform-origin 750ms cubic-bezier(0.22, 1, 0.36, 1)";
+      "transform 820ms cubic-bezier(0.22, 1, 0.36, 1), transform-origin 820ms cubic-bezier(0.22, 1, 0.36, 1)";
     workspace.style.transformOrigin = `${camera.originX}% ${camera.originY}%`;
     workspace.style.transform = `scale(${camera.scale})`;
 
@@ -40,29 +40,33 @@ export function DemoOverlay() {
         <div
           className="pointer-events-none fixed left-0 top-0 z-50"
           style={{
-            transform: `translate3d(${cursor.x}px, ${cursor.y}px, 0) scale(${cursor.clicking ? 0.86 : 1})`,
+            // Offset so the SVG arrow tip sits exactly on (cursor.x, cursor.y)
+            transform: `translate3d(${cursor.x - 5}px, ${cursor.y - 3}px, 0) scale(${cursor.clicking ? 0.84 : 1})`,
             transition:
-              "transform 520ms cubic-bezier(0.22, 1, 0.36, 1)",
+              "transform 540ms cubic-bezier(0.22, 1, 0.36, 1)",
           }}
         >
           {cursor.rippleKey > 0 && (
             <span
               key={cursor.rippleKey}
-              className="absolute -left-3 -top-3 size-7 animate-ping rounded-full border border-violet-400/70 bg-violet-400/20"
+              className="pointer-events-none absolute -left-2 -top-2 size-7 rounded-full border-2 border-violet-400/90 bg-violet-400/25"
+              style={{
+                animation: "ping 420ms cubic-bezier(0, 0, 0.2, 1) 1 forwards",
+              }}
             />
           )}
           <svg
-            width="24"
-            height="24"
-            viewBox="0 0 24 24"
+            width="34"
+            height="34"
+            viewBox="0 0 28 28"
             fill="none"
-            className="drop-shadow-[0_4px_10px_rgba(0,0,0,0.65)]"
+            className="drop-shadow-[0_6px_14px_rgba(0,0,0,0.75)]"
           >
             <path
-              d="M4.5 2.5L19.5 11.2L12.6 13.1L9.6 19.8L4.5 2.5Z"
+              d="M5 3L22.5 13.4L14.4 15.6L10.8 23.4L5 3Z"
               fill="#ffffff"
-              stroke="#0f121c"
-              strokeWidth="1.6"
+              stroke="#0b0d14"
+              strokeWidth="2"
               strokeLinejoin="round"
             />
           </svg>
