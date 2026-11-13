@@ -115,8 +115,8 @@ function UpdateControl() {
         </span>
         <span
           aria-hidden="true"
-          className={`absolute bottom-0 left-0 h-0.5 bg-accent transition-[width] duration-300 ${progress == null ? "w-1/3 animate-pulse" : ""}`}
-          style={progress == null ? undefined : { width: `${progress}%` }}
+          className={`absolute bottom-0 left-0 h-0.5 w-full origin-left bg-accent transition-transform duration-300 ${progress == null ? "scale-x-35 animate-pulse" : ""}`}
+          style={progress == null ? undefined : { transform: `scaleX(${Math.max(0, Math.min(100, progress)) / 100})` }}
         />
       </div>
     );
@@ -206,7 +206,7 @@ export function TitleBar({ setup = false }: { setup?: boolean }) {
   return (
     <div
       data-tauri-drag-region
-      className="app-titlebar drag-region relative flex shrink-0 items-center border-b border-line pl-3 text-[11px] text-muted"
+      className="app-header-bar drag-region relative flex shrink-0 items-center border-b border-line pl-3 text-[11px] text-muted"
     >
       <div
         data-tauri-drag-region
@@ -228,14 +228,14 @@ export function TitleBar({ setup = false }: { setup?: boolean }) {
           className="h-5 w-auto object-contain"
         />
         {proActive && (
-          <span className="inline-flex items-center gap-1 rounded border border-white/10 bg-white/[0.04] px-1.5 py-px text-[9px] font-semibold tracking-wider text-zinc-400">
-            <Crown size={8} className="text-amber-300/65" aria-hidden="true" />
-            PRO
+          <span className="inline-flex items-center gap-1 rounded border border-rule bg-hover px-1.5 py-px text-[10px] font-semibold text-muted">
+            <Crown size={9} className="text-amber-300/75" aria-hidden="true" />
+            Pro
           </span>
         )}
         <span
           aria-label={t("titleBar.version", { version: version || t("titleBar.loading"), channel })}
-          className="flex items-center gap-1 text-[9px] tabular-nums text-zinc-600"
+          className="flex items-center gap-1 text-[10px] tabular-nums text-subtle"
         >
           <Tag size={9} />
           {version ? (
@@ -243,8 +243,8 @@ export function TitleBar({ setup = false }: { setup?: boolean }) {
           ) : (
             <LoadingIndicator className="h-2 w-7" />
           )}
-          <span className="rounded px-1 py-0.5 text-[8px] font-semibold tracking-wider text-zinc-700">
-            · {channel}
+          <span className="rounded px-1 py-0.5 text-[10px] font-medium text-subtle">
+            {channel.toLowerCase()}
           </span>
         </span>
       </div>
@@ -254,7 +254,7 @@ export function TitleBar({ setup = false }: { setup?: boolean }) {
           <div
             role="group"
             aria-label={t("titleBar.zoomLabel", { zoom })}
-            className="flex h-7 items-center gap-0.5 rounded-full border border-white/[0.08] bg-black/30 px-1 shadow-[inset_2px_2px_5px_rgba(0,0,0,0.55),inset_-1px_-1px_2px_rgba(255,255,255,0.03)] backdrop-blur-md"
+            className="flex h-6.5 items-center gap-0.5 rounded-md border border-rule bg-well px-0.5"
           >
             <button
               type="button"
@@ -358,19 +358,19 @@ export function TitleBar({ setup = false }: { setup?: boolean }) {
           data-tauri-drag-region="false"
           role="menu"
           aria-label={t("titleBar.closeOptions")}
-          className="fixed z-50 w-max min-w-44 max-w-xs space-y-0.5 rounded-2xl border border-white/10 bg-linear-to-br from-[#191c24]/95 to-[#0e1014]/98 p-1.5 text-[11px] text-zinc-200 shadow-[0_20px_52px_rgba(0,0,0,0.72),inset_0_1px_0_rgba(255,255,255,0.09)] backdrop-blur-2xl"
+          className="fixed z-50 w-max min-w-44 max-w-xs space-y-0.5 rounded-xl border border-rule-strong bg-raised p-1.5 text-[11px] text-ink shadow-xl"
           style={{ right: menuPos.right + 6, top: menuPos.top + 2 }}
         >
           <button
             type="button"
             role="menuitem"
-            className="flex w-full items-center gap-2.5 rounded-xl border border-transparent px-2.5 py-1.5 text-left text-[11px] transition hover:border-white/8 hover:bg-white/[0.06]"
+            className="flex w-full items-center gap-2.5 rounded-lg border border-transparent px-2.5 py-1.5 text-left text-[11px] transition-colors hover:border-rule hover:bg-hover"
             onClick={() => {
               setCloseMenuOpen(false);
               void window?.hide();
             }}
           >
-            <span className="grid size-5 shrink-0 place-items-center rounded-lg border border-white/8 bg-white/[0.04] text-accent shadow-[inset_0_1px_0_rgba(255,255,255,0.06)]">
+            <span className="grid size-5 shrink-0 place-items-center rounded-md border border-rule bg-panel text-accent">
               <PanelBottomClose size={11} />
             </span>
             <span className="whitespace-nowrap font-medium">{t("titleBar.closeToTray")}</span>
@@ -378,13 +378,13 @@ export function TitleBar({ setup = false }: { setup?: boolean }) {
           <button
             type="button"
             role="menuitem"
-            className="flex w-full items-center gap-2.5 rounded-xl border border-transparent px-2.5 py-1.5 text-left text-[11px] transition hover:border-red-400/20 hover:bg-red-400/10"
+            className="flex w-full items-center gap-2.5 rounded-lg border border-transparent px-2.5 py-1.5 text-left text-[11px] transition-colors hover:border-red-400/20 hover:bg-red-400/10"
             onClick={() => {
               setCloseMenuOpen(false);
               if (isTauri()) void invoke("app_quit");
             }}
           >
-            <span className="grid size-5 shrink-0 place-items-center rounded-lg border border-red-400/15 bg-red-400/10 text-red-300 shadow-[inset_0_1px_0_rgba(255,255,255,0.05)]">
+            <span className="grid size-5 shrink-0 place-items-center rounded-md border border-red-400/15 bg-red-400/10 text-red-300">
               <Power size={11} />
             </span>
             <span className="whitespace-nowrap font-medium text-red-200">{t("titleBar.quitApp")}</span>

@@ -400,8 +400,8 @@ export function GiveawaysPage() {
                             {entry.displayName}
                           </span>
                           {entry.subscriber && (
-                            <span className="shrink-0 rounded bg-accent/15 px-1 py-0.5 text-[9px] font-semibold uppercase text-accent">
-                              SUB
+                            <span className="shrink-0 rounded bg-accent/15 px-1.5 py-0.5 text-[10px] font-medium text-accent">
+                              Sub
                             </span>
                           )}
                         </button>
@@ -477,7 +477,7 @@ export function GiveawaysPage() {
                   )}
 
                   <div className="min-w-0 flex-1">
-                    <div className="text-[10px] font-semibold uppercase tracking-wider text-accent">
+                    <div className="text-[11px] font-medium text-accent">
                       {t("giveaways.theWinnerIs")}
                     </div>
                     <div className="mt-0.5 flex flex-wrap items-center gap-1.5">
@@ -524,7 +524,7 @@ export function GiveawaysPage() {
                 </div>
               </div>
 
-              <div className="mt-2.5 flex items-center justify-between text-[10px] font-semibold uppercase tracking-[.08em] text-muted">
+              <div className="mt-2.5 flex items-center justify-between text-[11px] font-medium text-muted">
                 <span>{t("giveaways.messages")}</span>
                 <span>{winnerMessages.length}</span>
               </div>

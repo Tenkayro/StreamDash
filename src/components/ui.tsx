@@ -163,7 +163,7 @@ export function Badge({
   return (
     <span
       className={cn(
-        "inline-flex items-center rounded-lg border px-2 py-0.5 text-[11px] font-medium capitalize shadow-[inset_0_1px_0_rgba(255,255,255,0.06)] backdrop-blur-sm",
+        "inline-flex items-center rounded-md border px-2 py-0.5 text-[11px] font-medium capitalize",
         styles[tone],
       )}
     >

@@ -222,7 +222,7 @@ export function UserCard({
 
   return (
     <div
-      className="fixed inset-0 z-50 grid place-items-center bg-black/65 p-2 backdrop-blur-[2px] sm:p-5"
+      className="fixed inset-0 z-50 grid place-items-center bg-canvas/80 p-2 sm:p-5"
       onMouseDown={(event) => {
         if (event.target === event.currentTarget) onClose();
       }}
@@ -231,7 +231,7 @@ export function UserCard({
         role="dialog"
         aria-modal="true"
         aria-label={t("userCard.dialogLabel", { login })}
-        className="flex max-h-[calc(100vh-1rem)] w-full max-w-3xl flex-col overflow-hidden rounded-xl border border-zinc-700 bg-[#101115] shadow-2xl sm:max-h-[86vh]"
+        className="flex max-h-[calc(100vh-1rem)] w-full max-w-3xl flex-col overflow-hidden rounded-xl border border-rule-strong bg-panel shadow-lg sm:max-h-[86vh]"
       >
         <header className="flex items-start gap-3 border-b border-line p-3 sm:gap-4 sm:p-4">
           {loading ? (
@@ -414,7 +414,7 @@ export function UserCard({
         </div>
         <div className="border-b border-line p-4">
           <div className="mb-2 flex items-center justify-between">
-            <span className="text-[10px] font-semibold uppercase tracking-[.12em] text-zinc-600">
+            <span className="text-[11px] font-semibold text-muted">
               {t("userCard.moderation")}
             </span>
             {(!canBan ||
@@ -514,7 +514,7 @@ export function UserCard({
                       {message.text}
                     </span>
                     {message.deleted ? (
-                      <span className="text-[9px] uppercase text-zinc-600">
+                      <span className="text-[10px] text-subtle">
                         {t("userCard.deleted")}
                       </span>
                     ) : (

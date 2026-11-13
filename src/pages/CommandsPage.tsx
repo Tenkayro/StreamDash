@@ -574,7 +574,7 @@ export function CommandsPage() {
           onMouseDown={(event) => {
             if (event.target === event.currentTarget) setEditing(null);
           }}
-          className="fixed inset-0 z-90 flex items-center justify-center bg-black/70 p-3 backdrop-blur-sm sm:p-4"
+          className="fixed inset-0 z-90 flex items-center justify-center bg-canvas/80 p-3 sm:p-4"
         >
           <div
             role="dialog"
@@ -754,7 +754,7 @@ export function CommandsPage() {
                               }}
                               className="ml-auto text-[11px] text-accent hover:brightness-125"
                             >
-                              {t("nav.variables")} →
+                              {t("nav.variables")}
                             </button>
                           </div>
                         </>

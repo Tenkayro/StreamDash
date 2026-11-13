@@ -65,8 +65,8 @@ export function CommandPalette() {
   }, [open, active, listId]);
   if (!open) return null;
   return <div role="presentation" onMouseDown={(event) => { if (event.target === event.currentTarget) close(); }}
-    className="fixed inset-0 z-100 flex justify-center overflow-y-auto bg-black/65 px-3 py-[min(10vh,4rem)] backdrop-blur-sm sm:px-4">
-    <div ref={dialogRef} role="dialog" aria-modal="true" aria-label={t("search.title")} className="command-search h-fit max-h-full w-full max-w-2xl overflow-hidden rounded-2xl border border-line shadow-2xl shadow-black/60"
+    className="fixed inset-0 z-100 flex justify-center overflow-y-auto bg-canvas/80 px-3 py-[min(10vh,4rem)] sm:px-4">
+    <div ref={dialogRef} role="dialog" aria-modal="true" aria-label={t("search.title")} className="command-search h-fit max-h-full w-full max-w-2xl overflow-hidden rounded-xl border border-rule-strong shadow-lg"
       onKeyDown={(event) => {
         if (event.key !== "Tab") return;
         const elements = dialogRef.current?.querySelectorAll<HTMLElement>("button:not([disabled]), input");
@@ -101,7 +101,7 @@ export function CommandPalette() {
         {groups.map(({ group, items }) => {
           const Icon = icons[group];
           return <div key={group} role="group" aria-label={t(`search.groups.${group}`)}>
-            <div className="sticky top-0 z-10 flex items-center gap-2 bg-[#2b2c2d]/95 px-2 py-2 text-[10px] font-semibold uppercase tracking-wider text-muted backdrop-blur-md"><Icon size={12} aria-hidden="true" />{t(`search.groups.${group}`)}<span className="ml-auto tabular-nums">{items.length}</span></div>
+            <div className="sticky top-0 z-10 flex items-center gap-2 bg-raised px-2 py-2 text-[11px] font-semibold text-muted"><Icon size={12} aria-hidden="true" />{t(`search.groups.${group}`)}<span className="ml-auto tabular-nums">{items.length}</span></div>
             {items.slice(0, limit).map((item) => <div id={`${listId}-${item.id}`} key={item.id} role="option" aria-selected={item.id === active?.id}
               onMouseEnter={() => setActiveId(item.id)} onMouseDown={(event) => event.preventDefault()} onClick={() => select(item)}
               className={`command-result flex cursor-pointer items-center gap-3 rounded-xl border px-3 py-2.5 ${item.id === active?.id ? "border-accent/15 bg-accent-soft" : "border-transparent hover:bg-white/4"}`}>

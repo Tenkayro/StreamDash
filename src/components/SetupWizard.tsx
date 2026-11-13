@@ -367,7 +367,7 @@ export function SetupWizard() {
 
     <div key="twitch" className="space-y-3.5">
       <div className="text-center">
-        <span className="mx-auto grid size-12 place-items-center rounded-2xl bg-[#9146ff]/12">
+        <span className="mx-auto grid size-12 place-items-center rounded-2xl bg-twitch-soft">
           <img src={twitchIcon} alt="" className="size-7 object-contain" />
         </span>
         <h1 className="mt-3 text-xl font-semibold tracking-[-.03em]">
@@ -382,7 +382,7 @@ export function SetupWizard() {
         <div className="flex flex-col justify-between rounded-xl border border-line bg-black/15 p-4">
           <div>
             <div className="flex items-center gap-2.5">
-              <span className="grid size-9 shrink-0 place-items-center rounded-lg bg-[#9146ff]/15">
+              <span className="grid size-9 shrink-0 place-items-center rounded-lg bg-twitch-soft">
                 <img src={twitchIcon} alt="" className="size-5 object-contain" />
               </span>
               <div className="min-w-0 flex-1">
@@ -815,41 +815,41 @@ export function SetupWizard() {
         {t("onboarding.readyBody")}
       </p>
       <div className="mx-auto mt-5 grid max-w-xl grid-cols-2 gap-2 text-left sm:grid-cols-4">
-        <div className="rounded-xl border border-line bg-black/15 p-3">
-          <div className="text-[10px] uppercase tracking-wider text-zinc-500">
+        <div className="rounded-xl border border-line bg-well p-3">
+          <div className="text-[11px] font-medium text-muted">
             {t("onboarding.languageSummary")}
           </div>
-          <div className="mt-1 truncate text-xs font-semibold text-zinc-100">
+          <div className="mt-1 truncate text-xs font-semibold text-ink">
             {settings.language === "auto"
               ? t("common.automatic")
               : t(`languages.${settings.language}`)}
           </div>
         </div>
-        <div className="rounded-xl border border-line bg-black/15 p-3">
-          <div className="text-[10px] uppercase tracking-wider text-zinc-500">
+        <div className="rounded-xl border border-line bg-well p-3">
+          <div className="text-[11px] font-medium text-muted">
             Twitch
           </div>
-          <div className="mt-1 truncate text-xs font-semibold text-zinc-100">
+          <div className="mt-1 truncate text-xs font-semibold text-ink">
             {twitch.phase === "connected"
               ? twitch.account
               : t("connectionPhases.disconnected")}
           </div>
         </div>
-        <div className="rounded-xl border border-line bg-black/15 p-3">
-          <div className="text-[10px] uppercase tracking-wider text-zinc-500">
+        <div className="rounded-xl border border-line bg-well p-3">
+          <div className="text-[11px] font-medium text-muted">
             {t("connections.twitchBot")}
           </div>
-          <div className="mt-1 truncate text-xs font-semibold text-zinc-100">
+          <div className="mt-1 truncate text-xs font-semibold text-ink">
             {twitchBot.phase === "connected"
               ? twitchBot.account
               : t("connectionPhases.disconnected")}
           </div>
         </div>
-        <div className="rounded-xl border border-line bg-black/15 p-3">
-          <div className="text-[10px] uppercase tracking-wider text-zinc-500">
+        <div className="rounded-xl border border-line bg-well p-3">
+          <div className="text-[11px] font-medium text-muted">
             OBS Studio
           </div>
-          <div className="mt-1 truncate text-xs font-semibold text-zinc-100">
+          <div className="mt-1 truncate text-xs font-semibold text-ink">
             {t(`connectionPhases.${obs.phase}`)}
           </div>
         </div>

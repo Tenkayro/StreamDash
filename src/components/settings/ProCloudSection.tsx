@@ -334,7 +334,7 @@ export function ProCloudSection() {
           className="border-b border-line p-5"
         >
           {!twitchConnected ? (
-            <div className="flex flex-wrap items-center justify-between gap-4 rounded-xl border border-[#9146ff]/30 bg-[#9146ff]/10 p-4">
+            <div className="flex flex-wrap items-center justify-between gap-4 rounded-xl border border-twitch-border bg-twitch-soft p-4">
               <div className="min-w-0 flex-1 space-y-1">
                 <div className="text-sm font-semibold text-zinc-100">{t("pro.subtitle")}</div>
                 <p className="text-xs text-zinc-300">{t("pro.connectStepHint")}</p>
@@ -398,7 +398,7 @@ export function ProCloudSection() {
                       <span>{t("pro.perks.twitchBound", { account: twitch.account ?? "" })}</span>
                     </div>
                     <div className="flex items-center gap-2">
-                      <Sparkles size={13} className="shrink-0 text-[#b98cff]" />
+                      <Sparkles size={13} className="shrink-0 text-twitch-ink" />
                       <span>{t("pro.perks.futureFeatures")}</span>
                     </div>
                   </div>
@@ -693,14 +693,14 @@ export function ProCloudSection() {
                   </div>
                   <div className="h-1.5 min-w-[90px] flex-1 overflow-hidden rounded-full bg-white/10">
                     <div
-                      className={`h-full rounded-full transition-all ${
+                      className={`h-full w-full origin-left rounded-full transition-transform ${
                         storageInfo.usedBytes >= storageInfo.quotaBytes
                           ? "bg-red-400"
                           : nearLimit
                             ? "bg-amber-400"
                             : "bg-emerald-400"
                       }`}
-                      style={{ width: `${pct}%` }}
+                      style={{ transform: `scaleX(${Math.max(0, Math.min(100, pct)) / 100})` }}
                     />
                   </div>
                   <Badge
@@ -1102,7 +1102,7 @@ export function ProCloudSection() {
 
       {deleteCloudOpen && (
         <div
-          className="fixed inset-0 z-50 grid place-items-center bg-black/70 p-4 backdrop-blur-xs"
+          className="fixed inset-0 z-50 grid place-items-center bg-canvas/80 p-4"
           onMouseDown={(event) => {
             if (event.target === event.currentTarget) setDeleteCloudOpen(false);
           }}

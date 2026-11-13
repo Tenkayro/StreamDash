@@ -55,7 +55,7 @@ export function AppContextMenu() {
       ref={menuRef}
       role="menu"
       aria-label={t("contextMenu.label")}
-      className="no-drag fixed z-100 w-42 rounded-lg border border-line bg-raised p-1 shadow-xl shadow-black/40"
+      className="no-drag fixed z-100 w-42 rounded-lg border border-rule-strong bg-raised p-1 shadow-lg"
       style={{ left: position.x, top: position.y }}
     >
       <button

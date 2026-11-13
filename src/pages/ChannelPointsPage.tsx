@@ -117,7 +117,7 @@ function ChannelPointIcon({
     size === "lg" ? "size-13 rounded-xl" : size === "sm" ? "size-9 rounded-lg" : "size-10 rounded-xl";
   return (
     <div
-      style={{ backgroundColor: color || "#3B82F6" }}
+      style={{ backgroundColor: color || "var(--color-chart-blue)" }}
       className={cn(
         "grid shrink-0 place-items-center shadow-inner shadow-white/15 transition-colors",
         dimensions,
@@ -681,7 +681,7 @@ export function ChannelPointsPage() {
                     )}
                   />
                 ))}
-                <span className="ml-auto font-mono text-[11px] uppercase text-zinc-500">
+                <span className="ml-auto font-mono text-[11px] text-muted">
                   {editing.backgroundColor}
                 </span>
               </div>

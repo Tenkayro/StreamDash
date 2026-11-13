@@ -153,12 +153,12 @@ export function Sidebar() {
         <div
           aria-hidden="true"
           onClick={() => setMobileOpen(false)}
-          className="fixed inset-0 z-40 bg-black/60 backdrop-blur-sm md:hidden"
+          className="fixed inset-0 z-40 bg-canvas/80 md:hidden"
         />
       )}
       <aside
         className={cn(
-          "app-sidebar min-h-0 shrink-0 flex-col overflow-hidden transition-[width]",
+          "app-sidebar min-h-0 shrink-0 flex-col overflow-hidden",
           mobileOpen
             ? "fixed inset-y-0 left-0 z-50 flex w-60 shadow-2xl md:static md:z-auto md:shadow-none"
             : "hidden md:flex",
@@ -171,7 +171,7 @@ export function Sidebar() {
         aria-label={t("navigation.quickSwitch")}
         onClick={() => window.dispatchEvent(new Event(OPEN_COMMAND_PALETTE))}
         className={cn(
-          "sidebar-search mb-3 flex h-9 w-full shrink-0 items-center rounded-xl border border-line bg-black/15 text-zinc-500 transition hover:border-accent/30 hover:text-zinc-200",
+          "sidebar-search mb-3 flex h-8 w-full shrink-0 items-center rounded-lg border border-rule bg-well text-muted transition-colors hover:border-accent-border hover:text-ink",
           compact ? "justify-center" : "gap-2 px-3",
         )}
       >
@@ -189,16 +189,16 @@ export function Sidebar() {
           <span
             aria-hidden="true"
             ref={indicatorRef}
-            className="nav-indicator pointer-events-none absolute inset-x-0 top-0 h-9 rounded-xl bg-accent-soft"
+            className="nav-indicator pointer-events-none absolute inset-x-0 top-0 h-8 rounded-lg bg-raised"
           >
-            <span className="absolute left-1 top-1/2 h-4 w-0.5 -translate-y-1/2 rounded-full bg-accent" />
+            <span className="absolute left-0 top-1.5 bottom-1.5 w-0.5 rounded-r-full bg-accent" />
           </span>
           {navigationGroups.map((group, groupIndex) => (
             <div key={group} className={cn(groupIndex > 0 && "mt-3")}>
               {compact ? (
                 groupIndex > 0 && <div className="mx-2 mb-2 h-px bg-line" />
               ) : (
-                <div className="sidebar-group-label mb-2 px-3 text-[9px] font-semibold uppercase tracking-[.14em] text-zinc-700">
+                <div className="sidebar-group-label mb-1.5 px-3 text-[11px] font-medium text-subtle">
                   {t(`navigation.${group}`)}
                 </div>
               )}
@@ -225,9 +225,9 @@ export function Sidebar() {
                   setMobileOpen(false);
                 }}
                 className={cn(
-                  "relative flex h-9 w-full items-center rounded-xl text-sm text-zinc-500 transition-colors hover:bg-white/4 hover:text-zinc-200",
-                  compact ? "justify-center" : "gap-3 px-3",
-                  page === id && "text-accent",
+                  "relative flex h-8 w-full items-center rounded-lg text-[13px] text-muted transition-colors hover:bg-hover hover:text-ink",
+                  compact ? "justify-center" : "gap-2.5 px-2.5",
+                  page === id && "font-medium text-ink",
                 )}
               >
                 <Icon size={16} />
@@ -278,7 +278,7 @@ export function Sidebar() {
             type="button"
             onClick={() => setPage("connections")}
             title={t("navigation.manageConnections")}
-            className="mb-2 block w-full rounded-xl border border-white/[0.07] bg-white/[0.025] px-2.5 py-1.5 text-left shadow-[inset_2px_2px_6px_rgba(0,0,0,0.45)] transition hover:border-accent/30 hover:bg-white/[0.04]"
+            className="mb-2 block w-full rounded-lg border border-rule bg-well px-2.5 py-1.5 text-left transition-colors hover:border-accent-border hover:bg-raised"
           >
             {services.map(({ name, icon, state }) => (
               <Status key={name} icon={icon} name={name} state={state} />
@@ -317,7 +317,7 @@ export function Sidebar() {
     </aside>
     <nav
       aria-label="Mobile navigation"
-      className="fixed inset-x-0 bottom-0 z-30 grid grid-cols-5 border-t border-line bg-[#0e1015]/95 px-1 pt-1 pb-[max(0.35rem,env(safe-area-inset-bottom))] backdrop-blur-md md:hidden"
+      className="fixed inset-x-0 bottom-0 z-30 grid grid-cols-5 border-t border-line bg-panel px-1 pt-1 pb-[max(0.35rem,env(safe-area-inset-bottom))] md:hidden"
     >
       {mobileQuickItems.map(({ id, label, icon: Icon }) => {
         const active = page === id;

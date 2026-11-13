@@ -154,7 +154,7 @@ function ChatRow({
           {message.displayName}
         </button>
         {message.firstMessage && (
-          <span className="ml-1 rounded bg-sky-400/10 px-1 py-0.5 text-[9px] font-semibold uppercase tracking-wide text-sky-300">
+          <span className="ml-1 rounded bg-sky-400/10 px-1.5 py-0.5 text-[10px] font-medium text-sky-300">
             {t("chat.first")}
           </span>
         )}
@@ -165,7 +165,7 @@ function ChatRow({
           <Parts parts={message.parts} emoteSize={settings.chatEmoteSize} />
         </span>
         {message.deleted && (
-          <span className="ml-2 text-[9px] uppercase text-zinc-600">
+          <span className="ml-2 text-[10px] text-subtle">
             {t("userCard.deleted")}
           </span>
         )}
@@ -796,7 +796,7 @@ export function ChatPage() {
         </ScrollFade>
         {!stick && (
           <button
-            className="mx-auto -mb-3 flex -translate-y-4 items-center gap-1.5 rounded-full border border-line bg-raised px-3 py-1.5 text-[11px] shadow-xl hover:border-zinc-600"
+            className="mx-auto -mb-3 flex -translate-y-4 items-center gap-1.5 rounded-full border border-rule-strong bg-raised px-3 py-1.5 text-[11px] shadow-md hover:border-accent-border"
             onClick={jumpToLatest}
           >
             <ChevronDown size={13} />
@@ -853,11 +853,11 @@ export function ChatPage() {
                       {item.name}
                     </span>
                     {item.preview && (
-                      <span className="min-w-0 flex-1 truncate text-[11px] text-zinc-500">
-                        → {item.preview}
+                      <span className="min-w-0 flex-1 truncate text-[11px] text-muted">
+                        {item.preview}
                       </span>
                     )}
-                    <span className="shrink-0 text-[9px] uppercase text-zinc-600">
+                    <span className="shrink-0 text-[10px] text-subtle">
                       {item.source === "custom"
                         ? t("chat.variableCustom")
                         : item.source === "variable"
@@ -871,7 +871,7 @@ export function ChatPage() {
           )}
           {resolvedDraft && (
             <div className="mb-2 flex items-center gap-2 rounded-lg border border-line/70 bg-black/25 px-2.5 py-1.5 text-xs">
-              <span className="shrink-0 text-[10px] font-medium uppercase tracking-wider text-accent">
+              <span className="shrink-0 text-[11px] font-medium text-accent">
                 {t("chat.variablePreview")}
               </span>
               <span className="min-w-0 flex-1 truncate text-zinc-200" title={resolvedDraft}>

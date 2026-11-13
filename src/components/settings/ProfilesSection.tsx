@@ -114,7 +114,7 @@ function ModalShell({
 
   return (
     <div
-      className="fixed inset-0 z-50 grid place-items-center bg-black/70 p-4 backdrop-blur-xs"
+      className="fixed inset-0 z-50 grid place-items-center bg-canvas/80 p-4"
       onMouseDown={(event) => {
         if (event.target === event.currentTarget) onClose();
       }}
@@ -384,7 +384,7 @@ export function ProfilesSection() {
                   <span
                     className={`grid size-9 shrink-0 place-items-center rounded-lg border ${
                       profile.twitchUserId
-                        ? "border-[#9146ff]/30 bg-[#9146ff]/12 text-[#b98cff]"
+                        ? "border-twitch-border bg-twitch-soft text-twitch-ink"
                         : isActive
                           ? "border-accent/35 bg-accent/15 text-accent"
                           : "border-line bg-black/20 text-zinc-400"

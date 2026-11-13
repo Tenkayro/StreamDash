@@ -84,13 +84,13 @@ function ProModalContent({ onClose }: { onClose: () => void }) {
 
   return (
     <div
-      className="fixed inset-0 z-50 grid place-items-center bg-black/70 p-4 backdrop-blur-xs"
+      className="fixed inset-0 z-50 grid place-items-center bg-canvas/80 p-4"
       onMouseDown={(event) => {
         if (event.target === event.currentTarget) onClose();
       }}
     >
       <Card className="w-full max-w-lg overflow-hidden border-line bg-surface p-0 shadow-2xl">
-        <div className="flex items-center justify-between border-b border-line bg-linear-to-r from-[#9146ff]/12 via-accent/10 to-transparent px-5 py-4">
+        <div className="flex items-center justify-between border-b border-line bg-twitch-soft px-5 py-4">
           <div className="flex items-center gap-2.5">
             <span className="grid size-8 place-items-center rounded-xl border border-white/10 bg-white/5 text-zinc-300">
               <Crown size={16} />
@@ -121,7 +121,7 @@ function ProModalContent({ onClose }: { onClose: () => void }) {
           {!twitchConnected ? (
             <div className="space-y-3 rounded-xl border border-line bg-black/20 p-4">
               <div className="flex items-start gap-3">
-                <Link2 size={16} className="mt-0.5 shrink-0 text-[#b98cff]" />
+                <Link2 size={16} className="mt-0.5 shrink-0 text-twitch-ink" />
                 <div className="text-xs leading-5 text-zinc-300">
                   {t("pro.twitchRequiredDetail")}
                 </div>
@@ -191,7 +191,7 @@ function ProModalContent({ onClose }: { onClose: () => void }) {
                   <span>{t("pro.perks.twitchBound", { account: twitch.account ?? "" })}</span>
                 </div>
                 <div className="flex items-center gap-2 text-zinc-200">
-                  <Sparkles size={14} className="text-[#b98cff]" />
+                  <Sparkles size={14} className="text-twitch-ink" />
                   <span>{t("pro.perks.futureFeatures")}</span>
                 </div>
               </div>
@@ -228,7 +228,7 @@ function ProModalContent({ onClose }: { onClose: () => void }) {
                   <span>{t("pro.perks.twitchBound", { account: twitch.account ?? "" })}</span>
                 </div>
                 <div className="flex items-center gap-2 text-zinc-200">
-                  <Sparkles size={14} className="shrink-0 text-[#b98cff]" />
+                  <Sparkles size={14} className="shrink-0 text-twitch-ink" />
                   <span>{t("pro.perks.futureFeatures")}</span>
                 </div>
               </div>

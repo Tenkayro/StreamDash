@@ -251,10 +251,10 @@ function Metric({
 }) {
   return (
     <Card className="metric-card flex min-h-0 flex-col">
-      <div className="flex items-center justify-between">
+      <div className="flex items-center justify-between gap-2">
         <span className="text-[11px] font-medium text-muted">{label}</span>
         <span className="metric-icon">
-          <Icon size={14} />
+          <Icon size={14} aria-hidden="true" />
         </span>
       </div>
       <div className="metric-value mt-auto pt-2 font-semibold tracking-[-.03em]">
@@ -359,12 +359,12 @@ function DashboardWidget({
     <div
       data-dashboard-widget={id}
       className={cn(
-        "relative h-full min-w-0 rounded-[18px]",
+        "relative h-full min-w-0 rounded-[10px]",
         editing && "ring-1 ring-accent/30",
       )}
     >
       {editing && (
-        <div className="absolute -top-2.5 right-2.5 z-20 flex items-center gap-0.5 rounded-full border border-white/12 bg-[#14161c]/92 px-1 py-0.5 shadow-[0_6px_18px_rgba(0,0,0,0.55),inset_0_1px_0_rgba(255,255,255,0.08)] backdrop-blur-xl">
+        <div className="absolute -top-2.5 right-2.5 z-20 flex items-center gap-0.5 rounded-full border border-rule-strong bg-raised px-1 py-0.5 shadow-lg">
           {showWidthControls && onWidthChange && (
             <div className="flex items-center border-r border-white/10 pr-1 mr-0.5">
               {(
@@ -428,7 +428,7 @@ function DashboardWidget({
           title={t("dashboard.resizeWidget", { label })}
           aria-label={t("dashboard.resizeWidget", { label })}
           onPointerDown={onResizeStart}
-          className="absolute bottom-2 right-2 z-20 grid size-6 touch-none cursor-se-resize place-items-center rounded-full border border-white/12 bg-[#14161c]/90 text-accent shadow-[0_4px_12px_rgba(0,0,0,0.5),inset_0_1px_0_rgba(255,255,255,0.08)] backdrop-blur-md outline-none transition hover:border-accent/45 hover:bg-accent-soft"
+          className="absolute bottom-2 right-2 z-20 grid size-6 touch-none cursor-se-resize place-items-center rounded-full border border-rule-strong bg-raised text-accent shadow-md outline-none transition-colors hover:border-accent-border hover:bg-accent-soft"
         >
           <MoveDiagonal2 size={11} />
         </button>
@@ -554,7 +554,7 @@ function CustomizeToolbar({
       {/* Top row: Presets + Zoom + Actions */}
       <div className="flex flex-wrap items-center justify-between gap-2 border-b border-line pb-2">
         <div className="flex flex-wrap items-center gap-1.5">
-          <span className="text-[10.5px] font-semibold uppercase tracking-wider text-muted">
+          <span className="text-[11px] font-semibold text-muted">
             {t("dashboard.presets.label")}:
           </span>
           {(["standard", "cockpit", "metrics"] as const).map((preset) => (
@@ -563,10 +563,10 @@ function CustomizeToolbar({
               type="button"
               onClick={() => onApplyPreset(preset)}
               className={cn(
-                "rounded-full border px-2.5 py-1 text-[10.5px] font-medium transition",
+                "rounded-md border px-2.5 py-1 text-[11px] font-medium transition-colors",
                 activePreset === preset
-                  ? "border-accent/40 bg-accent-soft text-accent shadow-[inset_0_1px_0_rgba(255,255,255,0.08)]"
-                  : "border-white/[0.08] bg-white/[0.03] text-zinc-300 hover:border-accent/40 hover:text-accent",
+                  ? "border-accent-border bg-accent-soft text-accent"
+                  : "border-rule bg-raised text-ink hover:border-accent-border hover:text-accent",
               )}
             >
               {t(`dashboard.presets.${preset}`)}
@@ -575,7 +575,7 @@ function CustomizeToolbar({
         </div>
 
         <div className="flex flex-wrap items-center gap-1.5">
-          <div className="inline-flex items-center rounded-full border border-white/[0.08] bg-black/30 p-0.5 shadow-[inset_2px_2px_5px_rgba(0,0,0,0.5)]">
+          <div className="inline-flex items-center rounded-md border border-rule bg-well p-0.5">
             <button
               type="button"
               onClick={() => onZoomChange(Math.max(50, zoom - 10))}
@@ -637,7 +637,7 @@ function CustomizeToolbar({
             widgets.map((widget) => (
               <div
                 key={widget.id}
-                className="inline-flex h-6.5 overflow-hidden rounded-full border border-white/[0.08] bg-black/25 shadow-[inset_1px_1px_4px_rgba(0,0,0,0.45)] transition hover:border-accent/35"
+                className="inline-flex h-6.5 overflow-hidden rounded-md border border-rule bg-well transition-colors hover:border-accent-border"
               >
                 <button
                   type="button"
@@ -1589,7 +1589,7 @@ export function Dashboard() {
                   )}
                   <span
                     className="font-semibold"
-                    style={{ color: msg.color || "#fb923c" }}
+                    style={{ color: msg.color || "var(--color-chart-amber)" }}
                   >
                     {msg.displayName}:
                   </span>{" "}

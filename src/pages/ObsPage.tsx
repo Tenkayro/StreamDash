@@ -47,21 +47,19 @@ function Metric({
   tone?: "neutral" | "red" | "green" | "amber";
 }) {
   const tones = {
-    neutral: "bg-white/5 text-zinc-400",
-    red: "bg-red-400/10 text-red-300",
-    green: "bg-emerald-400/10 text-emerald-300",
-    amber: "bg-amber-400/10 text-amber-300",
+    neutral: "text-subtle",
+    red: "text-red-400",
+    green: "text-emerald-400",
+    amber: "text-amber-400",
   };
   return (
-    <Card className="flex min-w-0 items-center gap-3 p-4">
-      <span className={cn("grid size-9 shrink-0 place-items-center rounded-lg", tones[tone])}>
-        <Icon size={17} />
-      </span>
-      <div className="min-w-0">
-        <div className="text-[10px] font-semibold uppercase tracking-[.12em] text-zinc-600">{label}</div>
-        <div className="mt-0.5 truncate text-sm font-semibold tabular-nums text-zinc-100">{value}</div>
-        {detail && <div className="mt-0.5 truncate text-[10px] text-muted">{detail}</div>}
+    <Card className="flex min-w-0 flex-col justify-between p-4">
+      <div className="flex items-center justify-between gap-2">
+        <div className="text-[11px] font-medium text-muted">{label}</div>
+        <Icon size={14} className={cn("shrink-0", tones[tone])} aria-hidden="true" />
       </div>
+      <div className="mt-1.5 truncate text-base font-semibold tabular-nums text-ink">{value}</div>
+      {detail && <div className="mt-0.5 truncate text-[10px] text-muted">{detail}</div>}
     </Card>
   );
 }
@@ -142,11 +140,11 @@ function SpotifyOverlayCard() {
     <Card className="mt-3 p-4">
       <SectionTitle icon={Music2} title={t("obs.spotifyOverlay.title")} />
       <div className="grid items-center gap-4 xl:grid-cols-[minmax(360px,1.1fr)_minmax(300px,.9fr)]">
-        <div className="relative aspect-35/8 min-h-28 overflow-hidden rounded-2xl border border-white/10 bg-[#211e27] shadow-xl">
+        <div className="relative aspect-35/8 min-h-28 overflow-hidden rounded-xl border border-rule bg-obs-stage">
           {coverUrl && <div className="absolute -inset-8 scale-110 bg-cover bg-center opacity-30 blur-2xl" style={{ backgroundImage: `url(${JSON.stringify(coverUrl)})` }} />}
           <div className="absolute inset-0 bg-linear-to-r from-black/10 via-black/45 to-black/75" />
           <div className="relative grid h-full grid-cols-[min(23%,10rem)_1fr]">
-            <div className="grid min-h-0 place-items-center overflow-hidden bg-white/5 text-[#1ed760]">
+            <div className="grid min-h-0 place-items-center overflow-hidden bg-white/5 text-spotify">
               {coverUrl ? <img src={coverUrl} alt="" className="size-full object-cover" /> : <Music2 size={34} />}
             </div>
             <div className="flex min-w-0 flex-col justify-center px-5">
@@ -280,7 +278,7 @@ function ObsWorkspace({ snapshot }: { snapshot: ObsSnapshot }) {
             [t("obs.page.profile"), snapshot.profile ?? "—"],
             [t("obs.page.sceneCollection"), snapshot.sceneCollection ?? "—"],
             [t("obs.page.websocketAddress"), settings.obsAddress],
-          ].map(([label, value]) => <div key={label}><dt className="text-[10px] font-semibold uppercase tracking-widest text-zinc-600">{label}</dt><dd className="mt-1 truncate text-xs text-zinc-300" title={value}>{value}</dd></div>)}
+          ].map(([label, value]) => <div key={label}><dt className="text-[11px] font-medium text-muted">{label}</dt><dd className="mt-1 truncate text-xs text-ink" title={value}>{value}</dd></div>)}
         </dl>
       </Card>
     </>

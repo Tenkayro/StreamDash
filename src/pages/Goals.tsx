@@ -104,13 +104,13 @@ function GoalCard({
 
       <div className="mt-2 h-1.5 overflow-hidden rounded-full bg-white/5">
         <div
-          className="h-full rounded-full bg-accent transition-all"
-          style={{ width: `${loading ? 0 : percent}%` }}
+          className="h-full w-full origin-left rounded-full bg-accent transition-transform"
+          style={{ transform: `scaleX(${loading ? 0 : Math.max(0, Math.min(100, percent)) / 100})` }}
         />
       </div>
 
       <label className="block pt-3">
-        <span className="mb-1 block text-[10px] font-medium uppercase tracking-widest text-muted">
+        <span className="mb-1 block text-[11px] font-medium text-muted">
           {t("goals.target")}
         </span>
         <input
@@ -145,7 +145,7 @@ function GoalCard({
         </div>
         {automation?.enabled && (
           <label className="mt-2 flex items-center justify-between gap-3">
-            <span className="text-[10px] font-medium uppercase tracking-widest text-zinc-600">
+            <span className="text-[11px] font-medium text-muted">
               {t("goals.increaseBy")}
             </span>
             <span className="relative w-22">

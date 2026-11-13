@@ -271,7 +271,7 @@ function SettingsNav({ smooth }: { smooth: boolean }) {
     <nav
       ref={navRef}
       aria-label={t("settings.categories")}
-      className="no-scrollbar sticky top-2 z-20 mb-5 flex gap-1 overflow-x-auto rounded-2xl border border-white/[0.08] bg-[#121418]/85 p-1.5 shadow-[0_10px_30px_rgba(0,0,0,0.45),inset_0_1px_0_rgba(255,255,255,0.07)] backdrop-blur-xl"
+      className="no-scrollbar sticky top-2 z-20 mb-5 flex gap-1 overflow-x-auto rounded-lg border border-rule bg-panel p-1"
     >
       <span
         aria-hidden="true"
@@ -339,7 +339,7 @@ function Row({
 }
 function SectionTitle({ icon: Icon, children }: { icon: LucideIcon; children: ReactNode }) {
   return (
-    <h2 className="mb-2 flex items-center gap-1.5 px-1 text-[10px] font-bold uppercase tracking-[.14em] text-zinc-600">
+    <h2 className="mb-2 flex items-center gap-1.5 px-1 text-xs font-semibold text-muted">
       <Icon size={12} aria-hidden="true" />
       {children}
     </h2>

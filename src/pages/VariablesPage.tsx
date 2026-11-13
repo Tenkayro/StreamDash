@@ -244,7 +244,7 @@ export function VariablesPage() {
             ) : (
               groups.map((group) => (
                 <section key={group.cat} className="pt-3">
-                  <h2 className="mb-1 px-1 text-[10.5px] font-semibold uppercase tracking-wider text-muted">
+                  <h2 className="mb-1 px-1 text-xs font-semibold text-muted">
                     {t(`variables.categories.${group.cat}`)}
                   </h2>
                   <div className="grid gap-1 lg:grid-cols-2">

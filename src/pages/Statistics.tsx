@@ -95,10 +95,10 @@ export function Statistics() {
                 fontSize={11}
               />
               <Tooltip
-                cursor={{ fill: "#ffffff08" }}
+                cursor={{ fill: "var(--color-hover)" }}
                 contentStyle={{
-                  background: "#2c2d2e",
-                  border: "1px solid #2b2d34",
+                  background: "var(--color-raised)",
+                  border: "1px solid var(--color-rule-strong)",
                   borderRadius: 8,
                   fontSize: 12,
                 }}

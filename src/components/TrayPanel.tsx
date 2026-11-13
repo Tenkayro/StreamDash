@@ -68,7 +68,7 @@ function ServiceStatus({ icon, name, phase, account }: { icon: string; name: str
     >
       <span className="relative shrink-0">
         <img src={icon} alt="" className="size-4 object-contain" />
-        <span className={`absolute -bottom-1 -right-1 size-2 rounded-full border-2 border-[#121418] ${statusColor(phase)}`} />
+        <span className={`absolute -bottom-1 -right-1 size-2 rounded-full border-2 border-panel ${statusColor(phase)}`} />
       </span>
     </div>
   );
@@ -81,7 +81,7 @@ function QuickAction({ icon: Icon, label, action }: { icon: LucideIcon; label: s
       title={label}
       aria-label={label}
       onClick={() => void invoke("tray_action", { action })}
-      className="tray-action flex h-11 min-w-0 flex-col items-center justify-center gap-1 rounded-xl border border-white/[0.05] bg-white/[0.025] px-1.5 text-zinc-400 shadow-[2px_2px_6px_rgba(0,0,0,0.35),inset_0_1px_0_rgba(255,255,255,0.05)] transition hover:border-accent/35 hover:bg-accent-soft/60 hover:text-accent focus-visible:outline-2 focus-visible:outline-accent"
+      className="tray-action flex h-11 min-w-0 flex-col items-center justify-center gap-1 rounded-xl border border-rule bg-raised px-1.5 text-muted transition-colors hover:border-accent-border hover:bg-accent-soft hover:text-accent focus-visible:outline-2 focus-visible:outline-accent"
     >
       <Icon size={15} className="shrink-0" aria-hidden="true" />
       <span className="max-w-full whitespace-nowrap text-[10px] font-medium leading-none">{label}</span>
@@ -193,9 +193,9 @@ export function TrayPanel() {
         <header className="tray-header flex h-11 shrink-0 items-center gap-3 border-b border-white/[0.06] px-3.5">
           <img src={titlebarLogo} alt="StreamDash" className="h-4 w-auto object-contain" />
           <span
-            className={`ml-auto inline-flex items-center gap-1.5 rounded-full border px-2.5 py-0.5 text-[10px] font-semibold shadow-[inset_0_1px_0_rgba(255,255,255,0.06)] ${status.live ? "border-red-400/25 bg-red-400/12 text-red-300" : "border-white/8 bg-white/[0.04] text-zinc-400"}`}
+            className={`ml-auto inline-flex items-center gap-1.5 rounded-full border px-2.5 py-0.5 text-[10px] font-semibold ${status.live ? "border-red-400/25 bg-red-400/12 text-red-300" : "border-rule bg-hover text-muted"}`}
           >
-            <span className={`size-1.5 rounded-full ${status.live ? "animate-pulse bg-red-400" : "bg-zinc-500"}`} />
+            <span className={`size-1.5 rounded-full ${status.live ? "animate-pulse bg-red-400" : "bg-subtle"}`} />
             {status.live ? t("tray.live") : t("tray.offline")}
           </span>
           <button
@@ -203,7 +203,7 @@ export function TrayPanel() {
             title={t("tray.quit")}
             aria-label={t("tray.quit")}
             onClick={() => void invoke("tray_action", { action: "quit" })}
-            className="grid size-7 place-items-center rounded-full border border-white/[0.06] bg-white/[0.03] text-zinc-400 shadow-[inset_0_1px_0_rgba(255,255,255,0.05)] transition hover:border-red-400/30 hover:bg-red-400/12 hover:text-red-300"
+            className="grid size-7 place-items-center rounded-full border border-rule bg-raised text-muted transition-colors hover:border-red-400/30 hover:bg-red-400/12 hover:text-red-300"
           >
             <Power size={13} aria-hidden="true" />
           </button>
@@ -242,7 +242,7 @@ export function TrayPanel() {
               title={reconnecting ? t("tray.reconnecting") : t("tray.reconnect")}
               aria-label={reconnecting ? t("tray.reconnecting") : t("tray.reconnect")}
               onClick={() => void invoke("tray_action", { action: "reconnect" })}
-              className="tray-action flex h-11 min-w-0 flex-col items-center justify-center gap-1 rounded-xl border border-white/[0.05] bg-white/[0.025] px-1.5 text-zinc-400 shadow-[2px_2px_6px_rgba(0,0,0,0.35),inset_0_1px_0_rgba(255,255,255,0.05)] transition hover:border-accent/35 hover:bg-accent-soft/60 hover:text-accent disabled:opacity-50"
+              className="tray-action flex h-11 min-w-0 flex-col items-center justify-center gap-1 rounded-xl border border-rule bg-raised px-1.5 text-muted transition-colors hover:border-accent-border hover:bg-accent-soft hover:text-accent disabled:opacity-50"
             >
               <RefreshCw size={15} className={`shrink-0 ${reconnecting ? "animate-spin" : ""}`} aria-hidden="true" />
               <span className="max-w-full whitespace-nowrap text-[10px] font-medium leading-none">{t("tray.retry")}</span>

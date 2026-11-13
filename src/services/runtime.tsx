@@ -3314,7 +3314,7 @@ export function RuntimeProvider({ children }: { children: ReactNode }) {
 
   if (!isTauri() && remoteAuthNeeded) {
     return (
-      <div className="flex min-h-screen items-center justify-center bg-[#0b0c0f] p-4 text-zinc-100">
+      <div className="flex min-h-screen items-center justify-center bg-canvas p-4 text-ink">
         <form
           onSubmit={async (e) => {
             e.preventDefault();
@@ -3335,7 +3335,7 @@ export function RuntimeProvider({ children }: { children: ReactNode }) {
               setRemoteAuthError(i18n.t("host.configError"));
             }
           }}
-          className="w-full max-w-sm space-y-4 rounded-2xl border border-white/10 bg-[#14161c] p-6 shadow-2xl"
+          className="w-full max-w-sm space-y-4 rounded-xl border border-rule-strong bg-panel p-6 shadow-lg"
         >
           <div className="space-y-1">
             <h1 className="text-base font-semibold">{i18n.t("host.title")}</h1>
