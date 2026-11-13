@@ -929,7 +929,11 @@ export function RuntimeProvider({ children }: { children: ReactNode }) {
   );
 
   const syncHistoryWithCloud = useCallback(
-    async (userId: string, mode: "smart" | "push" | "pull" = "smart") => {
+    async (
+      userId: string,
+      mode: "smart" | "push" | "pull" = "smart",
+      attempt = 0,
+    ): Promise<void> => {
       if (!isTauri() || !userId || !state().entitlements.pro) return;
       try {
         const meta = await historySyncNative.meta(TWITCH_CLIENT_ID);
@@ -989,6 +993,13 @@ export function RuntimeProvider({ children }: { children: ReactNode }) {
         }
       } catch (err) {
         const msg = errorMessage(err);
+        const waitSeconds = parseRateLimitWaitSeconds(msg);
+        if (waitSeconds && waitSeconds <= 10 && attempt === 0) {
+          await new Promise((resolve) =>
+            window.setTimeout(resolve, waitSeconds * 1000 + 200),
+          );
+          return syncHistoryWithCloud(userId, mode, 1);
+        }
         state().setCloudSync({ historyError: msg });
         if (msg.includes("storage_quota_exceeded")) {
           toast.warning(i18n.t("profiles.cloud.storage.quotaExceededToast"));

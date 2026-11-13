@@ -32,11 +32,19 @@ fn app_display_name() -> &'static str {
 }
 
 fn credential_service() -> &'static str {
-    app_display_name()
+    if cfg!(debug_assertions) {
+        "StreamDash.dev"
+    } else {
+        app_display_name()
+    }
 }
 
 fn preferences_registry_key() -> &'static str {
-    r"HKCU\Software\Tenkayro\StreamDash"
+    if cfg!(debug_assertions) {
+        r"HKCU\Software\Tenkayro\StreamDashDev"
+    } else {
+        r"HKCU\Software\Tenkayro\StreamDash"
+    }
 }
 
 struct AppState {

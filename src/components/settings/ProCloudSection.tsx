@@ -794,11 +794,19 @@ export function ProCloudSection() {
 
                 {cloudSync.historyError && (
                   <div className="mt-2 rounded-lg border border-amber-500/30 bg-amber-500/10 px-2.5 py-1.5 text-[11px] text-amber-200">
-                    {cloudSync.historyError.includes("storage_quota_exceeded")
-                      ? t("profiles.cloud.storage.quotaExceededToast")
-                      : cloudSync.historyError.includes("storage_pool_full")
-                        ? t("profiles.cloud.storage.poolFullToast")
-                        : cloudSync.historyError}
+                    {(() => {
+                      if (cloudSync.historyError.includes("storage_quota_exceeded")) {
+                        return t("profiles.cloud.storage.quotaExceededToast");
+                      }
+                      if (cloudSync.historyError.includes("storage_pool_full")) {
+                        return t("profiles.cloud.storage.poolFullToast");
+                      }
+                      const wait = parseRateLimitWaitSeconds(cloudSync.historyError);
+                      if (wait) {
+                        return t("settings.support.errors.rateLimited", { seconds: wait });
+                      }
+                      return cloudSync.historyError;
+                    })()}
                   </div>
                 )}
 

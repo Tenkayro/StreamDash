@@ -111,10 +111,10 @@ function ServiceRow({
   const { t } = useTranslation();
   return (
     <Card data-search-label={name} className="flex flex-col justify-between">
-      <div className="flex flex-wrap items-center gap-3 px-4 py-3.5">
+      <div className="flex flex-wrap items-center gap-3.5 px-4 py-3.5 sm:flex-nowrap">
         <span
           className={cn(
-            "grid size-9 shrink-0 place-items-center rounded-lg",
+            "grid size-10 shrink-0 place-items-center rounded-xl",
             tint,
           )}
         >
@@ -123,24 +123,28 @@ function ServiceRow({
         <div className="min-w-0 flex-1">
           <div className="flex flex-wrap items-center gap-2">
             <span className="truncate text-sm font-medium">{name}</span>
-            <Badge tone={phaseTone(phase)}>
-              {t(`connectionPhases.${phase}`)}
-            </Badge>
+            <span className="shrink-0 whitespace-nowrap">
+              <Badge tone={phaseTone(phase)}>
+                {t(`connectionPhases.${phase}`)}
+              </Badge>
+            </span>
             {meta && (
-              <span className="truncate text-[11px] text-subtle">{meta}</span>
+              <span className="inline-flex shrink-0 items-center truncate text-[11px] text-subtle">
+                {meta}
+              </span>
             )}
           </div>
           <div className="mt-0.5 text-[11px] leading-4 text-muted">
             {purpose}
           </div>
           {error && (
-            <div className="mt-0.5 text-[11px] leading-4 text-red-300">
+            <div className="mt-1 text-[11px] leading-4 text-red-300">
               {error}
             </div>
           )}
         </div>
         {action && (
-          <div className="ml-auto flex max-w-full flex-wrap items-center justify-end gap-2">
+          <div className="ml-auto flex shrink-0 flex-wrap items-center justify-end gap-2">
             {action}
           </div>
         )}
@@ -342,7 +346,7 @@ export function Connections() {
         description={t("pageDescriptions.connections")}
       />
       <OfflineBanner className="mb-4" />
-      <div className="grid grid-cols-1 gap-3 lg:grid-cols-2">
+      <div className="flex flex-col gap-3">
         <ServiceRow
           name="Twitch"
           icon={twitchIcon}
