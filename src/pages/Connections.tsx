@@ -108,8 +108,8 @@ function ServiceRow({
 }) {
   const { t } = useTranslation();
   return (
-    <div data-search-label={name}>
-      <div className="flex flex-wrap items-center gap-3 px-4 py-3">
+    <Card data-search-label={name} className="flex flex-col justify-between">
+      <div className="flex flex-wrap items-center gap-3 px-4 py-3.5">
         <span
           className={cn(
             "grid size-9 shrink-0 place-items-center rounded-lg",
@@ -125,7 +125,7 @@ function ServiceRow({
               {t(`connectionPhases.${phase}`)}
             </Badge>
             {meta && (
-              <span className="truncate text-[11px] text-zinc-600">{meta}</span>
+              <span className="truncate text-[11px] text-subtle">{meta}</span>
             )}
           </div>
           <div className="mt-0.5 text-[11px] leading-4 text-muted">
@@ -144,7 +144,7 @@ function ServiceRow({
         )}
       </div>
       {children}
-    </div>
+    </Card>
   );
 }
 
@@ -171,7 +171,7 @@ function TokenForm({
 }) {
   const { t } = useTranslation();
   return (
-    <div className="max-w-2xl px-4 pb-3 sm:pl-16">
+    <div className="px-4 pb-3.5">
       <div className="flex flex-col gap-2 sm:flex-row">
         <input
           id={id}
@@ -233,7 +233,7 @@ function ObsForm({
 }) {
   const { t } = useTranslation();
   return (
-    <div className="max-w-2xl px-4 pb-3 sm:pl-16">
+    <div className="px-4 pb-3.5">
       <div className="flex flex-col gap-2 lg:flex-row">
         <div className="w-full shrink-0 lg:w-44">
           <input
@@ -338,11 +338,11 @@ export function Connections() {
         title={t("connections.title")}
         description={t("pageDescriptions.connections")}
       />
-      <Card className="divide-y divide-line overflow-hidden">
+      <div className="grid grid-cols-1 gap-3 lg:grid-cols-2">
         <ServiceRow
           name="Twitch"
           icon={twitchIcon}
-          tint="bg-[#9146ff]/10"
+          tint="bg-twitch-soft"
           phase={twitch.phase}
           purpose={t("connections.twitchPurpose")}
           meta={
@@ -403,12 +403,12 @@ export function Connections() {
           }
         >
           {missingModeration && (
-            <p className="px-4 pb-3 text-xs leading-5 text-amber-300 sm:pl-16">
+            <p className="px-4 pb-3.5 text-xs leading-5 text-amber-300">
               {t("connections.reconnectModeration")}
             </p>
           )}
           {runtime.deviceAuth && (
-            <div className="mx-4 mb-3 flex flex-wrap items-center gap-3 rounded-lg border border-accent/30 bg-accent-soft px-3 py-2 sm:ml-16">
+            <div className="mx-4 mb-3.5 flex flex-wrap items-center gap-3 rounded-lg border border-accent/30 bg-accent-soft px-3 py-2">
               <span className="font-mono text-lg font-semibold tracking-[.16em]">
                 {runtime.deviceAuth.code}
               </span>
@@ -650,7 +650,7 @@ export function Connections() {
             />
           )}
         </ServiceRow>
-      </Card>
+      </div>
     </>
   );
 }

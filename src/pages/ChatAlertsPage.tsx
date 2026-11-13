@@ -143,7 +143,7 @@ export function ChatAlertsPage() {
       <div
         role="tablist"
         aria-label={t("nav.chatAlerts")}
-        className="mb-3 flex shrink-0 flex-wrap items-center gap-1.5 rounded-xl border border-line bg-black/20 p-1"
+        className="mb-3 flex shrink-0 flex-wrap items-center gap-1.5 rounded-xl border border-line bg-well p-1"
       >
         {tabs.map((item) => (
           <button
@@ -155,8 +155,8 @@ export function ChatAlertsPage() {
             className={cn(
               "inline-flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-medium transition",
               tab === item.id
-                ? "bg-accent/20 text-accent"
-                : "text-zinc-400 hover:bg-white/4 hover:text-zinc-200",
+                ? "bg-accent-soft text-accent"
+                : "text-muted hover:bg-raised hover:text-ink",
             )}
           >
             <span>{item.label}</span>

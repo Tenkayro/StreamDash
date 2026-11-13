@@ -79,17 +79,17 @@ export function Statistics() {
         <div className="h-52">
           <ResponsiveContainer width="100%" height="100%">
             <BarChart data={data}>
-              <CartesianGrid stroke="#24262d" vertical={false} />
+              <CartesianGrid stroke="var(--color-chart-grid)" vertical={false} />
               <XAxis
                 dataKey="day"
-                stroke="#666a75"
+                stroke="var(--color-muted)"
                 tickLine={false}
                 axisLine={false}
                 fontSize={11}
               />
               <YAxis
                 allowDecimals={false}
-                stroke="#666a75"
+                stroke="var(--color-muted)"
                 tickLine={false}
                 axisLine={false}
                 fontSize={11}
@@ -112,20 +112,20 @@ export function Statistics() {
           </ResponsiveContainer>
         </div>
       </Card>
-      <div className="mt-3 grid grid-cols-3 gap-3">
-        <Card className="p-4">
+      <div className="mt-3 grid grid-cols-1 gap-3 sm:grid-cols-3">
+        <Card className="metric-card">
           <div className="text-xs text-muted">{t("statistics.totalEvents")}</div>
-          <div className="mt-1.5 text-2xl font-semibold">
+          <div className="metric-value mt-1.5">
             {events.length.toLocaleString(i18n.language)}
           </div>
         </Card>
-        <Card className="p-4">
+        <Card className="metric-card">
           <div className="text-xs text-muted">{t("statistics.eventTypes")}</div>
-          <div className="mt-1.5 text-2xl font-semibold">{types.length}</div>
+          <div className="metric-value mt-1.5">{types.length}</div>
         </Card>
-        <Card className="p-4">
+        <Card className="metric-card">
           <div className="text-xs text-muted">{t("statistics.mostCommon")}</div>
-          <div className="mt-1.5 text-lg font-semibold capitalize">
+          <div className="metric-value mt-1.5 text-xl capitalize">
             {types[0] ? t(`events.${types[0][0]}`) : "—"}
           </div>
         </Card>

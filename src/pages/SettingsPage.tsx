@@ -325,9 +325,7 @@ function Row({
   return (
     <div data-search-label={label} className={`flex flex-col items-stretch gap-3 border-b border-line last:border-0 lg:flex-row lg:items-center lg:justify-between lg:gap-6 ${detail ? "py-4" : "py-3"}`}>
       <div className={`flex min-w-0 gap-3 ${detail ? "items-start" : "items-center"}`}>
-        <span className={`grid size-8 shrink-0 place-items-center rounded-lg bg-white/4 text-zinc-500 ${detail ? "mt-0.5" : ""}`}>
-          <Icon size={15} aria-hidden="true" />
-        </span>
+        <Icon size={15} className={`shrink-0 text-muted ${detail ? "mt-0.5" : ""}`} aria-hidden="true" />
         <div className="min-w-0">
           <div className="text-sm">{label}</div>
           {detail && <div className="mt-1 text-xs text-muted">{detail}</div>}
@@ -467,7 +465,7 @@ export function SettingsPage() {
   return (
     <>
       <SettingsNav smooth={settings.animations} />
-      <div className="space-y-4">
+      <div className="mx-auto max-w-4xl space-y-5">
         <ProCloudSection />
         <ProfilesSection />
         <section id="general" className="scroll-mt-16">

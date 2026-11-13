@@ -223,9 +223,9 @@ export function HostPage() {
                 </div>
               </div>
             ) : (
-              <div className="flex flex-col items-center justify-center gap-2 rounded-xl border border-dashed border-line bg-black/20 px-4 py-10 text-center">
-                <Globe size={28} className="text-zinc-500" />
-                <div className="text-xs font-medium text-zinc-300">{t("host.disabledHintTitle")}</div>
+              <div className="flex flex-col items-center justify-center gap-2 rounded-xl border border-dashed border-line bg-well px-4 py-10 text-center">
+                <Globe size={28} className="text-muted" />
+                <div className="text-xs font-medium text-ink">{t("host.disabledHintTitle")}</div>
                 <p className="max-w-xs text-[11px] text-muted">{t("host.disabledHintBody")}</p>
               </div>
             )}
@@ -237,13 +237,8 @@ export function HostPage() {
           <Card>
             <form onSubmit={handleSaveSettings} className="space-y-4 p-5">
               <div className="flex items-center gap-2.5">
-                <span className="grid size-8 place-items-center rounded-lg bg-black/30 text-zinc-300">
-                  <Server size={16} />
-                </span>
-                <div>
-                  <h2 className="text-sm font-semibold">{t("host.serverTitle")}</h2>
-                  <p className="text-xs text-muted">{t("host.serverDescription")}</p>
-                </div>
+                <Server size={16} className="text-muted" aria-hidden="true" />
+                <h2 className="text-sm font-semibold">{t("host.serverTitle")}</h2>
               </div>
 
               <div className="grid gap-3 sm:grid-cols-2">
@@ -291,7 +286,7 @@ export function HostPage() {
                 </div>
               </div>
 
-              <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-line bg-black/20 px-3.5 py-2.5">
+              <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-line bg-well px-3.5 py-2.5">
                 <div className="flex items-center gap-2.5">
                   <ShieldCheck size={15} className="text-emerald-400" />
                   <div>
@@ -324,13 +319,8 @@ export function HostPage() {
           <Card>
             <div className="space-y-3 p-5">
               <div className="flex items-center gap-2.5">
-                <span className="grid size-8 place-items-center rounded-lg bg-black/30 text-zinc-300">
-                  <Terminal size={16} />
-                </span>
-                <div>
-                  <h2 className="text-sm font-semibold">{t("host.headlessTitle")}</h2>
-                  <p className="text-xs text-muted">{t("host.headlessDescription")}</p>
-                </div>
+                <Terminal size={16} className="text-muted" aria-hidden="true" />
+                <h2 className="text-sm font-semibold">{t("host.headlessTitle")}</h2>
               </div>
 
               <div className="space-y-2 text-xs">
@@ -341,7 +331,7 @@ export function HostPage() {
                 ].map((item) => (
                   <div
                     key={item.id}
-                    className="flex items-center justify-between gap-2 rounded-lg border border-line bg-black/25 px-3 py-2"
+                    className="flex items-center justify-between gap-2 rounded-lg border border-line bg-well px-3 py-2"
                   >
                     <code className="truncate font-mono text-[11px] text-zinc-200">{item.cmd}</code>
                     <button
