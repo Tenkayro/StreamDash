@@ -284,6 +284,8 @@ fn init_database(path: PathBuf) -> Result<Connection, String> {
     conn.execute_batch(
         "PRAGMA journal_mode=WAL;
          PRAGMA synchronous=NORMAL;
+         PRAGMA busy_timeout=5000;
+         PRAGMA foreign_keys=ON;
          CREATE TABLE IF NOT EXISTS settings (key TEXT PRIMARY KEY, value TEXT NOT NULL);
          CREATE TABLE IF NOT EXISTS activity_events (
            id TEXT PRIMARY KEY, source TEXT NOT NULL, event_type TEXT NOT NULL,
@@ -307,6 +309,8 @@ fn init_history_database(path: PathBuf) -> Result<Connection, String> {
     conn.execute_batch(
         "PRAGMA journal_mode=WAL;
          PRAGMA synchronous=NORMAL;
+         PRAGMA busy_timeout=5000;
+         PRAGMA foreign_keys=ON;
          PRAGMA temp_store=MEMORY;
          CREATE TABLE IF NOT EXISTS activity_events (
            id TEXT PRIMARY KEY, source TEXT NOT NULL, event_type TEXT NOT NULL,
@@ -947,30 +951,53 @@ async fn twitch_session(
     }))
 }
 
-#[tauri::command]
-async fn twitch_helix_get(
-    client_id: String,
-    path: String,
-    query: Vec<(String, String)>,
-) -> Result<Value, String> {
-    if path.contains("..") || path.contains("://") {
+fn validate_helix_path(path: &str) -> Result<&str, String> {
+    if path.chars().any(|c| c.is_whitespace() || c.is_control()) {
         return Err("Invalid Helix path".into());
     }
-    let tokens = valid_tokens(&client_id).await?;
-    let url = format!(
-        "https://api.twitch.tv/helix/{}",
-        path.trim_start_matches('/')
-    );
-    let response = http()
-        .get(url)
-        .query(&query)
+    let trimmed = path.trim_start_matches('/');
+    if trimmed.is_empty()
+        || trimmed.contains("..")
+        || trimmed.contains("://")
+        || trimmed.contains('\\')
+        || trimmed.contains('?')
+        || trimmed.contains('#')
+    {
+        return Err("Invalid Helix path".into());
+    }
+    Ok(trimmed)
+}
+
+async fn helix_request(
+    method: reqwest::Method,
+    client_id: &str,
+    path: &str,
+    query: &[(String, String)],
+    body: Option<&Value>,
+    use_bot: bool,
+    allow_empty_error_json: bool,
+) -> Result<Value, String> {
+    let clean_path = validate_helix_path(path)?;
+    let tokens = valid_tokens_for(client_id, use_bot).await?;
+    let url = format!("https://api.twitch.tv/helix/{clean_path}");
+    let mut request = http()
+        .request(method, url)
+        .query(query)
         .header("Client-Id", client_id)
-        .bearer_auth(tokens.access_token)
-        .send()
-        .await
-        .map_err(|e| e.to_string())?;
+        .bearer_auth(tokens.access_token);
+    if let Some(json_body) = body {
+        request = request.json(json_body);
+    }
+    let response = request.send().await.map_err(|e| e.to_string())?;
     let status = response.status();
-    let body: Value = response.json().await.map_err(|e| e.to_string())?;
+    if status.as_u16() == 204 {
+        return Ok(json!({}));
+    }
+    let body: Value = if allow_empty_error_json {
+        response.json().await.unwrap_or(json!({}))
+    } else {
+        response.json().await.map_err(|e| e.to_string())?
+    };
     if !status.is_success() {
         return Err(body["message"]
             .as_str()
@@ -981,41 +1008,31 @@ async fn twitch_helix_get(
 }
 
 #[tauri::command]
+async fn twitch_helix_get(
+    client_id: String,
+    path: String,
+    query: Vec<(String, String)>,
+) -> Result<Value, String> {
+    helix_request(reqwest::Method::GET, &client_id, &path, &query, None, false, false).await
+}
+
+#[tauri::command]
 async fn twitch_helix_patch(
     client_id: String,
     path: String,
     query: Vec<(String, String)>,
     body: Value,
 ) -> Result<Value, String> {
-    if path.contains("..") || path.contains("://") {
-        return Err("Invalid Helix path".into());
-    }
-    let tokens = valid_tokens(&client_id).await?;
-    let url = format!(
-        "https://api.twitch.tv/helix/{}",
-        path.trim_start_matches('/')
-    );
-    let response = http()
-        .patch(url)
-        .query(&query)
-        .header("Client-Id", client_id)
-        .bearer_auth(tokens.access_token)
-        .json(&body)
-        .send()
-        .await
-        .map_err(|e| e.to_string())?;
-    let status = response.status();
-    if status.as_u16() == 204 {
-        return Ok(json!({}));
-    }
-    let body: Value = response.json().await.map_err(|e| e.to_string())?;
-    if !status.is_success() {
-        return Err(body["message"]
-            .as_str()
-            .unwrap_or("Twitch API request failed")
-            .to_string());
-    }
-    Ok(body)
+    helix_request(
+        reqwest::Method::PATCH,
+        &client_id,
+        &path,
+        &query,
+        Some(&body),
+        false,
+        false,
+    )
+    .await
 }
 
 #[tauri::command]
@@ -1026,35 +1043,16 @@ async fn twitch_helix_post(
     body: Value,
     bot: Option<bool>,
 ) -> Result<Value, String> {
-    if path.contains("..") || path.contains("://") {
-        return Err("Invalid Helix path".into());
-    }
-    let tokens = valid_tokens_for(&client_id, bot.unwrap_or(false)).await?;
-    let url = format!(
-        "https://api.twitch.tv/helix/{}",
-        path.trim_start_matches('/')
-    );
-    let response = http()
-        .post(url)
-        .query(&query)
-        .header("Client-Id", client_id)
-        .bearer_auth(tokens.access_token)
-        .json(&body)
-        .send()
-        .await
-        .map_err(|e| e.to_string())?;
-    let status = response.status();
-    if status.as_u16() == 204 {
-        return Ok(json!({}));
-    }
-    let body: Value = response.json().await.map_err(|e| e.to_string())?;
-    if !status.is_success() {
-        return Err(body["message"]
-            .as_str()
-            .unwrap_or("Twitch API request failed")
-            .to_string());
-    }
-    Ok(body)
+    helix_request(
+        reqwest::Method::POST,
+        &client_id,
+        &path,
+        &query,
+        Some(&body),
+        bot.unwrap_or(false),
+        false,
+    )
+    .await
 }
 
 #[tauri::command]
@@ -1064,35 +1062,16 @@ async fn twitch_helix_put(
     query: Vec<(String, String)>,
     body: Value,
 ) -> Result<Value, String> {
-    if path.contains("..") || path.contains("://") {
-        return Err("Invalid Helix path".into());
-    }
-    let tokens = valid_tokens(&client_id).await?;
-    let url = format!(
-        "https://api.twitch.tv/helix/{}",
-        path.trim_start_matches('/')
-    );
-    let response = http()
-        .put(url)
-        .query(&query)
-        .header("Client-Id", client_id)
-        .bearer_auth(tokens.access_token)
-        .json(&body)
-        .send()
-        .await
-        .map_err(|e| e.to_string())?;
-    let status = response.status();
-    if status.as_u16() == 204 {
-        return Ok(json!({}));
-    }
-    let body: Value = response.json().await.map_err(|e| e.to_string())?;
-    if !status.is_success() {
-        return Err(body["message"]
-            .as_str()
-            .unwrap_or("Twitch API request failed")
-            .to_string());
-    }
-    Ok(body)
+    helix_request(
+        reqwest::Method::PUT,
+        &client_id,
+        &path,
+        &query,
+        Some(&body),
+        false,
+        false,
+    )
+    .await
 }
 
 #[tauri::command]
@@ -1101,34 +1080,16 @@ async fn twitch_helix_delete(
     path: String,
     query: Vec<(String, String)>,
 ) -> Result<Value, String> {
-    if path.contains("..") || path.contains("://") {
-        return Err("Invalid Helix path".into());
-    }
-    let tokens = valid_tokens(&client_id).await?;
-    let url = format!(
-        "https://api.twitch.tv/helix/{}",
-        path.trim_start_matches('/')
-    );
-    let response = http()
-        .delete(url)
-        .query(&query)
-        .header("Client-Id", client_id)
-        .bearer_auth(tokens.access_token)
-        .send()
-        .await
-        .map_err(|e| e.to_string())?;
-    let status = response.status();
-    if status.as_u16() == 204 {
-        return Ok(json!({}));
-    }
-    let body: Value = response.json().await.unwrap_or(json!({}));
-    if !status.is_success() {
-        return Err(body["message"]
-            .as_str()
-            .unwrap_or("Twitch API request failed")
-            .to_string());
-    }
-    Ok(body)
+    helix_request(
+        reqwest::Method::DELETE,
+        &client_id,
+        &path,
+        &query,
+        None,
+        false,
+        true,
+    )
+    .await
 }
 
 #[tauri::command]
@@ -1515,6 +1476,16 @@ struct ChatIrc {
     sender: Mutex<Option<mpsc::UnboundedSender<String>>>,
 }
 
+fn validate_irc_identifier(value: &str) -> Result<(), String> {
+    if value.is_empty()
+        || value.contains(['\r', '\n', ' ', '#', ':'])
+        || value.chars().any(char::is_control)
+    {
+        return Err("Invalid chat identifier".into());
+    }
+    Ok(())
+}
+
 #[tauri::command]
 async fn twitch_chat_start(
     app: tauri::AppHandle,
@@ -1524,6 +1495,8 @@ async fn twitch_chat_start(
     channel: String,
     session: String,
 ) -> Result<(), String> {
+    validate_irc_identifier(&login)?;
+    validate_irc_identifier(&channel)?;
     let tokens = valid_tokens(&client_id).await?;
     let (socket, _) = tokio_tungstenite::connect_async("wss://irc-ws.chat.twitch.tv:443")
         .await
@@ -1580,7 +1553,8 @@ fn twitch_chat_send(
     message: String,
     reply_parent_id: Option<String>,
 ) -> Result<(), String> {
-    if message.contains(['\r', '\n']) || channel.contains(['\r', '\n', ' ', '#']) {
+    validate_irc_identifier(&channel)?;
+    if message.contains(['\r', '\n']) {
         return Err("Invalid chat message".into());
     }
     if reply_parent_id.as_ref().is_some_and(|id| {
@@ -2197,4 +2171,59 @@ pub fn run() {
                 }
             }
         });
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn helix_path_validation_allows_clean_paths_and_blocks_traversal() {
+        assert_eq!(validate_helix_path("/users").unwrap(), "users");
+        assert_eq!(
+            validate_helix_path("channel_points/custom_rewards").unwrap(),
+            "channel_points/custom_rewards"
+        );
+        assert!(validate_helix_path("").is_err());
+        assert!(validate_helix_path("../secret").is_err());
+        assert!(validate_helix_path("https://evil.test/users").is_err());
+        assert!(validate_helix_path("users?login=foo").is_err());
+        assert!(validate_helix_path("users\r\n").is_err());
+    }
+
+    #[test]
+    fn irc_identifier_validation_blocks_crlf_and_spaces() {
+        assert!(validate_irc_identifier("tenkayro").is_ok());
+        assert!(validate_irc_identifier("").is_err());
+        assert!(validate_irc_identifier("foo\r\nPART #bar").is_err());
+        assert!(validate_irc_identifier("#channel").is_err());
+        assert!(validate_irc_identifier("two words").is_err());
+    }
+
+    #[test]
+    fn databases_initialize_schemas_and_wal_mode() {
+        let base = std::env::temp_dir().join(format!("streamdash-test-{}", std::process::id()));
+        let _ = std::fs::remove_dir_all(&base);
+        let db = init_database(base.join("streamdash.db")).expect("settings db should init");
+        let history =
+            init_history_database(base.join("history.db")).expect("history db should init");
+
+        let mode: String = db
+            .query_row("PRAGMA journal_mode;", [], |r| r.get(0))
+            .expect("journal mode");
+        assert_eq!(mode.to_lowercase(), "wal");
+
+        let tables: i64 = history
+            .query_row(
+                "SELECT COUNT(*) FROM sqlite_master WHERE type='table' AND name IN ('activity_events', 'chat_messages');",
+                [],
+                |r| r.get(0),
+            )
+            .expect("tables count");
+        assert_eq!(tables, 2);
+
+        drop(db);
+        drop(history);
+        let _ = std::fs::remove_dir_all(&base);
+    }
 }

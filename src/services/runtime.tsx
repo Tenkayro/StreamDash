@@ -676,7 +676,7 @@ export function RuntimeProvider({ children }: { children: ReactNode }) {
           });
       }
     },
-    [state],
+    [sendCommandReply, state],
   );
 
   const startObs = useCallback(async () => {
@@ -960,79 +960,82 @@ export function RuntimeProvider({ children }: { children: ReactNode }) {
       mode: "smart" | "push" | "pull" = "smart",
       attempt = 0,
     ): Promise<void> => {
-      if (!isTauri() || !userId || !state().entitlements.pro) return;
-      try {
-        const meta = await historySyncNative.meta(TWITCH_CLIENT_ID);
-        if (meta.storage) {
-          state().setCloudSync({ storageInfo: meta.storage, historyError: undefined });
-        }
+      const execute = async (currentAttempt: number): Promise<void> => {
+        if (!isTauri() || !userId || !state().entitlements.pro) return;
+        try {
+          const meta = await historySyncNative.meta(TWITCH_CLIENT_ID);
+          if (meta.storage) {
+            state().setCloudSync({ storageInfo: meta.storage, historyError: undefined });
+          }
 
-        if (mode === "pull" || (mode === "smart" && meta.exists)) {
-          const pulled = await historySyncNative.pull(TWITCH_CLIENT_ID);
-          if (pulled.payload?.events?.length) {
-            const inserted = await mergeEvents(pulled.payload.events, 50_000);
-            if (inserted > 0) {
-              const refreshed = await loadEvents(5000);
-              state().setEvents(refreshed);
+          if (mode === "pull" || (mode === "smart" && meta.exists)) {
+            const pulled = await historySyncNative.pull(TWITCH_CLIENT_ID);
+            if (pulled.payload?.events?.length) {
+              const inserted = await mergeEvents(pulled.payload.events, 50_000);
+              if (inserted > 0) {
+                const refreshed = await loadEvents(5000);
+                state().setEvents(refreshed);
+              }
             }
+            if (pulled.payload?.stats) {
+              const cur = state().stats;
+              const rem = pulled.payload.stats;
+              const mergedStats = {
+                ...cur,
+                followers: Math.max(cur.followers ?? 0, rem.followers ?? 0) || undefined,
+                subscribers: Math.max(cur.subscribers ?? 0, rem.subscribers ?? 0) || undefined,
+                viewers: cur.viewers ?? rem.viewers,
+                donations: Math.max(cur.donations ?? 0, rem.donations ?? 0),
+                donationCurrency: cur.donationCurrency || rem.donationCurrency,
+                bits: Math.max(cur.bits ?? 0, rem.bits ?? 0),
+                startedAt: cur.startedAt || rem.startedAt,
+                title: cur.title || rem.title,
+                category: cur.category || rem.category,
+              };
+              state().setStats(mergedStats);
+              await saveLocalState("cachedStats", mergedStats);
+            }
+            state().setCloudSync({
+              storageInfo: pulled.storage ?? meta.storage,
+              historyLastSyncedAt: Date.now(),
+              historyError: undefined,
+            });
           }
-          if (pulled.payload?.stats) {
-            const cur = state().stats;
-            const rem = pulled.payload.stats;
-            const mergedStats = {
-              ...cur,
-              followers: Math.max(cur.followers ?? 0, rem.followers ?? 0) || undefined,
-              subscribers: Math.max(cur.subscribers ?? 0, rem.subscribers ?? 0) || undefined,
-              viewers: cur.viewers ?? rem.viewers,
-              donations: Math.max(cur.donations ?? 0, rem.donations ?? 0),
-              donationCurrency: cur.donationCurrency || rem.donationCurrency,
-              bits: Math.max(cur.bits ?? 0, rem.bits ?? 0),
-              startedAt: cur.startedAt || rem.startedAt,
-              title: cur.title || rem.title,
-              category: cur.category || rem.category,
-            };
-            state().setStats(mergedStats);
-            await saveLocalState("cachedStats", mergedStats);
-          }
-          state().setCloudSync({
-            storageInfo: pulled.storage ?? meta.storage,
-            historyLastSyncedAt: Date.now(),
-            historyError: undefined,
-          });
-        }
 
-        if (mode === "push" || mode === "smart") {
-          const events = await loadEvents(50_000);
-          const pushed = await historySyncNative.push(TWITCH_CLIENT_ID, {
-            payload: {
-              version: 1,
-              exportedAt: Date.now(),
-              events,
-              stats: state().stats,
-            },
-          });
-          state().setCloudSync({
-            storageInfo: pushed.storage,
-            historyLastSyncedAt: Date.now(),
-            historyError: undefined,
-          });
+          if (mode === "push" || mode === "smart") {
+            const events = await loadEvents(50_000);
+            const pushed = await historySyncNative.push(TWITCH_CLIENT_ID, {
+              payload: {
+                version: 1,
+                exportedAt: Date.now(),
+                events,
+                stats: state().stats,
+              },
+            });
+            state().setCloudSync({
+              storageInfo: pushed.storage,
+              historyLastSyncedAt: Date.now(),
+              historyError: undefined,
+            });
+          }
+        } catch (err) {
+          const msg = errorMessage(err);
+          const waitSeconds = parseRateLimitWaitSeconds(msg);
+          if (waitSeconds && waitSeconds <= 10 && currentAttempt === 0) {
+            await new Promise((resolve) =>
+              window.setTimeout(resolve, waitSeconds * 1000 + 200),
+            );
+            return execute(1);
+          }
+          state().setCloudSync({ historyError: msg });
+          if (msg.includes("storage_quota_exceeded")) {
+            toast.warning(i18n.t("profiles.cloud.storage.quotaExceededToast"));
+          } else if (msg.includes("storage_pool_full")) {
+            toast.warning(i18n.t("profiles.cloud.storage.poolFullToast"));
+          }
         }
-      } catch (err) {
-        const msg = errorMessage(err);
-        const waitSeconds = parseRateLimitWaitSeconds(msg);
-        if (waitSeconds && waitSeconds <= 10 && attempt === 0) {
-          await new Promise((resolve) =>
-            window.setTimeout(resolve, waitSeconds * 1000 + 200),
-          );
-          return syncHistoryWithCloud(userId, mode, 1);
-        }
-        state().setCloudSync({ historyError: msg });
-        if (msg.includes("storage_quota_exceeded")) {
-          toast.warning(i18n.t("profiles.cloud.storage.quotaExceededToast"));
-        } else if (msg.includes("storage_pool_full")) {
-          toast.warning(i18n.t("profiles.cloud.storage.poolFullToast"));
-        }
-      }
+      };
+      return execute(attempt);
     },
     [state],
   );
@@ -1282,6 +1285,7 @@ export function RuntimeProvider({ children }: { children: ReactNode }) {
       pushLocalToCloud,
       setCloudSyncCheckpoint,
       state,
+      syncHistoryWithCloud,
     ],
   );
 
@@ -1807,17 +1811,41 @@ export function RuntimeProvider({ children }: { children: ReactNode }) {
   const [remoteTokenInput, setRemoteTokenInput] = useState("");
   const [remoteAuthError, setRemoteAuthError] = useState<string>();
 
-  const sendRemoteAction = async (type: string, payload: Record<string, unknown> = {}) => {
-    const token = sessionStorage.getItem("sd_remote_token") ?? "";
-    await fetch("/api/action", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        ...(token ? { "X-SD-Token": token } : {}),
-      },
-      body: JSON.stringify({ type, payload }),
-    });
-  };
+  const sendRemoteAction = useCallback(
+    async (type: string, payload: Record<string, unknown> = {}) => {
+      const token = sessionStorage.getItem("sd_remote_token") ?? "";
+      await fetch("/api/action", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          ...(token ? { "X-SD-Token": token } : {}),
+        },
+        body: JSON.stringify({ type, payload }),
+      });
+    },
+    [],
+  );
+
+  const sendChatMessage = useCallback(
+    async (text: string) => {
+      if (!isTauri()) {
+        const trimmed = text.trim();
+        if (trimmed) await sendRemoteAction("chat.send", { message: trimmed.slice(0, 500) });
+        return;
+      }
+      const current = state();
+      const resolved = (
+        await resolveTemplateWithSong(text, {
+          state: current,
+          user: current.twitch.account,
+          userLogin: current.twitch.account,
+        })
+      ).trim();
+      if (!resolved) return;
+      await sendChat(resolved.slice(0, 500));
+    },
+    [sendChat, sendRemoteAction, state],
+  );
 
   const applyRemoteSnapshot = useCallback((snap: Record<string, unknown>) => {
     if (!snap || typeof snap !== "object" || snap.ready !== true) return false;
@@ -2098,7 +2126,7 @@ export function RuntimeProvider({ children }: { children: ReactNode }) {
       obsRef.current?.stop();
       chatRef.current?.stop();
     };
-  }, [applyRemoteSnapshot, reconnect, setChatMessages, setEvents, setReady, setSettings, state]);
+  }, [applyRemoteSnapshot, reconnect, sendChatMessage, setChatMessages, setEvents, setReady, setSettings, state]);
 
   useEffect(() => {
     if (!isTauri()) return;
@@ -2376,23 +2404,6 @@ export function RuntimeProvider({ children }: { children: ReactNode }) {
     !isTauri()
       ? sendRemoteAction("obs.virtualCam", { active })
       : obsAction((client) => client.setVirtualCam(active));
-  const sendChatMessage = async (text: string) => {
-    if (!isTauri()) {
-      const trimmed = text.trim();
-      if (trimmed) await sendRemoteAction("chat.send", { message: trimmed.slice(0, 500) });
-      return;
-    }
-    const current = state();
-    const resolved = (
-      await resolveTemplateWithSong(text, {
-        state: current,
-        user: current.twitch.account,
-        userLogin: current.twitch.account,
-      })
-    ).trim();
-    if (!resolved) return;
-    await sendChat(resolved.slice(0, 500));
-  };
 
   const moderationContext = (scope: string) => {
     const current = state();
@@ -3357,7 +3368,7 @@ export function RuntimeProvider({ children }: { children: ReactNode }) {
 
   if (!isTauri() && remoteAuthNeeded) {
     return (
-      <div className="flex min-h-screen items-center justify-center bg-canvas p-4 text-ink">
+      <div className="flex min-h-dvh items-center justify-center bg-canvas p-4 text-ink">
         <form
           onSubmit={async (e) => {
             e.preventDefault();

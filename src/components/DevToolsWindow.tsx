@@ -140,7 +140,7 @@ export function DevToolsWindow() {
   };
 
   return (
-    <div className="min-h-screen bg-[#0c0e14] p-4 text-zinc-100 select-none">
+    <div className="min-h-dvh bg-[#0c0e14] p-4 text-zinc-100 select-none">
       <div className="mx-auto flex max-w-lg flex-col gap-3">
         {/* Minimal Header */}
         <header className="flex items-center justify-between">

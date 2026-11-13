@@ -16,3 +16,6 @@ AGENTS.md
 .server
 .dev-data/
 exports/*.mp4
+.agents/
+.agent/
+skills-lock.json

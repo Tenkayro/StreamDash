@@ -150,8 +150,11 @@ export function GiveawaysPage() {
     prevWinnerLoginRef.current = nextLogin;
     setView(nextLogin ? "winner" : "settings");
   }, [giveaway.winner?.login]);
-  const [winnerProfile, setWinnerProfile] = useState<ChatUserProfile>();
-  const [winnerProfileLoading, setWinnerProfileLoading] = useState(false);
+  const [winnerProfileState, setWinnerProfileState] = useState<{
+    login: string;
+    profile?: ChatUserProfile;
+    settled: boolean;
+  }>({ login: "", settled: true });
   const [selectedUser, setSelectedUser] = useState<string>();
   const [chatDraft, setChatDraft] = useState("");
   const [chatSending, setChatSending] = useState(false);
@@ -203,28 +206,36 @@ export function GiveawaysPage() {
 
   useEffect(() => {
     const winnerLogin = giveaway.winner?.login;
-    if (!winnerLogin || twitch.phase !== "connected") {
-      setWinnerProfile(undefined);
-      setWinnerProfileLoading(false);
-      return;
-    }
+    if (!winnerLogin || twitch.phase !== "connected") return;
     let active = true;
-    setWinnerProfileLoading(true);
     void runtime
       .getChatUserProfile(winnerLogin)
       .then((profile) => {
-        if (active) setWinnerProfile(profile);
+        if (active) {
+          setWinnerProfileState({ login: winnerLogin, profile, settled: true });
+        }
       })
       .catch(() => {
-        if (active) setWinnerProfile(undefined);
-      })
-      .finally(() => {
-        if (active) setWinnerProfileLoading(false);
+        if (active) {
+          setWinnerProfileState({ login: winnerLogin, profile: undefined, settled: true });
+        }
       });
     return () => {
       active = false;
     };
   }, [giveaway.winner?.login, runtime, twitch.phase]);
+
+  const activeWinnerLogin =
+    giveaway.winner?.login && twitch.phase === "connected"
+      ? giveaway.winner.login
+      : undefined;
+  const winnerProfile = activeWinnerLogin && winnerProfileState.login === activeWinnerLogin
+    ? winnerProfileState.profile
+    : undefined;
+  const winnerProfileLoading = Boolean(
+    activeWinnerLogin &&
+      (winnerProfileState.login !== activeWinnerLogin || !winnerProfileState.settled),
+  );
 
   const toggleRunning = async () => {
     const nextRunning = !giveaway.running;

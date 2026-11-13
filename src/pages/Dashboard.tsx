@@ -40,6 +40,7 @@ import {
   type LucideIcon,
 } from "lucide-react";
 import {
+  useCallback,
   useEffect,
   useMemo,
   useRef,
@@ -837,16 +838,19 @@ export function Dashboard() {
     return () => observer.disconnect();
   }, []);
 
-  const setZoomLevel = (nextZoom: number) => {
-    const clamped = Math.max(50, Math.min(150, nextZoom));
-    useAppStore.getState().setSettings({ dashboardZoom: clamped });
-    clearTimeout(zoomSaveTimer.current);
-    zoomSaveTimer.current = setTimeout(() => {
-      void saveSetting("dashboardZoom", clamped).catch(() =>
-        toast.error(t("dashboard.zoomSaveError")),
-      );
-    }, 200);
-  };
+  const setZoomLevel = useCallback(
+    (nextZoom: number) => {
+      const clamped = Math.max(50, Math.min(150, nextZoom));
+      useAppStore.getState().setSettings({ dashboardZoom: clamped });
+      clearTimeout(zoomSaveTimer.current);
+      zoomSaveTimer.current = setTimeout(() => {
+        void saveSetting("dashboardZoom", clamped).catch(() =>
+          toast.error(t("dashboard.zoomSaveError")),
+        );
+      }, 200);
+    },
+    [t],
+  );
 
   useEffect(() => {
     const dashboard = dashboardRef.current;
@@ -883,7 +887,7 @@ export function Dashboard() {
       window.removeEventListener("blur", cancelZoomGesture);
       clearTimeout(zoomSaveTimer.current);
     };
-  }, [t]);
+  }, [setZoomLevel]);
 
   const connected = [twitch, streamElements, tipeeStream].some(
     (service) => service.phase === "connected",

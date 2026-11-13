@@ -30,7 +30,7 @@ export function ToastHost() {
         duration: 4200,
         classNames: {
           toast:
-            "group pointer-events-auto relative flex w-[340px] max-w-[calc(100vw-2rem)] items-start gap-2.5 rounded-[10px] border border-rule-strong bg-panel/95 px-3.5 py-3 text-ink shadow-[0_18px_44px_-12px_rgba(0,0,0,0.88)] backdrop-blur-xl transition-all",
+            "group pointer-events-auto relative flex w-[340px] max-w-[calc(100vw-2rem)] items-start gap-2.5 rounded-[10px] border border-rule-strong bg-panel/95 px-3.5 py-3 text-ink shadow-[0_18px_44px_-12px_rgba(0,0,0,0.88)] backdrop-blur-xl transition-[transform,opacity]",
           title: "text-[12.5px] font-semibold leading-4.5 text-ink-strong",
           description: "mt-0.5 text-[11px] leading-4 text-muted",
           content: "min-w-0 flex-1 pr-4",
@@ -42,11 +42,11 @@ export function ToastHost() {
           cancelButton:
             "mt-2 inline-flex h-6 items-center rounded-md border border-rule bg-raised px-2 text-[11px] font-medium text-ink transition hover:bg-hover",
           success:
-            "!border-emerald-500/30 [&_[data-icon]]:bg-emerald-500/15",
-          error: "!border-red-500/35 [&_[data-icon]]:bg-red-500/15",
-          warning: "!border-amber-500/35 [&_[data-icon]]:bg-amber-500/15",
-          info: "!border-sky-500/30 [&_[data-icon]]:bg-sky-500/15",
-          loading: "!border-violet-500/30 [&_[data-icon]]:bg-violet-500/15",
+            "border-emerald-500/30! [&_[data-icon]]:bg-emerald-500/15",
+          error: "border-red-500/35! [&_[data-icon]]:bg-red-500/15",
+          warning: "border-amber-500/35! [&_[data-icon]]:bg-amber-500/15",
+          info: "border-sky-500/30! [&_[data-icon]]:bg-sky-500/15",
+          loading: "border-violet-500/30! [&_[data-icon]]:bg-violet-500/15",
         },
       }}
     />

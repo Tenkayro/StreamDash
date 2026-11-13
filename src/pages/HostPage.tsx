@@ -24,37 +24,50 @@ export function HostPage() {
   const [status, setStatus] = useState<WebHostStatus | null>(null);
   const [portInput, setPortInput] = useState("48950");
   const [tokenInput, setTokenInput] = useState("");
-  const [qrSvg, setQrSvg] = useState("");
   const [busy, setBusy] = useState(false);
   const [copiedKey, setCopiedKey] = useState<string | null>(null);
 
-  const loadStatus = async () => {
-    try {
-      const next = await webHostNative.status();
-      setStatus(next);
-      setPortInput(String(next.port));
-      setTokenInput(next.token);
-    } catch {
-      // ignore
-    }
-  };
-
   useEffect(() => {
-    void loadStatus();
-    if (!isTauri()) return;
+    let active = true;
+    const syncStatus = () =>
+      void webHostNative
+        .status()
+        .then((next) => {
+          if (!active) return;
+          setStatus(next);
+          setPortInput((prev) => (prev === "48950" ? String(next.port) : prev));
+          setTokenInput((prev) => (prev ? prev : next.token));
+        })
+        .catch(() => undefined);
+
+    syncStatus();
+    if (!isTauri()) {
+      return () => {
+        active = false;
+      };
+    }
     const id = window.setInterval(() => {
-      void webHostNative.status().then(setStatus).catch(() => undefined);
+      void webHostNative
+        .status()
+        .then((next) => {
+          if (active) setStatus(next);
+        })
+        .catch(() => undefined);
     }, 5000);
-    return () => window.clearInterval(id);
+    return () => {
+      active = false;
+      window.clearInterval(id);
+    };
   }, []);
 
   const primaryUrl = status?.urls[0] ?? "";
+  const [qrResult, setQrResult] = useState<{ url: string; svg: string }>({
+    url: "",
+    svg: "",
+  });
 
   useEffect(() => {
-    if (!primaryUrl || !status?.running) {
-      setQrSvg("");
-      return;
-    }
+    if (!primaryUrl || !status?.running) return;
     let cancelled = false;
     void QRCode.toString(primaryUrl, {
       type: "svg",
@@ -62,12 +75,15 @@ export function HostPage() {
       width: 196,
       color: { dark: "#0b0c0f", light: "#ffffff" },
     }).then((svg) => {
-      if (!cancelled) setQrSvg(svg);
+      if (!cancelled) setQrResult({ url: primaryUrl, svg });
     });
     return () => {
       cancelled = true;
     };
   }, [primaryUrl, status?.running]);
+
+  const qrSvg =
+    primaryUrl && status?.running && qrResult.url === primaryUrl ? qrResult.svg : "";
 
   const applyConfig = async (next: {
     enabled: boolean;
@@ -215,8 +231,9 @@ export function HostPage() {
                         onClick={() => void copyText(`url-${idx}`, url)}
                         className="shrink-0 rounded p-1 text-muted transition hover:bg-hover hover:text-ink-strong"
                         title={t("host.copy")}
+                        aria-label={t("host.copy")}
                       >
-                        {copiedKey === `url-${idx}` ? <Check size={13} className="text-emerald-400" /> : <Copy size={13} />}
+                        {copiedKey === `url-${idx}` ? <Check size={13} className="text-emerald-400" aria-hidden="true" /> : <Copy size={13} aria-hidden="true" />}
                       </button>
                     </div>
                   ))}

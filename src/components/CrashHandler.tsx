@@ -21,7 +21,6 @@ import {
 interface BoundaryProps {
   children: ReactNode;
   fatal?: boolean;
-  resetKey?: string;
 }
 
 interface BoundaryState {
@@ -48,12 +47,6 @@ export class CrashBoundary extends Component<BoundaryProps, BoundaryState> {
       page: useAppStore.getState().page,
       fatal: this.props.fatal,
     });
-  }
-
-  componentDidUpdate(prevProps: BoundaryProps) {
-    if (this.state.hasError && prevProps.resetKey !== this.props.resetKey) {
-      this.setState({ hasError: false, errorMessage: undefined });
-    }
   }
 
   render() {
@@ -115,23 +108,47 @@ function BoundaryFallback({
 }
 
 export function CrashDialog() {
-  const { t } = useTranslation();
   const activeCrash = useCrashStore((state) => state.activeCrash);
   const history = useCrashStore((state) => state.history);
   const dismissCrash = useCrashStore((state) => state.dismissCrash);
-  const [detailsOpen, setDetailsOpen] = useState(false);
-  const [copied, setCopied] = useState(false);
 
   useEffect(() => {
     installGlobalCrashHandlers(() => useAppStore.getState().page);
   }, []);
 
-  useEffect(() => {
-    setDetailsOpen(false);
-    setCopied(false);
-  }, [activeCrash?.id]);
-
   if (!activeCrash) return null;
+
+  return (
+    <CrashDialogContent
+      key={activeCrash.id}
+      activeCrash={activeCrash}
+      history={history}
+      dismissCrash={dismissCrash}
+    />
+  );
+}
+
+function CrashDialogContent({
+  activeCrash,
+  history,
+  dismissCrash,
+}: {
+  activeCrash: NonNullable<ReturnType<typeof useCrashStore.getState>["activeCrash"]>;
+  history: ReturnType<typeof useCrashStore.getState>["history"];
+  dismissCrash: () => void;
+}) {
+  const { t } = useTranslation();
+  const [detailsOpen, setDetailsOpen] = useState(false);
+  const [copied, setCopied] = useState(false);
+
+  useEffect(() => {
+    if (activeCrash.fatal) return;
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.key === "Escape") dismissCrash();
+    };
+    window.addEventListener("keydown", onKeyDown);
+    return () => window.removeEventListener("keydown", onKeyDown);
+  }, [activeCrash.fatal, dismissCrash]);
 
   const fullReport = formatCrashReport(activeCrash, history);
 
@@ -200,11 +217,12 @@ export function CrashDialog() {
 
           <button
             type="button"
+            aria-expanded={detailsOpen}
             onClick={() => setDetailsOpen((open) => !open)}
             className="flex w-full items-center justify-between rounded-lg border border-rule bg-well px-3 py-2 text-xs font-medium text-muted transition hover:border-rule-strong hover:text-ink-strong"
           >
             <span>{t("crash.technicalDetails")}</span>
-            {detailsOpen ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
+            {detailsOpen ? <ChevronUp size={14} aria-hidden="true" /> : <ChevronDown size={14} aria-hidden="true" />}
           </button>
 
           {detailsOpen && (

@@ -189,7 +189,7 @@ export function TrayPanel() {
   const viewerCount = status.live ? (status.viewers?.toLocaleString(i18n.language) ?? "—") : "—";
 
   return (
-    <main data-accent={status.accentColor} data-animations={status.animations ? "on" : "off"} className="tray-panel flex h-screen flex-col overflow-hidden rounded-xl">
+    <main data-accent={status.accentColor} data-animations={status.animations ? "on" : "off"} className="tray-panel flex h-dvh flex-col overflow-hidden rounded-xl">
         <header className="tray-header flex h-11 shrink-0 items-center gap-3 border-b border-rule px-3.5">
           <img src={titlebarLogo} alt="StreamDash" className="h-4 w-auto object-contain" />
           <span

@@ -11,9 +11,14 @@ import { isTauri } from "./lib/utils";
 import { LoadingIndicator } from "./components/ui";
 import { useTranslation } from "react-i18next";
 import { resolveLanguage } from "./i18n";
-import { SetupWizard } from "./components/SetupWizard";
 import { useRuntime } from "./services/runtime-context";
 import { DEV_RENDER_CRASH_EVENT } from "./lib/dev-bridge";
+
+const SetupWizard = lazy(() =>
+  import("./components/SetupWizard").then((module) => ({
+    default: module.SetupWizard,
+  })),
+);
 
 function DevCrashTrigger() {
   const [shouldCrash, setShouldCrash] = useState(false);
@@ -334,7 +339,7 @@ export default function App() {
         data-accent={settings.accentColor}
         data-density={settings.uiDensity}
         data-animations={settings.animations ? "on" : "off"}
-        className="app-shell flex h-screen flex-col"
+        className="app-shell flex h-dvh flex-col"
       >
         <TitleBar setup />
         <AppContextMenu />
@@ -344,7 +349,9 @@ export default function App() {
             <DemoOverlay />
           </Suspense>
         )}
-        <SetupWizard />
+        <Suspense fallback={loading}>
+          <SetupWizard />
+        </Suspense>
       </div>
     );
   return (
@@ -385,7 +392,7 @@ export default function App() {
                 }
                 className={`app-content mx-auto w-full ${isFullWidthPage ? "max-w-none" : widths[settings.contentWidth]} ${isViewportPage ? "flex h-full min-h-0 flex-col" : ""} pb-16 md:pb-0 ${settings.uiDensity === "compact" ? "p-3 lg:p-4" : "p-3 sm:p-4 xl:p-5"}`}
               >
-                <CrashBoundary resetKey={page}>
+                <CrashBoundary key={page}>
                   {import.meta.env.DEV && <DevCrashTrigger />}
                   <Suspense fallback={loading}>
                     <Page />

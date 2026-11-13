@@ -40,4 +40,37 @@ export default defineConfig({
     ],
   },
   clearScreen: false,
+  build: {
+    rollupOptions: {
+      output: {
+        manualChunks(id) {
+          if (!id.includes("node_modules")) return;
+          if (
+            id.includes("\\react\\") ||
+            id.includes("/react/") ||
+            id.includes("\\react-dom\\") ||
+            id.includes("/react-dom/") ||
+            id.includes("scheduler")
+          )
+            return "react";
+          if (id.includes("recharts") || id.includes("d3-")) return "charts";
+          if (id.includes("lucide-react")) return "icons";
+          if (id.includes("i18next")) return "i18n";
+          if (id.includes("@tauri-apps")) return "tauri";
+          if (id.includes("socket.io-client") || id.includes("engine.io-client"))
+            return "realtime";
+          if (id.includes("date-fns")) return "dates";
+          if (id.includes("qrcode")) return "qrcode";
+          if (
+            id.includes("zustand") ||
+            id.includes("sonner") ||
+            id.includes("clsx") ||
+            id.includes("tailwind-merge") ||
+            id.includes("class-variance-authority")
+          )
+            return "ui-vendor";
+        },
+      },
+    },
+  },
 })

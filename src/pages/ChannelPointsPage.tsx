@@ -179,85 +179,86 @@ export function ChannelPointsPage() {
   const formatPoints = (cost: number) =>
     new Intl.NumberFormat(i18n.language).format(cost);
 
+  const fetchRewardsFromTwitch = useCallback(
+    async (userId: string, manageAllowed: boolean): Promise<ChannelPointReward[]> => {
+      const [allResult, manageableResult] = await Promise.allSettled([
+        twitchNative.helix<{ data: HelixCustomReward[] }>(
+          TWITCH_CLIENT_ID,
+          "channel_points/custom_rewards",
+          [["broadcaster_id", userId]],
+        ),
+        manageAllowed
+          ? twitchNative.helix<{ data: HelixCustomReward[] }>(
+              TWITCH_CLIENT_ID,
+              "channel_points/custom_rewards",
+              [
+                ["broadcaster_id", userId],
+                ["only_manageable_rewards", "true"],
+              ],
+            )
+          : Promise.resolve({ data: [] as HelixCustomReward[] }),
+      ]);
+
+      if (allResult.status === "rejected") {
+        throw allResult.reason;
+      }
+
+      const manageableIds = new Set(
+        manageableResult.status === "fulfilled"
+          ? (manageableResult.value.data ?? []).map((item) => item.id)
+          : [],
+      );
+      const existingMap = new Map(
+        useAppStore
+          .getState()
+          .channelRewards.map((item) => [item.id, item] as const),
+      );
+
+      return (allResult.value.data ?? []).map((item) => {
+        const local = existingMap.get(item.id);
+        return {
+          id: item.id,
+          title: item.title,
+          prompt: item.prompt ?? "",
+          cost: item.cost,
+          backgroundColor: item.background_color || "#3B82F6",
+          enabled: item.is_enabled,
+          paused: item.is_paused,
+          enabledWhenOffline: local?.enabledWhenOffline ?? true,
+          enabledWhenOnline: local?.enabledWhenOnline ?? true,
+          userInputRequired: item.is_user_input_required,
+          skipRequestQueue: item.should_redemptions_skip_request_queue,
+          maxPerStreamEnabled: item.max_per_stream_setting?.is_enabled ?? false,
+          maxPerStream:
+            item.max_per_stream_setting?.max_per_stream ||
+            local?.maxPerStream ||
+            100,
+          maxPerUserPerStreamEnabled:
+            item.max_per_user_per_stream_setting?.is_enabled ?? false,
+          maxPerUserPerStream:
+            item.max_per_user_per_stream_setting?.max_per_user_per_stream ||
+            local?.maxPerUserPerStream ||
+            10,
+          globalCooldownEnabled:
+            item.global_cooldown_setting?.is_enabled ?? false,
+          globalCooldownSeconds:
+            item.global_cooldown_setting?.global_cooldown_seconds ||
+            local?.globalCooldownSeconds ||
+            300,
+          imageUrl: item.image?.url_2x || item.image?.url_1x || undefined,
+          manageable: manageableIds.has(item.id),
+        };
+      });
+    },
+    [],
+  );
+
   const syncFromTwitch = useCallback(
     async (silent = false) => {
       if (!connected || !twitch.userId || !canRead) return;
       setLoading(true);
       try {
-        const [allResult, manageableResult] = await Promise.allSettled([
-          twitchNative.helix<{ data: HelixCustomReward[] }>(
-            TWITCH_CLIENT_ID,
-            "channel_points/custom_rewards",
-            [["broadcaster_id", twitch.userId]],
-          ),
-          canManage
-            ? twitchNative.helix<{ data: HelixCustomReward[] }>(
-                TWITCH_CLIENT_ID,
-                "channel_points/custom_rewards",
-                [
-                  ["broadcaster_id", twitch.userId],
-                  ["only_manageable_rewards", "true"],
-                ],
-              )
-            : Promise.resolve({ data: [] as HelixCustomReward[] }),
-        ]);
-
-        if (allResult.status === "rejected") {
-          throw allResult.reason;
-        }
-
-        const manageableIds = new Set(
-          manageableResult.status === "fulfilled"
-            ? (manageableResult.value.data ?? []).map((item) => item.id)
-            : [],
-        );
-        const existingMap = new Map(
-          useAppStore
-            .getState()
-            .channelRewards.map((item) => [item.id, item] as const),
-        );
-
-        const mapped: ChannelPointReward[] = (allResult.value.data ?? []).map(
-          (item) => {
-            const local = existingMap.get(item.id);
-            return {
-              id: item.id,
-              title: item.title,
-              prompt: item.prompt ?? "",
-              cost: item.cost,
-              backgroundColor: item.background_color || "#3B82F6",
-              enabled: item.is_enabled,
-              paused: item.is_paused,
-              enabledWhenOffline: local?.enabledWhenOffline ?? true,
-              enabledWhenOnline: local?.enabledWhenOnline ?? true,
-              userInputRequired: item.is_user_input_required,
-              skipRequestQueue: item.should_redemptions_skip_request_queue,
-              maxPerStreamEnabled:
-                item.max_per_stream_setting?.is_enabled ?? false,
-              maxPerStream:
-                item.max_per_stream_setting?.max_per_stream ||
-                local?.maxPerStream ||
-                100,
-              maxPerUserPerStreamEnabled:
-                item.max_per_user_per_stream_setting?.is_enabled ?? false,
-              maxPerUserPerStream:
-                item.max_per_user_per_stream_setting?.max_per_user_per_stream ||
-                local?.maxPerUserPerStream ||
-                10,
-              globalCooldownEnabled:
-                item.global_cooldown_setting?.is_enabled ?? false,
-              globalCooldownSeconds:
-                item.global_cooldown_setting?.global_cooldown_seconds ||
-                local?.globalCooldownSeconds ||
-                300,
-              imageUrl:
-                item.image?.url_2x ||
-                item.image?.url_1x ||
-                undefined,
-              manageable: manageableIds.has(item.id),
-            };
-          },
-        );
+        const mapped = await fetchRewardsFromTwitch(twitch.userId, canManage);
         setChannelRewards(mapped);
       } catch (error) {
         if (!silent) {
@@ -269,14 +270,21 @@ export function ChannelPointsPage() {
         setLoading(false);
       }
     },
-    [canManage, canRead, connected, setChannelRewards, t, twitch.userId],
+    [canManage, canRead, connected, fetchRewardsFromTwitch, setChannelRewards, t, twitch.userId],
   );
 
   useEffect(() => {
-    if (connected && canRead) {
-      void syncFromTwitch(true);
-    }
-  }, [canRead, connected, syncFromTwitch]);
+    if (!connected || !canRead || !twitch.userId) return;
+    let active = true;
+    void fetchRewardsFromTwitch(twitch.userId, canManage)
+      .then((mapped) => {
+        if (active) setChannelRewards(mapped);
+      })
+      .catch(() => undefined);
+    return () => {
+      active = false;
+    };
+  }, [canManage, canRead, connected, fetchRewardsFromTwitch, setChannelRewards, twitch.userId]);
 
   const openCreate = () => {
     setIsNew(true);

@@ -116,7 +116,10 @@ export function CommandsPage() {
   const [aliasDraft, setAliasDraft] = useState("");
   const [keywordDraft, setKeywordDraft] = useState("");
   const [gameQuery, setGameQuery] = useState("");
-  const [gameSuggestions, setGameSuggestions] = useState<string[]>([]);
+  const [gameSuggestResult, setGameSuggestResult] = useState<{
+    query: string;
+    items: string[];
+  }>({ query: "", items: [] });
   const [titleKeywordDraft, setTitleKeywordDraft] = useState("");
   const responseRef = useRef<HTMLTextAreaElement>(null);
 
@@ -133,10 +136,7 @@ export function CommandsPage() {
 
   useEffect(() => {
     const term = gameQuery.trim();
-    if (!connected || term.length < 2) {
-      setGameSuggestions([]);
-      return;
-    }
+    if (!connected || term.length < 2) return;
     let cancelled = false;
     const timer = window.setTimeout(async () => {
       try {
@@ -147,10 +147,13 @@ export function CommandsPage() {
           ["first", "6"],
         ]);
         if (!cancelled) {
-          setGameSuggestions((res.data ?? []).map((item) => item.name));
+          setGameSuggestResult({
+            query: term,
+            items: (res.data ?? []).map((item) => item.name),
+          });
         }
       } catch {
-        if (!cancelled) setGameSuggestions([]);
+        if (!cancelled) setGameSuggestResult({ query: term, items: [] });
       }
     }, 300);
     return () => {
@@ -158,6 +161,13 @@ export function CommandsPage() {
       window.clearTimeout(timer);
     };
   }, [connected, gameQuery]);
+
+  const gameSuggestions =
+    connected &&
+    gameQuery.trim().length >= 2 &&
+    gameSuggestResult.query === gameQuery.trim()
+      ? gameSuggestResult.items
+      : [];
 
   const filteredCommands = useMemo(() => {
     const q = search.trim().toLowerCase();
@@ -236,7 +246,7 @@ export function CommandsPage() {
       setEditing({ ...editing, games: [...editing.games, clean] });
     }
     setGameQuery("");
-    setGameSuggestions([]);
+    setGameSuggestResult({ query: "", items: [] });
   };
 
   const addTitleKeyword = () => {

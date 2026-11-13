@@ -157,7 +157,7 @@ export function TitleBar({ setup = false }: { setup?: boolean }) {
   const { t } = useTranslation();
   const window = isTauri() ? getCurrentWindow() : null;
   const updater = useUpdater();
-  const [version, setVersion] = useState("");
+  const [version, setVersion] = useState(() => (isTauri() ? "" : pkg.version));
   const [closeMenuOpen, setCloseMenuOpen] = useState(false);
   const [menuPos, setMenuPos] = useState({ right: 0, top: 0 });
   const closeMenuRef = useRef<HTMLDivElement>(null);
@@ -199,7 +199,6 @@ export function TitleBar({ setup = false }: { setup?: boolean }) {
   useEffect(() => {
     startNetworkMonitoring();
     if (isTauri()) void getVersion().then(setVersion);
-    else setVersion(pkg.version);
   }, []);
   useEffect(() => {
     if (!closeMenuOpen) return;

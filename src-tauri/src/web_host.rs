@@ -95,8 +95,40 @@ pub fn generate_token() -> String {
     if rng.fill(&mut bytes).is_ok() {
         hex::encode_upper(bytes)
     } else {
-        "SD48950".to_string()
+        let nanos = std::time::SystemTime::now()
+            .duration_since(std::time::UNIX_EPOCH)
+            .map(|d| d.subsec_nanos())
+            .unwrap_or(0)
+            ^ std::process::id();
+        format!("{nanos:08X}")
     }
+}
+
+fn sanitize_token(raw: &str) -> String {
+    raw.trim()
+        .chars()
+        .filter(|c| !c.is_control() && !c.is_whitespace() && !matches!(c, ';' | '"' | '\\'))
+        .collect()
+}
+
+fn tokens_match(provided: &str, expected: &str) -> bool {
+    let clean = provided.trim().as_bytes();
+    let expected_bytes = expected.as_bytes();
+    if clean.is_empty() || expected_bytes.is_empty() || clean.len() != expected_bytes.len() {
+        return false;
+    }
+    let mut diff = 0u8;
+    for (a, b) in clean.iter().zip(expected_bytes.iter()) {
+        diff |= a ^ b;
+    }
+    std::hint::black_box(diff) == 0
+}
+
+fn has_unsafe_path_segments(path: &str) -> bool {
+    path.contains('\\')
+        || path.contains('\0')
+        || path.chars().any(char::is_control)
+        || path.split('/').any(|seg| seg == "..")
 }
 
 #[derive(Debug, Clone, Serialize)]
@@ -163,10 +195,13 @@ impl WebHostRuntime {
             running: Arc::new(AtomicBool::new(false)),
             port: AtomicU16::new(if port >= 1024 { port } else { DEFAULT_HOST_PORT }),
             require_auth: Arc::new(AtomicBool::new(require_auth)),
-            token: Arc::new(RwLock::new(if token.trim().is_empty() {
-                generate_token()
-            } else {
-                token.trim().to_string()
+            token: Arc::new(RwLock::new({
+                let cleaned = sanitize_token(&token);
+                if cleaned.is_empty() {
+                    generate_token()
+                } else {
+                    cleaned
+                }
             })),
             snapshot_json: Arc::new(RwLock::new("{}".to_string())),
             tx,
@@ -233,7 +268,7 @@ impl WebHostRuntime {
         self.require_auth.store(require_auth, Ordering::Relaxed);
 
         if let Some(t) = token {
-            let trimmed = t.trim().to_string();
+            let trimmed = sanitize_token(&t);
             if !trimmed.is_empty() {
                 *self.token.write().unwrap_or_else(|e| e.into_inner()) = trimmed;
             }
@@ -346,18 +381,18 @@ fn is_authorized(state: &AxumHostState, headers: &HeaderMap, query_token: Option
         return true;
     }
     if let Some(q) = query_token
-        && q.trim() == expected
+        && tokens_match(q, &expected)
     {
         return true;
     }
     if let Some(hdr) = headers.get("x-sd-token").and_then(|v| v.to_str().ok())
-        && hdr.trim() == expected
+        && tokens_match(hdr, &expected)
     {
         return true;
     }
     if let Some(auth) = headers.get("authorization").and_then(|v| v.to_str().ok())
         && let Some(bearer) = auth.strip_prefix("Bearer ")
-        && bearer.trim() == expected
+        && tokens_match(bearer, &expected)
     {
         return true;
     }
@@ -365,7 +400,7 @@ fn is_authorized(state: &AxumHostState, headers: &HeaderMap, query_token: Option
         for part in cookie_hdr.split(';') {
             if let Some((k, v)) = part.trim().split_once('=')
                 && k.trim() == "sd_host_token"
-                && v.trim() == expected
+                && tokens_match(v, &expected)
             {
                 return true;
             }
@@ -421,9 +456,10 @@ async fn serve_app_asset(
         let expected = state.token.read().unwrap_or_else(|e| e.into_inner()).clone();
         if !expected.is_empty() {
             if let Some(ref q_tok) = query.token {
-                if q_tok.trim() == expected {
+                if tokens_match(q_tok, &expected) {
+                    let cookie_val = sanitize_token(&expected);
                     let cookie = format!(
-                        "sd_host_token={expected}; Path=/; HttpOnly; SameSite=Lax"
+                        "sd_host_token={cookie_val}; Path=/; HttpOnly; SameSite=Lax"
                     );
                     let mut resp = Redirect::to("/").into_response();
                     if let Ok(val) = cookie.parse() {
@@ -439,6 +475,9 @@ async fn serve_app_asset(
         }
     }
     let raw_path = uri.path().trim_start_matches('/');
+    if has_unsafe_path_segments(raw_path) {
+        return (StatusCode::BAD_REQUEST, "Invalid path").into_response();
+    }
     let rel_path = if raw_path.is_empty() { "index.html" } else { raw_path };
     // In `tauri dev`, always prefer the live Vite dev server so we never serve a stale `dist/`.
     if cfg!(debug_assertions) {
@@ -528,8 +567,19 @@ async fn api_state(
         .read()
         .unwrap_or_else(|e| e.into_inner())
         .clone();
-    let val: Value = serde_json::from_str(&raw).unwrap_or(json!({}));
-    Json(val).into_response()
+    let payload = if raw.trim_start().starts_with('{') {
+        raw
+    } else {
+        "{}".to_string()
+    };
+    (
+        [
+            (header::CONTENT_TYPE, "application/json"),
+            (header::CACHE_CONTROL, "no-store"),
+        ],
+        payload,
+    )
+        .into_response()
 }
 
 async fn api_events(
@@ -574,6 +624,13 @@ async fn api_events(
         .into_response()
 }
 
+fn is_valid_action_payload(body: &Value) -> bool {
+    body.as_object()
+        .and_then(|obj| obj.get("type"))
+        .and_then(Value::as_str)
+        .is_some_and(|kind| !kind.trim().is_empty() && kind.len() <= 64)
+}
+
 async fn api_action(
     AxumState(state): AxumState<AxumHostState>,
     headers: HeaderMap,
@@ -582,6 +639,9 @@ async fn api_action(
 ) -> impl IntoResponse {
     if !is_authorized(&state, &headers, query.token.as_deref()) {
         return (StatusCode::UNAUTHORIZED, Json(json!({ "error": "unauthorized" }))).into_response();
+    }
+    if !is_valid_action_payload(&body) {
+        return (StatusCode::BAD_REQUEST, Json(json!({ "error": "invalid_action" }))).into_response();
     }
     let _ = state.app.emit("web-host-action", body);
     Json(json!({ "ok": true })).into_response()
@@ -601,4 +661,46 @@ fn detect_local_ips() -> Vec<String> {
         ips.push("127.0.0.1".to_string());
     }
     ips
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn tokens_match_requires_exact_non_empty_token() {
+        assert!(tokens_match("  AB12CD34 ", "AB12CD34"));
+        assert!(!tokens_match("", ""));
+        assert!(!tokens_match("AB12CD34", ""));
+        assert!(!tokens_match("AB12CD35", "AB12CD34"));
+        assert!(!tokens_match("AB12CD3", "AB12CD34"));
+    }
+
+    #[test]
+    fn sanitize_token_strips_cookie_delimiters_and_whitespace() {
+        assert_eq!(sanitize_token(" ab;12\r\n\"cd "), "ab12cd");
+    }
+
+    #[test]
+    fn unsafe_path_segments_detects_traversal() {
+        assert!(has_unsafe_path_segments("../secret"));
+        assert!(has_unsafe_path_segments("assets/../../etc/passwd"));
+        assert!(has_unsafe_path_segments("assets\\main.js"));
+        assert!(!has_unsafe_path_segments("assets/index-123.js"));
+    }
+
+    #[test]
+    fn valid_action_payload_requires_non_empty_type() {
+        assert!(is_valid_action_payload(&json!({ "type": "obs.scene", "payload": {} })));
+        assert!(!is_valid_action_payload(&json!({ "payload": {} })));
+        assert!(!is_valid_action_payload(&json!({ "type": "   " })));
+        assert!(!is_valid_action_payload(&json!("obs.scene")));
+    }
+
+    #[test]
+    fn generate_token_is_eight_hex_chars() {
+        let tok = generate_token();
+        assert_eq!(tok.len(), 8);
+        assert!(tok.chars().all(|c| c.is_ascii_hexdigit()));
+    }
 }
