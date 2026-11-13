@@ -156,6 +156,13 @@ export function DevToolsWindow() {
             </span>
           </div>
           <div className="flex items-center gap-1.5">
+            <ActionButton
+              label={snapshot?.demoActive ? "Stop Demo" : "Demo Tour"}
+              tone={snapshot?.demoActive ? "danger" : "accent"}
+              onClick={() =>
+                send({ type: snapshot?.demoActive ? "stop-demo" : "start-demo" })
+              }
+            />
             <button
               type="button"
               onClick={() => send({ type: "request-state" })}

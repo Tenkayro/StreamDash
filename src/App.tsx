@@ -32,6 +32,32 @@ function DevCrashTrigger() {
 import { AppContextMenu } from "./components/AppContextMenu";
 import { CrashBoundary } from "./components/CrashHandler";
 
+const DemoOverlay = import.meta.env.DEV
+  ? lazy(() => import("./components/DemoOverlay"))
+  : null;
+
+function DevDemoAutoStart() {
+  const ready = useAppStore((s) => s.ready);
+  const startedRef = useRef(false);
+
+  useEffect(() => {
+    if (
+      !import.meta.env.DEV ||
+      import.meta.env.VITE_DEMO_AUTO !== "1" ||
+      !ready ||
+      startedRef.current
+    ) {
+      return;
+    }
+    startedRef.current = true;
+    void import("./lib/demo-runner").then((m) =>
+      m.startDemoTour({ autoSignal: true }),
+    );
+  }, [ready]);
+
+  return null;
+}
+
 const CommandPalette = lazy(() =>
   import("./components/CommandPalette").then((module) => ({
     default: module.CommandPalette,
@@ -336,6 +362,12 @@ export default function App() {
         <Suspense fallback={null}>
           <CommandPalette />
         </Suspense>
+        {import.meta.env.DEV && DemoOverlay && (
+          <Suspense fallback={null}>
+            <DevDemoAutoStart />
+            <DemoOverlay />
+          </Suspense>
+        )}
         <div className="app-workspace flex min-h-0 flex-1">
           <Sidebar />
           <div className="relative flex min-w-0 flex-1">

@@ -3,6 +3,7 @@ import { toast } from "sonner";
 import { formatCrashReport, useCrashStore } from "../stores/crash-store";
 import { useNetworkStore } from "../stores/network-store";
 import { useAppStore } from "../stores/app-store";
+import { startDemoTour, stopDemoTour, useDemoStore } from "./demo-runner";
 import type { ActivityEvent, ChatMessage } from "../types";
 
 export const DEV_CHANNEL_NAME = "streamdash-devtools";
@@ -21,6 +22,7 @@ export interface DevStateSnapshot {
   updatedAt: number;
   page: string;
   pageHistory: string[];
+  demoActive: boolean;
   online: boolean;
   networkChecking: boolean;
   pro: boolean;
@@ -97,6 +99,8 @@ export type DevCommand =
       target: "twitch" | "twitchBot" | "obs" | "streamElements" | "tipeeStream";
       phase: "connected" | "disconnected" | "error";
     }
+  | { type: "start-demo" }
+  | { type: "stop-demo" }
   | { type: "reload" };
 
 export async function openDevToolsWindow(): Promise<void> {
@@ -123,6 +127,7 @@ function buildDevSnapshot(): DevStateSnapshot {
     updatedAt: Date.now(),
     page: app.page,
     pageHistory: app.pageHistory.slice(-8),
+    demoActive: useDemoStore.getState().active,
     online: network.online,
     networkChecking: network.checking,
     pro: app.entitlements.pro,
@@ -358,6 +363,7 @@ export function installDevBridge(): () => void {
   const unsubApp = useAppStore.subscribe(broadcastState);
   const unsubNet = useNetworkStore.subscribe(broadcastState);
   const unsubCrash = useCrashStore.subscribe(broadcastState);
+  const unsubDemo = useDemoStore.subscribe(broadcastState);
 
   channel.onmessage = (event: MessageEvent<DevCommand>) => {
     const cmd = event.data;
@@ -468,6 +474,12 @@ export function installDevBridge(): () => void {
         else if (cmd.target === "tipeeStream") app.setTipeeeStream(nextState);
         break;
       }
+      case "start-demo":
+        void startDemoTour();
+        break;
+      case "stop-demo":
+        stopDemoTour();
+        break;
       case "reload":
         window.location.reload();
         break;
@@ -481,6 +493,7 @@ export function installDevBridge(): () => void {
     unsubApp();
     unsubNet();
     unsubCrash();
+    unsubDemo();
     channel.close();
   };
 }

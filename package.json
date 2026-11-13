@@ -15,7 +15,8 @@
     "release": "node scripts/release.mjs",
     "check": "tsc -b --pretty false && oxlint src",
     "start": "tauri dev",
-    "start2": "node scripts/start-temp.mjs"
+    "start2": "node scripts/start-temp.mjs",
+    "demo": "node scripts/record-demo.mjs"
   },
   "dependencies": {
     "@clack/prompts": "^1.8.1",

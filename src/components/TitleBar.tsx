@@ -3,6 +3,7 @@ import { invoke } from "@tauri-apps/api/core";
 import { getCurrentWindow } from "@tauri-apps/api/window";
 import { openUrl } from "@tauri-apps/plugin-opener";
 import { openDevToolsWindow } from "../lib/dev-bridge";
+import { useDemoStore } from "../lib/demo-runner";
 import {
   Bug,
   Crown,
@@ -174,7 +175,8 @@ export function TitleBar({ setup = false }: { setup?: boolean }) {
     setSettings({ dashboardZoom: clamped });
     void saveSetting("dashboardZoom", clamped);
   };
-  const channel = import.meta.env.DEV
+  const demoActive = useDemoStore((s) => s.active);
+  const channel = import.meta.env.DEV && !demoActive
     ? "DEV"
     : updater.channel === "store"
       ? "STORE"
@@ -250,7 +252,7 @@ export function TitleBar({ setup = false }: { setup?: boolean }) {
           ) : (
             <LoadingIndicator className="h-2 w-7" />
           )}
-          {import.meta.env.DEV ? (
+          {import.meta.env.DEV && !demoActive ? (
             <button
               type="button"
               onClick={() => void openDevToolsWindow()}
