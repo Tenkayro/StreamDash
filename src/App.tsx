@@ -38,21 +38,16 @@ const DemoOverlay = import.meta.env.DEV
 
 function DevDemoAutoStart() {
   const ready = useAppStore((s) => s.ready);
-  const startedRef = useRef(false);
 
   useEffect(() => {
     if (
       !import.meta.env.DEV ||
       import.meta.env.VITE_DEMO_AUTO !== "1" ||
-      !ready ||
-      startedRef.current
+      !ready
     ) {
       return;
     }
-    startedRef.current = true;
-    void import("./lib/demo-runner").then((m) =>
-      m.startDemoTour({ autoSignal: true }),
-    );
+    void import("./lib/demo-runner").then((m) => m.startAutoDemoOnce());
   }, [ready]);
 
   return null;

@@ -1,5 +1,6 @@
 import { create } from "zustand";
 import { toast } from "sonner";
+import i18n from "../i18n";
 import {
   defaultChatAlerts,
   defaultCommands,
@@ -39,6 +40,13 @@ const RANDOM_USERS = [
 ];
 
 let abortController: AbortController | null = null;
+let autoStarted = false;
+
+export function startAutoDemoOnce(): void {
+  if (autoStarted) return;
+  autoStarted = true;
+  void startDemoTour({ autoSignal: true });
+}
 
 function pickUser(index?: number) {
   return RANDOM_USERS[
@@ -158,8 +166,11 @@ export async function startDemoTour(options?: {
     useNetworkStore.setState({ online: true, checking: false });
     const app = useAppStore.getState();
 
-    // Populate a complete, isolated fake save state in memory
+    // Populate a complete, isolated fake save state in memory (English UI)
+    void i18n.changeLanguage("en");
     app.setSettings({
+      language: "en",
+      accentColor: "violet",
       onboardingCompleted: false,
       goals: {
         ...app.settings.goals,
