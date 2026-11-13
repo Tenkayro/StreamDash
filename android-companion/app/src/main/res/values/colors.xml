@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <color name="obsidian_bg">#0B0C0F</color>
+    <color name="obsidian_surface">#14161C</color>
+    <color name="obsidian_surface_elevated">#1B1E27</color>
+    <color name="obsidian_border">#262A36</color>
+    <color name="obsidian_border_strong">#383E50</color>
+    <color name="accent_violet">#8B5CF6</color>
+    <color name="accent_violet_pressed">#7C3AED</color>
+    <color name="accent_violet_subtle">#248B5CF6</color>
+    <color name="status_emerald">#10B981</color>
+    <color name="status_amber">#F59E0B</color>
+    <color name="status_rose">#F43F5E</color>
+    <color name="text_primary">#F4F5F7</color>
+    <color name="text_secondary">#B8BECB</color>
+    <color name="text_muted">#8A91A0</color>
+</resources>

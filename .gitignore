@@ -19,3 +19,11 @@ exports/*.mp4
 .agents/
 .agent/
 skills-lock.json
+
+# Android Companion
+android-companion/.gradle/
+android-companion/build/
+android-companion/app/build/
+android-companion/local.properties
+*.keystore
+*.jks

@@ -27,6 +27,8 @@ use tauri::{AppHandle, Emitter, Manager};
 use tokio::sync::broadcast;
 
 pub const DEFAULT_HOST_PORT: u16 = 48_950;
+pub const DISCOVERY_PORT: u16 = 48_951;
+pub const DISCOVERY_MAGIC: &[u8] = b"STREAMDASH_DISCOVER_V1";
 
 static HEADLESS_MODE: AtomicBool = AtomicBool::new(false);
 
@@ -178,6 +180,7 @@ pub struct WebHostRuntime {
     connected_clients: Arc<AtomicUsize>,
     last_error: Arc<RwLock<Option<String>>>,
     server_task: Mutex<Option<tauri::async_runtime::JoinHandle<()>>>,
+    discovery_task: Mutex<Option<tauri::async_runtime::JoinHandle<()>>>,
 }
 
 impl WebHostRuntime {
@@ -208,6 +211,7 @@ impl WebHostRuntime {
             connected_clients: Arc::new(AtomicUsize::new(0)),
             last_error: Arc::new(RwLock::new(None)),
             server_task: Mutex::new(None),
+            discovery_task: Mutex::new(None),
         };
         if enabled {
             let _ = runtime.restart_server();
@@ -306,6 +310,11 @@ impl WebHostRuntime {
         {
             handle.abort();
         }
+        if let Ok(mut guard) = self.discovery_task.lock()
+            && let Some(handle) = guard.take()
+        {
+            handle.abort();
+        }
         self.running.store(false, Ordering::Relaxed);
     }
 
@@ -363,6 +372,31 @@ impl WebHostRuntime {
         if let Ok(mut guard) = self.server_task.lock() {
             *guard = Some(handle);
         }
+
+        let disc_running = self.running.clone();
+        let disc_auth = self.require_auth.load(Ordering::Relaxed);
+        let disc_handle = tauri::async_runtime::spawn(async move {
+            let Ok(sock) = tokio::net::UdpSocket::bind(("0.0.0.0", DISCOVERY_PORT)).await else {
+                return;
+            };
+            let mut buf = [0u8; 256];
+            while disc_running.load(Ordering::Relaxed) {
+                let Ok((len, peer)) = sock.recv_from(&mut buf).await else {
+                    break;
+                };
+                if !buf[..len].starts_with(DISCOVERY_MAGIC) {
+                    continue;
+                }
+                let reply = build_discovery_payload(port, disc_auth);
+                if let Ok(bytes) = serde_json::to_vec(&reply) {
+                    let _ = sock.send_to(&bytes, peer).await;
+                }
+            }
+        });
+        if let Ok(mut guard) = self.discovery_task.lock() {
+            *guard = Some(disc_handle);
+        }
+
         Ok(())
     }
 }
@@ -539,6 +573,8 @@ async fn api_health(AxumState(state): AxumState<AxumHostState>) -> Json<Value> {
     Json(json!({
         "ok": true,
         "authRequired": state.require_auth.load(Ordering::Relaxed),
+        "hostName": detect_host_name(),
+        "version": env!("CARGO_PKG_VERSION"),
     }))
 }
 
@@ -647,6 +683,29 @@ async fn api_action(
     Json(json!({ "ok": true })).into_response()
 }
 
+fn detect_host_name() -> String {
+    for key in ["COMPUTERNAME", "HOSTNAME"] {
+        if let Ok(val) = std::env::var(key) {
+            let trimmed = val.trim();
+            if !trimmed.is_empty() {
+                return trimmed.to_string();
+            }
+        }
+    }
+    "StreamDash PC".to_string()
+}
+
+fn build_discovery_payload(port: u16, auth_required: bool) -> Value {
+    json!({
+        "service": "streamdash-host",
+        "version": env!("CARGO_PKG_VERSION"),
+        "hostName": detect_host_name(),
+        "port": port,
+        "ips": detect_local_ips(),
+        "authRequired": auth_required,
+    })
+}
+
 fn detect_local_ips() -> Vec<String> {
     let mut ips = Vec::new();
     if let Ok(socket) = UdpSocket::bind("0.0.0.0:0")
@@ -702,5 +761,14 @@ mod tests {
         let tok = generate_token();
         assert_eq!(tok.len(), 8);
         assert!(tok.chars().all(|c| c.is_ascii_hexdigit()));
+    }
+
+    #[test]
+    fn discovery_payload_never_exposes_token() {
+        let payload = build_discovery_payload(48950, true);
+        assert_eq!(payload["service"], "streamdash-host");
+        assert_eq!(payload["port"], 48950);
+        assert_eq!(payload["authRequired"], true);
+        assert!(payload.get("token").is_none());
     }
 }

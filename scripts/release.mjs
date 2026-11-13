@@ -13,6 +13,7 @@ const versionFiles = [
   "src-tauri/Cargo.toml",
   "src-tauri/Cargo.lock",
   "src-tauri/tauri.conf.json",
+  "android-companion/app/build.gradle.kts",
 ];
 
 function executable(name) {
@@ -107,6 +108,15 @@ async function updateVersions(version) {
   const tauri = JSON.parse(await readFile(tauriPath, "utf8"));
   tauri.version = version;
   await writeFile(tauriPath, `${JSON.stringify(tauri, null, 2)}\n`);
+
+  const gradlePath = join(root, "android-companion/app/build.gradle.kts");
+  const gradleContent = await readFile(gradlePath, "utf8");
+  const [major, minor, patch] = parseVersion(version);
+  const versionCode = major * 10000 + minor * 100 + patch;
+  const updatedGradle = gradleContent
+    .replace(/(versionCode\s*=\s*)\d+/m, `$1${versionCode}`)
+    .replace(/(versionName\s*=\s*")[^"]+(")/m, `$1${version}$2`);
+  await writeFile(gradlePath, updatedGradle);
 }
 
 async function main() {
@@ -227,7 +237,7 @@ async function main() {
       `${currentVersion}  ->  ${version}`,
       "Channel: Stable",
       `Repository: ${repo}`,
-      "GitHub Actions: Windows (.msi + private .msix), Linux (.AppImage, .deb, .rpm), macOS (.dmg)",
+      "GitHub Actions: Windows (.msi + private .msix), Linux (.AppImage, .deb, .rpm), macOS (.dmg), Android Companion (.apk)",
       "Local PC: only version bump, check, commit & tag push (no local build)",
     ].join("\n"),
     "Release summary",

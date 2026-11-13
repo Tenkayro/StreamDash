@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="utf-8"?>
+<network-security-config>
+    <!-- StreamDash Companion connects exclusively to the user's PC host on the local LAN over HTTP -->
+    <base-config cleartextTrafficPermitted="true" />
+</network-security-config>

@@ -285,8 +285,59 @@ jobs:
           fi
           gh release upload "${{ needs.create-release.outputs.tag }}" "${ASSETS[@]}" --clobber --repo "${{ github.repository }}"
 
+  build-android-companion:
+    needs: create-release
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Checkout tag
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ needs.create-release.outputs.tag }}
+
+      - name: Set up JDK 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "17"
+
+      - name: Set up Android SDK
+        uses: android-actions/setup-android@v3
+
+      - name: Build Android Companion APK
+        working-directory: android-companion
+        env:
+          ANDROID_KEYSTORE_PATH: /tmp/streamdash-release.keystore
+          ANDROID_KEYSTORE_BASE64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
+          ANDROID_KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+          ANDROID_KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
+          ANDROID_KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
+        run: |
+          chmod +x gradlew
+          ./gradlew testDebugUnitTest assembleDebug --no-daemon
+          TAG="${{ needs.create-release.outputs.tag }}"
+          VERSION="${{ needs.create-release.outputs.version }}"
+          if [ -n "$ANDROID_KEYSTORE_BASE64" ]; then
+            printf '%s' "$ANDROID_KEYSTORE_BASE64" | base64 -d > "$ANDROID_KEYSTORE_PATH"
+            ./gradlew assembleRelease --no-daemon
+            rm -f "$ANDROID_KEYSTORE_PATH"
+            cp app/build/outputs/apk/release/app-release.apk "../StreamDash-Companion-${TAG}.apk"
+          else
+            cp app/build/outputs/apk/debug/app-debug.apk "../StreamDash-Companion-${TAG}.apk"
+          fi
+          cat > ../companion-latest.json <<EOF
+          {"version":"${VERSION}","tag":"${TAG}","url":"https://github.com/${{ github.repository }}/releases/download/${TAG}/StreamDash-Companion-${TAG}.apk"}
+          EOF
+
+      - name: Upload Companion APK to Draft Release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          TAG="${{ needs.create-release.outputs.tag }}"
+          gh release upload "$TAG" "StreamDash-Companion-${TAG}.apk" "companion-latest.json" --clobber --repo "${{ github.repository }}"
+
   publish-release:
-    needs: [create-release, build-windows, build-linux, build-macos]
+    needs: [create-release, build-windows, build-linux, build-macos, build-android-companion]
     runs-on: ubuntu-latest
     timeout-minutes: 10
     steps:
