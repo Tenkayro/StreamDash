@@ -1106,6 +1106,7 @@
     "resetZoom": "Réinitialiser le zoom du tableau de bord",
     "updateStore": "Mettre à jour StreamDash dans le Microsoft Store",
     "version": "Version {{version}}, {{channel}}",
+    "openDevTools": "Ouvrir la fenêtre DevTools",
     "zoomLabel": "Zoom du tableau de bord à {{zoom}} pour cent. Réinitialiser le zoom",
     "closeOptions": "Options de fermeture",
     "closeToTray": "Réduire dans la zone système",

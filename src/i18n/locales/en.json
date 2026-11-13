@@ -1106,6 +1106,7 @@
     "resetZoom": "Reset dashboard zoom",
     "updateStore": "Update StreamDash in Microsoft Store",
     "version": "Version {{version}}, {{channel}}",
+    "openDevTools": "Open DevTools window",
     "zoomLabel": "Dashboard zoom {{zoom}} percent. Reset zoom",
     "closeOptions": "Close options",
     "closeToTray": "Minimize to tray",

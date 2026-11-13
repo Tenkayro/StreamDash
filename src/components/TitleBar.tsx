@@ -2,6 +2,7 @@ import { getVersion } from "@tauri-apps/api/app";
 import { invoke } from "@tauri-apps/api/core";
 import { getCurrentWindow } from "@tauri-apps/api/window";
 import { openUrl } from "@tauri-apps/plugin-opener";
+import { openDevToolsWindow } from "../lib/dev-bridge";
 import {
   Bug,
   Crown,
@@ -249,9 +250,22 @@ export function TitleBar({ setup = false }: { setup?: boolean }) {
           ) : (
             <LoadingIndicator className="h-2 w-7" />
           )}
-          <span className="rounded px-1 py-0.5 text-[10px] font-medium text-subtle">
-            {channel.toLowerCase()}
-          </span>
+          {import.meta.env.DEV ? (
+            <button
+              type="button"
+              onClick={() => void openDevToolsWindow()}
+              title={t("titleBar.openDevTools")}
+              aria-label={t("titleBar.openDevTools")}
+              className="no-drag inline-flex items-center gap-1 rounded bg-violet-500/15 px-1.5 py-0.5 text-[10px] font-semibold text-violet-300 transition hover:bg-violet-500/25 hover:text-violet-200 cursor-pointer"
+            >
+              <Bug size={9} />
+              {channel.toLowerCase()}
+            </button>
+          ) : (
+            <span className="rounded px-1 py-0.5 text-[10px] font-medium text-subtle">
+              {channel.toLowerCase()}
+            </span>
+          )}
         </span>
         {!networkOnline && (
           <button

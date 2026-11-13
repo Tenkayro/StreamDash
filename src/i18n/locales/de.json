@@ -1106,6 +1106,7 @@
     "resetZoom": "Dashboard-Zoom zurücksetzen",
     "updateStore": "StreamDash im Microsoft Store aktualisieren",
     "version": "Version {{version}}, {{channel}}",
+    "openDevTools": "DevTools-Fenster öffnen",
     "zoomLabel": "Dashboard-Zoom {{zoom}} Prozent. Zoom zurücksetzen",
     "closeOptions": "Optionen zum Schließen",
     "closeToTray": "In Tray minimieren",

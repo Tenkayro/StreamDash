@@ -1106,6 +1106,7 @@
     "resetZoom": "Redefinir zoom do painel",
     "updateStore": "Atualizar o StreamDash na Microsoft Store",
     "version": "Versão {{version}}, {{channel}}",
+    "openDevTools": "Abrir janela do DevTools",
     "zoomLabel": "Zoom do painel em {{zoom}} por cento. Redefinir zoom",
     "closeOptions": "Opções de fechamento",
     "closeToTray": "Minimizar para a bandeja",

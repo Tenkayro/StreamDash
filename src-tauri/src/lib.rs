@@ -1730,6 +1730,33 @@ fn web_host_publish_state(host: tauri::State<'_, web_host::WebHostRuntime>, snap
 }
 
 #[tauri::command]
+async fn open_devtools_window(app: tauri::AppHandle) -> Result<(), String> {
+    if !cfg!(debug_assertions) {
+        return Err("DevTools are only available in dev builds".into());
+    }
+    if let Some(window) = app.get_webview_window("devtools") {
+        let _ = window.show();
+        let _ = window.unminimize();
+        let _ = window.set_focus();
+        return Ok(());
+    }
+    WebviewWindowBuilder::new(
+        &app,
+        "devtools",
+        WebviewUrl::App("index.html?devtools=1".into()),
+    )
+    .title("StreamDash DevTools")
+    .inner_size(560.0, 760.0)
+    .min_inner_size(440.0, 560.0)
+    .resizable(true)
+    .decorations(true)
+    .focused(true)
+    .build()
+    .map_err(|err| format!("Failed to open DevTools window: {err}"))?;
+    Ok(())
+}
+
+#[tauri::command]
 fn tray_action(app: tauri::AppHandle, action: String) -> Result<(), String> {
     if let Some(window) = app.get_webview_window("tray") {
         let _ = window.hide();
@@ -2112,6 +2139,7 @@ pub fn run() {
             tray_action,
             tray_configure,
             tray_set_tooltip,
+            open_devtools_window,
             spotify_overlay::spotify_overlay_info,
             spotify_overlay::spotify_overlay_status
         ])

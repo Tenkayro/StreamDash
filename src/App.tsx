@@ -13,6 +13,22 @@ import { useTranslation } from "react-i18next";
 import { resolveLanguage } from "./i18n";
 import { SetupWizard } from "./components/SetupWizard";
 import { useRuntime } from "./services/runtime-context";
+import { DEV_RENDER_CRASH_EVENT } from "./lib/dev-bridge";
+
+function DevCrashTrigger() {
+  const [shouldCrash, setShouldCrash] = useState(false);
+
+  useEffect(() => {
+    const onCrash = () => setShouldCrash(true);
+    window.addEventListener(DEV_RENDER_CRASH_EVENT, onCrash);
+    return () => window.removeEventListener(DEV_RENDER_CRASH_EVENT, onCrash);
+  }, []);
+
+  if (shouldCrash) {
+    throw new Error("DevTools: Simulated React render crash");
+  }
+  return null;
+}
 import { AppContextMenu } from "./components/AppContextMenu";
 import { CrashBoundary } from "./components/CrashHandler";
 
@@ -336,6 +352,7 @@ export default function App() {
                 className={`app-content mx-auto w-full ${isFullWidthPage ? "max-w-none" : widths[settings.contentWidth]} ${isViewportPage ? "flex h-full min-h-0 flex-col" : ""} pb-16 md:pb-0 ${settings.uiDensity === "compact" ? "p-3 lg:p-4" : "p-3 sm:p-4 xl:p-5"}`}
               >
                 <CrashBoundary resetKey={page}>
+                  {import.meta.env.DEV && <DevCrashTrigger />}
                   <Suspense fallback={loading}>
                     <Page />
                   </Suspense>

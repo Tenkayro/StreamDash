@@ -1,5 +1,5 @@
 import { Tooltips } from "./components/Tooltips";
-import { StrictMode } from "react";
+import { lazy, StrictMode, Suspense } from "react";
 import { createRoot } from "react-dom/client";
 import { invoke } from "@tauri-apps/api/core";
 import { getVersion } from "@tauri-apps/api/app";
@@ -13,15 +13,20 @@ import { TrayBridge, TrayPanel } from "./components/TrayPanel";
 import { CrashBoundary, CrashDialog } from "./components/CrashHandler";
 import { isTauri } from "./lib/utils";
 
-const trayWindow = new URLSearchParams(window.location.search).has("tray");
+const searchParams = new URLSearchParams(window.location.search);
+const trayWindow = searchParams.has("tray");
+const devToolsWindow = import.meta.env.DEV && searchParams.has("devtools");
+const DevToolsWindow = import.meta.env.DEV
+  ? lazy(() => import("./components/DevToolsWindow"))
+  : null;
 const splash = document.getElementById("boot-splash");
 const splashLogo = splash?.querySelector("img");
 const splashVersion = document.getElementById("boot-version");
 const bootStartedAt = performance.now();
 const MINIMUM_SPLASH_MS = 600;
 
-if (trayWindow) {
-  document.documentElement.classList.add("tray-window");
+if (trayWindow || devToolsWindow) {
+  if (trayWindow) document.documentElement.classList.add("tray-window");
   splash?.remove();
 }
 
@@ -56,6 +61,10 @@ createRoot(document.getElementById("root")!).render(
     <Tooltips />
     {trayWindow ? (
       <TrayPanel />
+    ) : devToolsWindow && DevToolsWindow ? (
+      <Suspense fallback={null}>
+        <DevToolsWindow />
+      </Suspense>
     ) : (
       <CrashBoundary fatal>
         <UpdateProvider>
@@ -71,7 +80,10 @@ createRoot(document.getElementById("root")!).render(
   </StrictMode>,
 );
 
-if (!trayWindow) {
+if (!trayWindow && !devToolsWindow) {
+  if (import.meta.env.DEV) {
+    void import("./lib/dev-bridge").then((m) => m.installDevBridge());
+  }
   void (async () => {
     await revealWindow();
     const remaining = MINIMUM_SPLASH_MS - (performance.now() - bootStartedAt);

@@ -2,7 +2,7 @@
   "$schema": "../gen/schemas/desktop-schema.json",
   "identifier": "default",
   "description": "enables the default permissions",
-  "windows": ["main", "tray"],
+  "windows": ["main", "tray", "devtools"],
   "permissions": [
     "core:default",
     "core:window:allow-start-dragging",
