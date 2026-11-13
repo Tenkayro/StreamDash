@@ -64,10 +64,13 @@ const RANDOM_USERS = [
 
 let abortController: AbortController | null = null;
 let autoStarted = false;
+let demoPaused = false;
+let bridgePollTimer: number | null = null;
 
 export function startAutoDemoOnce(): void {
   if (autoStarted) return;
   autoStarted = true;
+  startBridgeCommandPolling();
   void startDemoTour({ autoSignal: true });
 }
 
@@ -85,15 +88,35 @@ function sleep(ms: number, signal: AbortSignal): Promise<void> {
       reject(new DOMException("Aborted", "AbortError"));
       return;
     }
-    const timer = window.setTimeout(() => {
+
+    let remaining = ms;
+    let lastTick = performance.now();
+    let timer = 0;
+
+    const cleanup = () => {
+      window.clearInterval(timer);
       signal.removeEventListener("abort", onAbort);
-      resolve();
-    }, ms);
+    };
+
     const onAbort = () => {
-      window.clearTimeout(timer);
+      cleanup();
       reject(new DOMException("Aborted", "AbortError"));
     };
+
     signal.addEventListener("abort", onAbort, { once: true });
+
+    timer = window.setInterval(() => {
+      const now = performance.now();
+      const delta = now - lastTick;
+      lastTick = now;
+      if (!demoPaused) {
+        remaining -= delta;
+      }
+      if (remaining <= 0) {
+        cleanup();
+        resolve();
+      }
+    }, 30);
   });
 }
 
@@ -319,7 +342,10 @@ function createDemoCommands(): ChatCommand[] {
   ];
 }
 
-async function notifyBridge(path: "/ready" | "/done", payload?: unknown) {
+async function notifyBridge(
+  path: "/ready" | "/done" | "/status",
+  payload?: unknown,
+) {
   try {
     await fetch(`http://127.0.0.1:1429${path}`, {
       method: "POST",
@@ -330,6 +356,53 @@ async function notifyBridge(path: "/ready" | "/done", payload?: unknown) {
   } catch {
     // Recording server not running (manual OBS mode)
   }
+}
+
+function startBridgeCommandPolling() {
+  if (bridgePollTimer !== null) return;
+  bridgePollTimer = window.setInterval(async () => {
+    try {
+      const res = await fetch("http://127.0.0.1:1429/command");
+      if (!res.ok) return;
+      const data = (await res.json()) as { command?: string | null };
+      if (!data.command) return;
+
+      if (data.command === "pause") {
+        demoPaused = true;
+        const s = useDemoStore.getState();
+        void notifyBridge("/status", {
+          active: s.active,
+          step: s.step,
+          totalSteps: s.totalSteps,
+          title: s.title,
+          subtitle: s.subtitle,
+          progress: s.progress,
+          paused: true,
+        });
+      } else if (data.command === "resume") {
+        demoPaused = false;
+        const s = useDemoStore.getState();
+        void notifyBridge("/status", {
+          active: s.active,
+          step: s.step,
+          totalSteps: s.totalSteps,
+          title: s.title,
+          subtitle: s.subtitle,
+          progress: s.progress,
+          paused: false,
+        });
+      } else if (data.command === "restart") {
+        demoPaused = false;
+        void startDemoTour({ autoSignal: true });
+      } else if (data.command === "stop_save") {
+        demoPaused = false;
+        stopDemoTour();
+        void notifyBridge("/done");
+      }
+    } catch {
+      // Ignore transient poll errors
+    }
+  }, 250);
 }
 
 function getWindowCaptureRect() {
@@ -366,14 +439,26 @@ export async function startDemoTour(options?: {
   const { signal } = controller;
 
   const setStep = (step: number, title: string, subtitle: string) => {
+    const progress = Math.round((step / 12) * 100);
     useDemoStore.setState({
       active: true,
       step,
       totalSteps: 12,
       title,
       subtitle,
-      progress: Math.round((step / 12) * 100),
+      progress,
     });
+    if (options?.autoSignal) {
+      void notifyBridge("/status", {
+        active: true,
+        step,
+        totalSteps: 12,
+        title,
+        subtitle,
+        progress,
+        paused: demoPaused,
+      });
+    }
   };
 
   try {
@@ -828,6 +913,15 @@ export async function startDemoTour(options?: {
       cursor: DEFAULT_CURSOR,
     });
     if (options?.autoSignal) {
+      await notifyBridge("/status", {
+        active: false,
+        step: 12,
+        totalSteps: 12,
+        title: "Completed",
+        subtitle: "Rendering 1080p60 studio video...",
+        progress: 100,
+        paused: false,
+      });
       await notifyBridge("/done");
     }
   }
