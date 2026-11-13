@@ -38,6 +38,7 @@ import { parseRateLimitWaitSeconds } from "../../lib/cloud-sync-limiter";
 import { errorMessage } from "../../lib/utils";
 import { useRuntime } from "../../services/runtime-context";
 import { useAppStore } from "../../stores/app-store";
+import { useNetworkStore } from "../../stores/network-store";
 
 function mapSupportError(
   raw: string,
@@ -173,12 +174,15 @@ export function ProCloudSection() {
     cloudSync.cooldownUntil && cloudSync.cooldownUntil > nowMs
       ? Math.max(1, Math.ceil((cloudSync.cooldownUntil - nowMs) / 1000))
       : 0;
-  const serverOffline = Boolean(
-    isCloudServerUnavailableError(entitlements.error) ||
-      isCloudServerUnavailableError(cloudSync.error) ||
-      isCloudServerUnavailableError(supportTicket?.error) ||
-      isCloudServerUnavailableError(activateError),
-  );
+  const networkOnline = useNetworkStore((state) => state.online);
+  const serverOffline =
+    !networkOnline ||
+    Boolean(
+      isCloudServerUnavailableError(entitlements.error) ||
+        isCloudServerUnavailableError(cloudSync.error) ||
+        isCloudServerUnavailableError(supportTicket?.error) ||
+        isCloudServerUnavailableError(activateError),
+    );
   const syncButtonsDisabled =
     serverOffline || syncBusy || cloudSync.phase === "syncing" || cooldownSeconds > 0;
 

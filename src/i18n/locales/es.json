@@ -1,4 +1,12 @@
 {
+  "network": {
+    "offlineBadge": "Sin conexión",
+    "offlineTooltip": "Sin conexión a internet. Haz clic para reintentar.",
+    "offlineTitle": "Sin conexión a internet",
+    "offlineDescription": "Las funciones en línea están pausadas hasta que vuelva la conexión. OBS local y los ajustes siguen funcionando.",
+    "previewUnavailable": "La vista previa no está disponible sin conexión.",
+    "retry": "Reintentar"
+  },
   "common": {
     "automatic": "Automático (idioma del sistema)",
     "loadingPage": "Cargando página",

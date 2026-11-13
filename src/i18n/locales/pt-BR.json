@@ -1,4 +1,12 @@
 {
+  "network": {
+    "offlineBadge": "Offline",
+    "offlineTooltip": "Sem conexão com a internet. Clique para tentar novamente.",
+    "offlineTitle": "Sem conexão com a internet",
+    "offlineDescription": "Os recursos online ficam pausados até a conexão voltar. O OBS local e as configurações continuam funcionando.",
+    "previewUnavailable": "A pré-visualização da transmissão não está disponível offline.",
+    "retry": "Tentar novamente"
+  },
   "common": {
     "automatic": "Automático (idioma do sistema)",
     "loadingPage": "Carregando página",

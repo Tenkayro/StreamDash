@@ -23,10 +23,12 @@ import {
   ScrollFade,
 } from "../components/ui";
 import { ObsCard } from "../components/ObsCard";
+import { OfflineBanner } from "../components/OfflineBanner";
 import { errorMessage, isTauri } from "../lib/utils";import { twitchNative } from "../services/native";
 import { TWITCH_CLIENT_ID } from "../services/twitch/config";
 import { useRuntime } from "../services/runtime-context";
 import { useAppStore } from "../stores/app-store";
+import { useNetworkStore } from "../stores/network-store";
 import { Trans, useTranslation } from "react-i18next";
 
 const MANAGE_SCOPE = "channel:manage:broadcast";
@@ -101,6 +103,7 @@ function BoxArt({
 
 export function StreamPage() {
   const { t, i18n } = useTranslation();
+  const networkOnline = useNetworkStore((state) => state.online);
   const { stats, statsLoading, twitch, setStats } = useAppStore();
   const runtime = useRuntime();
   const clientId = TWITCH_CLIENT_ID;
@@ -261,7 +264,7 @@ export function StreamPage() {
                   ? t("stream.markMoment")
                   : t("stream.markersWhileLive")
               }
-              disabled={statsLoading || !stats.live || marking || missingScope}
+              disabled={!networkOnline || statsLoading || !stats.live || marking || missingScope}
               onClick={() => void markStream()}
             >
               {marking ? (
@@ -288,6 +291,7 @@ export function StreamPage() {
     return (
       <>
         {header}
+        <OfflineBanner className="mb-4" />
         <div className="grid gap-4 xl:grid-cols-[minmax(0,1fr)_300px]">
           <div>
             <Card>
@@ -320,7 +324,7 @@ export function StreamPage() {
                   action={
                     <Button
                       variant="primary"
-                      disabled={!isTauri()}
+                      disabled={!networkOnline || !isTauri()}
                       onClick={runtime.connectTwitch}
                     >
                       {t("connections.connectTwitch")}
@@ -341,6 +345,7 @@ export function StreamPage() {
   return (
     <>
       {header}
+      <OfflineBanner className="mb-4" />
       {missingScope && (
         <Card className="mb-4 flex flex-wrap items-start gap-3 border-amber-500/30 bg-amber-400/6 p-4">
           <TriangleAlert size={16} className="mt-0.5 shrink-0 text-amber-300" />
@@ -509,7 +514,7 @@ export function StreamPage() {
           <div className="flex items-center justify-end border-t border-line pt-3">
             <Button
               variant="primary"
-              disabled={saving || busyLoading || missingScope || !title.trim()}
+              disabled={!networkOnline || saving || busyLoading || missingScope || !title.trim()}
               onClick={save}
             >
               {saving ? (

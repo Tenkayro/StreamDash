@@ -19,7 +19,9 @@ import {
   LoadingIndicator,
   PageHeader,
 } from "../components/ui";
+import { OfflineBanner } from "../components/OfflineBanner";
 import { useAppStore } from "../stores/app-store";
+import { useNetworkStore } from "../stores/network-store";
 import { saveSetting } from "../services/native";
 import { useRuntime } from "../services/runtime-context";
 import { isTauri, cn } from "../lib/utils";
@@ -282,6 +284,7 @@ function ObsForm({
 
 export function Connections() {
   const { t } = useTranslation();
+  const networkOnline = useNetworkStore((state) => state.online);
   const twitch = useAppStore((state) => state.twitch);
   const twitchBot = useAppStore((state) => state.twitchBot);
   const streamElements = useAppStore((state) => state.streamElements);
@@ -338,6 +341,7 @@ export function Connections() {
         title={t("connections.title")}
         description={t("pageDescriptions.connections")}
       />
+      <OfflineBanner className="mb-4" />
       <div className="grid grid-cols-1 gap-3 lg:grid-cols-2">
         <ServiceRow
           name="Twitch"
@@ -375,6 +379,7 @@ export function Connections() {
               {missingModeration && (
                 <Button
                   variant="primary"
+                  disabled={!networkOnline}
                   onClick={runtime.reauthorizeTwitch}
                 >
                   <ShieldCheck size={14} />
@@ -388,7 +393,7 @@ export function Connections() {
               ) : (
                 <Button
                   variant="primary"
-                  disabled={twitchBusy || !isTauri()}
+                  disabled={!networkOnline || twitchBusy || !isTauri()}
                   onClick={runtime.connectTwitch}
                 >
                   {twitchBusy ? (
@@ -442,6 +447,7 @@ export function Connections() {
               {missingBotPermissions && (
                 <Button
                   variant="primary"
+                  disabled={!networkOnline}
                   onClick={runtime.reauthorizeTwitchBot}
                 >
                   <ShieldCheck size={14} />
@@ -459,7 +465,7 @@ export function Connections() {
               ) : (
                 <Button
                   variant="primary"
-                  disabled={twitchBotBusy || !isTauri()}
+                  disabled={!networkOnline || twitchBotBusy || !isTauri()}
                   onClick={runtime.connectTwitchBot}
                 >
                   <Link2 size={15} />
@@ -516,7 +522,7 @@ export function Connections() {
               </RowAction>
             ) : streamElements.phase === "error" ? (
               <div className="flex shrink-0 items-center gap-1">
-                <Button onClick={() => void runtime.retryStreamElements()}>
+                <Button disabled={!networkOnline} onClick={() => void runtime.retryStreamElements()}>
                   <RefreshCw size={14} />
                   {t("connections.retry")}
                 </Button>
@@ -539,7 +545,7 @@ export function Connections() {
               value={token}
               onChange={setToken}
               busy={seBusy}
-              disabled={!isTauri()}
+              disabled={!networkOnline || !isTauri()}
               onConnect={async () => {
                 await runtime.connectStreamElements(token);
                 setToken("");
@@ -559,7 +565,7 @@ export function Connections() {
           action={
             tipeeStream.phase === "error" ? (
               <div className="flex shrink-0 items-center gap-1">
-                <Button onClick={() => void runtime.retryTipeeeStream()}>
+                <Button disabled={!networkOnline} onClick={() => void runtime.retryTipeeeStream()}>
                   <RefreshCw size={14} />
                   {t("connections.retry")}
                 </Button>
@@ -586,7 +592,7 @@ export function Connections() {
               value={tipeeeStreamKey}
               onChange={setTipeeeStreamKey}
               busy={tipeeStreamBusy}
-              disabled={!isTauri()}
+              disabled={!networkOnline || !isTauri()}
               onConnect={async () => {
                 await runtime.connectTipeeeStream(tipeeeStreamKey);
                 setTipeeeStreamKey("");

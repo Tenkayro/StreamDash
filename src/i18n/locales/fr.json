@@ -1,4 +1,12 @@
 {
+  "network": {
+    "offlineBadge": "Hors ligne",
+    "offlineTooltip": "Aucune connexion Internet. Cliquez pour réessayer.",
+    "offlineTitle": "Aucune connexion Internet",
+    "offlineDescription": "Les fonctions en ligne sont en pause jusqu'au retour de la connexion. OBS local et les paramètres continuent de fonctionner.",
+    "previewUnavailable": "L'aperçu du stream est indisponible hors ligne.",
+    "retry": "Réessayer"
+  },
   "common": {
     "automatic": "Automatique (langue du système)",
     "loadingPage": "Chargement de la page",

@@ -13,6 +13,7 @@ import {
 import { useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
 import { Badge, Button, Card, EmptyState, PageHeader, ScrollFade } from "../components/ui";
+import { OfflineBanner } from "../components/OfflineBanner";
 import { UserCard } from "../components/chat/UserCard";
 import { resolveVariables, VARIABLE_DEFINITIONS } from "../lib/variables";
 import { errorMessage, isTauri } from "../lib/utils";
@@ -20,6 +21,7 @@ import { spotifyOverlayNative, twitchNative } from "../services/native";
 import { TWITCH_CLIENT_ID } from "../services/twitch/config";
 import { useRuntime } from "../services/runtime-context";
 import { useAppStore } from "../stores/app-store";
+import { useNetworkStore } from "../stores/network-store";
 import type {
   AppSettings,
   ChatEmote,
@@ -350,6 +352,7 @@ function getCompletion(
 
 export function ChatPage() {
   const { t } = useTranslation();
+  const networkOnline = useNetworkStore((state) => state.online);
   const storeState = useAppStore();
   const {
     chat,
@@ -664,7 +667,7 @@ export function ChatPage() {
                   : t("chat.reconnectShield")
               }
               onClick={() => void toggleShield()}
-              disabled={shieldBusy || (canManageShield && shieldActive == null)}
+              disabled={!networkOnline || shieldBusy || (canManageShield && shieldActive == null)}
             >
               {shieldBusy || (canManageShield && shieldActive == null) ? (
                 <LoaderCircle size={14} className="animate-spin" />
@@ -718,6 +721,7 @@ export function ChatPage() {
   return (
     <>
       {header}
+      <OfflineBanner className="mb-3 shrink-0" />
       {missingScope && (
         <div className="mb-3 flex flex-wrap items-center justify-between gap-3 rounded-lg border border-amber-500/30 bg-amber-400/6 px-3 py-2 text-xs leading-5 text-amber-200">
           <span className="min-w-0 flex-1 basis-72">
@@ -887,7 +891,7 @@ export function ChatPage() {
               value={draft}
               maxLength={500}
               autoComplete="off"
-              disabled={!isTauri() || twitch.phase !== "connected" || chat.phase !== "connected"}
+              disabled={!networkOnline || !isTauri() || twitch.phase !== "connected" || chat.phase !== "connected"}
               onChange={(event) => {
                 setDraft(event.target.value);
                 setCursor(
@@ -910,7 +914,7 @@ export function ChatPage() {
             <Button
               variant="primary"
               type="submit"
-              disabled={!draft.trim() || sending || !isTauri() || twitch.phase !== "connected" || chat.phase !== "connected"}
+              disabled={!networkOnline || !draft.trim() || sending || !isTauri() || twitch.phase !== "connected" || chat.phase !== "connected"}
             >
               {sending ? (
                 <LoaderCircle size={15} className="animate-spin" />

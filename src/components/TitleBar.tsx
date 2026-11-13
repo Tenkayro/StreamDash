@@ -18,6 +18,7 @@ import {
   Store,
   Tag,
   UserRound,
+  WifiOff,
   ZoomIn,
   X,
   type LucideIcon,
@@ -29,6 +30,7 @@ import { useUpdater } from "../services/updater-context";
 import titlebarLogo from "../assets/branding/streamdash-logo-titlebar.webp";
 import { LoadingIndicator } from "./ui";
 import { useAppStore } from "../stores/app-store";
+import { startNetworkMonitoring, useNetworkStore } from "../stores/network-store";
 import { saveSetting } from "../services/native";
 import pkg from "../../package.json";
 import { useTranslation } from "react-i18next";
@@ -160,6 +162,9 @@ export function TitleBar({ setup = false }: { setup?: boolean }) {
   const closeMenuRef = useRef<HTMLDivElement>(null);
   const closeButtonRef = useRef<HTMLButtonElement>(null);
   const { settings, setSettings, entitlements } = useAppStore();
+  const networkOnline = useNetworkStore((state) => state.online);
+  const networkChecking = useNetworkStore((state) => state.checking);
+  const checkNetworkNow = useNetworkStore((state) => state.checkNow);
   const proActive = entitlements.pro;
   const zoom = Math.max(50, Math.min(150, settings.dashboardZoom || 100));
   const applyZoom = (next: number) => {
@@ -174,6 +179,7 @@ export function TitleBar({ setup = false }: { setup?: boolean }) {
       ? "STORE"
       : "RELEASE";
   useEffect(() => {
+    startNetworkMonitoring();
     if (isTauri()) void getVersion().then(setVersion);
     else setVersion(pkg.version);
   }, []);
@@ -247,6 +253,19 @@ export function TitleBar({ setup = false }: { setup?: boolean }) {
             {channel.toLowerCase()}
           </span>
         </span>
+        {!networkOnline && (
+          <button
+            type="button"
+            disabled={networkChecking}
+            onClick={() => void checkNetworkNow()}
+            title={t("network.offlineTooltip")}
+            aria-label={t("network.offlineTooltip")}
+            className="no-drag inline-flex items-center gap-1 rounded border border-amber-400/35 bg-amber-400/12 px-1.5 py-0.5 text-[10px] font-medium text-amber-200 transition hover:bg-amber-400/20 disabled:opacity-60"
+          >
+            <WifiOff size={10} className={networkChecking ? "animate-pulse" : undefined} aria-hidden="true" />
+            <span>{t("network.offlineBadge")}</span>
+          </button>
+        )}
       </div>
       <div data-tauri-drag-region className="h-full min-w-8 flex-1" />
       <div data-tauri-drag-region="false" className="no-drag flex h-full shrink-0 items-center">

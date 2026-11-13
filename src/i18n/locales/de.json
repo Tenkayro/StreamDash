@@ -1,4 +1,12 @@
 {
+  "network": {
+    "offlineBadge": "Offline",
+    "offlineTooltip": "Keine Internetverbindung. Klicken zum Erneut-Prüfen.",
+    "offlineTitle": "Keine Internetverbindung",
+    "offlineDescription": "Online-Funktionen sind pausiert, bis wieder Internet besteht. Lokales OBS und Einstellungen funktionieren weiter.",
+    "previewUnavailable": "Die Stream-Vorschau ist offline nicht verfügbar.",
+    "retry": "Erneut prüfen"
+  },
   "common": {
     "automatic": "Automatisch (Systemsprache)",
     "loadingPage": "Seite wird geladen",
