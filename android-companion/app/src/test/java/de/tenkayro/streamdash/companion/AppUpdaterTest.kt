@@ -1,4 +1,4 @@
-package dev.streamdash.companion
+package de.tenkayro.streamdash.companion
 
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
@@ -54,5 +54,16 @@ class AppUpdaterTest {
             "https://github.com/Tenkayro/StreamDash/releases/download/v2.4.3/StreamDash-Companion-v2.4.3.apk",
             parsed?.downloadUrl
         )
+    }
+
+    @Test
+    fun parseDevApkInfoJson_buildsAuthenticatedLanDownloadUrl() {
+        val json = """{"available":true,"sha256":"abcdef1234567890fedcba9876543210","size":7500000}"""
+        val parsed = AppUpdater.parseDevApkInfoJson(json, "192.168.1.42", 48950, "A1B2C3D4")
+        assertNotNull(parsed)
+        assertEquals("abcdef12", parsed?.version)
+        assertEquals("http://192.168.1.42:48950/api/dev-apk", parsed?.downloadUrl)
+        assertEquals("A1B2C3D4", parsed?.authToken)
+        assertEquals("abcdef1234567890fedcba9876543210", parsed?.devSha256)
     }
 }

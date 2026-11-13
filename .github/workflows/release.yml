@@ -325,6 +325,7 @@ jobs:
           else
             cp app/build/outputs/apk/debug/app-debug.apk "../StreamDash-Companion-${TAG}.apk"
           fi
+          cp "../StreamDash-Companion-${TAG}.apk" "../StreamDash-Companion.apk"
           cat > ../companion-latest.json <<EOF
           {"version":"${VERSION}","tag":"${TAG}","url":"https://github.com/${{ github.repository }}/releases/download/${TAG}/StreamDash-Companion-${TAG}.apk"}
           EOF
@@ -334,7 +335,7 @@ jobs:
           GH_TOKEN: ${{ github.token }}
         run: |
           TAG="${{ needs.create-release.outputs.tag }}"
-          gh release upload "$TAG" "StreamDash-Companion-${TAG}.apk" "companion-latest.json" --clobber --repo "${{ github.repository }}"
+          gh release upload "$TAG" "StreamDash-Companion-${TAG}.apk" "StreamDash-Companion.apk" "companion-latest.json" --clobber --repo "${{ github.repository }}"
 
   publish-release:
     needs: [create-release, build-windows, build-linux, build-macos, build-android-companion]

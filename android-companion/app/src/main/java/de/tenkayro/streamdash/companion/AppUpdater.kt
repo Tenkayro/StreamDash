@@ -1,4 +1,4 @@
-package dev.streamdash.companion
+package de.tenkayro.streamdash.companion
 
 import android.content.Context
 import android.content.Intent
@@ -9,13 +9,17 @@ import androidx.core.content.FileProvider
 import org.json.JSONObject
 import java.io.BufferedReader
 import java.io.File
+import java.io.FileInputStream
 import java.io.FileOutputStream
 import java.net.HttpURLConnection
 import java.net.URL
+import java.security.MessageDigest
 
 data class AppUpdateInfo(
     val version: String,
-    val downloadUrl: String
+    val downloadUrl: String,
+    val authToken: String? = null,
+    val devSha256: String? = null
 )
 
 sealed class UpdateCheckResult {
@@ -110,9 +114,73 @@ object AppUpdater {
         }
     }
 
+    internal fun parseDevApkInfoJson(raw: String, host: String, port: Int, token: String): AppUpdateInfo? {
+        val json = runCatching { JSONObject(raw) }.getOrNull() ?: return null
+        if (!json.optBoolean("available", false)) return null
+        val sha256 = json.optString("sha256").trim().lowercase()
+        if (sha256.length < 16) return null
+        return AppUpdateInfo(
+            version = sha256.take(8),
+            downloadUrl = "http://${host.trim()}:$port/api/dev-apk",
+            authToken = token.trim().takeIf { it.isNotEmpty() },
+            devSha256 = sha256
+        )
+    }
+
+    fun computeInstalledApkSha256(context: Context): String? {
+        val path = context.applicationInfo?.sourceDir ?: return null
+        val file = File(path)
+        if (!file.isFile) return null
+        return runCatching {
+            val md = MessageDigest.getInstance("SHA-256")
+            FileInputStream(file).use { input ->
+                val buf = ByteArray(16 * 1024)
+                while (true) {
+                    val read = input.read(buf)
+                    if (read <= 0) break
+                    md.update(buf, 0, read)
+                }
+            }
+            md.digest().joinToString("") { "%02x".format(it) }
+        }.getOrNull()
+    }
+
+    fun checkForDevUpdate(
+        context: Context,
+        host: String,
+        port: Int,
+        token: String
+    ): UpdateCheckResult {
+        val cleanHost = host.trim()
+        if (cleanHost.isEmpty() || port !in 1..65535) return UpdateCheckResult.Failed
+        val infoUrl = "http://$cleanHost:$port/api/dev-apk-info"
+        val headers = if (token.isNotBlank()) mapOf("X-SD-Token" to token.trim()) else emptyMap()
+        val raw = fetchText(infoUrl, extraHeaders = headers) ?: return UpdateCheckResult.Failed
+        val remote = parseDevApkInfoJson(raw, cleanHost, port, token) ?: return UpdateCheckResult.UpToDate
+
+        val installedSha = computeInstalledApkSha256(context)
+        val prefs = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
+        val lastDownloadedSha = prefs.getString("last_dev_apk_sha", null)
+
+        return if (remote.devSha256 != installedSha && remote.devSha256 != lastDownloadedSha) {
+            UpdateCheckResult.UpdateAvailable(remote)
+        } else {
+            UpdateCheckResult.UpToDate
+        }
+    }
+
+    fun markDevShaDownloaded(context: Context, sha256: String?) {
+        if (sha256.isNullOrBlank()) return
+        context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
+            .edit()
+            .putString("last_dev_apk_sha", sha256)
+            .apply()
+    }
+
     fun downloadApk(
         context: Context,
         downloadUrl: String,
+        authToken: String? = null,
         onProgress: (percent: Int) -> Unit
     ): File {
         val updatesDir = File(context.cacheDir, "updates").apply { mkdirs() }
@@ -131,6 +199,9 @@ object AppUpdater {
                     readTimeout = 20000
                     instanceFollowRedirects = false
                     setRequestProperty("User-Agent", "StreamDashCompanion/${BuildConfig.VERSION_NAME}")
+                    if (!authToken.isNullOrBlank()) {
+                        setRequestProperty("X-SD-Token", authToken)
+                    }
                 }
                 val code = conn.responseCode
                 if (code in 301..308 && redirects < 6) {
@@ -200,7 +271,10 @@ object AppUpdater {
         }
     }
 
-    private fun fetchText(urlString: String): String? {
+    private fun fetchText(
+        urlString: String,
+        extraHeaders: Map<String, String> = emptyMap()
+    ): String? {
         var conn: HttpURLConnection? = null
         return try {
             conn = (URL(urlString).openConnection() as HttpURLConnection).apply {
@@ -209,6 +283,9 @@ object AppUpdater {
                 instanceFollowRedirects = true
                 setRequestProperty("Accept", "application/json")
                 setRequestProperty("User-Agent", "StreamDashCompanion/${BuildConfig.VERSION_NAME}")
+                for ((k, v) in extraHeaders) {
+                    setRequestProperty(k, v)
+                }
             }
             if (conn.responseCode != 200) return null
             conn.inputStream.bufferedReader().use(BufferedReader::readText)

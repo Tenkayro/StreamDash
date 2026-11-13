@@ -4,15 +4,17 @@ plugins {
 }
 
 android {
-    namespace = "dev.streamdash.companion"
+    namespace = "de.tenkayro.streamdash.companion"
     compileSdk = 35
 
     defaultConfig {
-        applicationId = "dev.streamdash.companion"
+        applicationId = "de.tenkayro.streamdash.companion"
         minSdk = 26
         targetSdk = 35
-        versionCode = 1
-        versionName = "1.0.0"
+        versionCode = 20401
+        versionName = "2.4.1"
+
+        manifestPlaceholders["appName"] = "StreamDash Companion"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
@@ -53,6 +55,7 @@ android {
         debug {
             applicationIdSuffix = ".debug"
             versionNameSuffix = "-debug"
+            manifestPlaceholders["appName"] = "StreamDash Companion Dev"
         }
     }
 
@@ -83,7 +86,10 @@ dependencies {
     implementation("com.google.android.material:material:1.12.0")
     implementation("androidx.activity:activity-ktx:1.9.3")
     implementation("androidx.swiperefreshlayout:swiperefreshlayout:1.1.0")
-    implementation("com.journeyapps:zxing-android-embedded:4.3.0")
+    implementation("androidx.camera:camera-core:1.4.1")
+    implementation("androidx.camera:camera-camera2:1.4.1")
+    implementation("androidx.camera:camera-lifecycle:1.4.1")
+    implementation("androidx.camera:camera-view:1.4.1")
     implementation("com.google.zxing:core:3.5.3")
 
     testImplementation("junit:junit:4.13.2")

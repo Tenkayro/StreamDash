@@ -648,7 +648,14 @@
     "headlessDescription": "Starte StreamDash unsichtbar im Hintergrund ohne Desktop-Fenster – direkt über Web erreichbar.",
     "authPrompt": "Gib den Zugriffstoken aus den StreamDash-Host-Einstellungen ein.",
     "invalidToken": "Ungültiger Zugriffstoken.",
-    "connectButton": "Verbinden"
+    "connectButton": "Verbinden",
+    "mobileAppButton": "Mobile App",
+    "appModalTitle": "Android Companion App",
+    "appModalHint": "Mit der Handy-Kamera scannen, um die APK direkt zu laden & zu installieren.",
+    "appSourceRelease": "Release-APK",
+    "appSourceDev": "Lokale Dev-APK",
+    "appDownloadApk": "APK herunterladen",
+    "appClose": "Schließen"
   },
   "channelPoints": {
     "backgroundColor": "Hintergrundfarbe",

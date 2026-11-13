@@ -1,4 +1,4 @@
-package dev.streamdash.companion
+package de.tenkayro.streamdash.companion
 
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNotNull

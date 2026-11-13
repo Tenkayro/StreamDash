@@ -648,7 +648,14 @@
     "headlessDescription": "Inicie o StreamDash em segundo plano sem janela de desktop e hospede a interface web automaticamente.",
     "authPrompt": "Digite o token de acesso exibido nas configurações Host do StreamDash.",
     "invalidToken": "Token de acesso inválido.",
-    "connectButton": "Conectar"
+    "connectButton": "Conectar",
+    "mobileAppButton": "App Mobile",
+    "appModalTitle": "Android Companion App",
+    "appModalHint": "Escaneie com a câmera do celular para baixar e instalar o APK.",
+    "appSourceRelease": "APK Release",
+    "appSourceDev": "APK Dev local",
+    "appDownloadApk": "Baixar APK",
+    "appClose": "Fechar"
   },
   "channelPoints": {
     "backgroundColor": "Cor de fundo",

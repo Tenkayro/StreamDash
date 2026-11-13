@@ -1,17 +1,20 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <color name="obsidian_bg">#0B0C0F</color>
-    <color name="obsidian_surface">#14161C</color>
-    <color name="obsidian_surface_elevated">#1B1E27</color>
-    <color name="obsidian_border">#262A36</color>
-    <color name="obsidian_border_strong">#383E50</color>
-    <color name="accent_violet">#8B5CF6</color>
-    <color name="accent_violet_pressed">#7C3AED</color>
-    <color name="accent_violet_subtle">#248B5CF6</color>
-    <color name="status_emerald">#10B981</color>
-    <color name="status_amber">#F59E0B</color>
-    <color name="status_rose">#F43F5E</color>
-    <color name="text_primary">#F4F5F7</color>
+    <!-- StreamDash Studio Command Obsidian Palette -->
+    <color name="obsidian_bg">#111317</color>
+    <color name="obsidian_well">#0D0E12</color>
+    <color name="obsidian_surface">#1B1E26</color>
+    <color name="obsidian_surface_elevated">#232732</color>
+    <color name="obsidian_border">#2B2F3A</color>
+    <color name="obsidian_border_strong">#3E4453</color>
+    <color name="accent_violet">#A78BFA</color>
+    <color name="accent_violet_ink">#12131A</color>
+    <color name="accent_violet_subtle">#21A78BFA</color>
+    <color name="accent_violet_border">#5CA78BFA</color>
+    <color name="status_emerald">#34D399</color>
+    <color name="status_amber">#FBBF24</color>
+    <color name="status_rose">#FB7185</color>
+    <color name="text_primary">#FAFAFC</color>
     <color name="text_secondary">#B8BECB</color>
-    <color name="text_muted">#8A91A0</color>
+    <color name="text_muted">#8A909E</color>
 </resources>

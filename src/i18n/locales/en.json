@@ -648,7 +648,14 @@
     "headlessDescription": "Start StreamDash in the background without a desktop window and host the web UI automatically.",
     "authPrompt": "Enter the access token shown in StreamDash Host settings.",
     "invalidToken": "Invalid access token.",
-    "connectButton": "Connect"
+    "connectButton": "Connect",
+    "mobileAppButton": "Mobile App",
+    "appModalTitle": "Android Companion App",
+    "appModalHint": "Scan with your phone camera to download & install the APK.",
+    "appSourceRelease": "Release APK",
+    "appSourceDev": "Local Dev APK",
+    "appDownloadApk": "Download APK",
+    "appClose": "Close"
   },
   "channelPoints": {
     "backgroundColor": "Background color",

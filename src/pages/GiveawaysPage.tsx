@@ -28,7 +28,7 @@ import {
   ScrollFade,
   Toggle,
 } from "../components/ui";
-import { cn, errorMessage, isTauri } from "../lib/utils";
+import { cn, errorMessage } from "../lib/utils";
 import { useRuntime } from "../services/runtime-context";
 import { useAppStore } from "../stores/app-store";
 import type {
@@ -1016,7 +1016,6 @@ export function GiveawaysPage() {
                   maxLength={500}
                   autoComplete="off"
                   disabled={
-                    !isTauri() ||
                     twitch.phase !== "connected" ||
                     chat.phase !== "connected"
                   }
@@ -1028,7 +1027,6 @@ export function GiveawaysPage() {
                   disabled={
                     !chatDraft.trim() ||
                     chatSending ||
-                    !isTauri() ||
                     twitch.phase !== "connected" ||
                     chat.phase !== "connected"
                   }

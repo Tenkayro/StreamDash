@@ -7,7 +7,8 @@ import process from "node:process";
 const root = resolve(import.meta.dirname, "..");
 const androidDir = join(root, "android-companion");
 const isWin = process.platform === "win32";
-const releaseMode = process.argv.includes("--release");
+const debugMode = process.argv.includes("--debug");
+const releaseMode = !debugMode;
 const skipTests = process.argv.includes("--skip-tests");
 
 function resolveAndroidToolchainEnv() {
@@ -83,4 +84,10 @@ if (existsSync(apkDir)) {
     const sizeMb = (statSync(fullPath).size / (1024 * 1024)).toFixed(2);
     console.log(`\nAPK built: ${fullPath} (${sizeMb} MB)`);
   }
+}
+
+if (releaseMode) {
+  console.log("Release APK matches GitHub release signing and auto-updates via GitHub Releases.");
+} else {
+  console.log("StreamDash Companion Dev checks for this build automatically over Wi-Fi when Host Mode is running.");
 }

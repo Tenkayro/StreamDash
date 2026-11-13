@@ -648,7 +648,14 @@
     "headlessDescription": "Lancez StreamDash en arrière-plan sans fenêtre et hébergez l'interface Web automatiquement.",
     "authPrompt": "Entrez le jeton d'accès affiché dans les paramètres Host de StreamDash.",
     "invalidToken": "Jeton d'accès invalide.",
-    "connectButton": "Connexion"
+    "connectButton": "Connexion",
+    "mobileAppButton": "App Mobile",
+    "appModalTitle": "Android Companion App",
+    "appModalHint": "Scannez avec votre téléphone pour télécharger et installer l'APK.",
+    "appSourceRelease": "APK Release",
+    "appSourceDev": "APK Dev local",
+    "appDownloadApk": "Télécharger l'APK",
+    "appClose": "Fermer"
   },
   "channelPoints": {
     "backgroundColor": "Couleur d’arrière-plan",

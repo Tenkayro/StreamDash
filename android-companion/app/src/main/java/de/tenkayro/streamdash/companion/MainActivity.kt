@@ -1,7 +1,8 @@
-package dev.streamdash.companion
+package de.tenkayro.streamdash.companion
 
 import android.Manifest
 import android.annotation.SuppressLint
+import android.content.Intent
 import android.content.pm.PackageManager
 import android.graphics.Color
 import android.os.Bundle
@@ -31,9 +32,7 @@ import androidx.core.view.WindowCompat
 import androidx.core.view.WindowInsetsCompat
 import androidx.core.view.updatePadding
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
-import com.journeyapps.barcodescanner.ScanContract
-import com.journeyapps.barcodescanner.ScanOptions
-import dev.streamdash.companion.databinding.ActivityMainBinding
+import de.tenkayro.streamdash.companion.databinding.ActivityMainBinding
 import java.io.File
 import java.util.concurrent.Executors
 
@@ -90,8 +89,12 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
-    private val qrScannerLauncher = registerForActivityResult(ScanContract()) { result ->
-        val raw = result.contents ?: return@registerForActivityResult
+    private val qrScannerLauncher = registerForActivityResult(
+        ActivityResultContracts.StartActivityForResult()
+    ) { result ->
+        if (result.resultCode != RESULT_OK) return@registerForActivityResult
+        val raw = result.data?.getStringExtra(PortraitCaptureActivity.EXTRA_QR_RESULT)
+            ?: return@registerForActivityResult
         val parsed = HostApi.parseQrUrl(raw)
         if (parsed == null) {
             showError(getString(R.string.err_invalid_qr))
@@ -111,6 +114,9 @@ class MainActivity : AppCompatActivity() {
         setContentView(binding.root)
 
         store = ConnectionStore(this)
+        if (BuildConfig.DEBUG) {
+            binding.tvModeBadge.text = "DEV"
+        }
         applyKeepScreenOn(store.isKeepScreenOn())
         setupInsets()
         setupWebView()
@@ -130,7 +136,7 @@ class MainActivity : AppCompatActivity() {
             triggerLanDiscovery()
         }
 
-        if (AppUpdater.shouldAutoCheck(this)) {
+        if (!BuildConfig.DEBUG && AppUpdater.shouldAutoCheck(this)) {
             checkForUpdates(manual = false)
         }
     }
@@ -240,7 +246,7 @@ class MainActivity : AppCompatActivity() {
         cookieManager.setAcceptCookie(true)
         cookieManager.setAcceptThirdPartyCookies(binding.webView, true)
 
-        binding.webView.setBackgroundColor(Color.parseColor("#0B0C0F"))
+        binding.webView.setBackgroundColor(Color.parseColor("#111317"))
         binding.webView.settings.apply {
             javaScriptEnabled = true
             domStorageEnabled = true
@@ -297,14 +303,7 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun startQrScanner() {
-        val options = ScanOptions().apply {
-            setCaptureActivity(PortraitCaptureActivity::class.java)
-            setDesiredBarcodeFormats(ScanOptions.QR_CODE)
-            setPrompt(getString(R.string.qr_scanner_prompt))
-            setBeepEnabled(false)
-            setOrientationLocked(true)
-        }
-        qrScannerLauncher.launch(options)
+        qrScannerLauncher.launch(Intent(this, PortraitCaptureActivity::class.java))
     }
 
     private fun setManualExpanded(expanded: Boolean) {
@@ -369,7 +368,7 @@ class MainActivity : AppCompatActivity() {
 
             val isSelected = selectedHost?.ip == host.ip && selectedHost?.port == host.port
             itemView.setBackgroundResource(
-                if (isSelected) R.drawable.bg_card_selected else R.drawable.bg_card
+                if (isSelected) R.drawable.bg_card_selected else R.drawable.bg_well
             )
 
             itemView.setOnClickListener {
@@ -519,6 +518,9 @@ class MainActivity : AppCompatActivity() {
         applyKeepScreenOn(store.isKeepScreenOn())
         val url = HostApi.buildDashboardUrl(conn.host, conn.port, conn.token)
         binding.webView.loadUrl(url)
+        if (BuildConfig.DEBUG) {
+            checkForUpdates(manual = false)
+        }
     }
 
     private fun showReconnectScreen(conn: SavedConnection) {
@@ -604,30 +606,51 @@ class MainActivity : AppCompatActivity() {
 
     private fun checkForUpdates(manual: Boolean) {
         if (isUpdating) return
+        val devConn = if (BuildConfig.DEBUG) (activeConnection ?: store.loadConnection()) else null
+        if (BuildConfig.DEBUG && devConn == null) {
+            if (manual) {
+                Toast.makeText(this, R.string.update_check_failed, Toast.LENGTH_SHORT).show()
+            }
+            return
+        }
+
         ioExecutor.execute {
-            val result = AppUpdater.checkForUpdate(BuildConfig.VERSION_NAME)
+            val result = if (BuildConfig.DEBUG && devConn != null) {
+                AppUpdater.checkForDevUpdate(
+                    applicationContext,
+                    devConn.host,
+                    devConn.port,
+                    devConn.token
+                )
+            } else {
+                AppUpdater.checkForUpdate(BuildConfig.VERSION_NAME)
+            }
             mainHandler.post {
                 if (isDestroyed) return@post
                 when (result) {
                     is UpdateCheckResult.UpdateAvailable -> {
-                        AppUpdater.markChecked(this)
+                        if (!BuildConfig.DEBUG) AppUpdater.markChecked(this)
                         availableUpdate = result.info
-                        binding.tvUpdateBanner.text =
+                        binding.tvUpdateBanner.text = if (BuildConfig.DEBUG) {
+                            getString(R.string.dev_update_banner_title, result.info.version)
+                        } else {
                             getString(R.string.update_banner_title, result.info.version)
+                        }
                         binding.updateBanner.visibility = View.VISIBLE
                         if (manual || screenMode == ScreenMode.WEBVIEW) {
                             promptInstallUpdate(result.info)
                         }
                     }
                     UpdateCheckResult.UpToDate -> {
-                        AppUpdater.markChecked(this)
+                        if (!BuildConfig.DEBUG) AppUpdater.markChecked(this)
                         if (manual) {
-                            val current = BuildConfig.VERSION_NAME.substringBefore("-")
-                            Toast.makeText(
-                                this,
-                                getString(R.string.update_up_to_date, current),
-                                Toast.LENGTH_SHORT
-                            ).show()
+                            val msg = if (BuildConfig.DEBUG) {
+                                getString(R.string.dev_update_up_to_date)
+                            } else {
+                                val current = BuildConfig.VERSION_NAME.substringBefore("-")
+                                getString(R.string.update_up_to_date, current)
+                            }
+                            Toast.makeText(this, msg, Toast.LENGTH_SHORT).show()
                         }
                     }
                     UpdateCheckResult.Failed -> {
@@ -642,10 +665,15 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun promptInstallUpdate(info: AppUpdateInfo) {
-        val current = BuildConfig.VERSION_NAME.substringBefore("-")
+        val message = if (BuildConfig.DEBUG) {
+            getString(R.string.dev_update_dialog_message, info.version)
+        } else {
+            val current = BuildConfig.VERSION_NAME.substringBefore("-")
+            getString(R.string.update_dialog_message, info.version, current)
+        }
         MaterialAlertDialogBuilder(this)
             .setTitle(R.string.update_dialog_title)
-            .setMessage(getString(R.string.update_dialog_message, info.version, current))
+            .setMessage(message)
             .setPositiveButton(R.string.update_btn_install) { _, _ ->
                 downloadAndInstallUpdate(info)
             }
@@ -661,7 +689,7 @@ class MainActivity : AppCompatActivity() {
         ioExecutor.execute {
             var lastReported = -10
             val result = runCatching {
-                AppUpdater.downloadApk(applicationContext, info.downloadUrl) { pct ->
+                AppUpdater.downloadApk(applicationContext, info.downloadUrl, info.authToken) { pct ->
                     if (pct - lastReported >= 25) {
                         lastReported = pct
                         mainHandler.post {
@@ -680,6 +708,7 @@ class MainActivity : AppCompatActivity() {
                 if (isDestroyed) return@post
                 isUpdating = false
                 result.onSuccess { apkFile ->
+                    AppUpdater.markDevShaDownloaded(this, info.devSha256)
                     if (AppUpdater.canInstallPackages(this)) {
                         launchApkInstaller(apkFile)
                     } else {

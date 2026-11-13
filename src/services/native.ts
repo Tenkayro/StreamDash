@@ -27,6 +27,7 @@ export async function saveEvent(
 }
 export async function clearEvents() {
   if (isTauri()) await invoke("events_clear");
+  else await postRemoteAction("events.clear");
 }
 export async function mergeEvents(
   events: ActivityEvent[],
@@ -48,6 +49,7 @@ export async function updateChatMessage(opts: { id?: string; login?: string; del
 }
 export async function clearChatMessages() {
   if (isTauri()) await invoke("chat_messages_clear");
+  else await postRemoteAction("chat.clear");
 }
 export async function loadSettings(): Promise<Record<string, unknown>> {
   return isTauri()

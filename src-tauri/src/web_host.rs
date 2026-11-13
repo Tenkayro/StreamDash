@@ -347,6 +347,8 @@ impl WebHostRuntime {
             .route("/api/state", get(api_state))
             .route("/api/events", get(api_events))
             .route("/api/action", post(api_action))
+            .route("/api/dev-apk-info", get(api_dev_apk_info))
+            .route("/api/dev-apk", get(api_dev_apk))
             .fallback(get(serve_app_asset))
             .with_state(shared);
 
@@ -614,6 +616,101 @@ async fn api_state(
             (header::CACHE_CONTROL, "no-store"),
         ],
         payload,
+    )
+        .into_response()
+}
+
+fn resolve_dev_apk_path() -> Option<std::path::PathBuf> {
+    if let Ok(explicit) = std::env::var("STREAMDASH_DEV_APK") {
+        let p = std::path::PathBuf::from(explicit.trim());
+        if p.is_file() {
+            return Some(p);
+        }
+    }
+    if !cfg!(debug_assertions) {
+        return None;
+    }
+    let rel_candidates = [
+        "android-companion/app/build/outputs/apk/release/app-release.apk",
+        "android-companion/app/build/outputs/apk/debug/app-debug.apk",
+    ];
+    let mut bases = vec![std::path::PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("..")];
+    if let Ok(cwd) = std::env::current_dir() {
+        bases.push(cwd.clone());
+        if let Some(parent) = cwd.parent() {
+            bases.push(parent.to_path_buf());
+        }
+    }
+    let mut best: Option<(std::time::SystemTime, std::path::PathBuf)> = None;
+    for base in bases {
+        for rel in rel_candidates {
+            let candidate = base.join(rel);
+            if candidate.is_file() {
+                let mtime = candidate
+                    .metadata()
+                    .and_then(|m| m.modified())
+                    .unwrap_or(std::time::UNIX_EPOCH);
+                if best.as_ref().is_none_or(|(best_time, _)| mtime > *best_time) {
+                    best = Some((mtime, candidate));
+                }
+            }
+        }
+    }
+    best.map(|(_, path)| path)
+}
+
+async fn api_dev_apk_info(
+    AxumState(state): AxumState<AxumHostState>,
+    headers: HeaderMap,
+    Query(query): Query<TokenQuery>,
+) -> impl IntoResponse {
+    if !is_authorized(&state, &headers, query.token.as_deref()) {
+        return StatusCode::UNAUTHORIZED.into_response();
+    }
+    let Some(path) = resolve_dev_apk_path() else {
+        return axum::Json(serde_json::json!({ "available": false })).into_response();
+    };
+    let bytes = match tokio::fs::read(&path).await {
+        Ok(b) => b,
+        Err(_) => return axum::Json(serde_json::json!({ "available": false })).into_response(),
+    };
+    let digest = ring::digest::digest(&ring::digest::SHA256, &bytes);
+    let sha256 = hex::encode(digest.as_ref());
+    axum::Json(serde_json::json!({
+        "available": true,
+        "sha256": sha256,
+        "size": bytes.len(),
+    }))
+    .into_response()
+}
+
+async fn api_dev_apk(
+    AxumState(state): AxumState<AxumHostState>,
+    headers: HeaderMap,
+    Query(query): Query<TokenQuery>,
+) -> impl IntoResponse {
+    if !is_authorized(&state, &headers, query.token.as_deref()) {
+        return StatusCode::UNAUTHORIZED.into_response();
+    }
+    let Some(path) = resolve_dev_apk_path() else {
+        return StatusCode::NOT_FOUND.into_response();
+    };
+    let Ok(bytes) = tokio::fs::read(&path).await else {
+        return StatusCode::NOT_FOUND.into_response();
+    };
+    let filename = path
+        .file_name()
+        .and_then(|n| n.to_str())
+        .filter(|n| n.ends_with(".apk"))
+        .unwrap_or("StreamDash-Companion.apk");
+    let disposition = format!("attachment; filename=\"{}\"", filename);
+    (
+        [
+            (header::CONTENT_TYPE, "application/vnd.android.package-archive".to_string()),
+            (header::CONTENT_DISPOSITION, disposition),
+            (header::CACHE_CONTROL, "no-store".to_string()),
+        ],
+        bytes,
     )
         .into_response()
 }

@@ -16,7 +16,7 @@ import { Badge, Button, Card, EmptyState, PageHeader, ScrollFade } from "../comp
 import { OfflineBanner } from "../components/OfflineBanner";
 import { UserCard } from "../components/chat/UserCard";
 import { resolveVariables, VARIABLE_DEFINITIONS } from "../lib/variables";
-import { errorMessage, isTauri } from "../lib/utils";
+import { errorMessage } from "../lib/utils";
 import { spotifyOverlayNative, twitchNative } from "../services/native";
 import { TWITCH_CLIENT_ID } from "../services/twitch/config";
 import { useRuntime } from "../services/runtime-context";
@@ -892,7 +892,7 @@ export function ChatPage() {
               value={draft}
               maxLength={500}
               autoComplete="off"
-              disabled={!networkOnline || !isTauri() || twitch.phase !== "connected" || chat.phase !== "connected"}
+              disabled={!networkOnline || twitch.phase !== "connected" || chat.phase !== "connected"}
               onChange={(event) => {
                 setDraft(event.target.value);
                 setCursor(
@@ -915,7 +915,7 @@ export function ChatPage() {
             <Button
               variant="primary"
               type="submit"
-              disabled={!networkOnline || !draft.trim() || sending || !isTauri() || twitch.phase !== "connected" || chat.phase !== "connected"}
+              disabled={!networkOnline || !draft.trim() || sending || twitch.phase !== "connected" || chat.phase !== "connected"}
             >
               {sending ? (
                 <LoaderCircle size={15} className="animate-spin" />

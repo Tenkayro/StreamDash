@@ -1,4 +1,4 @@
-package dev.streamdash.companion
+package de.tenkayro.streamdash.companion
 
 import org.json.JSONObject
 import java.io.BufferedReader

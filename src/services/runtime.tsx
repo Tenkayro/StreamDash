@@ -101,6 +101,7 @@ import {
   type DeviceAuth,
   type ExportProfileOptions,
   type ImportProfileOptions,
+  type RuntimeValue,
 } from "./runtime-context";
 import i18n, { resolveLanguage } from "../i18n";
 import { resolveVariables } from "../lib/variables";
@@ -122,6 +123,64 @@ type Bootstrap = {
   events: ActivityEvent[];
   chatMessages: ChatMessage[];
 };
+
+const REMOTE_IGNORED_STATE_KEYS = new Set([
+  "page",
+  "pageHistory",
+  "pageHistoryIndex",
+  "searchTarget",
+  "unreadCounts",
+]);
+
+const REMOTE_BLOCKED_METHODS = new Set([
+  "shutdown",
+  "deviceAuth",
+  "botDeviceAuth",
+  "connectTwitch",
+  "disconnectTwitch",
+  "reauthorizeTwitch",
+  "connectTwitchBot",
+  "disconnectTwitchBot",
+  "reauthorizeTwitchBot",
+  "activateProLicense",
+  "exportProfiles",
+  "importProfiles",
+]);
+
+function serializeHostSnapshot(storeState: ReturnType<typeof useAppStore.getState>) {
+  const out: Record<string, unknown> = { ready: true };
+  for (const [key, val] of Object.entries(storeState)) {
+    if (typeof val === "function" || REMOTE_IGNORED_STATE_KEYS.has(key)) continue;
+    if (key === "chatMessages" && Array.isArray(val)) {
+      out[key] = val.slice(-100);
+    } else if (key === "events" && Array.isArray(val)) {
+      out[key] = val.slice(0, 200);
+    } else {
+      out[key] = val;
+    }
+  }
+  return out;
+}
+
+function createRemoteRuntimeProxy(
+  localFallback: Partial<RuntimeValue>,
+  dispatch: (actionType: string, payload?: Record<string, unknown>) => Promise<void>,
+): RuntimeValue {
+  return new Proxy(localFallback as Record<string, unknown>, {
+    get(target, prop, receiver) {
+      if (typeof prop !== "string" || prop === "then" || prop === "$$typeof") {
+        return Reflect.get(target, prop, receiver);
+      }
+      if (Object.prototype.hasOwnProperty.call(target, prop)) {
+        return Reflect.get(target, prop, receiver);
+      }
+      if (REMOTE_BLOCKED_METHODS.has(prop)) {
+        return async () => undefined;
+      }
+      return (...args: unknown[]) => dispatch("runtime.call", { method: prop, args });
+    },
+  }) as unknown as RuntimeValue;
+}
 
 let bootstrapPromise: Promise<Bootstrap> | undefined;
 
@@ -1915,36 +1974,19 @@ export function RuntimeProvider({ children }: { children: ReactNode }) {
 
   const applyRemoteSnapshot = useCallback((snap: Record<string, unknown>) => {
     if (!snap || typeof snap !== "object" || snap.ready !== true) return false;
-    useAppStore.setState((prev) => ({
-      ...prev,
-      ready: true,
-      ...(snap.settings ? { settings: snap.settings as typeof prev.settings } : {}),
-      ...(snap.stats ? { stats: snap.stats as typeof prev.stats } : {}),
-      ...(Array.isArray(snap.chatMessages) ? { chatMessages: snap.chatMessages as typeof prev.chatMessages } : {}),
-      ...(Array.isArray(snap.events) ? { events: snap.events as typeof prev.events } : {}),
-      ...(snap.obs ? { obs: snap.obs as typeof prev.obs } : {}),
-      ...(snap.giveaway ? { giveaway: snap.giveaway as typeof prev.giveaway } : {}),
-      ...(snap.twitch ? { twitch: snap.twitch as typeof prev.twitch } : {}),
-      ...(snap.twitchBot ? { twitchBot: snap.twitchBot as typeof prev.twitchBot } : {}),
-      ...(snap.streamElements ? { streamElements: snap.streamElements as typeof prev.streamElements } : {}),
-      ...(snap.tipeeStream ? { tipeeStream: snap.tipeeStream as typeof prev.tipeeStream } : {}),
-      ...(Array.isArray(snap.commands) ? { commands: snap.commands as typeof prev.commands } : {}),
-      ...(Array.isArray(snap.customVariables) ? { customVariables: snap.customVariables as typeof prev.customVariables } : {}),
-      ...(snap.chatAlerts ? { chatAlerts: snap.chatAlerts as typeof prev.chatAlerts } : {}),
-      ...(Array.isArray(snap.channelRewards) ? { channelRewards: snap.channelRewards as typeof prev.channelRewards } : {}),
-      ...(Array.isArray(snap.profiles) ? { profiles: snap.profiles as typeof prev.profiles } : {}),
-      ...(typeof snap.activeProfileId === "string" ? { activeProfileId: snap.activeProfileId } : {}),
-      ...(typeof snap.lastTwitchUserId === "string" ? { lastTwitchUserId: snap.lastTwitchUserId } : {}),
-      ...(typeof snap.profilesAutoSwitch === "boolean" ? { profilesAutoSwitch: snap.profilesAutoSwitch } : {}),
-      ...(typeof snap.cloudSyncEnabled === "boolean" ? { cloudSyncEnabled: snap.cloudSyncEnabled } : {}),
-      ...(snap.cloudSyncCheckpoints ? { cloudSyncCheckpoints: snap.cloudSyncCheckpoints as typeof prev.cloudSyncCheckpoints } : {}),
-      ...(snap.cloudSync ? { cloudSync: snap.cloudSync as typeof prev.cloudSync } : {}),
-      ...(snap.supportTicket ? { supportTicket: snap.supportTicket as typeof prev.supportTicket } : {}),
-      ...(snap.storageTicket ? { storageTicket: snap.storageTicket as typeof prev.storageTicket } : {}),
-      ...(snap.entitlements ? { entitlements: snap.entitlements as typeof prev.entitlements } : {}),
-    }));
+    useAppStore.setState((prev) => {
+      const next: Record<string, unknown> = { ...prev, ready: true };
+      for (const [key, val] of Object.entries(snap)) {
+        if (REMOTE_IGNORED_STATE_KEYS.has(key) || val === undefined) continue;
+        if (typeof (prev as unknown as Record<string, unknown>)[key] === "function") continue;
+        next[key] = val;
+      }
+      return next as unknown as typeof prev;
+    });
     return true;
   }, []);
+
+  const runtimeMethodsRef = useRef<Record<string, unknown>>({});
 
   useEffect(() => {
     let disposed = false;
@@ -2148,31 +2190,46 @@ export function RuntimeProvider({ children }: { children: ReactNode }) {
                 state().setGiveaway({ running: false, entries: [], winner: undefined });
               } else if (actionType === "reconnect") {
                 void reconnect();
+              } else if (actionType === "events.clear") {
+                state().clearEvents();
+              } else if (actionType === "chat.clear") {
+                state().clearChat();
+              } else if (actionType === "runtime.call" && typeof data.method === "string") {
+                const method = data.method;
+                const fn = runtimeMethodsRef.current[method];
+                if (!REMOTE_BLOCKED_METHODS.has(method) && typeof fn === "function") {
+                  const args = Array.isArray(data.args) ? data.args : [];
+                  void Promise.resolve((fn as (...a: unknown[]) => unknown)(...args)).catch(
+                    (err) => {
+                      console.error("Remote runtime call failed", method, errorMessage(err));
+                    },
+                  );
+                }
               } else if (actionType === "state.save" && typeof data.key === "string") {
                 const key = data.key;
                 const val = data.value;
                 void saveLocalState(key, val);
-                if (key === "commands" && Array.isArray(val)) state().setCommands(val as never);
-                else if (key === "customVariables" && Array.isArray(val)) state().setCustomVariables(val as never);
-                else if (key === "chatAlerts" && val && typeof val === "object") state().setChatAlerts(val as never);
-                else if (key === "channelRewards" && Array.isArray(val)) state().setChannelRewards(val as never);
-                else if (key === "giveaway" && val && typeof val === "object") state().setGiveaway(val as never);
-                else if (key === "profiles" && Array.isArray(val)) state().setProfiles(val as never);
-                else if (key === "activeProfileId" && typeof val === "string") state().setActiveProfileId(val);
-                else if (key in state().settings) state().setSettings({ [key]: val } as never);
+                const cur = state() as unknown as Record<string, unknown>;
+                if (!REMOTE_IGNORED_STATE_KEYS.has(key) && key in cur && typeof cur[key] !== "function") {
+                  useAppStore.setState({ [key]: val } as never);
+                } else if (key in state().settings) {
+                  state().setSettings({ [key]: val } as never);
+                }
               } else if (actionType === "state.saveBatch" && data.entries && typeof data.entries === "object") {
                 const entries = data.entries as Record<string, unknown>;
                 void saveLocalStateBatch(entries);
+                const cur = state() as unknown as Record<string, unknown>;
+                const storePatch: Record<string, unknown> = {};
                 const settingsPatch: Record<string, unknown> = {};
                 for (const [key, val] of Object.entries(entries)) {
-                  if (key === "commands" && Array.isArray(val)) state().setCommands(val as never);
-                  else if (key === "customVariables" && Array.isArray(val)) state().setCustomVariables(val as never);
-                  else if (key === "chatAlerts" && val && typeof val === "object") state().setChatAlerts(val as never);
-                  else if (key === "channelRewards" && Array.isArray(val)) state().setChannelRewards(val as never);
-                  else if (key === "giveaway" && val && typeof val === "object") state().setGiveaway(val as never);
-                  else if (key === "profiles" && Array.isArray(val)) state().setProfiles(val as never);
-                  else if (key === "activeProfileId" && typeof val === "string") state().setActiveProfileId(val);
-                  else if (key in state().settings) settingsPatch[key] = val;
+                  if (!REMOTE_IGNORED_STATE_KEYS.has(key) && key in cur && typeof cur[key] !== "function") {
+                    storePatch[key] = val;
+                  } else if (key in state().settings) {
+                    settingsPatch[key] = val;
+                  }
+                }
+                if (Object.keys(storePatch).length > 0) {
+                  useAppStore.setState(storePatch as never);
                 }
                 if (Object.keys(settingsPatch).length > 0) {
                   state().setSettings(settingsPatch as never);
@@ -2200,33 +2257,7 @@ export function RuntimeProvider({ children }: { children: ReactNode }) {
     const publish = () => {
       const s = useAppStore.getState();
       if (!s.ready) return;
-      void webHostNative.publishState({
-        ready: true,
-        settings: s.settings,
-        stats: s.stats,
-        chatMessages: s.chatMessages.slice(-100),
-        events: s.events.slice(0, 200),
-        obs: s.obs,
-        giveaway: s.giveaway,
-        twitch: s.twitch,
-        twitchBot: s.twitchBot,
-        streamElements: s.streamElements,
-        tipeeStream: s.tipeeStream,
-        commands: s.commands,
-        customVariables: s.customVariables,
-        chatAlerts: s.chatAlerts,
-        channelRewards: s.channelRewards,
-        profiles: s.profiles,
-        activeProfileId: s.activeProfileId,
-        lastTwitchUserId: s.lastTwitchUserId,
-        profilesAutoSwitch: s.profilesAutoSwitch,
-        cloudSyncEnabled: s.cloudSyncEnabled,
-        cloudSyncCheckpoints: s.cloudSyncCheckpoints,
-        cloudSync: s.cloudSync,
-        supportTicket: s.supportTicket,
-        storageTicket: s.storageTicket,
-        entitlements: s.entitlements,
-      });
+      void webHostNative.publishState(serializeHostSnapshot(s));
     };
     publish();
     const unsub = useAppStore.subscribe(() => {
@@ -3573,6 +3604,66 @@ export function RuntimeProvider({ children }: { children: ReactNode }) {
     state,
   ]);
 
+  const rawRuntimeValue: RuntimeValue = {
+    deviceAuth,
+    botDeviceAuth,
+    connectTwitch,
+    disconnectTwitch,
+    reauthorizeTwitch,
+    connectTwitchBot,
+    disconnectTwitchBot,
+    reauthorizeTwitchBot,
+    connectStreamElements,
+    retryStreamElements: startStreamElements,
+    disconnectStreamElements,
+    connectTipeeeStream,
+    retryTipeeeStream: startTipeeeStream,
+    disconnectTipeeeStream,
+    connectObs,
+    retryObs: startObs,
+    disconnectObs,
+    setObsScene,
+    setObsMute,
+    setObsVolume,
+    setObsStreaming,
+    setObsRecording,
+    setObsRecordingPaused,
+    setObsReplayBuffer,
+    saveObsReplayBuffer,
+    setObsVirtualCam,
+    sendChatMessage,
+    sendBotChatMessage: sendCommandReply,
+    getChatUserProfile,
+    moderateChatUser,
+    unbanChatUser,
+    deleteChatMessage,
+    setChatUserRole,
+    switchProfile,
+    createProfile,
+    renameProfile,
+    duplicateProfile,
+    deleteProfile,
+    linkProfileToTwitch,
+    setProfilesAutoSwitch: setProfilesAutoSwitchPref,
+    exportProfiles,
+    importProfiles,
+    setCloudSyncEnabled: setCloudSyncEnabledPref,
+    syncCloudNow,
+    deleteCloudBackup,
+    refreshProEntitlements,
+    activateProLicense,
+    refreshSupportTicket,
+    submitKeyResetTicket,
+    refreshStorageTicket,
+    submitStorageRequestTicket,
+    reconnect,
+    shutdown,
+  };
+
+  useEffect(() => {
+    runtimeMethodsRef.current = { ...rawRuntimeValue };
+  });
+
   if (!isTauri() && remoteAuthNeeded) {
     return (
       <div className="flex min-h-dvh items-center justify-center bg-canvas p-4 text-ink">
@@ -3626,64 +3717,21 @@ export function RuntimeProvider({ children }: { children: ReactNode }) {
     );
   }
 
+  const providerValue: RuntimeValue = isTauri()
+    ? rawRuntimeValue
+    : createRemoteRuntimeProxy(
+        {
+          deviceAuth,
+          botDeviceAuth,
+          getChatUserProfile,
+          exportProfiles,
+          importProfiles,
+        },
+        sendRemoteAction,
+      );
+
   return (
-    <RuntimeContext.Provider
-      value={{
-        deviceAuth,
-        botDeviceAuth,
-        connectTwitch,
-        disconnectTwitch,
-        reauthorizeTwitch,
-        connectTwitchBot,
-        disconnectTwitchBot,
-        reauthorizeTwitchBot,
-        connectStreamElements,
-        retryStreamElements: startStreamElements,
-        disconnectStreamElements,
-        connectTipeeeStream,
-        retryTipeeeStream: startTipeeeStream,
-        disconnectTipeeeStream,
-        connectObs,
-        retryObs: startObs,
-        disconnectObs,
-        setObsScene,
-        setObsMute,
-        setObsVolume,
-        setObsStreaming,
-        setObsRecording,
-        setObsRecordingPaused,
-        setObsReplayBuffer,
-        saveObsReplayBuffer,
-        setObsVirtualCam,
-        sendChatMessage,
-        sendBotChatMessage: sendCommandReply,
-        getChatUserProfile,
-        moderateChatUser,
-        unbanChatUser,
-        deleteChatMessage,
-        setChatUserRole,
-        switchProfile,
-        createProfile,
-        renameProfile,
-        duplicateProfile,
-        deleteProfile,
-        linkProfileToTwitch,
-        setProfilesAutoSwitch: setProfilesAutoSwitchPref,
-        exportProfiles,
-        importProfiles,
-        setCloudSyncEnabled: setCloudSyncEnabledPref,
-        syncCloudNow,
-        deleteCloudBackup,
-        refreshProEntitlements,
-        activateProLicense,
-        refreshSupportTicket,
-        submitKeyResetTicket,
-        refreshStorageTicket,
-        submitStorageRequestTicket,
-        reconnect,
-        shutdown,
-      }}
-    >
+    <RuntimeContext.Provider value={providerValue}>
       {children}
     </RuntimeContext.Provider>
   );
