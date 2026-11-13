@@ -359,7 +359,7 @@ function DashboardWidget({
     <div
       data-dashboard-widget={id}
       className={cn(
-        "relative h-full min-w-0 rounded-[10px]",
+        "relative h-full min-w-0 rounded-xl",
         editing && "ring-1 ring-accent/30",
       )}
     >
@@ -2256,7 +2256,7 @@ export function Dashboard() {
         titleActions={
           <button
             onClick={() => setEditing(!editing)}
-            className={`inline-flex items-center gap-1.5 rounded-md px-2 py-1 text-[11px] transition ${editing ? "bg-accent-soft text-accent" : "text-zinc-600 hover:bg-white/4 hover:text-zinc-300"}`}
+            className={`inline-flex items-center gap-1.5 rounded-lg border px-2.5 py-1 text-[11px] font-medium transition-colors ${editing ? "border-accent-border bg-accent-soft text-accent" : "border-rule bg-raised text-muted hover:border-rule-strong hover:text-ink"}`}
           >
             {editing ? <LayoutGrid size={12} /> : <Settings2 size={12} />}{" "}
             {editing ? t("dashboard.finish") : t("dashboard.customize")}

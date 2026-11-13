@@ -1,61 +1,68 @@
-/* Hallmark · shape: app screen · genre: atmospheric · theme: studio-desk · accent: violet · built: the project · redesign: restyle · v2.0.0 */
-/* Hallmark · pre-emit critique: P4 H5 E5 S4 R5 V4 · weakest: S, generic glass/neumorphism hid the broadcast desk; grounded in crisp OKLCH studio surfaces and tabular telemetry */
+/* Hallmark · shape: app screen · genre: modern-minimal · theme: dusk · accent: periwinkle · built: the project · redesign: restyle · v2.0.0 */
+/* Hallmark · pre-emit critique: P5 H5 E5 S5 R5 V4 · weakest: V, moved from flat graphite Console to Dusk smoked-slate surfaces with lit top edges, Wix Madefor typography, and periwinkle/apricot signals */
 @import "tailwindcss";
 
 :root {
   color-scheme: dark;
-  --accent-violet: oklch(72% 0.14 290);
-  --accent-violet-soft: oklch(72% 0.14 290 / 0.14);
-  --accent-violet-border: oklch(72% 0.14 290 / 0.35);
-  --accent-blue: oklch(66% 0.15 255);
-  --accent-blue-soft: oklch(66% 0.15 255 / 0.14);
-  --accent-blue-border: oklch(66% 0.15 255 / 0.35);
-  --accent-emerald: oklch(68% 0.13 160);
-  --accent-emerald-soft: oklch(68% 0.13 160 / 0.14);
-  --accent-emerald-border: oklch(68% 0.13 160 / 0.35);
-  --accent-orange: oklch(76% 0.14 55);
-  --accent-orange-soft: oklch(76% 0.14 55 / 0.14);
-  --accent-orange-border: oklch(76% 0.14 55 / 0.35);
+  --accent-violet: oklch(77% 0.105 274);
+  --accent-violet-soft: oklch(77% 0.105 274 / 0.16);
+  --accent-violet-border: oklch(77% 0.105 274 / 0.38);
+  --accent-blue: oklch(69% 0.14 252);
+  --accent-blue-soft: oklch(69% 0.14 252 / 0.16);
+  --accent-blue-border: oklch(69% 0.14 252 / 0.38);
+  --accent-emerald: oklch(74% 0.12 162);
+  --accent-emerald-soft: oklch(74% 0.12 162 / 0.16);
+  --accent-emerald-border: oklch(74% 0.12 162 / 0.38);
+  --accent-orange: oklch(81% 0.105 62);
+  --accent-orange-soft: oklch(81% 0.105 62 / 0.16);
+  --accent-orange-border: oklch(81% 0.105 62 / 0.38);
 
   --app-accent: var(--accent-violet);
   --app-accent-soft: var(--accent-violet-soft);
   --app-accent-border: var(--accent-violet-border);
 
-  --color-canvas: oklch(12% 0.008 260);
-  --color-panel: oklch(16% 0.01 260);
-  --color-raised: oklch(20.5% 0.012 260);
-  --color-well: oklch(10% 0.007 260);
-  --color-ink: oklch(94% 0.005 260);
-  --color-ink-strong: oklch(97.5% 0.003 260);
-  --color-muted: oklch(68% 0.01 260);
-  --color-subtle: oklch(54% 0.01 260);
-  --color-accent-ink: oklch(13% 0.01 260);
+  --color-canvas: oklch(14.5% 0.013 268);
+  --color-panel: oklch(18.5% 0.015 268);
+  --color-panel-hi: oklch(20.5% 0.016 268);
+  --color-raised: oklch(23.5% 0.017 268);
+  --color-well: oklch(11.5% 0.012 268);
+  --color-ink: oklch(95.5% 0.006 75);
+  --color-ink-strong: oklch(98% 0.004 75);
+  --color-muted: oklch(71% 0.015 262);
+  --color-subtle: oklch(56% 0.014 264);
+  --color-accent-ink: oklch(18% 0.035 274);
+  --color-signal-2: oklch(83% 0.095 62);
 
-  --color-rule: oklch(27.5% 0.011 260);
-  --color-rule-strong: oklch(37% 0.014 260);
-  --color-hover: oklch(22% 0.012 260);
-  --color-active: oklch(25% 0.013 260);
-  --color-scroll-thumb: oklch(34% 0.01 260);
-  --color-scroll-thumb-hover: oklch(44% 0.012 260);
-  --color-scroll-thumb-active: oklch(54% 0.012 260);
+  --color-rule: oklch(30% 0.016 266);
+  --color-rule-strong: oklch(40% 0.019 266);
+  --color-hover: oklch(24% 0.016 268);
+  --color-active: oklch(27% 0.018 268);
+  --color-scroll-thumb: oklch(35% 0.015 266);
+  --color-scroll-thumb-hover: oklch(45% 0.017 266);
+  --color-scroll-thumb-active: oklch(55% 0.017 266);
 
   --color-twitch: oklch(58% 0.22 293);
   --color-twitch-soft: oklch(58% 0.22 293 / 0.14);
   --color-twitch-border: oklch(58% 0.22 293 / 0.35);
-  --color-twitch-ink: oklch(78% 0.14 293);
+  --color-twitch-ink: oklch(80% 0.13 293);
   --color-spotify: oklch(72% 0.19 148);
-  --color-obs-stage: oklch(18% 0.016 295);
-  --color-chart-grid: oklch(27% 0.008 260);
-  --color-chart-amber: oklch(75% 0.15 55);
-  --color-chart-blue: oklch(62% 0.18 255);
+  --color-obs-stage: oklch(19% 0.018 288);
+  --color-chart-grid: oklch(28% 0.014 266);
+  --color-chart-amber: oklch(83% 0.095 62);
+  --color-chart-blue: oklch(69% 0.14 252);
 
-  --shadow-card: inset 0 1px 0 oklch(100% 0 0 / 0.04);
-  --shadow-control: inset 0 1px 0 oklch(100% 0 0 / 0.05);
-  --shadow-popover: 0 12px 28px oklch(0% 0 0 / 0.55);
-  --shadow-inset: inset 0 1px 2px oklch(0% 0 0 / 0.4);
+  --dusk-edge: inset 0 1px 0 oklch(100% 0 0 / 0.08);
+  --shadow-card: var(--dusk-edge), 0 14px 28px -18px oklch(6% 0.02 268 / 0.78);
+  --shadow-control: inset 0 1px 0 oklch(100% 0 0 / 0.07);
+  --shadow-popover: var(--dusk-edge), 0 18px 40px -12px oklch(5% 0.02 268 / 0.85);
+  --shadow-inset: inset 0 2px 4px oklch(5% 0.02 268 / 0.55);
   --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
 
-  font-family: "Segoe UI Variable", "Segoe UI", system-ui, sans-serif;
+  --font-display: "Wix Madefor Display", "Segoe UI Variable", system-ui, sans-serif;
+  --font-body: "Wix Madefor Text", "Segoe UI Variable", system-ui, sans-serif;
+  --font-mono: "JetBrains Mono", ui-monospace, monospace;
+
+  font-family: var(--font-body);
   color: var(--color-ink);
   background: var(--color-canvas);
   font-synthesis: none;
@@ -310,8 +317,8 @@ a:focus-visible,
 
 .card {
   border: 1px solid var(--color-rule);
-  background: var(--color-panel);
-  border-radius: 10px;
+  background: linear-gradient(180deg, var(--color-panel-hi), var(--color-panel));
+  border-radius: 12px;
   box-shadow: var(--shadow-card);
 }
 
@@ -327,6 +334,7 @@ a:focus-visible,
   background: var(--color-raised);
   box-shadow: var(--shadow-control);
   color: var(--color-ink);
+  font-weight: 500;
   transition: background-color 140ms var(--ease-out), border-color 140ms var(--ease-out), transform 120ms var(--ease-out);
 }
 
@@ -493,9 +501,10 @@ select.input option {
 }
 
 .page-header h1 {
-  font-size: 20px;
+  font-family: var(--font-display);
+  font-size: 21px;
   font-weight: 600;
-  letter-spacing: -0.025em;
+  letter-spacing: -0.022em;
   text-wrap: balance;
   color: var(--color-ink-strong);
 }
@@ -508,8 +517,9 @@ select.input option {
 .page-header-icon {
   border: 1px solid var(--color-rule);
   background: var(--color-raised);
-  width: 30px;
-  height: 30px;
+  box-shadow: var(--shadow-control);
+  width: 32px;
+  height: 32px;
   border-radius: 8px;
   margin-right: 4px;
 }
@@ -523,12 +533,15 @@ select.input option {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  color: var(--color-subtle);
+  color: var(--color-signal-2);
 }
 
 .metric-value {
+  font-family: var(--font-display);
   font-variant-numeric: tabular-nums;
-  font-size: 24px;
+  font-size: 25px;
+  font-weight: 600;
+  letter-spacing: -0.025em;
   line-height: 1.15;
   color: var(--color-ink-strong);
 }
@@ -544,7 +557,6 @@ select.input option {
 
 .card > .border-b {
   border-color: var(--color-rule);
-  background: var(--color-hover);
 }
 
 [data-accent] .text-zinc-600 {
