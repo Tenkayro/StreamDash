@@ -342,6 +342,12 @@ export default function App() {
       >
         <TitleBar setup />
         <AppContextMenu />
+        {import.meta.env.DEV && DemoOverlay && (
+          <Suspense fallback={null}>
+            <DevDemoAutoStart />
+            <DemoOverlay />
+          </Suspense>
+        )}
         <SetupWizard />
       </div>
     );

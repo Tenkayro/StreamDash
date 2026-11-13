@@ -4,10 +4,12 @@ import http from "node:http";
 import path from "node:path";
 
 const ROOT = process.cwd();
+const DEMO_DATA_DIR = path.join(ROOT, ".dev-data", "demo");
 const EXPORT_DIR = path.join(ROOT, "exports");
 const OUTPUT_FILE = path.join(EXPORT_DIR, "streamdash-demo.mp4");
 const SIGNAL_PORT = 1429;
 
+fs.rmSync(DEMO_DATA_DIR, { recursive: true, force: true });
 fs.mkdirSync(EXPORT_DIR, { recursive: true });
 
 let tauriProc = null;
@@ -65,36 +67,56 @@ async function finishRecording() {
   process.exit();
 }
 
-function startFfmpeg() {
-  console.log("Starting FFmpeg 60fps capture of StreamDash window...");
-  ffmpegProc = spawn(
-    "ffmpeg",
-    [
-      "-y",
-      "-f",
-      "gdigrab",
-      "-framerate",
-      "60",
-      "-draw_mouse",
-      "0",
+function startFfmpeg(rect) {
+  const args = ["-y", "-f", "gdigrab", "-framerate", "60", "-draw_mouse", "0"];
+
+  if (
+    rect &&
+    Number.isFinite(rect.x) &&
+    Number.isFinite(rect.y) &&
+    rect.width >= 320 &&
+    rect.height >= 240
+  ) {
+    const w = Math.floor(rect.width / 2) * 2;
+    const h = Math.floor(rect.height / 2) * 2;
+    args.push(
+      "-offset_x",
+      String(rect.x),
+      "-offset_y",
+      String(rect.y),
+      "-video_size",
+      `${w}x${h}`,
       "-i",
-      "title=StreamDash",
-      "-vf",
-      "scale=trunc(iw/2)*2:trunc(ih/2)*2",
-      "-c:v",
-      "libx264",
-      "-preset",
-      "medium",
-      "-crf",
-      "16",
-      "-pix_fmt",
-      "yuv420p",
-      "-movflags",
-      "+faststart",
-      OUTPUT_FILE,
-    ],
-    { stdio: ["pipe", "inherit", "inherit"], windowsHide: true },
+      "desktop",
+    );
+    console.log(
+      `Starting FFmpeg 60fps desktop capture at (${rect.x},${rect.y}) ${w}x${h}...`,
+    );
+  } else {
+    args.push("-i", "desktop");
+    console.log("Starting FFmpeg 60fps desktop capture...");
+  }
+
+  args.push(
+    "-vf",
+    "scale=trunc(iw/2)*2:trunc(ih/2)*2",
+    "-c:v",
+    "libx264",
+    "-preset",
+    "medium",
+    "-crf",
+    "16",
+    "-pix_fmt",
+    "yuv420p",
+    "-movflags",
+    "+faststart",
+    OUTPUT_FILE,
   );
+
+  ffmpegProc = spawn("ffmpeg", args, {
+    stdio: ["pipe", "inherit", "inherit"],
+    windowsHide: true,
+  });
 
   ffmpegProc.on("error", (err) => {
     console.error("Failed to start ffmpeg:", err.message);
@@ -105,10 +127,22 @@ function startFfmpeg() {
 const server = http.createServer((req, res) => {
   res.setHeader("Access-Control-Allow-Origin", "*");
   if (req.method === "POST" && req.url === "/ready") {
-    res.writeHead(204).end();
-    if (!ffmpegProc) {
-      setTimeout(startFfmpeg, 400);
-    }
+    let body = "";
+    req.on("data", (chunk) => {
+      body += chunk;
+    });
+    req.on("end", () => {
+      res.writeHead(204).end();
+      if (!ffmpegProc) {
+        let rect = null;
+        try {
+          rect = body ? JSON.parse(body) : null;
+        } catch {
+          rect = null;
+        }
+        setTimeout(() => startFfmpeg(rect), 400);
+      }
+    });
     return;
   }
   if (req.method === "POST" && req.url === "/done") {
@@ -129,7 +163,7 @@ server.listen(SIGNAL_PORT, "127.0.0.1", () => {
     env: {
       ...process.env,
       VITE_DEMO_AUTO: "1",
-      STREAMDASH_DATA_DIR: path.join(ROOT, ".dev-data", "demo"),
+      STREAMDASH_DATA_DIR: DEMO_DATA_DIR,
     },
     stdio: "inherit",
     shell: process.platform === "win32",

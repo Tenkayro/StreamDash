@@ -1,5 +1,10 @@
 import { create } from "zustand";
 import { toast } from "sonner";
+import {
+  defaultChatAlerts,
+  defaultCommands,
+  defaultCustomVariables,
+} from "./defaults";
 import { useAppStore } from "../stores/app-store";
 import { useNetworkStore } from "../stores/network-store";
 import type { ActivityEvent, ChatMessage } from "../types";
@@ -94,15 +99,26 @@ function scrollMainSmooth(top: number) {
   }
 }
 
-async function notifyBridge(path: "/ready" | "/done") {
+async function notifyBridge(path: "/ready" | "/done", payload?: unknown) {
   try {
     await fetch(`http://127.0.0.1:1429${path}`, {
       method: "POST",
       mode: "no-cors",
+      headers: { "Content-Type": "text/plain" },
+      body: payload ? JSON.stringify(payload) : undefined,
     });
   } catch {
     // Recording server not running (manual OBS mode)
   }
+}
+
+function getWindowCaptureRect() {
+  const dpr = window.devicePixelRatio || 1;
+  const x = Math.max(0, Math.round(window.screenX * dpr));
+  const y = Math.max(0, Math.round(window.screenY * dpr));
+  const width = Math.max(320, Math.round(window.outerWidth * dpr));
+  const height = Math.max(240, Math.round(window.outerHeight * dpr));
+  return { x, y, width, height };
 }
 
 export function stopDemoTour(): void {
@@ -131,10 +147,10 @@ export async function startDemoTour(options?: {
     useDemoStore.setState({
       active: true,
       step,
-      totalSteps: 9,
+      totalSteps: 10,
       title,
       subtitle,
-      progress: Math.round((step / 9) * 100),
+      progress: Math.round((step / 10) * 100),
     });
   };
 
@@ -142,12 +158,42 @@ export async function startDemoTour(options?: {
     useNetworkStore.setState({ online: true, checking: false });
     const app = useAppStore.getState();
 
-    // Prepare clean, rich showcase state in memory
+    // Populate a complete, isolated fake save state in memory
+    app.setSettings({
+      onboardingCompleted: false,
+      goals: {
+        ...app.settings.goals,
+        followers: 3000,
+        subscribers: 100,
+        donations: 150,
+      },
+    });
     app.setEntitlements({
       tier: "pro",
       pro: true,
       twitchLogin: "tenkayro",
       features: ["cloud_sync", "pro_themes", "unlimited_profiles"],
+    });
+    app.setCloudSyncEnabled(true);
+    app.setCloudSync({
+      phase: "synced",
+      lastSyncedAt: Date.now(),
+      hasLocalChanges: false,
+      error: undefined,
+      historyError: undefined,
+      storageInfo: {
+        usedBytes: 2_140_000,
+        quotaBytes: 26_214_400,
+        defaultQuotaBytes: 26_214_400,
+        effectiveDefaultQuotaBytes: 26_214_400,
+        globalUsedBytes: 180_000_000,
+        globalPoolMaxBytes: 1_073_741_824,
+        globalSoftThrottled: false,
+        globalPoolFull: false,
+        historyRevision: 12,
+        historyUpdatedAt: Date.now(),
+        historyEventCount: 142,
+      },
     });
     app.setTwitch({ phase: "connected", account: "tenkayro", userId: "1001" });
     app.setTwitchBot({
@@ -158,6 +204,91 @@ export async function startDemoTour(options?: {
     app.setObs({ phase: "connected", detail: "OBS 31.0 · WebSocket 5" });
     app.setStreamElements({ phase: "connected" });
     app.setTipeeeStream({ phase: "connected" });
+    app.setCommands(
+      defaultCommands.map((cmd, idx) => ({
+        ...cmd,
+        enabled: true,
+        usageCount: 40 + idx * 37,
+      })),
+    );
+    app.setCustomVariables(
+      defaultCustomVariables.map((v, idx) => ({
+        ...v,
+        value: String(3 + idx * 4),
+        updatedAt: Date.now(),
+      })),
+    );
+    app.setChannelRewards([
+      {
+        id: "demo-rew-1",
+        title: "Hydrate!",
+        cost: 250,
+        enabled: true,
+        paused: false,
+        prompt: "Remind streamer to drink water",
+        backgroundColor: "#0ea5e9",
+        enabledWhenOffline: false,
+        enabledWhenOnline: true,
+        userInputRequired: false,
+        skipRequestQueue: true,
+        maxPerStreamEnabled: false,
+        maxPerStream: 0,
+        maxPerUserPerStreamEnabled: false,
+        maxPerUserPerStream: 0,
+        globalCooldownEnabled: true,
+        globalCooldownSeconds: 120,
+      },
+      {
+        id: "demo-rew-2",
+        title: "Stretch Break",
+        cost: 500,
+        enabled: true,
+        paused: false,
+        prompt: "Quick posture & stretch check",
+        backgroundColor: "#10b981",
+        enabledWhenOffline: false,
+        enabledWhenOnline: true,
+        userInputRequired: false,
+        skipRequestQueue: false,
+        maxPerStreamEnabled: false,
+        maxPerStream: 0,
+        maxPerUserPerStreamEnabled: false,
+        maxPerUserPerStream: 0,
+        globalCooldownEnabled: true,
+        globalCooldownSeconds: 300,
+      },
+      {
+        id: "demo-rew-3",
+        title: "Pick Next Game",
+        cost: 2500,
+        enabled: true,
+        paused: false,
+        prompt: "Choose the next game on stream",
+        backgroundColor: "#8b5cf6",
+        enabledWhenOffline: false,
+        enabledWhenOnline: true,
+        userInputRequired: true,
+        skipRequestQueue: false,
+        maxPerStreamEnabled: true,
+        maxPerStream: 2,
+        maxPerUserPerStreamEnabled: true,
+        maxPerUserPerStream: 1,
+        globalCooldownEnabled: true,
+        globalCooldownSeconds: 900,
+      },
+    ]);
+    app.setChatAlerts({
+      ...defaultChatAlerts,
+      donation: { ...defaultChatAlerts.donation, enabled: true },
+      subTier1: { ...defaultChatAlerts.subTier1, enabled: true },
+      subPrime: { ...defaultChatAlerts.subPrime, enabled: true },
+      resubTier1: { ...defaultChatAlerts.resubTier1, enabled: true },
+      giftTier1: { ...defaultChatAlerts.giftTier1, enabled: true },
+      raid: { ...defaultChatAlerts.raid, enabled: true },
+      bits: { ...defaultChatAlerts.bits, enabled: true },
+      follower: { ...defaultChatAlerts.follower, enabled: true },
+      goLive: { ...defaultChatAlerts.goLive, enabled: true },
+    });
     app.setObsSnapshot({
       version: "31.0.2",
       profile: "StreamDash 1080p60",
@@ -195,17 +326,23 @@ export async function startDemoTour(options?: {
     });
     app.setEvents([]);
     app.setChatMessages([]);
-    app.setPage("dashboard");
 
     if (options?.autoSignal) {
-      await sleep(1100, signal);
-      await notifyBridge("/ready");
-      await sleep(600, signal);
+      await sleep(1000, signal);
+      await notifyBridge("/ready", getWindowCaptureRect());
+      await sleep(700, signal);
     }
 
-    // 1. Dashboard & Live Metrics
-    setStep(1, "Live Dashboard", "Real-time stream metrics, alerts & OBS status");
-    await sleep(900, signal);
+    // 1. Setup Wizard
+    setStep(1, "Quick Setup", "Connect Twitch, OBS & services in seconds");
+    await sleep(2300, signal);
+    app.setSettings({ onboardingCompleted: true });
+    app.setPage("dashboard");
+    await sleep(600, signal);
+
+    // 2. Dashboard & Live Metrics
+    setStep(2, "Live Dashboard", "Real-time stream metrics, alerts & OBS status");
+    await sleep(700, signal);
 
     const u1 = pickUser(0);
     app.pushEvent(
@@ -263,8 +400,8 @@ export async function startDemoTour(options?: {
     app.setStats({ viewers: 418, subscribers: 86 });
     await sleep(1200, signal);
 
-    // 2. Activitys & Monetized Support Highlights
-    setStep(2, "Activitys & Support", "Donations, Prime, Tier 1–3 subs & bits at a glance");
+    // 3. Activitys & Monetized Support Highlights
+    setStep(3, "Activitys & Support", "Donations, Prime, Tier 1–3 subs & bits at a glance");
     app.setPage("activitys");
     await sleep(800, signal);
     app.pushEvent(
@@ -304,8 +441,8 @@ export async function startDemoTour(options?: {
     app.setStats({ donations: 100 });
     await sleep(1500, signal);
 
-    // 3. Live Chat & Commands
-    setStep(3, "Live Chat", "Fast moderation, badges & instant replies");
+    // 4. Live Chat & Commands
+    setStep(4, "Live Chat", "Fast moderation, badges & instant replies");
     app.setPage("chat");
     const chatSamples: Array<[number, string]> = [
       [0, "Yo! The new dashboard looks super clean!"],
@@ -322,15 +459,15 @@ export async function startDemoTour(options?: {
     }
     await sleep(800, signal);
 
-    // 4. Commands & Chat Alerts
-    setStep(4, "Commands & Chat Alerts", "Custom variables, donations & tier-specific alerts");
+    // 5. Commands & Chat Alerts
+    setStep(5, "Commands & Chat Alerts", "Custom variables, donations & tier-specific alerts");
     app.setPage("commands");
     await sleep(1900, signal);
     app.setPage("alerts");
     await sleep(2200, signal);
 
-    // 5. Giveaways
-    setStep(5, "Giveaways", "Live keyword entry tracking & instant winner draw");
+    // 6. Giveaways
+    setStep(6, "Giveaways", "Live keyword entry tracking & instant winner draw");
     app.setPage("giveaways");
     app.setGiveaway({
       running: true,
@@ -354,8 +491,8 @@ export async function startDemoTour(options?: {
     }
     await sleep(1700, signal);
 
-    // 6. OBS Control
-    setStep(6, "OBS Studio Control", "Switch scenes, audio mixers & replay buffer");
+    // 7. OBS Control
+    setStep(7, "OBS Studio Control", "Switch scenes, audio mixers & replay buffer");
     app.setPage("obs");
     await sleep(1100, signal);
     const obsSnap = useAppStore.getState().obsSnapshot;
@@ -369,15 +506,15 @@ export async function startDemoTour(options?: {
     }
     await sleep(1900, signal);
 
-    // 7. Statistics & Goals
-    setStep(7, "Statistics & Goals", "Track growth, revenue & community milestones");
+    // 8. Statistics & Goals
+    setStep(8, "Statistics & Goals", "Track growth, revenue & community milestones");
     app.setPage("statistics");
     await sleep(2000, signal);
     app.setPage("goals");
     await sleep(2000, signal);
 
-    // 8. Connections & Pro Cloud Sync
-    setStep(8, "Connections & Pro Cloud", "Unified services & encrypted cross-device sync");
+    // 9. Connections & Pro Cloud Sync
+    setStep(9, "Connections & Pro Cloud", "Unified services & encrypted cross-device sync");
     app.setPage("connections");
     await sleep(1900, signal);
     app.setPage("settings");
@@ -386,8 +523,8 @@ export async function startDemoTour(options?: {
     await sleep(1500, signal);
     scrollMainSmooth(0);
 
-    // 9. Finale back on Dashboard
-    setStep(9, "StreamDash 2.1", "Built for streamers. Fast, local & reliable.");
+    // 10. Finale back on Dashboard
+    setStep(10, "StreamDash 2.1", "Built for streamers. Fast, local & reliable.");
     app.setPage("dashboard");
     await sleep(2600, signal);
   } catch (err) {
