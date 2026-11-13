@@ -10,6 +10,14 @@ import { useAppStore } from "../stores/app-store";
 import { useNetworkStore } from "../stores/network-store";
 import type { ActivityEvent, ChatCommand, ChatMessage } from "../types";
 
+export interface ZoomSpan {
+  startMs: number;
+  endMs: number;
+  scale: number;
+  cx: number;
+  cy: number;
+}
+
 export interface DemoHudState {
   active: boolean;
   step: number;
@@ -17,11 +25,6 @@ export interface DemoHudState {
   title: string;
   subtitle: string;
   progress: number;
-  camera: {
-    scale: number;
-    originX: number;
-    originY: number;
-  };
   cursor: {
     visible: boolean;
     x: number;
@@ -31,7 +34,6 @@ export interface DemoHudState {
   };
 }
 
-const DEFAULT_CAMERA = { scale: 1, originX: 50, originY: 50 };
 const DEFAULT_CURSOR = {
   visible: false,
   x: 640,
@@ -47,7 +49,6 @@ export const useDemoStore = create<DemoHudState>(() => ({
   title: "",
   subtitle: "",
   progress: 0,
-  camera: DEFAULT_CAMERA,
   cursor: DEFAULT_CURSOR,
 }));
 
@@ -64,13 +65,10 @@ const RANDOM_USERS = [
 
 let abortController: AbortController | null = null;
 let autoStarted = false;
-let demoPaused = false;
-let bridgePollTimer: number | null = null;
 
 export function startAutoDemoOnce(): void {
   if (autoStarted) return;
   autoStarted = true;
-  startBridgeCommandPolling();
   void startDemoTour({ autoSignal: true });
 }
 
@@ -88,35 +86,15 @@ function sleep(ms: number, signal: AbortSignal): Promise<void> {
       reject(new DOMException("Aborted", "AbortError"));
       return;
     }
-
-    let remaining = ms;
-    let lastTick = performance.now();
-    let timer = 0;
-
-    const cleanup = () => {
-      window.clearInterval(timer);
+    const timer = window.setTimeout(() => {
       signal.removeEventListener("abort", onAbort);
-    };
-
+      resolve();
+    }, ms);
     const onAbort = () => {
-      cleanup();
+      window.clearTimeout(timer);
       reject(new DOMException("Aborted", "AbortError"));
     };
-
     signal.addEventListener("abort", onAbort, { once: true });
-
-    timer = window.setInterval(() => {
-      const now = performance.now();
-      const delta = now - lastTick;
-      lastTick = now;
-      if (!demoPaused) {
-        remaining -= delta;
-      }
-      if (remaining <= 0) {
-        cleanup();
-        resolve();
-      }
-    }, 30);
   });
 }
 
@@ -146,14 +124,6 @@ function makeChat(user: (typeof RANDOM_USERS)[number], text: string): ChatMessag
   };
 }
 
-function zoomTo(scale: number, originX: number, originY: number) {
-  useDemoStore.setState({ camera: { scale, originX, originY } });
-}
-
-function resetZoom() {
-  useDemoStore.setState({ camera: DEFAULT_CAMERA });
-}
-
 async function moveCursorToPoint(
   x: number,
   y: number,
@@ -169,7 +139,7 @@ async function moveCursorToPoint(
       clicking: false,
     },
   }));
-  await sleep(540, signal);
+  await sleep(490, signal);
   if (click) {
     useDemoStore.setState((s) => ({
       cursor: {
@@ -183,6 +153,28 @@ async function moveCursorToPoint(
       cursor: { ...s.cursor, clicking: false },
     }));
   }
+}
+
+async function clickElement(
+  el: HTMLElement | null,
+  signal: AbortSignal,
+  actuallyClickDom = true,
+) {
+  if (!el) return false;
+  el.scrollIntoView({ block: "nearest", behavior: "smooth" });
+  await sleep(120, signal);
+  const rect = el.getBoundingClientRect();
+  if (rect.width === 0 || rect.height === 0) return false;
+  await moveCursorToPoint(
+    rect.left + rect.width * 0.5,
+    rect.top + rect.height * 0.5,
+    signal,
+    true,
+  );
+  if (actuallyClickDom) {
+    el.click();
+  }
+  return true;
 }
 
 async function moveCursorToSelector(
@@ -201,16 +193,14 @@ async function moveCursorToSelector(
   );
 }
 
-async function hoverMainArea(rx: number, ry: number, signal: AbortSignal) {
-  const main = document.querySelector<HTMLElement>(".app-main");
-  if (!main) return;
-  const rect = main.getBoundingClientRect();
-  await moveCursorToPoint(
-    rect.left + rect.width * rx,
-    rect.top + rect.height * ry,
-    signal,
-    false,
-  );
+async function navigateWithCursor(pageId: string, signal: AbortSignal) {
+  const btn = document.querySelector<HTMLElement>(`[data-nav-id="${pageId}"]`);
+  if (btn) {
+    btn.scrollIntoView({ block: "nearest", behavior: "smooth" });
+    await sleep(140, signal);
+    await moveCursorToSelector(`[data-nav-id="${pageId}"]`, signal, true);
+  }
+  useAppStore.getState().setPage(pageId);
 }
 
 async function clickButtonByText(
@@ -228,31 +218,41 @@ async function clickButtonByText(
     const text = (btn.textContent ?? "").trim().toLowerCase();
     return lowered.some((label) => text.includes(label));
   });
-  if (!target) return false;
-  target.scrollIntoView({ block: "nearest", behavior: "smooth" });
-  await sleep(120, signal);
-  const rect = target.getBoundingClientRect();
-  await moveCursorToPoint(
-    rect.left + rect.width * 0.5,
-    rect.top + rect.height * 0.5,
-    signal,
-    true,
-  );
-  if (actuallyClickDom) {
-    target.click();
-  }
-  return true;
+  return clickElement(target ?? null, signal, actuallyClickDom);
 }
 
-async function navigateWithCursor(pageId: string, signal: AbortSignal) {
-  resetZoom();
-  const btn = document.querySelector<HTMLElement>(`[data-nav-id="${pageId}"]`);
-  if (btn) {
-    btn.scrollIntoView({ block: "nearest", behavior: "smooth" });
-    await sleep(140, signal);
-    await moveCursorToSelector(`[data-nav-id="${pageId}"]`, signal, true);
+async function clickSelector(
+  selector: string,
+  signal: AbortSignal,
+  actuallyClickDom = true,
+  rootSelector = ".app-main",
+) {
+  const root = document.querySelector<HTMLElement>(rootSelector) ?? document.body;
+  const target = root.querySelector<HTMLElement>(selector);
+  return clickElement(target, signal, actuallyClickDom);
+}
+
+async function typeIntoSelector(
+  selector: string,
+  text: string,
+  signal: AbortSignal,
+) {
+  const input = document.querySelector<HTMLInputElement | HTMLTextAreaElement>(selector);
+  if (!input) return false;
+  await clickElement(input, signal, true);
+  const proto =
+    input instanceof HTMLTextAreaElement
+      ? HTMLTextAreaElement.prototype
+      : HTMLInputElement.prototype;
+  const setter = Object.getOwnPropertyDescriptor(proto, "value")?.set;
+  let current = "";
+  for (const ch of text) {
+    current += ch;
+    setter?.call(input, current);
+    input.dispatchEvent(new Event("input", { bubbles: true }));
+    await sleep(32, signal);
   }
-  useAppStore.getState().setPage(pageId);
+  return true;
 }
 
 function scrollMainSmooth(top: number) {
@@ -342,10 +342,7 @@ function createDemoCommands(): ChatCommand[] {
   ];
 }
 
-async function notifyBridge(
-  path: "/ready" | "/done" | "/status",
-  payload?: unknown,
-) {
+async function notifyBridge(path: "/ready" | "/done", payload?: unknown) {
   try {
     await fetch(`http://127.0.0.1:1429${path}`, {
       method: "POST",
@@ -356,53 +353,6 @@ async function notifyBridge(
   } catch {
     // Recording server not running (manual OBS mode)
   }
-}
-
-function startBridgeCommandPolling() {
-  if (bridgePollTimer !== null) return;
-  bridgePollTimer = window.setInterval(async () => {
-    try {
-      const res = await fetch("http://127.0.0.1:1429/command");
-      if (!res.ok) return;
-      const data = (await res.json()) as { command?: string | null };
-      if (!data.command) return;
-
-      if (data.command === "pause") {
-        demoPaused = true;
-        const s = useDemoStore.getState();
-        void notifyBridge("/status", {
-          active: s.active,
-          step: s.step,
-          totalSteps: s.totalSteps,
-          title: s.title,
-          subtitle: s.subtitle,
-          progress: s.progress,
-          paused: true,
-        });
-      } else if (data.command === "resume") {
-        demoPaused = false;
-        const s = useDemoStore.getState();
-        void notifyBridge("/status", {
-          active: s.active,
-          step: s.step,
-          totalSteps: s.totalSteps,
-          title: s.title,
-          subtitle: s.subtitle,
-          progress: s.progress,
-          paused: false,
-        });
-      } else if (data.command === "restart") {
-        demoPaused = false;
-        void startDemoTour({ autoSignal: true });
-      } else if (data.command === "stop_save") {
-        demoPaused = false;
-        stopDemoTour();
-        void notifyBridge("/done");
-      }
-    } catch {
-      // Ignore transient poll errors
-    }
-  }, 250);
 }
 
 function getWindowCaptureRect() {
@@ -425,7 +375,6 @@ export function stopDemoTour(): void {
     title: "",
     subtitle: "",
     progress: 0,
-    camera: DEFAULT_CAMERA,
     cursor: DEFAULT_CURSOR,
   });
 }
@@ -438,6 +387,32 @@ export async function startDemoTour(options?: {
   abortController = controller;
   const { signal } = controller;
 
+  const zoomSpans: ZoomSpan[] = [];
+  let recordStartMs = performance.now();
+  let activeZoom: { startMs: number; scale: number; cx: number; cy: number } | null =
+    null;
+
+  const beginZoom = (scale: number, cx: number, cy: number) => {
+    if (activeZoom) {
+      zoomSpans.push({ ...activeZoom, endMs: Math.round(performance.now() - recordStartMs) });
+    }
+    activeZoom = {
+      startMs: Math.round(performance.now() - recordStartMs),
+      scale,
+      cx,
+      cy,
+    };
+  };
+
+  const endZoom = () => {
+    if (!activeZoom) return;
+    const endMs = Math.round(performance.now() - recordStartMs);
+    if (endMs - activeZoom.startMs >= 900) {
+      zoomSpans.push({ ...activeZoom, endMs });
+    }
+    activeZoom = null;
+  };
+
   const setStep = (step: number, title: string, subtitle: string) => {
     const progress = Math.round((step / 12) * 100);
     useDemoStore.setState({
@@ -448,17 +423,6 @@ export async function startDemoTour(options?: {
       subtitle,
       progress,
     });
-    if (options?.autoSignal) {
-      void notifyBridge("/status", {
-        active: true,
-        step,
-        totalSteps: 12,
-        title,
-        subtitle,
-        progress,
-        paused: demoPaused,
-      });
-    }
   };
 
   try {
@@ -633,24 +597,25 @@ export async function startDemoTour(options?: {
 
     if (options?.autoSignal) {
       await sleep(1000, signal);
+      recordStartMs = performance.now();
       await notifyBridge("/ready", getWindowCaptureRect());
-      await sleep(700, signal);
+      await sleep(600, signal);
     }
 
     // 1. Setup Wizard
     setStep(1, "Quick Setup", "Connect Twitch, OBS & services in seconds");
-    await sleep(750, signal);
+    await sleep(650, signal);
     await clickButtonByText(["Violet"], signal, true, ".app-shell");
-    await sleep(450, signal);
+    await sleep(350, signal);
     await clickButtonByText(["Next", "Continue"], signal, false, ".app-shell");
-    await sleep(450, signal);
+    await sleep(300, signal);
     app.setSettings({ onboardingCompleted: true });
     app.setPage("dashboard");
     await sleep(550, signal);
 
     // 2. Dashboard & Live Metrics
     setStep(2, "Live Dashboard", "Real-time stream metrics, alerts & OBS status");
-    zoomTo(1.16, 62, 26);
+    beginZoom(1.24, 0.62, 0.28);
 
     const u1 = pickUser(0);
     app.pushEvent(
@@ -662,7 +627,7 @@ export async function startDemoTour(options?: {
       }),
     );
     app.setStats({ viewers: 196, followers: 2481 });
-    await hoverMainArea(0.32, 0.24, signal);
+    await sleep(650, signal);
 
     const u2 = pickUser(1);
     app.pushEvent(
@@ -678,7 +643,7 @@ export async function startDemoTour(options?: {
     );
     app.setStats({ viewers: 268, donations: 90 });
     toast.success(`${u2.displayName} donated 25,00 €!`);
-    await hoverMainArea(0.68, 0.24, signal);
+    await sleep(750, signal);
 
     const u3 = pickUser(2);
     app.pushEvent(
@@ -692,7 +657,7 @@ export async function startDemoTour(options?: {
       }),
     );
     app.setStats({ viewers: 342, subscribers: 85 });
-    await sleep(650, signal);
+    await sleep(700, signal);
 
     const u4 = pickUser(3);
     app.pushEvent(
@@ -707,21 +672,20 @@ export async function startDemoTour(options?: {
     );
     app.setStats({ viewers: 418, subscribers: 86 });
     await sleep(750, signal);
+    endZoom();
 
     // 3. Stream & Live Preview
     setStep(3, "Stream & Live Preview", "Edit title, category & monitor your live feed");
     await navigateWithCursor("stream", signal);
-    await hoverMainArea(0.45, 0.34, signal);
-    await sleep(550, signal);
+    await typeIntoSelector(".app-main input", "StreamDash 2.1 Showcase · Live!", signal);
+    await sleep(450, signal);
     await navigateWithCursor("livePreview", signal);
-    await hoverMainArea(0.55, 0.46, signal);
-    await sleep(550, signal);
+    await sleep(1050, signal);
 
     // 4. Activitys & Monetized Support Highlights
     setStep(4, "Activitys & Support", "Donations, Prime, Tier 1–3 subs & bits at a glance");
     await navigateWithCursor("activitys", signal);
-    await sleep(350, signal);
-    zoomTo(1.2, 58, 42);
+    await sleep(300, signal);
     app.pushEvent(
       makeEvent({
         source: "twitch",
@@ -733,7 +697,7 @@ export async function startDemoTour(options?: {
       }),
     );
     app.setStats({ bits: 5750 });
-    await sleep(650, signal);
+    await sleep(550, signal);
     app.pushEvent(
       makeEvent({
         source: "twitch",
@@ -744,7 +708,7 @@ export async function startDemoTour(options?: {
         giftCount: 5,
       }),
     );
-    await sleep(650, signal);
+    await sleep(550, signal);
     app.pushEvent(
       makeEvent({
         source: "tipeeestream",
@@ -757,15 +721,16 @@ export async function startDemoTour(options?: {
       }),
     );
     app.setStats({ donations: 100 });
+    beginZoom(1.26, 0.56, 0.44);
     await clickButtonByText(["Donations"], signal, true);
-    await sleep(800, signal);
+    await sleep(650, signal);
     await clickButtonByText(["All"], signal, true);
     await sleep(450, signal);
+    endZoom();
 
     // 5. Live Chat
     setStep(5, "Live Chat", "Fast moderation, badges & instant command replies");
     await navigateWithCursor("chat", signal);
-    zoomTo(1.16, 56, 58);
     const chatSamples: Array<[number, string]> = [
       [0, "Yo! The new dashboard looks super clean!"],
       [1, "!song"],
@@ -777,38 +742,53 @@ export async function startDemoTour(options?: {
       const sender = pickUser(idx);
       const msg = makeChat(sender, text);
       app.pushChatMessage(msg);
-      await sleep(460, signal);
+      await sleep(380, signal);
     }
-    await hoverMainArea(0.55, 0.86, signal);
+    beginZoom(1.24, 0.56, 0.78);
+    await typeIntoSelector(
+      ".app-main input[type='text'], .app-main input:not([type])",
+      "Welcome everyone! Checking out StreamDash 2.1!",
+      signal,
+    );
     app.pushChatMessage(
       makeChat(
         { login: "tenkayro", displayName: "tenkayro", color: "#a78bfa" },
-        "Welcome everyone! Checking out StreamDash 2.1 live!",
+        "Welcome everyone! Checking out StreamDash 2.1!",
       ),
     );
-    await sleep(650, signal);
+    await sleep(500, signal);
+    endZoom();
 
     // 6. Commands & Variables
     setStep(6, "Commands & Variables", "Custom chat commands, aliases & dynamic variables");
     await navigateWithCursor("commands", signal);
-    zoomTo(1.18, 60, 40);
-    await hoverMainArea(0.45, 0.36, signal);
-    await hoverMainArea(0.45, 0.62, signal);
+    beginZoom(1.25, 0.58, 0.44);
+    await sleep(450, signal);
+    await clickSelector('button[aria-label="Edit"]', signal, true);
+    await sleep(1100, signal);
+    await clickButtonByText(["Cancel"], signal, true, "body");
+    await sleep(350, signal);
+    endZoom();
     await navigateWithCursor("variables", signal);
-    await hoverMainArea(0.5, 0.44, signal);
-    await sleep(550, signal);
+    await sleep(950, signal);
 
     // 7. Chat Alerts & Channel Points
     setStep(7, "Chat Alerts & Channel Points", "Tier-specific alerts & custom Twitch rewards");
     await navigateWithCursor("chatAlerts", signal);
-    zoomTo(1.18, 60, 44);
-    await hoverMainArea(0.52, 0.36, signal);
-    await hoverMainArea(0.52, 0.62, signal);
-    await navigateWithCursor("channelPoints", signal);
-    await hoverMainArea(0.46, 0.42, signal);
+    await clickButtonByText(["Gifted"], signal, true);
     await sleep(550, signal);
+    await clickButtonByText(["Engagement"], signal, true);
+    beginZoom(1.24, 0.58, 0.46);
+    await sleep(450, signal);
+    await clickSelector('button[role="switch"]', signal, true);
+    await sleep(350, signal);
+    await clickSelector('button[role="switch"]', signal, true);
+    await sleep(350, signal);
+    endZoom();
+    await navigateWithCursor("channelPoints", signal);
+    await sleep(950, signal);
 
-    // 8. Giveaways & Winner Roll
+    // 8. Giveaways & Winner Roll + Reroll
     setStep(8, "Giveaways", "Live keyword entry tracking & instant winner draw");
     await navigateWithCursor("giveaways", signal);
     app.setGiveaway({
@@ -818,15 +798,15 @@ export async function startDemoTour(options?: {
       entries: [],
       winner: undefined,
     });
-    await hoverMainArea(0.28, 0.48, signal);
+    await sleep(350, signal);
     for (let i = 0; i < 6; i++) {
       const entrant = pickUser(i);
       const msg = makeChat(entrant, "!win");
       app.pushChatMessage(msg);
       app.ingestGiveawayChatMessage(msg, "streamdash_bot");
-      await sleep(240, signal);
+      await sleep(220, signal);
     }
-    await clickButtonByText(["Roll it"], signal, false);
+    await clickButtonByText(["Roll Winner"], signal, false);
     const entries = useAppStore.getState().giveaway.entries;
     if (entries.length > 0) {
       const winner = entries[2 % entries.length];
@@ -842,14 +822,20 @@ export async function startDemoTour(options?: {
         ),
       );
       toast.success(`Giveaway winner: ${winner.displayName}!`);
-      zoomTo(1.22, 38, 46);
+      beginZoom(1.28, 0.38, 0.48);
+      await sleep(1100, signal);
+      await clickButtonByText(["Reroll Winner"], signal, false);
+      const rerolled = entries[4 % entries.length];
+      app.setGiveaway({ running: false, winner: rerolled });
+      toast.success(`Rerolled winner: ${rerolled.displayName}!`);
+      await sleep(900, signal);
+      endZoom();
     }
-    await sleep(1900, signal);
 
     // 9. OBS Control
     setStep(9, "OBS Studio Control", "Switch scenes, audio mixers & replay buffer");
     await navigateWithCursor("obs", signal);
-    zoomTo(1.2, 56, 36);
+    beginZoom(1.25, 0.56, 0.44);
     await clickButtonByText(["Gameplay"], signal, false);
     const obsSnap = useAppStore.getState().obsSnapshot;
     if (obsSnap) {
@@ -860,33 +846,34 @@ export async function startDemoTour(options?: {
       });
       toast.info("OBS Scene switched to Gameplay");
     }
-    await hoverMainArea(0.55, 0.64, signal);
-    await sleep(750, signal);
+    await sleep(450, signal);
+    await clickSelector('button[aria-label*="Mute"]', signal, false);
+    await sleep(450, signal);
+    endZoom();
 
     // 10. Statistics & Goals
     setStep(10, "Statistics & Goals", "Track growth, revenue & community milestones");
     await navigateWithCursor("statistics", signal);
-    await hoverMainArea(0.52, 0.42, signal);
-    await sleep(550, signal);
+    await sleep(1050, signal);
     await navigateWithCursor("goals", signal);
-    await hoverMainArea(0.48, 0.4, signal);
-    await sleep(550, signal);
+    await sleep(1050, signal);
 
     // 11. Connections, Host & Settings (with sidebar + settings scroll)
     setStep(11, "Connections, Host & Settings", "Unified services, mobile companion & Pro Cloud Sync");
     await navigateWithCursor("connections", signal);
-    await hoverMainArea(0.5, 0.4, signal);
-    await navigateWithCursor("host", signal);
-    await hoverMainArea(0.5, 0.45, signal);
-    await navigateWithCursor("settings", signal);
-    await hoverMainArea(0.55, 0.35, signal);
-    const maxScroll = getMainMaxScroll();
-    scrollMainSmooth(Math.round(maxScroll * 0.45));
     await sleep(950, signal);
+    await navigateWithCursor("host", signal);
+    await sleep(950, signal);
+    await navigateWithCursor("settings", signal);
+    await clickButtonByText(["Appearance"], signal, true);
+    await sleep(750, signal);
+    const maxScroll = getMainMaxScroll();
+    scrollMainSmooth(Math.round(maxScroll * 0.55));
+    await sleep(900, signal);
     scrollMainSmooth(maxScroll);
-    await sleep(1050, signal);
+    await sleep(900, signal);
     scrollMainSmooth(0);
-    await sleep(650, signal);
+    await sleep(550, signal);
 
     // 12. Finale back on Dashboard
     setStep(12, "StreamDash 2.1", "Built for streamers. Fast, local & reliable.");
@@ -894,12 +881,13 @@ export async function startDemoTour(options?: {
     useDemoStore.setState((s) => ({
       cursor: { ...s.cursor, visible: false },
     }));
-    await sleep(2000, signal);
+    await sleep(1600, signal);
   } catch (err) {
     if (!(err instanceof DOMException && err.name === "AbortError")) {
       toast.error(err instanceof Error ? err.message : String(err));
     }
   } finally {
+    endZoom();
     if (abortController === controller) {
       abortController = null;
     }
@@ -909,20 +897,10 @@ export async function startDemoTour(options?: {
       title: "",
       subtitle: "",
       progress: 0,
-      camera: DEFAULT_CAMERA,
       cursor: DEFAULT_CURSOR,
     });
     if (options?.autoSignal) {
-      await notifyBridge("/status", {
-        active: false,
-        step: 12,
-        totalSteps: 12,
-        title: "Completed",
-        subtitle: "Rendering 1080p60 studio video...",
-        progress: 100,
-        paused: false,
-      });
-      await notifyBridge("/done");
+      await notifyBridge("/done", { zooms: zoomSpans });
     }
   }
 }

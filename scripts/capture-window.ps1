@@ -106,11 +106,24 @@ public static class WindowCapture {
 
   public static int[] GetSize(IntPtr hwnd) {
     RECT r;
-    if (!GetWindowRect(hwnd, out r)) return new[] { 0, 0 };
+    if (!GetWindowRect(hwnd, out r)) return new[] { 0, 0, 0, 0, 0, 0 };
     int w = (r.Right - r.Left) & ~1;
     int h = (r.Bottom - r.Top) & ~1;
-    return new[] { w, h };
+
+    // Visible frame (excludes the invisible resize borders of undecorated windows)
+    int cx = 0, cy = 0, cw = w, ch = h;
+    RECT f;
+    if (DwmGetWindowAttribute(hwnd, 9 /* DWMWA_EXTENDED_FRAME_BOUNDS */, out f, Marshal.SizeOf(typeof(RECT))) == 0) {
+      cx = Math.Max(0, f.Left - r.Left);
+      cy = Math.Max(0, f.Top - r.Top);
+      cw = Math.Min(w - cx, f.Right - f.Left) & ~1;
+      ch = Math.Min(h - cy, f.Bottom - f.Top) & ~1;
+    }
+    return new[] { w, h, cx, cy, cw, ch };
   }
+
+  [DllImport("dwmapi.dll")]
+  public static extern int DwmGetWindowAttribute(IntPtr hwnd, int attr, out RECT value, int size);
 
   public static void StreamFrames(IntPtr hwnd, int width, int height, int fps) {
     IntPtr screenDc = GetDC(IntPtr.Zero);
@@ -173,7 +186,7 @@ if ($hwnd -eq [IntPtr]::Zero) {
 
 if ($QuerySize) {
   $size = [WindowCapture]::GetSize($hwnd)
-  Write-Output "$($size[0])x$($size[1])"
+  Write-Output "$($size[0]) $($size[1]) $($size[2]) $($size[3]) $($size[4]) $($size[5])"
   exit 0
 }
 
