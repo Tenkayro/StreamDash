@@ -143,6 +143,13 @@ export function GiveawaysPage() {
   const [view, setView] = useState<"settings" | "winner">(() =>
     giveaway.winner ? "winner" : "settings",
   );
+  const prevWinnerLoginRef = useRef<string | undefined>(giveaway.winner?.login);
+  useEffect(() => {
+    const nextLogin = giveaway.winner?.login;
+    if (nextLogin === prevWinnerLoginRef.current) return;
+    prevWinnerLoginRef.current = nextLogin;
+    setView(nextLogin ? "winner" : "settings");
+  }, [giveaway.winner?.login]);
   const [winnerProfile, setWinnerProfile] = useState<ChatUserProfile>();
   const [winnerProfileLoading, setWinnerProfileLoading] = useState(false);
   const [selectedUser, setSelectedUser] = useState<string>();

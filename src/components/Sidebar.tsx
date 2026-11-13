@@ -89,6 +89,10 @@ export function Sidebar() {
     const animated =
       settings.animations &&
       !window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    active.scrollIntoView({
+      block: "nearest",
+      behavior: animated ? "smooth" : "auto",
+    });
 
     // Start from the element's current on-screen position so rapid clicks
     // continue the motion instead of jumping back to the previous item.

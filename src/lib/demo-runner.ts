@@ -8,7 +8,7 @@ import {
 } from "./defaults";
 import { useAppStore } from "../stores/app-store";
 import { useNetworkStore } from "../stores/network-store";
-import type { ActivityEvent, ChatMessage } from "../types";
+import type { ActivityEvent, ChatCommand, ChatMessage } from "../types";
 
 export interface DemoHudState {
   active: boolean;
@@ -22,7 +22,7 @@ export interface DemoHudState {
 export const useDemoStore = create<DemoHudState>(() => ({
   active: false,
   step: 0,
-  totalSteps: 9,
+  totalSteps: 12,
   title: "",
   subtitle: "",
   progress: 0,
@@ -107,6 +107,86 @@ function scrollMainSmooth(top: number) {
   }
 }
 
+function getMainMaxScroll(): number {
+  const main = document.querySelector(".app-main");
+  if (!main) return 0;
+  return Math.max(0, main.scrollHeight - main.clientHeight);
+}
+
+function createDemoCommands(): ChatCommand[] {
+  const baseTemplate = defaultCommands[0];
+  const makeCustom = (
+    id: string,
+    name: string,
+    response: string,
+    aliases: string[],
+    usageCount: number,
+    roles: ChatCommand["roles"] = [],
+  ): ChatCommand => ({
+    ...baseTemplate,
+    id,
+    name,
+    builtIn: false,
+    enabled: true,
+    response,
+    aliases,
+    usageCount,
+    roles,
+    createdAt: Date.now() - usageCount * 60_000,
+  });
+
+  return [
+    ...defaultCommands.map((cmd, idx) => ({
+      ...cmd,
+      enabled: true,
+      usageCount: 142 + idx * 19,
+    })),
+    makeCustom(
+      "demo-cmd-discord",
+      "discord",
+      "Join the community Discord: https://discord.gg/streamdash",
+      ["dc"],
+      124,
+    ),
+    makeCustom(
+      "demo-cmd-socials",
+      "socials",
+      "Follow {channel} on X, YouTube & TikTok: https://links.streamdash.app",
+      ["links", "youtube"],
+      89,
+    ),
+    makeCustom(
+      "demo-cmd-lurk",
+      "lurk",
+      "Thanks for the lurk, {user}! Grab a snack and enjoy the stream.",
+      [],
+      95,
+    ),
+    makeCustom(
+      "demo-cmd-uptime",
+      "uptime",
+      "{channel} has been live for {uptime}!",
+      [],
+      67,
+    ),
+    makeCustom(
+      "demo-cmd-setup",
+      "setup",
+      "Streaming with StreamDash 2.1 + OBS 31.0 at 1080p60!",
+      ["specs", "pc"],
+      51,
+    ),
+    makeCustom(
+      "demo-cmd-so",
+      "so",
+      "Go check out {target} at https://twitch.tv/{target} — they were last playing {game}!",
+      ["shoutout"],
+      38,
+      ["moderator"],
+    ),
+  ];
+}
+
 async function notifyBridge(path: "/ready" | "/done", payload?: unknown) {
   try {
     await fetch(`http://127.0.0.1:1429${path}`, {
@@ -155,10 +235,10 @@ export async function startDemoTour(options?: {
     useDemoStore.setState({
       active: true,
       step,
-      totalSteps: 10,
+      totalSteps: 12,
       title,
       subtitle,
-      progress: Math.round((step / 10) * 100),
+      progress: Math.round((step / 12) * 100),
     });
   };
 
@@ -215,13 +295,7 @@ export async function startDemoTour(options?: {
     app.setObs({ phase: "connected", detail: "OBS 31.0 · WebSocket 5" });
     app.setStreamElements({ phase: "connected" });
     app.setTipeeeStream({ phase: "connected" });
-    app.setCommands(
-      defaultCommands.map((cmd, idx) => ({
-        ...cmd,
-        enabled: true,
-        usageCount: 40 + idx * 37,
-      })),
-    );
+    app.setCommands(createDemoCommands());
     app.setCustomVariables(
       defaultCustomVariables.map((v, idx) => ({
         ...v,
@@ -411,8 +485,15 @@ export async function startDemoTour(options?: {
     app.setStats({ viewers: 418, subscribers: 86 });
     await sleep(1200, signal);
 
-    // 3. Activitys & Monetized Support Highlights
-    setStep(3, "Activitys & Support", "Donations, Prime, Tier 1–3 subs & bits at a glance");
+    // 3. Stream & Live Preview
+    setStep(3, "Stream & Live Preview", "Edit title, category & monitor your live feed");
+    app.setPage("stream");
+    await sleep(1600, signal);
+    app.setPage("livePreview");
+    await sleep(1600, signal);
+
+    // 4. Activitys & Monetized Support Highlights
+    setStep(4, "Activitys & Support", "Donations, Prime, Tier 1–3 subs & bits at a glance");
     app.setPage("activitys");
     await sleep(800, signal);
     app.pushEvent(
@@ -450,10 +531,10 @@ export async function startDemoTour(options?: {
       }),
     );
     app.setStats({ donations: 100 });
-    await sleep(1500, signal);
+    await sleep(1400, signal);
 
-    // 4. Live Chat & Commands
-    setStep(4, "Live Chat", "Fast moderation, badges & instant replies");
+    // 5. Live Chat
+    setStep(5, "Live Chat", "Fast moderation, badges & instant command replies");
     app.setPage("chat");
     const chatSamples: Array<[number, string]> = [
       [0, "Yo! The new dashboard looks super clean!"],
@@ -466,23 +547,31 @@ export async function startDemoTour(options?: {
       const sender = pickUser(idx);
       const msg = makeChat(sender, text);
       app.pushChatMessage(msg);
-      await sleep(620, signal);
+      await sleep(580, signal);
     }
-    await sleep(800, signal);
+    await sleep(750, signal);
 
-    // 5. Commands & Chat Alerts
-    setStep(5, "Commands & Chat Alerts", "Custom variables, donations & tier-specific alerts");
+    // 6. Commands & Variables
+    setStep(6, "Commands & Variables", "Custom chat commands, aliases & dynamic variables");
     app.setPage("commands");
-    await sleep(1900, signal);
-    app.setPage("alerts");
     await sleep(2200, signal);
+    app.setPage("variables");
+    await sleep(1700, signal);
 
-    // 6. Giveaways
-    setStep(6, "Giveaways", "Live keyword entry tracking & instant winner draw");
+    // 7. Chat Alerts & Channel Points
+    setStep(7, "Chat Alerts & Channel Points", "Tier-specific alerts & custom Twitch rewards");
+    app.setPage("chatAlerts");
+    await sleep(2000, signal);
+    app.setPage("channelPoints");
+    await sleep(1700, signal);
+
+    // 8. Giveaways & Winner Roll
+    setStep(8, "Giveaways", "Live keyword entry tracking & instant winner draw");
     app.setPage("giveaways");
     app.setGiveaway({
       running: true,
       keyword: "!win",
+      chatAnnouncements: false,
       entries: [],
       winner: undefined,
     });
@@ -492,20 +581,31 @@ export async function startDemoTour(options?: {
       const msg = makeChat(entrant, "!win");
       app.pushChatMessage(msg);
       app.ingestGiveawayChatMessage(msg, "streamdash_bot");
-      await sleep(340, signal);
+      await sleep(320, signal);
     }
+    await sleep(500, signal);
     const entries = useAppStore.getState().giveaway.entries;
     if (entries.length > 0) {
-      const winner = entries[Math.floor(Math.random() * entries.length)];
+      const winner = entries[2 % entries.length];
       app.setGiveaway({ running: false, winner });
+      app.pushChatMessage(
+        makeChat(
+          {
+            login: "streamdash_bot",
+            displayName: "StreamDash Bot",
+            color: "#a78bfa",
+          },
+          `Congratulations @${winner.displayName}! You won the giveaway!`,
+        ),
+      );
       toast.success(`Giveaway winner: ${winner.displayName}!`);
     }
-    await sleep(1700, signal);
+    await sleep(2200, signal);
 
-    // 7. OBS Control
-    setStep(7, "OBS Studio Control", "Switch scenes, audio mixers & replay buffer");
+    // 9. OBS Control
+    setStep(9, "OBS Studio Control", "Switch scenes, audio mixers & replay buffer");
     app.setPage("obs");
-    await sleep(1100, signal);
+    await sleep(1000, signal);
     const obsSnap = useAppStore.getState().obsSnapshot;
     if (obsSnap) {
       app.setObsSnapshot({
@@ -515,29 +615,35 @@ export async function startDemoTour(options?: {
       });
       toast.info("OBS Scene switched to Gameplay");
     }
-    await sleep(1900, signal);
+    await sleep(1800, signal);
 
-    // 8. Statistics & Goals
-    setStep(8, "Statistics & Goals", "Track growth, revenue & community milestones");
+    // 10. Statistics & Goals
+    setStep(10, "Statistics & Goals", "Track growth, revenue & community milestones");
     app.setPage("statistics");
-    await sleep(2000, signal);
+    await sleep(1800, signal);
     app.setPage("goals");
-    await sleep(2000, signal);
+    await sleep(1800, signal);
 
-    // 9. Connections & Pro Cloud Sync
-    setStep(9, "Connections & Pro Cloud", "Unified services & encrypted cross-device sync");
+    // 11. Connections, Host & Settings (with sidebar + settings scroll)
+    setStep(11, "Connections, Host & Settings", "Unified services, mobile companion & Pro Cloud Sync");
     app.setPage("connections");
-    await sleep(1900, signal);
+    await sleep(1500, signal);
+    app.setPage("host");
+    await sleep(1500, signal);
     app.setPage("settings");
     await sleep(900, signal);
-    scrollMainSmooth(240);
-    await sleep(1500, signal);
+    const maxScroll = getMainMaxScroll();
+    scrollMainSmooth(Math.round(maxScroll * 0.45));
+    await sleep(1100, signal);
+    scrollMainSmooth(maxScroll);
+    await sleep(1200, signal);
     scrollMainSmooth(0);
+    await sleep(800, signal);
 
-    // 10. Finale back on Dashboard
-    setStep(10, "StreamDash 2.1", "Built for streamers. Fast, local & reliable.");
+    // 12. Finale back on Dashboard
+    setStep(12, "StreamDash 2.1", "Built for streamers. Fast, local & reliable.");
     app.setPage("dashboard");
-    await sleep(2600, signal);
+    await sleep(2400, signal);
   } catch (err) {
     if (!(err instanceof DOMException && err.name === "AbortError")) {
       toast.error(err instanceof Error ? err.message : String(err));

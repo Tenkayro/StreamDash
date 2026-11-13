@@ -1,4 +1,4 @@
-import { spawn } from "node:child_process";
+import { execFileSync, spawn } from "node:child_process";
 import fs from "node:fs";
 import http from "node:http";
 import path from "node:path";
@@ -7,12 +7,14 @@ const ROOT = process.cwd();
 const DEMO_DATA_DIR = path.join(ROOT, ".dev-data", "demo");
 const EXPORT_DIR = path.join(ROOT, "exports");
 const OUTPUT_FILE = path.join(EXPORT_DIR, "streamdash-demo.mp4");
+const CAPTURE_SCRIPT = path.join(ROOT, "scripts", "capture-window.ps1");
 const SIGNAL_PORT = 1429;
 
 fs.rmSync(DEMO_DATA_DIR, { recursive: true, force: true });
 fs.mkdirSync(EXPORT_DIR, { recursive: true });
 
 let tauriProc = null;
+let captureProc = null;
 let ffmpegProc = null;
 let shuttingDown = false;
 
@@ -38,10 +40,26 @@ async function finishRecording() {
 
   if (ffmpegProc && !ffmpegProc.killed) {
     console.log("Finalizing MP4 recording...");
-    try {
-      ffmpegProc.stdin.write("q\n");
-    } catch {
-      ffmpegProc.kill("SIGINT");
+    if (captureProc) {
+      try {
+        captureProc.stdout?.unpipe(ffmpegProc.stdin);
+      } catch {
+        // Ignore unpipe error
+      }
+      if (captureProc.pid) {
+        killTree(captureProc.pid);
+      }
+      try {
+        ffmpegProc.stdin.end();
+      } catch {
+        ffmpegProc.kill("SIGINT");
+      }
+    } else {
+      try {
+        ffmpegProc.stdin.write("q\n");
+      } catch {
+        ffmpegProc.kill("SIGINT");
+      }
     }
     await new Promise((resolve) => {
       const timeout = setTimeout(resolve, 6000);
@@ -52,6 +70,9 @@ async function finishRecording() {
     });
   }
 
+  if (captureProc?.pid) {
+    killTree(captureProc.pid);
+  }
   if (tauriProc?.pid) {
     killTree(tauriProc.pid);
   }
@@ -67,7 +88,107 @@ async function finishRecording() {
   process.exit();
 }
 
+function queryStreamDashWindowSize() {
+  if (process.platform !== "win32") return null;
+  try {
+    const out = execFileSync(
+      "powershell",
+      [
+        "-NoProfile",
+        "-ExecutionPolicy",
+        "Bypass",
+        "-File",
+        CAPTURE_SCRIPT,
+        "-ProcessName",
+        "streamdash",
+        "-QuerySize",
+      ],
+      { encoding: "utf8", windowsHide: true },
+    ).trim();
+    const match = /^(\d+)x(\d+)$/.exec(out);
+    if (!match) return null;
+    const width = Number(match[1]);
+    const height = Number(match[2]);
+    if (width >= 320 && height >= 240) return { width, height };
+  } catch {
+    // Fall back to gdigrab if window query fails
+  }
+  return null;
+}
+
 function startFfmpeg(rect) {
+  const winSize = queryStreamDashWindowSize();
+  if (winSize) {
+    console.log(
+      `Starting PrintWindow 60fps capture of StreamDash HWND (${winSize.width}x${winSize.height})...`,
+    );
+    captureProc = spawn(
+      "powershell",
+      [
+        "-NoProfile",
+        "-ExecutionPolicy",
+        "Bypass",
+        "-File",
+        CAPTURE_SCRIPT,
+        "-ProcessName",
+        "streamdash",
+        "-Width",
+        String(winSize.width),
+        "-Height",
+        String(winSize.height),
+        "-Fps",
+        "60",
+      ],
+      {
+        stdio: ["ignore", "pipe", "inherit"],
+        windowsHide: true,
+      },
+    );
+
+    const args = [
+      "-y",
+      "-f",
+      "rawvideo",
+      "-pixel_format",
+      "bgra",
+      "-video_size",
+      `${winSize.width}x${winSize.height}`,
+      "-use_wallclock_as_timestamps",
+      "1",
+      "-i",
+      "pipe:0",
+      "-vf",
+      "fps=60,scale=trunc(iw/2)*2:trunc(ih/2)*2",
+      "-c:v",
+      "libx264",
+      "-preset",
+      "medium",
+      "-crf",
+      "16",
+      "-pix_fmt",
+      "yuv420p",
+      "-movflags",
+      "+faststart",
+      OUTPUT_FILE,
+    ];
+
+    ffmpegProc = spawn("ffmpeg", args, {
+      stdio: ["pipe", "inherit", "inherit"],
+      windowsHide: true,
+    });
+
+    captureProc.stdout.pipe(ffmpegProc.stdin);
+    captureProc.on("error", (err) => {
+      console.error("Failed to start window capture:", err.message);
+      void finishRecording();
+    });
+    ffmpegProc.on("error", (err) => {
+      console.error("Failed to start ffmpeg:", err.message);
+      void finishRecording();
+    });
+    return;
+  }
+
   const args = ["-y", "-f", "gdigrab", "-framerate", "60", "-draw_mouse", "0"];
 
   if (
