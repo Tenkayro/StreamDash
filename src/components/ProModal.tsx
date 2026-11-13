@@ -1,6 +1,7 @@
 import {
   CheckCircle2,
   Cloud,
+  CloudOff,
   Copy,
   Crown,
   ExternalLink,
@@ -8,6 +9,7 @@ import {
   KeyRound,
   LifeBuoy,
   Link2,
+  RefreshCw,
   ShieldCheck,
   Sparkles,
   X,
@@ -24,6 +26,7 @@ import {
 import { errorMessage } from "../lib/utils";
 import { useRuntime } from "../services/runtime-context";
 import { useAppStore } from "../stores/app-store";
+import { useNetworkStore } from "../stores/network-store";
 
 export function ProModal({
   open,
@@ -45,9 +48,16 @@ function ProModalContent({ onClose }: { onClose: () => void }) {
 
   const [licenseKey, setLicenseKey] = useState("");
   const [busy, setBusy] = useState(false);
+  const [retrying, setRetrying] = useState(false);
   const [error, setError] = useState<string>();
+  const [rawError, setRawError] = useState<string>();
 
   const twitchConnected = twitch.phase === "connected" && Boolean(twitch.userId);
+  const networkOnline = useNetworkStore((s) => s.online);
+  const serverOffline =
+    !networkOnline ||
+    isCloudServerUnavailableError(entitlements.error) ||
+    isCloudServerUnavailableError(rawError);
 
   useEffect(() => {
     const onKeyDown = (event: KeyboardEvent) => {
@@ -63,12 +73,15 @@ function ProModalContent({ onClose }: { onClose: () => void }) {
     if (!trimmed || busy) return;
     setBusy(true);
     setError(undefined);
+    setRawError(undefined);
     try {
       await runtime.activateProLicense(trimmed);
       setLicenseKey("");
       onClose();
     } catch (err) {
-      setError(mapProError(errorMessage(err), t));
+      const msg = errorMessage(err);
+      setRawError(msg);
+      setError(mapProError(msg, t));
     } finally {
       setBusy(false);
     }
@@ -223,6 +236,39 @@ function ProModalContent({ onClose }: { onClose: () => void }) {
             </div>
           ) : (
             <div className="space-y-4">
+              {serverOffline && (
+                <div className="flex flex-wrap items-center justify-between gap-3 rounded-[10px] border border-amber-500/25 bg-amber-500/10 px-3.5 py-2.5 text-xs text-amber-100">
+                  <div className="flex min-w-0 flex-1 items-center gap-2.5">
+                    <CloudOff size={15} className="shrink-0 text-amber-300" />
+                    <div className="min-w-0">
+                      <div className="font-semibold text-amber-200">{t("pro.offlineTitle")}</div>
+                      <div className="text-[11px] text-amber-200/80">{t("pro.offlineDetail")}</div>
+                    </div>
+                  </div>
+                  <Button
+                    type="button"
+                    disabled={retrying || entitlements.loading}
+                    onClick={() => {
+                      setRetrying(true);
+                      setError(undefined);
+                      setRawError(undefined);
+                      void useNetworkStore
+                        .getState()
+                        .checkNow()
+                        .then((online) => (online ? runtime.refreshProEntitlements() : undefined))
+                        .catch(() => undefined)
+                        .finally(() => setRetrying(false));
+                    }}
+                  >
+                    <RefreshCw
+                      size={12}
+                      className={retrying || entitlements.loading ? "animate-spin" : ""}
+                    />
+                    {t("pro.retryConnection")}
+                  </Button>
+                </div>
+              )}
+
               <div className="space-y-2.5 rounded-[10px] border border-rule bg-well p-3.5 text-xs">
                 <div className="flex items-center gap-2 text-ink">
                   <Cloud size={14} className="shrink-0 text-accent" />
@@ -279,17 +325,14 @@ function ProModalContent({ onClose }: { onClose: () => void }) {
                       onChange={(event) => {
                         setLicenseKey(event.target.value);
                         setError(undefined);
+                        setRawError(undefined);
                       }}
                     />
                   </div>
                   <Button
                     type="submit"
                     variant="primary"
-                    disabled={
-                      busy ||
-                      !licenseKey.trim() ||
-                      isCloudServerUnavailableError(entitlements.error)
-                    }
+                    disabled={busy || !licenseKey.trim() || serverOffline}
                   >
                     {busy ? t("pro.activating") : t("pro.activateButton")}
                   </Button>

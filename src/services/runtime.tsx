@@ -19,7 +19,9 @@ import {
 } from "@tauri-apps/plugin-notification";
 import { toast } from "sonner";
 import { useAppStore } from "../stores/app-store";
+import { useNetworkStore } from "../stores/network-store";
 import { errorMessage, isTauri, money } from "../lib/utils";
+import { formatCloudError, isCloudServerUnavailableError } from "../lib/pro";
 import { cloudSyncLimiter, parseRateLimitWaitSeconds } from "../lib/cloud-sync-limiter";
 import {
   bootstrapProfiles,
@@ -239,8 +241,16 @@ export function RuntimeProvider({ children }: { children: ReactNode }) {
   const botAuthAttemptRef = useRef(0);
   const applyingProfileRef = useRef(false);
   const cloudSyncInFlightRef = useRef(false);
+  const cloudRecoveryInFlightRef = useRef(false);
+  const prevNetworkOnlineRef = useRef<boolean | undefined>(undefined);
   const cloudPushTimerRef = useRef<number | undefined>(undefined);
   const cloudSyncPhase = useAppStore((s) => s.cloudSync.phase);
+  const cloudSyncError = useAppStore((s) => s.cloudSync.error);
+  const cloudHistoryError = useAppStore((s) => s.cloudSync.historyError);
+  const entitlementsError = useAppStore((s) => s.entitlements.error);
+  const supportTicketError = useAppStore((s) => s.supportTicket?.error);
+  const storageTicketError = useAppStore((s) => s.storageTicket?.error);
+  const networkOnline = useNetworkStore((s) => s.online);
   const cloudSyncEnabled = useAppStore((s) => s.cloudSyncEnabled);
   const proActive = useAppStore((s) => s.entitlements.pro);
   const profilesList = useAppStore((s) => s.profiles);
@@ -959,16 +969,51 @@ export function RuntimeProvider({ children }: { children: ReactNode }) {
       userId: string,
       mode: "smart" | "push" | "pull" = "smart",
       attempt = 0,
+      options?: { force?: boolean; delayBeforeWriteMs?: number },
     ): Promise<void> => {
+      const computeHistoryFingerprint = (
+        evts: ActivityEvent[],
+        st: DashboardStats,
+      ): string => {
+        const head = evts[0];
+        const tail = evts[evts.length - 1];
+        return [
+          evts.length,
+          head?.id ?? "",
+          head?.timestamp ?? 0,
+          tail?.id ?? "",
+          tail?.timestamp ?? 0,
+          st.followers ?? "",
+          st.subscribers ?? "",
+          Math.round((st.donations ?? 0) * 100),
+          st.bits ?? 0,
+          st.startedAt ?? "",
+        ].join("|");
+      };
+
       const execute = async (currentAttempt: number): Promise<void> => {
         if (!isTauri() || !userId || !state().entitlements.pro) return;
+        if (
+          mode === "smart" &&
+          currentAttempt === 0 &&
+          !cloudSyncLimiter.canSyncHistory(userId, Boolean(options?.force))
+        ) {
+          return;
+        }
         try {
           const meta = await historySyncNative.meta(TWITCH_CLIENT_ID);
           if (meta.storage) {
             state().setCloudSync({ storageInfo: meta.storage, historyError: undefined });
           }
 
-          if (mode === "pull" || (mode === "smart" && meta.exists)) {
+          const prevHistory = cloudSyncLimiter.getLastHistoryState(userId);
+          let remoteSha = meta.payloadSha256;
+          const remoteChanged =
+            !prevHistory.remoteSha ||
+            !remoteSha ||
+            remoteSha !== prevHistory.remoteSha;
+
+          if (mode === "pull" || (mode === "smart" && meta.exists && remoteChanged)) {
             const pulled = await historySyncNative.pull(TWITCH_CLIENT_ID);
             if (pulled.payload?.events?.length) {
               const inserted = await mergeEvents(pulled.payload.events, 50_000);
@@ -995,6 +1040,7 @@ export function RuntimeProvider({ children }: { children: ReactNode }) {
               state().setStats(mergedStats);
               await saveLocalState("cachedStats", mergedStats);
             }
+            remoteSha = pulled.payloadSha256 ?? remoteSha;
             state().setCloudSync({
               storageInfo: pulled.storage ?? meta.storage,
               historyLastSyncedAt: Date.now(),
@@ -1002,22 +1048,40 @@ export function RuntimeProvider({ children }: { children: ReactNode }) {
             });
           }
 
-          if (mode === "push" || mode === "smart") {
-            const events = await loadEvents(50_000);
+          const events = await loadEvents(50_000);
+          const currentStats = state().stats;
+          const localFingerprint = computeHistoryFingerprint(events, currentStats);
+          const needsPush =
+            mode === "push" ||
+            (mode === "smart" &&
+              (!meta.exists || localFingerprint !== prevHistory.fingerprint));
+
+          if (needsPush) {
+            if (options?.delayBeforeWriteMs && currentAttempt === 0) {
+              await new Promise((resolve) =>
+                window.setTimeout(resolve, options.delayBeforeWriteMs),
+              );
+            }
             const pushed = await historySyncNative.push(TWITCH_CLIENT_ID, {
               payload: {
                 version: 1,
                 exportedAt: Date.now(),
                 events,
-                stats: state().stats,
+                stats: currentStats,
               },
             });
+            remoteSha = pushed.payloadSha256 ?? remoteSha;
             state().setCloudSync({
               storageInfo: pushed.storage,
               historyLastSyncedAt: Date.now(),
               historyError: undefined,
             });
           }
+
+          cloudSyncLimiter.markHistorySynced(userId, {
+            fingerprint: localFingerprint,
+            remoteSha,
+          });
         } catch (err) {
           const msg = errorMessage(err);
           const waitSeconds = parseRateLimitWaitSeconds(msg);
@@ -1235,7 +1299,9 @@ export function RuntimeProvider({ children }: { children: ReactNode }) {
             notifyConflict: true,
           });
           if (pushResult === "synced" && !options?.manual) {
-            void syncHistoryWithCloud(userId, "smart");
+            void syncHistoryWithCloud(userId, "smart", 0, {
+              delayBeforeWriteMs: 3_200,
+            });
           }
           return pushResult === "synced" ? "pushed" : "conflict";
         }
@@ -1676,7 +1742,7 @@ export function RuntimeProvider({ children }: { children: ReactNode }) {
     if (!checkpoint) return;
 
     window.clearTimeout(cloudPushTimerRef.current);
-    const delayMs = cloudSyncEnabled ? 2500 : 1200;
+    const delayMs = cloudSyncEnabled ? 12_000 : 2_000;
     cloudPushTimerRef.current = window.setTimeout(() => {
       cloudPushTimerRef.current = undefined;
       if (cloudSyncInFlightRef.current || applyingProfileRef.current) return;
@@ -2965,10 +3031,13 @@ export function RuntimeProvider({ children }: { children: ReactNode }) {
         });
         state().setCloudSync({ cooldownUntil: until });
         if (outcome === "noop") {
-          await syncHistoryWithCloud(userId, "smart");
+          await syncHistoryWithCloud(userId, "smart", 0, { force: true });
           toast.info(i18n.t("profiles.cloud.alreadyUpToDate"));
         } else if (outcome === "pushed" || outcome === "pulled") {
-          await syncHistoryWithCloud(userId, "smart");
+          await syncHistoryWithCloud(userId, "smart", 0, {
+            force: true,
+            delayBeforeWriteMs: outcome === "pushed" ? 3_200 : undefined,
+          });
           toast.success(i18n.t("profiles.cloud.syncSuccess"));
         }
         return;
@@ -3040,7 +3109,10 @@ export function RuntimeProvider({ children }: { children: ReactNode }) {
         });
         state().setCloudSync({ cooldownUntil: until });
         if (status === "synced") {
-          await syncHistoryWithCloud(userId, "push");
+          await syncHistoryWithCloud(userId, "push", 0, {
+            force: true,
+            delayBeforeWriteMs: 3_200,
+          });
           toast.success(i18n.t("profiles.cloud.uploadSuccess"));
         }
         return;
@@ -3118,7 +3190,7 @@ export function RuntimeProvider({ children }: { children: ReactNode }) {
         pulled.meta,
         Boolean(options?.merge),
       );
-      await syncHistoryWithCloud(userId, "pull");
+      await syncHistoryWithCloud(userId, "pull", 0, { force: true });
       const until = cloudSyncLimiter.recordManualOutcome({ serverWork: true });
       state().setCloudSync({ cooldownUntil: until });
       toast.success(i18n.t("profiles.cloud.downloadSuccess"));
@@ -3127,13 +3199,13 @@ export function RuntimeProvider({ children }: { children: ReactNode }) {
       const waitSeconds = cloudSyncLimiter.applyServerRateLimit(rawMsg);
       const displayMsg = waitSeconds
         ? i18n.t("profiles.cloud.rateLimited", { seconds: waitSeconds })
-        : rawMsg;
+        : formatCloudError(rawMsg, i18n.t);
       state().setCloudSync({
         phase: "error",
         cooldownUntil: cloudSyncLimiter.getManualRemainingMs()
           ? Date.now() + cloudSyncLimiter.getManualRemainingMs()
           : state().cloudSync.cooldownUntil,
-        error: displayMsg,
+        error: rawMsg,
       });
       toast.error(i18n.t("profiles.cloud.syncError"), { description: displayMsg });
       throw error;
@@ -3178,13 +3250,13 @@ export function RuntimeProvider({ children }: { children: ReactNode }) {
       const waitSeconds = cloudSyncLimiter.applyServerRateLimit(rawMsg);
       const displayMsg = waitSeconds
         ? i18n.t("profiles.cloud.rateLimited", { seconds: waitSeconds })
-        : rawMsg;
+        : formatCloudError(rawMsg, i18n.t);
       current.setCloudSync({
         phase: "error",
         cooldownUntil: cloudSyncLimiter.getManualRemainingMs()
           ? Date.now() + cloudSyncLimiter.getManualRemainingMs()
           : current.cloudSync.cooldownUntil,
-        error: displayMsg,
+        error: rawMsg,
       });
       toast.error(i18n.t("profiles.cloud.syncError"), { description: displayMsg });
       throw error;
@@ -3301,7 +3373,9 @@ export function RuntimeProvider({ children }: { children: ReactNode }) {
       cloudSyncLimiter.applyServerRateLimit(msg);
       state().setSupportTicket({ loading: false, error: msg });
       if (force) {
-        toast.error(i18n.t("settings.support.loadError"), { description: msg });
+        toast.error(i18n.t("settings.support.loadError"), {
+          description: formatCloudError(msg, i18n.t),
+        });
       }
       return undefined;
     }
@@ -3317,11 +3391,19 @@ export function RuntimeProvider({ children }: { children: ReactNode }) {
     if (trimmed.length < 10) {
       throw new Error("message_too_short");
     }
-    await supportNative.submitKeyReset(TWITCH_CLIENT_ID, trimmed);
-    cloudSyncLimiter.markSupportTicketFetched(userId, true);
-    const updated = await supportNative.ticketStatus(TWITCH_CLIENT_ID);
-    state().setSupportTicket({ ...updated, loading: false, error: undefined });
-    toast.success(i18n.t("settings.support.submitSuccess"));
+    try {
+      await supportNative.submitKeyReset(TWITCH_CLIENT_ID, trimmed);
+      cloudSyncLimiter.markSupportTicketFetched(userId, true);
+      const updated = await supportNative.ticketStatus(TWITCH_CLIENT_ID);
+      state().setSupportTicket({ ...updated, loading: false, error: undefined });
+      toast.success(i18n.t("settings.support.submitSuccess"));
+    } catch (error) {
+      const msg = errorMessage(error);
+      if (isCloudServerUnavailableError(msg)) {
+        state().setSupportTicket({ loading: false, error: msg });
+      }
+      throw error;
+    }
   };
 
   const refreshStorageTicket = async (force = false) => {
@@ -3343,7 +3425,9 @@ export function RuntimeProvider({ children }: { children: ReactNode }) {
       const msg = errorMessage(error);
       state().setStorageTicket({ loading: false, error: msg });
       if (force) {
-        toast.error(i18n.t("profiles.cloud.storage.loadError"), { description: msg });
+        toast.error(i18n.t("profiles.cloud.storage.loadError"), {
+          description: formatCloudError(msg, i18n.t),
+        });
       }
       return undefined;
     }
@@ -3359,12 +3443,135 @@ export function RuntimeProvider({ children }: { children: ReactNode }) {
     if (trimmed.length < 10) {
       throw new Error("message_too_short");
     }
-    await supportNative.submitStorageRequest(TWITCH_CLIENT_ID, requestedMb, trimmed);
-    const updated = await supportNative.storageStatus(TWITCH_CLIENT_ID);
-    state().setStorageTicket({ ...updated, loading: false, error: undefined });
-    state().setCloudSync({ storageInfo: updated.storage });
-    toast.success(i18n.t("profiles.cloud.storage.requestSuccess"));
+    try {
+      await supportNative.submitStorageRequest(TWITCH_CLIENT_ID, requestedMb, trimmed);
+      const updated = await supportNative.storageStatus(TWITCH_CLIENT_ID);
+      state().setStorageTicket({ ...updated, loading: false, error: undefined });
+      state().setCloudSync({ storageInfo: updated.storage });
+      toast.success(i18n.t("profiles.cloud.storage.requestSuccess"));
+    } catch (error) {
+      const msg = errorMessage(error);
+      if (isCloudServerUnavailableError(msg)) {
+        state().setStorageTicket({ loading: false, error: msg });
+      }
+      throw error;
+    }
   };
+
+  useEffect(() => {
+    const prevOnline = prevNetworkOnlineRef.current;
+    prevNetworkOnlineRef.current = networkOnline;
+    const justCameOnline = prevOnline === false && networkOnline;
+
+    const hasServerUnavailableError =
+      isCloudServerUnavailableError(entitlementsError) ||
+      isCloudServerUnavailableError(cloudSyncError) ||
+      isCloudServerUnavailableError(cloudHistoryError) ||
+      isCloudServerUnavailableError(supportTicketError) ||
+      isCloudServerUnavailableError(storageTicketError);
+
+    if (
+      !isTauri() ||
+      !ready ||
+      twitchPhase !== "connected" ||
+      !twitchUserId ||
+      !networkOnline
+    ) {
+      return;
+    }
+
+    const needsCloudRecovery =
+      hasServerUnavailableError ||
+      (justCameOnline &&
+        (Boolean(state().cloudSync.hasLocalChanges) ||
+          !state().entitlements.pro ||
+          state().cloudSyncEnabled));
+
+    if (!needsCloudRecovery) return;
+
+    const runRecovery = async () => {
+      if (cloudRecoveryInFlightRef.current) return;
+      const current = state();
+      const uid = current.twitch.userId;
+      const login = current.twitch.account ?? "";
+      if (!uid || current.twitch.phase !== "connected") return;
+
+      cloudRecoveryInFlightRef.current = true;
+      try {
+        let isPro = current.entitlements.pro;
+        if (!isPro || isCloudServerUnavailableError(current.entitlements.error)) {
+          try {
+            const ent = await proNative.entitlements(TWITCH_CLIENT_ID);
+            if (state().twitch.userId !== uid) return;
+            cloudSyncLimiter.setCachedEntitlements(uid, ent);
+            state().setEntitlements({ ...ent, loading: false, error: undefined });
+            isPro = ent.pro;
+          } catch (err) {
+            const msg = errorMessage(err);
+            state().setEntitlements({ loading: false, error: msg });
+          }
+        }
+
+        if (
+          isPro &&
+          (isCloudServerUnavailableError(state().cloudSync.error) ||
+            isCloudServerUnavailableError(state().cloudSync.historyError) ||
+            state().cloudSync.hasLocalChanges ||
+            justCameOnline)
+        ) {
+          await reconcileCloudOnConnect(uid, login, { force: true });
+        }
+
+        if (isCloudServerUnavailableError(state().supportTicket?.error)) {
+          try {
+            const nextSupport = await supportNative.ticketStatus(TWITCH_CLIENT_ID);
+            if (state().twitch.userId === uid) {
+              cloudSyncLimiter.markSupportTicketFetched(uid, false);
+              state().setSupportTicket({ ...nextSupport, loading: false, error: undefined });
+            }
+          } catch {
+            // Keep existing offline error state until next recovery check.
+          }
+        }
+
+        if (isPro && isCloudServerUnavailableError(state().storageTicket?.error)) {
+          try {
+            const nextStorage = await supportNative.storageStatus(TWITCH_CLIENT_ID);
+            if (state().twitch.userId === uid) {
+              state().setStorageTicket({ ...nextStorage, loading: false, error: undefined });
+              state().setCloudSync({ storageInfo: nextStorage.storage });
+            }
+          } catch {
+            // Keep existing offline error state until next recovery check.
+          }
+        }
+      } finally {
+        cloudRecoveryInFlightRef.current = false;
+      }
+    };
+
+    if (justCameOnline) {
+      void runRecovery();
+    }
+
+    if (!hasServerUnavailableError) return;
+    const timer = window.setInterval(() => {
+      void runRecovery();
+    }, 60_000);
+    return () => window.clearInterval(timer);
+  }, [
+    ready,
+    networkOnline,
+    twitchPhase,
+    twitchUserId,
+    entitlementsError,
+    cloudSyncError,
+    cloudHistoryError,
+    supportTicketError,
+    storageTicketError,
+    reconcileCloudOnConnect,
+    state,
+  ]);
 
   if (!isTauri() && remoteAuthNeeded) {
     return (

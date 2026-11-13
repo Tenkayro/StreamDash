@@ -61,6 +61,9 @@ function mapSupportError(
   if (wait) {
     return t("settings.support.errors.rateLimited", { seconds: wait });
   }
+  if (isCloudServerUnavailableError(raw)) {
+    return t("pro.offlineDetail");
+  }
   return raw || t("settings.support.loadError");
 }
 
@@ -180,7 +183,9 @@ export function ProCloudSection() {
     Boolean(
       isCloudServerUnavailableError(entitlements.error) ||
         isCloudServerUnavailableError(cloudSync.error) ||
+        isCloudServerUnavailableError(cloudSync.historyError) ||
         isCloudServerUnavailableError(supportTicket?.error) ||
+        isCloudServerUnavailableError(storageTicket?.error) ||
         isCloudServerUnavailableError(activateError),
     );
   const syncButtonsDisabled =
@@ -310,13 +315,23 @@ export function ProCloudSection() {
               onClick={() => {
                 setSyncBusy(true);
                 setActivateError(undefined);
-                void runtime
-                  .refreshProEntitlements()
-                  .then((ent) => {
-                    if (ent.pro) {
-                      return runtime.syncCloudNow("smart").catch(() => undefined);
-                    }
-                    return undefined;
+                setResetError(undefined);
+                setStorageError(undefined);
+                void useNetworkStore
+                  .getState()
+                  .checkNow()
+                  .then((online) => {
+                    if (!online) return undefined;
+                    return runtime.refreshProEntitlements().then((ent) => {
+                      const jobs: Promise<unknown>[] = [
+                        runtime.refreshSupportTicket(false),
+                      ];
+                      if (ent.pro) {
+                        jobs.push(runtime.syncCloudNow("smart"));
+                        jobs.push(runtime.refreshStorageTicket(false));
+                      }
+                      return Promise.allSettled(jobs);
+                    });
                   })
                   .catch(() => undefined)
                   .finally(() => setSyncBusy(false));
@@ -805,7 +820,7 @@ export function ProCloudSection() {
                       if (wait) {
                         return t("settings.support.errors.rateLimited", { seconds: wait });
                       }
-                      return cloudSync.historyError;
+                      return formatCloudError(cloudSync.historyError, t);
                     })()}
                   </div>
                 )}
@@ -890,7 +905,9 @@ export function ProCloudSection() {
                         <Button
                           type="submit"
                           variant="primary"
-                          disabled={storageSubmitting || storageMessage.trim().length < 10}
+                          disabled={
+                            serverOffline || storageSubmitting || storageMessage.trim().length < 10
+                          }
                         >
                           <Send size={12} />
                           {storageSubmitting
@@ -1135,7 +1152,9 @@ export function ProCloudSection() {
                           <Button
                             type="submit"
                             variant="primary"
-                            disabled={resetSubmitting || resetMessage.trim().length < 10}
+                            disabled={
+                              serverOffline || resetSubmitting || resetMessage.trim().length < 10
+                            }
                           >
                             <Send size={13} />
                             {resetSubmitting

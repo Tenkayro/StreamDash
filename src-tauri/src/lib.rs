@@ -1187,7 +1187,7 @@ async fn cloud_sync_send(
             .header("X-SD-Timestamp", &ts)
             .header("X-SD-Nonce", &nonce)
             .header("X-SD-Signature", &sig)
-            .timeout(std::time::Duration::from_secs(12));
+            .timeout(std::time::Duration::from_secs(30));
         if payload.is_some() {
             req = req
                 .header("Content-Type", "application/json")

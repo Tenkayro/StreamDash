@@ -10,8 +10,8 @@ interface NetworkStore {
 }
 
 const PROBE_URLS = [
-  "https://streamdash-api.tenkayro.de/health",
   "https://api.twitch.tv/helix",
+  "https://streamdash-api.tenkayro.de/health",
 ];
 
 let probeInFlight: Promise<boolean> | null = null;
@@ -48,7 +48,7 @@ function scheduleOfflinePoll() {
       return;
     }
     void useNetworkStore.getState().checkNow();
-  }, 10_000);
+  }, 20_000);
 }
 
 function clearOfflinePoll() {

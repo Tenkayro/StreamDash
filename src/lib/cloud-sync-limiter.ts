@@ -1,17 +1,20 @@
 import type { ProEntitlements } from '../types'
 
-const MANUAL_COOLDOWN_AFTER_SYNC_MS = 3_500
-const MANUAL_COOLDOWN_NOOP_MS = 1_500
+const MANUAL_COOLDOWN_AFTER_SYNC_MS = 8_000
+const MANUAL_COOLDOWN_NOOP_MS = 3_000
 const MANUAL_WINDOW_MS = 60_000
-const MANUAL_BURST_LIMIT = 6
-const MANUAL_BURST_COOLDOWN_MS = 15_000
+const MANUAL_BURST_LIMIT = 4
+const MANUAL_BURST_COOLDOWN_MS = 25_000
 
-const RECONCILE_MIN_GAP_MS = 15_000
-const ENTITLEMENTS_TTL_MS = 120_000
+const RECONCILE_MIN_GAP_MS = 60_000
+const HISTORY_SYNC_MIN_GAP_MS = 120_000
+const ENTITLEMENTS_TTL_MS = 300_000
+const SUPPORT_AUTO_GAP_MS = 60_000
+const SUPPORT_MANUAL_COOLDOWN_MS = 8_000
 
 const ACTIVATE_WINDOW_MS = 60_000
 const ACTIVATE_BURST_LIMIT = 4
-const ACTIVATE_COOLDOWN_MS = 3_000
+const ACTIVATE_COOLDOWN_MS = 5_000
 
 /**
  * Lightweight client-side limiter + short-TTL cache to prevent button spamming
@@ -21,6 +24,9 @@ class CloudSyncClientLimiter {
   private manualTimestamps: number[] = []
   private cooldownUntil = 0
   private lastReconcileByUser = new Map<string, number>()
+  private lastHistorySyncByUser = new Map<string, number>()
+  private lastHistoryFingerprintByUser = new Map<string, string>()
+  private lastHistoryRemoteShaByUser = new Map<string, string>()
   private entitlementsCache = new Map<string, { value: ProEntitlements; fetchedAt: number }>()
   private activateTimestamps: number[] = []
   private activateCooldownUntil = 0
@@ -140,7 +146,7 @@ class CloudSyncClientLimiter {
       return { allowed: true, waitSeconds: 0 }
     }
     const last = this.lastSupportFetchByUser.get(userId) ?? 0
-    if (now - last < 20_000) {
+    if (now - last < SUPPORT_AUTO_GAP_MS) {
       return { allowed: false, waitSeconds: 0 }
     }
     return { allowed: true, waitSeconds: 0 }
@@ -149,7 +155,34 @@ class CloudSyncClientLimiter {
   markSupportTicketFetched(userId: string, manual: boolean, now = Date.now()): void {
     this.lastSupportFetchByUser.set(userId, now)
     if (manual) {
-      this.supportRefreshCooldownUntil = now + 4_000
+      this.supportRefreshCooldownUntil = now + SUPPORT_MANUAL_COOLDOWN_MS
+    }
+  }
+
+  canSyncHistory(userId: string, force = false, now = Date.now()): boolean {
+    if (force) return true
+    const last = this.lastHistorySyncByUser.get(userId) ?? 0
+    return now - last >= HISTORY_SYNC_MIN_GAP_MS
+  }
+
+  markHistorySynced(
+    userId: string,
+    options?: { fingerprint?: string; remoteSha?: string },
+    now = Date.now(),
+  ): void {
+    this.lastHistorySyncByUser.set(userId, now)
+    if (options?.fingerprint !== undefined) {
+      this.lastHistoryFingerprintByUser.set(userId, options.fingerprint)
+    }
+    if (options?.remoteSha !== undefined) {
+      this.lastHistoryRemoteShaByUser.set(userId, options.remoteSha)
+    }
+  }
+
+  getLastHistoryState(userId: string): { fingerprint?: string; remoteSha?: string } {
+    return {
+      fingerprint: this.lastHistoryFingerprintByUser.get(userId),
+      remoteSha: this.lastHistoryRemoteShaByUser.get(userId),
     }
   }
 }
