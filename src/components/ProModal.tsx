@@ -85,34 +85,34 @@ function ProModalContent({ onClose }: { onClose: () => void }) {
 
   return (
     <div
-      className="fixed inset-0 z-50 grid place-items-center bg-canvas/80 p-4"
+      className="fixed inset-0 z-50 grid place-items-center bg-black/70 p-4 backdrop-blur-xs"
       onMouseDown={(event) => {
         if (event.target === event.currentTarget) onClose();
       }}
     >
-      <Card className="w-full max-w-lg overflow-hidden border-line bg-surface p-0 shadow-2xl">
-        <div className="flex items-center justify-between border-b border-line bg-twitch-soft px-5 py-4">
+      <Card className="w-full max-w-lg overflow-hidden border-rule-strong bg-panel p-0 shadow-2xl">
+        <div className="flex items-center justify-between border-b border-line bg-well px-5 py-4">
           <div className="flex items-center gap-2.5">
-            <span className="grid size-8 place-items-center rounded-xl border border-white/10 bg-white/5 text-zinc-300">
-              <Crown size={16} />
+            <span className="grid size-8 place-items-center rounded-lg border border-amber-400/25 bg-amber-400/12 text-amber-300">
+              <Crown size={15} />
             </span>
             <div>
               <div className="flex items-center gap-2">
-                <h3 className="text-sm font-semibold text-zinc-100">
+                <h3 className="text-sm font-semibold text-ink-strong">
                   {t("pro.title")}
                 </h3>
                 <Badge tone={entitlements.pro ? "green" : "purple"}>
                   {entitlements.pro ? t("pro.badgeActive") : t("pro.badgeOneTime")}
                 </Badge>
               </div>
-              <p className="text-[11px] text-zinc-400">{t("pro.subtitle")}</p>
+              <p className="text-[11px] text-muted">{t("pro.subtitle")}</p>
             </div>
           </div>
           <button
             type="button"
             onClick={onClose}
             aria-label={t("common.cancel")}
-            className="grid size-7 place-items-center rounded-lg text-zinc-500 transition hover:bg-white/5 hover:text-zinc-200"
+            className="grid size-7 place-items-center rounded-md text-subtle transition hover:bg-hover hover:text-ink"
           >
             <X size={15} />
           </button>
@@ -120,10 +120,10 @@ function ProModalContent({ onClose }: { onClose: () => void }) {
 
         <div className="space-y-4 p-5">
           {!twitchConnected ? (
-            <div className="space-y-3 rounded-xl border border-line bg-black/20 p-4">
+            <div className="space-y-3 rounded-[10px] border border-rule bg-well p-4">
               <div className="flex items-start gap-3">
                 <Link2 size={16} className="mt-0.5 shrink-0 text-twitch-ink" />
-                <div className="text-xs leading-5 text-zinc-300">
+                <div className="text-xs leading-5 text-ink">
                   {t("pro.twitchRequiredDetail")}
                 </div>
               </div>
@@ -141,14 +141,14 @@ function ProModalContent({ onClose }: { onClose: () => void }) {
             </div>
           ) : entitlements.pro ? (
             <div className="space-y-4">
-              <div className="rounded-xl border border-emerald-500/25 bg-emerald-500/8 p-4">
+              <div className="rounded-[10px] border border-emerald-500/25 bg-emerald-500/8 p-4">
                 <div className="flex items-start gap-3">
                   <CheckCircle2 size={17} className="mt-0.5 shrink-0 text-emerald-300" />
                   <div className="min-w-0 flex-1 space-y-1 text-xs">
                     <div className="font-semibold text-emerald-200">
                       {t("pro.activeForAccount", { account: twitch.account ?? "" })}
                     </div>
-                    <div className="text-zinc-400">
+                    <div className="text-muted">
                       {t("pro.licenseSummary", {
                         key: entitlements.license?.maskedKey ?? "••••",
                         date: entitlements.license?.activatedAt
@@ -158,8 +158,8 @@ function ProModalContent({ onClose }: { onClose: () => void }) {
                     </div>
                     {entitlements.license?.keyId && (
                       <div className="mt-1.5 flex items-center gap-2">
-                        <span className="text-zinc-400">{t("pro.keyIdLabel")}:</span>
-                        <code className="rounded bg-black/35 px-1.5 py-0.5 font-mono text-[11px] text-emerald-200">
+                        <span className="text-muted">{t("pro.keyIdLabel")}:</span>
+                        <code className="studio-mono rounded border border-emerald-500/25 bg-well px-1.5 py-0.5 text-[11px] text-emerald-200">
                           {entitlements.license.keyId}
                         </code>
                         <button
@@ -171,7 +171,7 @@ function ProModalContent({ onClose }: { onClose: () => void }) {
                               toast.success(t("pro.keyIdCopied"));
                             });
                           }}
-                          className="inline-flex items-center gap-1 rounded border border-line bg-white/5 px-1.5 py-0.5 text-[11px] text-zinc-200 transition hover:bg-white/10"
+                          className="inline-flex items-center gap-1 rounded border border-rule bg-panel px-1.5 py-0.5 text-[11px] text-ink transition hover:border-rule-strong hover:text-ink-strong"
                           title={t("pro.keyIdLabel")}
                         >
                           <Copy size={11} />
@@ -182,20 +182,20 @@ function ProModalContent({ onClose }: { onClose: () => void }) {
                 </div>
               </div>
 
-              <div className="space-y-2 rounded-xl border border-line bg-black/20 p-3.5 text-xs">
-                <div className="flex items-center gap-2 text-zinc-200">
+              <div className="space-y-2 rounded-[10px] border border-rule bg-well p-3.5 text-xs">
+                <div className="flex items-center gap-2 text-ink">
                   <Cloud size={14} className="text-accent" />
                   <span>{t("pro.perks.cloudSync")}</span>
                 </div>
-                <div className="flex items-center gap-2 text-zinc-200">
+                <div className="flex items-center gap-2 text-ink">
                   <ShieldCheck size={14} className="text-emerald-400" />
                   <span>{t("pro.perks.twitchBound", { account: twitch.account ?? "" })}</span>
                 </div>
-                <div className="flex items-center gap-2 text-zinc-200">
+                <div className="flex items-center gap-2 text-ink">
                   <Sparkles size={14} className="text-twitch-ink" />
                   <span>{t("pro.perks.futureFeatures")}</span>
                 </div>
-                <div className="flex items-center gap-2 text-zinc-200">
+                <div className="flex items-center gap-2 text-ink">
                   <HardDrive size={14} className="shrink-0 text-signal-2" />
                   <span>{t("pro.perks.storageQuota")}</span>
                 </div>
@@ -223,31 +223,31 @@ function ProModalContent({ onClose }: { onClose: () => void }) {
             </div>
           ) : (
             <div className="space-y-4">
-              <div className="space-y-2.5 rounded-xl border border-line bg-black/20 p-3.5 text-xs">
-                <div className="flex items-center gap-2 text-zinc-200">
+              <div className="space-y-2.5 rounded-[10px] border border-rule bg-well p-3.5 text-xs">
+                <div className="flex items-center gap-2 text-ink">
                   <Cloud size={14} className="shrink-0 text-accent" />
                   <span>{t("pro.perks.cloudSync")}</span>
                 </div>
-                <div className="flex items-center gap-2 text-zinc-200">
+                <div className="flex items-center gap-2 text-ink">
                   <ShieldCheck size={14} className="shrink-0 text-emerald-400" />
                   <span>{t("pro.perks.twitchBound", { account: twitch.account ?? "" })}</span>
                 </div>
-                <div className="flex items-center gap-2 text-zinc-200">
+                <div className="flex items-center gap-2 text-ink">
                   <Sparkles size={14} className="shrink-0 text-twitch-ink" />
                   <span>{t("pro.perks.futureFeatures")}</span>
                 </div>
-                <div className="flex items-center gap-2 text-zinc-200">
+                <div className="flex items-center gap-2 text-ink">
                   <HardDrive size={14} className="shrink-0 text-signal-2" />
                   <span>{t("pro.perks.storageQuota")}</span>
                 </div>
               </div>
 
-              <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-accent/25 bg-accent-soft/30 px-3.5 py-3">
+              <div className="flex flex-wrap items-center justify-between gap-3 rounded-[10px] border border-accent-border bg-accent-soft/55 px-3.5 py-3">
                 <div className="min-w-0 flex-1">
-                  <div className="text-xs font-semibold text-zinc-100">
+                  <div className="text-xs font-semibold text-ink-strong">
                     {t("pro.buyCardTitle")}
                   </div>
-                  <div className="text-[11px] text-zinc-400">
+                  <div className="text-[11px] text-muted">
                     {t("pro.buyCardDetail")}
                   </div>
                 </div>
@@ -262,18 +262,18 @@ function ProModalContent({ onClose }: { onClose: () => void }) {
               </div>
 
               <form onSubmit={(e) => void handleActivate(e)} className="space-y-2.5">
-                <label className="block text-xs font-medium text-zinc-300">
+                <label className="studio-label block">
                   {t("pro.licenseKeyLabel")}
                 </label>
                 <div className="flex gap-2">
                   <div className="relative min-w-0 flex-1">
                     <KeyRound
                       size={14}
-                      className="pointer-events-none absolute top-1/2 left-3 -translate-y-1/2 text-zinc-500"
+                      className="pointer-events-none absolute top-1/2 left-3 -translate-y-1/2 text-subtle"
                     />
                     <input
                       autoFocus
-                      className="input input-leading-icon font-mono text-xs"
+                      className="input input-leading-icon studio-mono text-xs"
                       placeholder={t("pro.licenseKeyPlaceholder")}
                       value={licenseKey}
                       onChange={(event) => {

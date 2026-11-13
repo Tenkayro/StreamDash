@@ -75,36 +75,36 @@ function GoalCard({
     <Card data-search-label={label} className="flex flex-col p-3.5">
       <div className="flex items-start justify-between gap-3">
         <div className="flex min-w-0 items-center gap-2.5">
-          <span className="grid size-8 shrink-0 place-items-center rounded-lg bg-accent-soft text-accent">
+          <span className="grid size-8 shrink-0 place-items-center rounded-[7px] border border-accent-border bg-accent-soft text-accent">
             <Icon size={15} aria-hidden="true" />
           </span>
           <div className="min-w-0">
-            <div className="truncate text-sm font-semibold">{label}</div>
-            <div className="mt-0.5 text-[10px] text-muted">
+            <div className="truncate text-sm font-semibold text-ink-strong">{label}</div>
+            <div className="mt-0.5 text-[10.5px] text-muted">
               {target ? t("goals.targetValue", { value: formattedTarget }) : t("goals.noTarget")}
             </div>
           </div>
         </div>
-        <span className="shrink-0 rounded-md bg-white/5 px-2 py-0.5 text-[10px] font-semibold tabular-nums text-zinc-400">
+        <span className="shrink-0 rounded-md border border-rule bg-well px-2 py-0.5 studio-mono text-[10.5px] font-semibold text-muted">
           {target ? `${Math.round(percent)}%` : "—"}
         </span>
       </div>
 
-      <div className="mt-3 min-h-7 text-xl font-semibold tracking-[-.03em]">
+      <div className="mt-3 min-h-7 studio-mono text-xl font-semibold tracking-[-.03em] text-ink-strong">
         {loading ? (
           <LoadingIndicator className="h-6 w-20" />
         ) : formattedValue == null ? (
-          <span className="text-sm font-normal tracking-normal text-muted">
+          <span className="font-sans text-sm font-normal tracking-normal text-muted">
             {t("goals.unavailable")}
           </span>
         ) : (
-          <span className="tabular-nums">{formattedValue}</span>
+          <span>{formattedValue}</span>
         )}
       </div>
 
-      <div className="mt-2 h-1.5 overflow-hidden rounded-full bg-white/5">
+      <div className="mt-2 h-2 overflow-hidden rounded-full border border-rule/80 bg-well">
         <div
-          className="h-full w-full origin-left rounded-full bg-accent transition-transform"
+          className="h-full w-full origin-left rounded-full bg-accent shadow-[0_0_10px_var(--app-accent-glow)] transition-transform"
           style={{ transform: `scaleX(${loading ? 0 : Math.max(0, Math.min(100, percent)) / 100})` }}
         />
       </div>

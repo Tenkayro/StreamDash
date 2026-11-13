@@ -391,7 +391,7 @@ export function CommandsPage() {
         <div
           role="tablist"
           aria-label={t("commands.title")}
-          className="inline-flex rounded-xl border border-line bg-black/20 p-1"
+          className="inline-flex rounded-[10px] border border-rule bg-well p-1"
         >
           {(["custom", "default"] as const).map((key) => {
             const count = commands.filter((c) =>
@@ -405,14 +405,14 @@ export function CommandsPage() {
                 aria-selected={tab === key}
                 onClick={() => setTab(key)}
                 className={cn(
-                  "rounded-lg px-3 py-1 text-xs font-medium transition",
+                  "inline-flex items-center gap-1.5 rounded-[7px] px-3 py-1 text-xs font-medium transition",
                   tab === key
-                    ? "bg-accent/20 text-accent"
-                    : "text-zinc-400 hover:text-zinc-200",
+                    ? "border border-accent-border bg-accent-soft text-accent"
+                    : "border border-transparent text-muted hover:text-ink",
                 )}
               >
                 {t(`commands.tabs.${key}`)}
-                <span className="ml-1.5 text-[10px] text-zinc-500">
+                <span className="studio-mono text-[10px] text-subtle">
                   {count}
                 </span>
               </button>
@@ -423,7 +423,7 @@ export function CommandsPage() {
         <div className="relative min-w-60 flex-1 sm:max-w-sm">
           <Search
             size={14}
-            className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-zinc-500"
+            className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-subtle"
           />
           <input
             className="input input-leading-icon input-trailing-action w-full"
@@ -437,7 +437,7 @@ export function CommandsPage() {
               type="button"
               onClick={() => setSearch("")}
               aria-label={t("activity.clearSearch")}
-              className="absolute right-2 top-1/2 grid size-6 -translate-y-1/2 place-items-center rounded-md text-zinc-500 hover:bg-white/5 hover:text-zinc-200"
+              className="absolute right-2 top-1/2 grid size-6 -translate-y-1/2 place-items-center rounded-md text-subtle hover:bg-hover hover:text-ink"
             >
               <X size={13} />
             </button>
@@ -446,14 +446,14 @@ export function CommandsPage() {
       </div>
 
       <Card className="flex min-h-0 flex-1 flex-col overflow-hidden">
-        <div className="grid shrink-0 grid-cols-[minmax(120px,190px)_1fr_auto] items-center gap-3 border-b border-line bg-white/[.015] px-4 py-2.5 text-xs font-semibold text-zinc-300">
+        <div className="studio-label grid shrink-0 grid-cols-[minmax(120px,190px)_1fr_auto] items-center gap-3 border-b border-rule bg-shell/70 px-4 py-2.5">
           <button
             type="button"
             onClick={() => setSortAsc((prev) => !prev)}
-            className="inline-flex items-center gap-1 text-left transition hover:text-zinc-100"
+            className="inline-flex items-center gap-1 text-left transition hover:text-ink-strong"
           >
             <span>{t("commands.table.name")}</span>
-            <ArrowUpDown size={12} className="text-zinc-500" />
+            <ArrowUpDown size={11} className="text-subtle" />
           </button>
           <span>{t("commands.table.response")}</span>
           <span className="sr-only">{t("commands.table.actions")}</span>
@@ -484,18 +484,18 @@ export function CommandsPage() {
             />
           </div>
         ) : (
-          <ScrollFade className="flex min-h-0 flex-1 flex-col" color="#242526" size={32}>
-            <div className="min-h-0 flex-1 divide-y divide-line overflow-y-auto">
+          <ScrollFade className="flex min-h-0 flex-1 flex-col" color="var(--color-panel)" size={32}>
+            <div className="min-h-0 flex-1 divide-y divide-rule overflow-y-auto">
               {filteredCommands.map((cmd) => {
                 const triggerLabel = `${cmd.usePrefix ? "!" : ""}${cmd.name}`;
                 return (
                   <div
                     key={cmd.id}
-                    className="grid grid-cols-1 items-center gap-2.5 px-4 py-2.5 transition hover:bg-white/2 sm:grid-cols-[minmax(120px,190px)_1fr_auto]"
+                    className="grid grid-cols-1 items-center gap-2.5 px-4 py-2.5 transition hover:bg-well/65 sm:grid-cols-[minmax(120px,190px)_1fr_auto]"
                   >
                     <div className="min-w-0">
                       <div className="flex flex-wrap items-center gap-1.5">
-                        <span className="truncate font-mono text-xs font-semibold text-zinc-100">
+                        <span className="studio-mono truncate text-xs font-semibold text-ink-strong">
                           {triggerLabel}
                         </span>
                         {!cmd.usePrefix && (
@@ -510,7 +510,7 @@ export function CommandsPage() {
                         )}
                       </div>
                       {(cmd.roles.length > 0 || cmd.keywords.length > 0) && (
-                        <div className="mt-0.5 flex flex-wrap items-center gap-1 text-[10.5px] text-zinc-500">
+                        <div className="mt-0.5 flex flex-wrap items-center gap-1 text-[10.5px] text-subtle">
                           {cmd.roles.length > 0 && (
                             <span>
                               {cmd.roles
@@ -523,7 +523,7 @@ export function CommandsPage() {
                     </div>
 
                     <div className="min-w-0">
-                      <p className="line-clamp-2 text-xs leading-5 text-zinc-300">
+                      <p className="line-clamp-2 text-xs leading-5 text-ink">
                         {cmd.builtIn && cmd.id === "builtin-song"
                           ? t("commands.builtInSongDescription")
                           : cmd.response}
@@ -541,7 +541,7 @@ export function CommandsPage() {
                         onClick={() => openEdit(cmd)}
                         title={t("commands.edit")}
                         aria-label={t("commands.edit")}
-                        className="grid size-8 place-items-center rounded-lg border border-line bg-white/3 text-zinc-400 transition hover:border-accent/35 hover:text-accent"
+                        className="grid size-8 place-items-center rounded-lg border border-rule bg-well text-muted transition hover:border-accent-border hover:bg-accent-soft hover:text-accent"
                       >
                         <Pencil size={13} />
                       </button>
@@ -554,7 +554,7 @@ export function CommandsPage() {
                           }}
                           title={t("commands.delete")}
                           aria-label={t("commands.delete")}
-                          className="grid size-8 place-items-center rounded-lg border border-line bg-white/3 text-zinc-400 transition hover:border-red-400/35 hover:bg-red-500/10 hover:text-red-300"
+                          className="grid size-8 place-items-center rounded-lg border border-rule bg-well text-muted transition hover:border-red-400/35 hover:bg-red-500/12 hover:text-red-300"
                         >
                           <Trash2 size={13} />
                         </button>
@@ -574,7 +574,7 @@ export function CommandsPage() {
           onMouseDown={(event) => {
             if (event.target === event.currentTarget) setEditing(null);
           }}
-          className="fixed inset-0 z-90 flex items-center justify-center bg-canvas/80 p-3 sm:p-4"
+          className="fixed inset-0 z-90 flex items-center justify-center bg-black/70 p-3 backdrop-blur-xs sm:p-4"
         >
           <div
             role="dialog"
@@ -582,20 +582,20 @@ export function CommandsPage() {
             aria-label={
               isNew ? t("commands.createTitle") : t("commands.editTitle")
             }
-            className="flex max-h-[min(580px,calc(100vh-2rem))] w-full max-w-2xl flex-col overflow-hidden rounded-2xl border border-line bg-panel shadow-2xl shadow-black/70"
+            className="flex max-h-[min(580px,calc(100vh-2rem))] w-full max-w-2xl flex-col overflow-hidden rounded-[14px] border border-rule-strong bg-panel shadow-2xl shadow-black/75"
           >
-            <div className="flex shrink-0 items-center justify-between gap-3 border-b border-line bg-white/2 px-5 py-3">
+            <div className="flex shrink-0 items-center justify-between gap-3 border-b border-rule bg-shell/80 px-5 py-3">
               <div className="flex min-w-0 items-center gap-2.5">
-                <span className="grid size-7 shrink-0 place-items-center rounded-lg bg-accent-soft text-accent">
+                <span className="grid size-7 shrink-0 place-items-center rounded-lg border border-accent-border bg-accent-soft text-accent">
                   <Terminal size={14} />
                 </span>
-                <h2 className="truncate text-sm font-semibold text-zinc-100">
+                <h2 className="truncate text-sm font-semibold text-ink-strong">
                   {isNew ? t("commands.createTitle") : t("commands.editTitle")}
                 </h2>
                 <span
                   className={cn(
-                    "truncate rounded-md border border-line bg-black/25 px-2 py-0.5 font-mono text-[11px]",
-                    editing.name.trim() ? "text-accent" : "text-zinc-500",
+                    "studio-mono truncate rounded-md border border-rule bg-well px-2 py-0.5 text-[11px]",
+                    editing.name.trim() ? "text-accent" : "text-subtle",
                   )}
                 >
                   {editing.usePrefix ? "!" : ""}
@@ -606,14 +606,14 @@ export function CommandsPage() {
                 type="button"
                 onClick={() => setEditing(null)}
                 aria-label={t("titleBar.close")}
-                className="grid size-7 shrink-0 place-items-center rounded-lg border border-line text-zinc-400 transition hover:bg-white/5 hover:text-zinc-100"
+                className="grid size-7 shrink-0 place-items-center rounded-lg border border-rule bg-well text-muted transition hover:border-rule-strong hover:text-ink-strong"
               >
                 <X size={14} />
               </button>
             </div>
 
             <div className="grid min-h-0 flex-1 grid-cols-1 overflow-hidden sm:grid-cols-[190px_1fr]">
-              <div className="flex shrink-0 gap-1 overflow-x-auto border-b border-line bg-black/15 p-2 sm:flex-col sm:border-b-0 sm:border-r">
+              <div className="flex shrink-0 gap-1 overflow-x-auto border-b border-rule bg-shell/60 p-2 sm:flex-col sm:border-b-0 sm:border-r">
                 {modalSections.map((item) => {
                   const Icon = item.icon;
                   const active = section === item.id;
@@ -625,8 +625,8 @@ export function CommandsPage() {
                       className={cn(
                         "flex shrink-0 items-center justify-between gap-2 rounded-lg px-2.5 py-2 text-left text-xs font-medium transition",
                         active
-                          ? "border border-accent/35 bg-accent-soft text-accent"
-                          : "border border-transparent text-zinc-400 hover:bg-white/4 hover:text-zinc-200",
+                          ? "border border-accent-border bg-accent-soft text-accent"
+                          : "border border-transparent text-muted hover:bg-hover hover:text-ink",
                       )}
                     >
                       <span className="flex min-w-0 items-center gap-2">
@@ -634,7 +634,7 @@ export function CommandsPage() {
                         <span className="truncate">{item.label}</span>
                       </span>
                       {typeof item.badge === "number" && item.badge > 0 && (
-                        <span className="rounded bg-white/8 px-1.5 py-0.5 text-[10px] tabular-nums text-zinc-300">
+                        <span className="studio-mono rounded bg-well px-1.5 py-0.5 text-[10px] text-ink">
                           {item.badge}
                         </span>
                       )}
@@ -650,7 +650,7 @@ export function CommandsPage() {
                 {section === "general" && (
                   <div className="space-y-3.5">
                     <div className="flex flex-wrap items-center gap-2.5">
-                      <div className="flex min-w-0 flex-1 items-center overflow-hidden rounded-lg border border-line bg-black/25 focus-within:border-accent/45">
+                      <div className="flex min-w-0 flex-1 items-center overflow-hidden rounded-lg border border-rule bg-well focus-within:border-accent-border">
                         <button
                           type="button"
                           disabled={editing.builtIn}
@@ -664,16 +664,16 @@ export function CommandsPage() {
                             })
                           }
                           className={cn(
-                            "flex h-9 shrink-0 items-center border-r border-line px-3 font-mono text-xs font-bold transition",
+                            "studio-mono flex h-9 shrink-0 items-center border-r border-rule px-3 text-xs font-bold transition",
                             editing.usePrefix
                               ? "bg-accent-soft text-accent"
-                              : "bg-white/2 text-zinc-600 line-through hover:text-zinc-300",
+                              : "bg-panel text-subtle line-through hover:text-ink",
                           )}
                         >
                           !
                         </button>
                         <input
-                          className="h-9 min-w-0 flex-1 bg-transparent px-3 font-mono text-xs text-zinc-100 outline-none placeholder:text-zinc-600 disabled:opacity-60"
+                          className="studio-mono h-9 min-w-0 flex-1 bg-transparent px-3 text-xs text-ink-strong outline-none placeholder:text-subtle disabled:opacity-60"
                           disabled={editing.builtIn}
                           placeholder={t("commands.namePlaceholder")}
                           value={editing.name}
@@ -686,7 +686,7 @@ export function CommandsPage() {
                         />
                       </div>
 
-                      <label className="flex cursor-pointer items-center gap-2 rounded-lg border border-line bg-white/2 px-2.5 py-1.5">
+                      <label className="flex cursor-pointer items-center gap-2 rounded-lg border border-rule bg-well px-2.5 py-1.5">
                         <Toggle
                           value={editing.enabled}
                           onChange={(enabled) =>
@@ -694,7 +694,7 @@ export function CommandsPage() {
                           }
                           label={t("commands.enabled")}
                         />
-                        <span className="text-xs font-medium text-zinc-200">
+                        <span className="text-xs font-medium text-ink">
                           {t("commands.enabled")}
                         </span>
                       </label>
@@ -704,18 +704,18 @@ export function CommandsPage() {
                       <div className="mb-1.5 flex items-center justify-between gap-2">
                         <label
                           htmlFor="cmd-response"
-                          className="text-xs font-semibold text-zinc-200"
+                          className="studio-label"
                         >
                           {t("commands.response")}
                         </label>
                         {!(editing.builtIn && editing.id === "builtin-song") && (
-                          <span className="text-[11px] tabular-nums text-muted">
+                          <span className="studio-mono text-[11px] text-subtle">
                             {editing.response.length}/500
                           </span>
                         )}
                       </div>
                       {editing.builtIn && editing.id === "builtin-song" ? (
-                        <div className="rounded-lg border border-line bg-white/2 px-3 py-2.5 text-xs text-zinc-400">
+                        <div className="rounded-lg border border-rule bg-well px-3 py-2.5 text-xs text-muted">
                           {t("commands.builtInSongDescription")}
                         </div>
                       ) : (
@@ -733,7 +733,7 @@ export function CommandsPage() {
                                 response: event.target.value,
                               })
                             }
-                            className="w-full resize-none rounded-lg border border-line bg-black/25 px-3 py-2 text-xs leading-5 text-zinc-100 outline-none transition placeholder:text-zinc-600 focus:border-accent/45"
+                            className="input h-auto w-full resize-none py-2 text-xs leading-5"
                           />
                           <div className="mt-1.5 flex flex-wrap items-center gap-1">
                             {QUICK_VARIABLES.map((token) => (
@@ -741,7 +741,7 @@ export function CommandsPage() {
                                 key={token}
                                 type="button"
                                 onClick={() => insertVariable(token)}
-                                className="rounded border border-line bg-white/2 px-1.5 py-0.5 font-mono text-[10px] text-zinc-300 transition hover:border-accent/35 hover:bg-accent-soft hover:text-accent"
+                                className="studio-mono rounded border border-rule bg-well px-1.5 py-0.5 text-[10px] text-muted transition hover:border-accent-border hover:bg-accent-soft hover:text-accent"
                               >
                                 {token}
                               </button>
@@ -1278,8 +1278,8 @@ export function CommandsPage() {
                       </div>
 
                       <div className="flex items-end">
-                        <label className="flex h-8.5 w-full cursor-pointer items-center justify-between gap-2 rounded-lg border border-line bg-white/2 px-3">
-                          <span className="text-xs font-medium text-zinc-200">
+                        <label className="flex h-8.5 w-full cursor-pointer items-center justify-between gap-2 rounded-lg border border-rule bg-well px-3">
+                          <span className="text-xs font-medium text-ink">
                             {t("commands.useRelativeTime")}
                           </span>
                           <Toggle
@@ -1297,7 +1297,7 @@ export function CommandsPage() {
               </div>
             </div>
 
-            <div className="flex shrink-0 items-center justify-end gap-2 border-t border-line bg-white/2 px-5 py-3">
+            <div className="flex shrink-0 items-center justify-end gap-2 border-t border-rule bg-shell/80 px-5 py-3">
               <Button variant="default" onClick={() => setEditing(null)}>
                 {t("dashboard.cancel")}
               </Button>

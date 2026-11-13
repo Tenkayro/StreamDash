@@ -75,12 +75,12 @@ function ChoiceRow({
   children: ReactNode;
 }) {
   return (
-    <div className="flex items-center gap-3 rounded-xl border border-line bg-black/15 px-3.5 py-2.5">
-      <span className="grid size-8 shrink-0 place-items-center rounded-lg bg-accent-soft text-accent">
-        <Icon size={16} aria-hidden="true" />
+    <div className="flex items-center gap-3 rounded-lg border border-line bg-well px-3.5 py-2.5">
+      <span className="grid size-8 shrink-0 place-items-center rounded-[7px] border border-accent-border bg-accent-soft text-accent">
+        <Icon size={15} aria-hidden="true" />
       </span>
       <div className="min-w-0 flex-1">
-        <div className="text-xs font-semibold text-zinc-100">{title}</div>
+        <div className="text-xs font-semibold text-ink-strong">{title}</div>
         <div className="mt-0.5 text-[11px] leading-4 text-muted">{detail}</div>
       </div>
       {children}
@@ -113,7 +113,7 @@ function IntegrationRow({
   const connected = phase === "connected";
   const failed = phase === "error" || phase === "expired";
   return (
-    <div className="rounded-xl border border-line bg-black/15 px-3.5 py-2.5">
+    <div className="rounded-lg border border-line bg-well px-3.5 py-2.5">
       <div className="flex items-center gap-2.5">
         <span
           className={cn(
@@ -871,15 +871,15 @@ export function SetupWizard() {
   ];
 
   return (
-    <ScrollFade className="flex min-h-0 flex-1 flex-col" color="#232425" size={48}>
+    <ScrollFade className="flex min-h-0 flex-1 flex-col" color="var(--color-canvas)" size={48}>
       <main className="min-h-0 flex-1 overflow-y-auto bg-transparent p-3 sm:p-6">
         <div className="mx-auto grid min-h-full max-w-5xl place-items-center">
-          <div className="grid w-full overflow-hidden rounded-2xl border border-line bg-panel shadow-2xl shadow-black/35 md:grid-cols-[215px_minmax(0,1fr)]">
-            <aside className="border-b border-line bg-black/15 p-4 md:border-b-0 md:border-r">
+          <div className="grid w-full overflow-hidden rounded-xl border border-rule-strong bg-panel shadow-2xl shadow-black/50 md:grid-cols-[220px_minmax(0,1fr)]">
+            <aside className="border-b border-line bg-shell p-4 md:border-b-0 md:border-r">
               <img
                 src="/streamdash-logo-boot.webp"
                 alt="StreamDash"
-                className="h-auto w-36 max-w-full object-contain"
+                className="h-auto w-34 max-w-full object-contain"
               />
               <div className="mt-5 flex gap-1.5 overflow-x-auto md:block md:space-y-1">
                 {steps.map(({ icon: Icon, label }, index) => (
@@ -888,22 +888,22 @@ export function SetupWizard() {
                     key={label}
                     onClick={() => setStep(index)}
                     className={cn(
-                      "flex min-w-max items-center gap-2.5 rounded-lg px-3 py-2 text-left text-xs transition md:w-full",
+                      "flex min-w-max items-center gap-2.5 rounded-[7px] border px-2.5 py-2 text-left text-xs transition md:w-full",
                       index === step
-                        ? "bg-accent-soft font-medium text-accent"
+                        ? "border-accent-border bg-accent-soft font-medium text-ink-strong"
                         : index < step
-                          ? "text-zinc-300 hover:bg-white/4"
-                          : "text-zinc-500 hover:bg-white/4 hover:text-zinc-300",
+                          ? "border-transparent text-ink hover:bg-hover"
+                          : "border-transparent text-muted hover:bg-hover hover:text-ink",
                     )}
                   >
                     <span
                       className={cn(
-                        "grid size-6 place-items-center rounded-full border",
+                        "grid size-6 place-items-center rounded-md border",
                         index < step
-                          ? "border-emerald-500/40 bg-emerald-400/10 text-emerald-400"
+                          ? "border-emerald-500/40 bg-emerald-400/12 text-emerald-400"
                           : index === step
-                            ? "border-accent/50"
-                            : "border-line",
+                            ? "border-accent-border bg-well text-accent"
+                            : "border-line bg-well text-subtle",
                       )}
                     >
                       {index < step ? <Check size={12} /> : <Icon size={12} />}

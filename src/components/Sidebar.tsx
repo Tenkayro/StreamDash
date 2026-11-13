@@ -19,9 +19,9 @@ function currentTranslateY(element: HTMLElement) {
 }
 function phaseColor(phase: ConnectionState["phase"]) {
   return phase === "connected"
-    ? "bg-emerald-400"
+    ? "bg-emerald-400 shadow-[0_0_7px_rgba(52,211,153,0.7)]"
     : phase === "connecting" || phase === "reconnecting"
-      ? "bg-amber-400"
+      ? "bg-amber-400 animate-pulse"
       : phase === "error" || phase === "expired"
         ? "bg-red-400"
         : "bg-zinc-600";
@@ -39,13 +39,13 @@ function Status({
   return (
     <div
       title={`${name}${state.account ? ` · ${state.account}` : ""}: ${t(`connectionPhases.${state.phase}`)}`}
-      className="flex h-6 items-center gap-1.5"
+      className="flex h-6 items-center gap-1.5 rounded-md bg-panel/70 px-1.5 border border-rule/60"
     >
-      <img src={icon} alt="" className="size-3.5 shrink-0 object-contain" />
-      <span className="min-w-0 flex-1 truncate text-[10.5px] text-zinc-300">
+      <img src={icon} alt="" className="size-3 shrink-0 object-contain" />
+      <span className="min-w-0 flex-1 truncate text-[10px] font-medium text-muted">
         {["connecting", "reconnecting"].includes(state.phase) &&
         !state.account ? (
-          <LoadingIndicator className="h-2.5 w-16" />
+          <LoadingIndicator className="h-2.5 w-10" />
         ) : (
           name
         )}
@@ -175,15 +175,15 @@ export function Sidebar() {
         aria-label={t("navigation.quickSwitch")}
         onClick={() => window.dispatchEvent(new Event(OPEN_COMMAND_PALETTE))}
         className={cn(
-          "sidebar-search mb-3 flex h-8 w-full shrink-0 items-center rounded-lg border border-rule bg-well text-muted transition-colors hover:border-accent-border hover:text-ink",
-          compact ? "justify-center" : "gap-2 px-3",
+          "sidebar-search mb-3 flex h-8 w-full shrink-0 items-center rounded-[7px] text-muted transition-colors hover:border-accent-border hover:text-ink",
+          compact ? "justify-center" : "gap-2 px-2.5",
         )}
       >
-        <Search size={15} />
+        <Search size={14} className="shrink-0" />
         {!compact && (
           <>
-            <span className="min-w-0 flex-1 truncate text-left text-xs">{t("navigation.quickSwitch")}</span>
-            <kbd className="rounded-md border border-line px-1.5 py-0.5 text-[9px] text-zinc-600">Ctrl K</kbd>
+            <span className="min-w-0 flex-1 truncate text-left text-[11.5px]">{t("navigation.quickSwitch")}</span>
+            <kbd className="rounded border border-rule bg-panel px-1.5 py-0.5 studio-mono text-[9px] text-subtle">Ctrl K</kbd>
           </>
         )}
       </button>
@@ -193,9 +193,9 @@ export function Sidebar() {
           <span
             aria-hidden="true"
             ref={indicatorRef}
-            className="nav-indicator pointer-events-none absolute inset-x-0 top-0 h-8 rounded-lg bg-raised"
+            className="nav-indicator pointer-events-none absolute inset-x-0 top-0 h-8 rounded-[7px]"
           >
-            <span className="absolute left-0 top-1.5 bottom-1.5 w-0.5 rounded-r-full bg-accent" />
+            <span className="absolute left-0 top-1.5 bottom-1.5 w-[2.5px] rounded-r-full bg-accent shadow-[0_0_8px_var(--app-accent-glow)]" />
           </span>
           {navigationGroups.map((group, groupIndex) => (
             <div key={group} className={cn(groupIndex > 0 && "mt-3")}>
@@ -283,10 +283,10 @@ export function Sidebar() {
             type="button"
             onClick={() => setPage("connections")}
             title={t("navigation.manageConnections")}
-            className="mb-2 block w-full rounded-lg border border-rule bg-well px-2.5 py-1.5 text-left transition-colors hover:border-accent-border hover:bg-raised"
+            className="mb-2 grid w-full grid-cols-2 gap-1 rounded-lg border border-rule bg-well p-1.5 text-left transition-colors hover:border-accent-border"
           >
             {services.map(({ name, icon, state }) => (
-              <Status key={name} icon={icon} name={name} state={state} />
+              <Status key={name} icon={icon} name={name === "StreamElements" ? "SE" : name === "TipeeeStream" ? "Tipeee" : name} state={state} />
             ))}
           </button>
         )}

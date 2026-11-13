@@ -514,13 +514,13 @@ export function ChannelPointsPage() {
             <button
               type="button"
               onClick={() => setEditing(null)}
-              className="inline-flex items-center gap-1.5 rounded-lg border border-line bg-white/3 px-2.5 py-1.5 text-xs font-medium text-zinc-400 transition hover:bg-white/6 hover:text-zinc-200"
+              className="inline-flex items-center gap-1.5 rounded-lg border border-rule bg-well px-2.5 py-1.5 text-xs font-medium text-muted transition hover:border-rule-strong hover:text-ink-strong"
             >
               <ArrowLeft size={13} />
               {t("nav.channelPoints")}
             </button>
-            <ChevronRight size={13} className="shrink-0 text-zinc-600" />
-            <h1 className="truncate text-base font-semibold text-zinc-100">
+            <ChevronRight size={13} className="shrink-0 text-subtle" />
+            <h1 className="truncate text-base font-semibold text-ink-strong">
               {isNew ? t("channelPoints.newReward") : editing.title || t("channelPoints.editReward")}
             </h1>
           </div>
@@ -566,7 +566,7 @@ export function ChannelPointsPage() {
         <div className="grid min-h-0 flex-1 grid-cols-1 gap-3 overflow-y-auto lg:grid-cols-2 lg:overflow-hidden">
           <div className="flex min-h-0 flex-col gap-3">
             <Card className="p-3.5">
-              <div className="mb-2.5 border-b border-line pb-2 text-xs font-semibold tracking-tight text-zinc-200">
+              <div className="studio-label mb-2.5 border-b border-rule pb-2">
                 {t("channelPoints.general")}
               </div>
               <div className="space-y-3">
@@ -574,11 +574,11 @@ export function ChannelPointsPage() {
                   <div className="mb-1 flex items-center justify-between gap-2">
                     <label
                       htmlFor="reward-title"
-                      className="text-xs font-medium text-zinc-200"
+                      className="text-xs font-medium text-ink"
                     >
                       {t("channelPoints.rewardTitle")}
                     </label>
-                    <span className="text-[11px] tabular-nums text-zinc-500">
+                    <span className="studio-mono text-[11px] text-subtle">
                       {editing.title.length}/45
                     </span>
                   </div>
@@ -598,11 +598,11 @@ export function ChannelPointsPage() {
                   <div className="mb-1 flex items-center justify-between gap-2">
                     <label
                       htmlFor="reward-prompt"
-                      className="text-xs font-medium text-zinc-200"
+                      className="text-xs font-medium text-ink"
                     >
                       {t("channelPoints.description")}
                     </label>
-                    <span className="text-[11px] tabular-nums text-zinc-500">
+                    <span className="studio-mono text-[11px] text-subtle">
                       {editing.prompt.length}/200
                     </span>
                   </div>
@@ -615,33 +615,33 @@ export function ChannelPointsPage() {
                     onChange={(event) =>
                       setEditing({ ...editing, prompt: event.target.value })
                     }
-                    className="w-full resize-none rounded-lg border border-line bg-black/25 px-3 py-2 text-xs leading-5 text-zinc-100 outline-none transition focus:border-accent/45"
+                    className="input h-auto w-full resize-none py-2 text-xs leading-5"
                   />
                 </div>
               </div>
             </Card>
 
             <Card className="p-3.5">
-              <div className="mb-2.5 border-b border-line pb-2 text-xs font-semibold tracking-tight text-zinc-200">
+              <div className="studio-label mb-2.5 border-b border-rule pb-2">
                 {t("channelPoints.preview")}
               </div>
-              <div className="flex flex-wrap items-center gap-3.5 rounded-xl border border-line bg-white/2 p-3">
+              <div className="flex flex-wrap items-center gap-3.5 rounded-[10px] border border-rule bg-well p-3">
                 <ChannelPointIcon
                   color={editing.backgroundColor}
                   imageUrl={editing.imageUrl}
                   size="lg"
                 />
                 <div className="min-w-0 flex-1">
-                  <div className="truncate text-sm font-semibold text-zinc-100">
+                  <div className="truncate text-sm font-semibold text-ink-strong">
                     {editing.title.trim() || t("channelPoints.titlePlaceholder")}
                   </div>
-                  <div className="mt-0.5 text-xs text-muted">
+                  <div className="studio-mono mt-0.5 text-[11px] text-muted">
                     {t("channelPoints.pointsCost", {
                       points: formatPoints(editing.cost || 0),
                     })}
                   </div>
                 </div>
-                <label className="inline-flex cursor-pointer items-center gap-1.5 rounded-lg border border-line bg-white/4 px-2.5 py-1.5 text-xs font-medium text-zinc-200 transition hover:border-accent/35 hover:bg-white/7">
+                <label className="inline-flex cursor-pointer items-center gap-1.5 rounded-lg border border-rule bg-panel px-2.5 py-1.5 text-xs font-medium text-ink transition hover:border-accent-border hover:bg-raised">
                   <Palette size={13} className="text-accent" />
                   <span>{t("channelPoints.selectColor")}</span>
                   <input
@@ -701,12 +701,12 @@ export function ChannelPointsPage() {
 
           <div className="flex min-h-0 flex-col gap-3">
             <Card className="p-3.5">
-              <div className="mb-2.5 border-b border-line pb-2 text-xs font-semibold tracking-tight text-zinc-200">
+              <div className="studio-label mb-2.5 border-b border-rule pb-2">
                 {t("channelPoints.conditions")}
               </div>
               <div className="space-y-2.5">
                 <div className="flex items-center justify-between gap-3">
-                  <span className="text-xs font-medium text-zinc-200">
+                  <span className="text-xs font-medium text-ink">
                     {t("channelPoints.enabled")}
                   </span>
                   <Toggle
@@ -716,7 +716,7 @@ export function ChannelPointsPage() {
                   />
                 </div>
                 <div className="flex items-center justify-between gap-3">
-                  <span className="text-xs font-medium text-zinc-200">
+                  <span className="text-xs font-medium text-ink">
                     {t("channelPoints.enabledWhenOffline")}
                   </span>
                   <Toggle
@@ -728,7 +728,7 @@ export function ChannelPointsPage() {
                   />
                 </div>
                 <div className="flex items-center justify-between gap-3">
-                  <span className="text-xs font-medium text-zinc-200">
+                  <span className="text-xs font-medium text-ink">
                     {t("channelPoints.enabledWhenOnline")}
                   </span>
                   <Toggle
@@ -740,7 +740,7 @@ export function ChannelPointsPage() {
                   />
                 </div>
                 <div className="flex items-center justify-between gap-3">
-                  <span className="text-xs font-medium text-zinc-200">
+                  <span className="text-xs font-medium text-ink">
                     {t("channelPoints.userInputRequired")}
                   </span>
                   <Toggle
@@ -752,7 +752,7 @@ export function ChannelPointsPage() {
                   />
                 </div>
                 <div className="flex items-center justify-between gap-3">
-                  <span className="text-xs font-medium text-zinc-200">
+                  <span className="text-xs font-medium text-ink">
                     {t("channelPoints.skipQueue")}
                   </span>
                   <Toggle
@@ -799,11 +799,11 @@ export function ChannelPointsPage() {
                   </div>
                 </div>
 
-                <div className="rounded-xl border border-line bg-white/2 p-2.5">
+                <div className="rounded-[10px] border border-rule bg-well p-2.5">
                   <div className="mb-1.5 flex items-center justify-between gap-2">
                     <label
                       htmlFor="reward-max-stream"
-                      className="text-xs font-medium text-zinc-200"
+                      className="text-xs font-medium text-ink"
                     >
                       {t("channelPoints.maxPerStream")}
                     </label>
@@ -820,7 +820,7 @@ export function ChannelPointsPage() {
                     type="number"
                     min={1}
                     disabled={!editing.maxPerStreamEnabled}
-                    className="input w-full tabular-nums disabled:opacity-45"
+                    className="input studio-mono w-full disabled:opacity-45"
                     value={editing.maxPerStream}
                     onChange={(event) =>
                       setEditing({
@@ -834,11 +834,11 @@ export function ChannelPointsPage() {
                   />
                 </div>
 
-                <div className="rounded-xl border border-line bg-white/2 p-2.5">
+                <div className="rounded-[10px] border border-rule bg-well p-2.5">
                   <div className="mb-1.5 flex items-center justify-between gap-2">
                     <label
                       htmlFor="reward-max-user"
-                      className="text-xs font-medium text-zinc-200"
+                      className="text-xs font-medium text-ink"
                     >
                       {t("channelPoints.maxPerUser")}
                     </label>
@@ -855,7 +855,7 @@ export function ChannelPointsPage() {
                     type="number"
                     min={1}
                     disabled={!editing.maxPerUserPerStreamEnabled}
-                    className="input w-full tabular-nums disabled:opacity-45"
+                    className="input studio-mono w-full disabled:opacity-45"
                     value={editing.maxPerUserPerStream}
                     onChange={(event) =>
                       setEditing({
@@ -869,11 +869,11 @@ export function ChannelPointsPage() {
                   />
                 </div>
 
-                <div className="rounded-xl border border-line bg-white/2 p-2.5 sm:col-span-2">
+                <div className="rounded-[10px] border border-rule bg-well p-2.5 sm:col-span-2">
                   <div className="mb-1.5 flex items-center justify-between gap-2">
                     <label
                       htmlFor="reward-cooldown"
-                      className="text-xs font-medium text-zinc-200"
+                      className="text-xs font-medium text-ink"
                     >
                       {t("channelPoints.globalCooldown")}
                     </label>
@@ -961,9 +961,9 @@ export function ChannelPointsPage() {
       )}
 
       <Card className="flex min-h-0 flex-1 flex-col overflow-hidden">
-        <div className="flex shrink-0 items-center justify-between gap-2 border-b border-line bg-white/2 px-4 py-2.5">
+        <div className="flex shrink-0 items-center justify-between gap-2 border-b border-rule bg-shell/70 px-4 py-2.5">
           <div className="flex items-center gap-2">
-            <span className="text-xs font-semibold text-zinc-200">
+            <span className="studio-label">
               {t("channelPoints.rewardsList")}
             </span>
             <Badge tone="neutral">
@@ -974,7 +974,7 @@ export function ChannelPointsPage() {
             <button
               type="button"
               onClick={() => void openUrl(TWITCH_REWARDS_DASHBOARD_URL)}
-              className="inline-flex items-center gap-1 text-xs text-muted transition hover:text-zinc-200"
+              className="inline-flex items-center gap-1 text-xs font-medium text-muted transition hover:text-ink-strong"
             >
               {t("channelPoints.openTwitchDashboard")}
               <ExternalLink size={12} />
@@ -997,7 +997,7 @@ export function ChannelPointsPage() {
             />
           </div>
         ) : (
-          <ScrollFade className="flex min-h-0 flex-1 flex-col" color="#242526" size={32}>
+          <ScrollFade className="flex min-h-0 flex-1 flex-col" color="var(--color-panel)" size={32}>
             <div className="min-h-0 flex-1 space-y-2 overflow-y-auto p-3">
               {channelRewards.map((reward) => (
                 <div
@@ -1011,7 +1011,7 @@ export function ChannelPointsPage() {
                       openEdit(reward);
                     }
                   }}
-                  className="group flex cursor-pointer items-center gap-3.5 rounded-xl border border-line bg-white/2 px-3.5 py-2.5 transition hover:border-accent/35 hover:bg-white/4"
+                  className="group flex cursor-pointer items-center gap-3.5 rounded-[10px] border border-rule bg-well/75 px-3.5 py-2.5 transition hover:border-accent-border hover:bg-raised"
                 >
                   <ChannelPointIcon
                     color={reward.backgroundColor}
@@ -1019,7 +1019,7 @@ export function ChannelPointsPage() {
                   />
                   <div className="min-w-0 flex-1">
                     <div className="flex flex-wrap items-center gap-2">
-                      <span className="truncate text-sm font-semibold text-zinc-100">
+                      <span className="truncate text-sm font-semibold text-ink-strong">
                         {reward.title}
                       </span>
                       {!reward.enabled && (
@@ -1039,7 +1039,7 @@ export function ChannelPointsPage() {
                       )}
                     </div>
                     <div className="mt-0.5 flex flex-wrap items-center gap-2 text-xs text-muted">
-                      <span>
+                      <span className="studio-mono text-[11px]">
                         {t("channelPoints.pointsCost", {
                           points: formatPoints(reward.cost),
                         })}
@@ -1047,7 +1047,7 @@ export function ChannelPointsPage() {
                       {reward.prompt && (
                         <>
                           <span aria-hidden="true">·</span>
-                          <span className="max-w-md truncate text-zinc-500">
+                          <span className="max-w-md truncate text-subtle">
                             {reward.prompt}
                           </span>
                         </>
@@ -1067,7 +1067,7 @@ export function ChannelPointsPage() {
                     />
                     <ChevronRight
                       size={16}
-                      className="text-zinc-500 transition group-hover:translate-x-0.5 group-hover:text-zinc-200"
+                      className="text-subtle transition group-hover:translate-x-0.5 group-hover:text-ink"
                     />
                   </div>
                 </div>

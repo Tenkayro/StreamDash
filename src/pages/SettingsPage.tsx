@@ -300,7 +300,7 @@ function SettingsNav({ smooth }: { smooth: boolean }) {
               });
               setActive(id);
             }}
-            className={`relative flex shrink-0 items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-[11px] font-medium transition-colors ${current ? "text-accent" : "text-zinc-500 hover:bg-white/5 hover:text-zinc-200"}`}
+            className={`relative flex shrink-0 items-center gap-1.5 rounded-[7px] px-2.5 py-1.5 text-[11px] font-medium transition-colors ${current ? "border border-accent-border bg-accent-soft text-accent" : "border border-transparent text-muted hover:bg-hover hover:text-ink"}`}
           >
             <Icon size={13} aria-hidden="true" />
             {t(`settings.${label}`)}
@@ -323,11 +323,11 @@ function Row({
   children: ReactNode;
 }) {
   return (
-    <div data-search-label={label} className={`flex flex-col items-stretch gap-3 border-b border-line last:border-0 lg:flex-row lg:items-center lg:justify-between lg:gap-6 ${detail ? "py-4" : "py-3"}`}>
+    <div data-search-label={label} className={`flex flex-col items-stretch gap-3 border-b border-rule last:border-0 lg:flex-row lg:items-center lg:justify-between lg:gap-6 ${detail ? "py-4" : "py-3"}`}>
       <div className={`flex min-w-0 gap-3 ${detail ? "items-start" : "items-center"}`}>
-        <Icon size={15} className={`shrink-0 text-muted ${detail ? "mt-0.5" : ""}`} aria-hidden="true" />
+        <Icon size={15} className={`shrink-0 text-subtle ${detail ? "mt-0.5" : ""}`} aria-hidden="true" />
         <div className="min-w-0">
-          <div className="text-sm">{label}</div>
+          <div className="text-[13.5px] font-medium text-ink-strong">{label}</div>
           {detail && <div className="mt-1 text-xs text-muted">{detail}</div>}
         </div>
       </div>
@@ -337,7 +337,7 @@ function Row({
 }
 function SectionTitle({ icon: Icon, children }: { icon: LucideIcon; children: ReactNode }) {
   return (
-    <h2 className="mb-2 flex items-center gap-1.5 px-1 text-xs font-semibold text-muted">
+    <h2 className="studio-label mb-2 flex items-center gap-1.5 px-1">
       <Icon size={12} aria-hidden="true" />
       {children}
     </h2>
@@ -812,14 +812,14 @@ export function SettingsPage() {
                             ),
                       )
                     }
-                    className={`flex items-center justify-between rounded-lg border px-3 py-2 text-xs transition ${enabled ? "border-accent/30 bg-accent-soft text-zinc-200" : "border-line bg-black/10 text-zinc-600"}`}
+                    className={`flex items-center justify-between rounded-lg border px-3 py-2 text-xs transition ${enabled ? "border-accent-border bg-accent-soft text-ink-strong" : "border-rule bg-well/65 text-subtle hover:border-rule-strong hover:text-muted"}`}
                   >
                     <span className="flex items-center gap-2">
                       <Icon size={13} aria-hidden="true" />
                       {t(`settings.${option.label}`)}
                     </span>
                     <span
-                      className={`size-1.5 rounded-full ${enabled ? "bg-accent" : "bg-zinc-700"}`}
+                      className={`size-1.5 rounded-full ${enabled ? "bg-accent" : "bg-subtle/40"}`}
                     />
                   </button>
                 );

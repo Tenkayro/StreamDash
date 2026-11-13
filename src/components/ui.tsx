@@ -4,9 +4,11 @@ import type { ButtonHTMLAttributes, HTMLAttributes, ReactNode } from "react";
 import { cn } from "../lib/utils";
 import { CurvedScrollbar } from "./CurvedScrollbar";
 import type { LucideIcon } from "lucide-react";
+
 export function Card({ className, ...props }: HTMLAttributes<HTMLDivElement>) {
   return <div className={cn("card", className)} {...props} />;
 }
+
 export function LoadingIndicator({
   className,
   ...props
@@ -23,6 +25,7 @@ export function LoadingIndicator({
     </span>
   );
 }
+
 export function Button({
   className,
   variant = "default",
@@ -37,7 +40,8 @@ export function Button({
       className={cn(
         "button",
         variant === "primary" && "button-primary",
-        variant === "danger" && "text-red-300 hover:border-red-900",
+        variant === "danger" &&
+          "border-red-400/25 bg-red-500/10 text-red-200 hover:border-red-400/45 hover:bg-red-500/18 hover:text-red-100",
         variant === "ghost" && "border-transparent bg-transparent",
         className,
       )}
@@ -45,6 +49,7 @@ export function Button({
     />
   );
 }
+
 export function Toggle({
   value,
   onChange,
@@ -83,12 +88,13 @@ export function Toggle({
           timeout.current = null;
         }, 190);
       }}
-      className={cn("toggle-switch relative h-5 w-9 shrink-0 rounded-full", className)}
+      className={cn("toggle-switch relative shrink-0 rounded-full", className)}
     >
       <span aria-hidden="true" className="toggle-knob" />
     </button>
   );
 }
+
 /**
  * Wraps a scroll container and fades its content out at the bottom edge while
  * there is still something to scroll to. The scroll container must be the first
@@ -97,7 +103,7 @@ export function Toggle({
 export function ScrollFade({
   children,
   className,
-  color = "#121418",
+  color = "var(--color-panel)",
   size = 36,
   scrollbar = true,
 }: {
@@ -149,34 +155,40 @@ export function ScrollFade({
     </div>
   );
 }
+
 export function Badge({
   children,
   tone = "neutral",
+  className,
 }: {
   children: ReactNode;
   tone?: "neutral" | "green" | "amber" | "red" | "purple";
+  className?: string;
 }) {
   const styles = {
-    neutral: "border-white/10 bg-white/[0.04] text-muted",
-    green: "border-emerald-400/20 bg-emerald-400/10 text-emerald-300",
-    amber: "border-amber-400/20 bg-amber-400/10 text-amber-300",
-    red: "border-red-400/20 bg-red-400/10 text-red-300",
-    purple: "border-accent/25 bg-accent-soft text-accent",
+    neutral: "border-rule bg-well text-muted",
+    green: "border-emerald-400/28 bg-emerald-400/12 text-emerald-300",
+    amber: "border-amber-400/28 bg-amber-400/12 text-amber-300",
+    red: "border-red-400/28 bg-red-400/12 text-red-300",
+    purple: "border-accent-border bg-accent-soft text-accent",
   };
   return (
     <span
       className={cn(
-        "inline-flex items-center rounded-md border px-2 py-0.5 text-[11px] font-medium capitalize",
+        "inline-flex items-center gap-1 rounded-[5px] border px-1.5 py-0.5 text-[10.5px] font-medium leading-none tracking-[0.01em]",
         styles[tone],
+        className,
       )}
     >
       {children}
     </span>
   );
 }
+
 export function PageHeader({
   icon: Icon,
   title,
+  description,
   titleActions,
   actions,
 }: {
@@ -189,20 +201,32 @@ export function PageHeader({
   return (
     <div className="page-header flex flex-wrap items-center gap-3 sm:gap-4">
       <div className="min-w-0 flex-1 basis-64">
-        <div className="flex min-w-0 flex-wrap items-center gap-2">
+        <div className="flex min-w-0 items-center gap-3">
           {Icon && (
-            <span className="page-header-icon grid size-8 shrink-0 place-items-center rounded-lg text-accent">
+            <span className="page-header-icon grid shrink-0 place-items-center text-accent">
               <Icon size={16} aria-hidden="true" />
             </span>
           )}
-          <h1 className="min-w-0 text-xl font-semibold tracking-[-.02em]">{title}</h1>
-          {titleActions}
+          <div className="min-w-0 flex-1">
+            <div className="flex min-w-0 flex-wrap items-center gap-2">
+              <h1 className="min-w-0 truncate font-semibold tracking-[-.025em]">{title}</h1>
+              {titleActions}
+            </div>
+            {description && (
+              <p className="truncate text-[11.5px] text-muted">{description}</p>
+            )}
+          </div>
         </div>
       </div>
-      {actions && <div className="ml-auto flex max-w-full flex-wrap items-center gap-2">{actions}</div>}
+      {actions && (
+        <div className="ml-auto flex max-w-full flex-wrap items-center gap-1.5">
+          {actions}
+        </div>
+      )}
     </div>
   );
 }
+
 export function EmptyState({
   icon,
   title,
@@ -215,11 +239,13 @@ export function EmptyState({
   action?: ReactNode;
 }) {
   return (
-    <div className="flex min-h-52 flex-col items-center justify-center px-8 text-center">
-      <div className="mb-3 text-muted">{icon}</div>
-      <div className="font-medium">{title}</div>
+    <div className="flex min-h-52 flex-col items-center justify-center px-8 py-10 text-center">
+      <div className="mb-3 grid size-11 place-items-center rounded-xl border border-rule bg-well text-muted shadow-inner">
+        {icon}
+      </div>
+      <div className="text-sm font-semibold text-ink-strong">{title}</div>
       {body && (
-        <p className="mt-1 max-w-sm text-sm leading-6 text-muted">{body}</p>
+        <p className="mt-1.5 max-w-sm text-xs leading-5 text-muted">{body}</p>
       )}
       {action && <div className="mt-4">{action}</div>}
     </div>

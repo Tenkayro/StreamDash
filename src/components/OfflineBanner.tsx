@@ -22,7 +22,7 @@ export function OfflineBanner({
       role="status"
       aria-live="polite"
       className={cn(
-        "flex flex-wrap items-center justify-between gap-2.5 rounded-xl border border-amber-400/30 bg-amber-400/10 px-3.5 py-2.5 text-xs text-amber-100",
+        "flex flex-wrap items-center justify-between gap-2.5 rounded-[10px] border border-amber-400/30 bg-amber-500/10 px-3.5 py-2.5 text-xs text-amber-100",
         className,
       )}
     >

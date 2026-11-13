@@ -734,12 +734,12 @@ export function ChatPage() {
         <p className="mb-3 px-1 text-xs text-red-300">{chat.detail}</p>
       )}
       <Card className="flex min-h-0 flex-1 flex-col overflow-hidden">
-        <div className="flex min-h-10 items-center justify-between gap-3 border-b border-line px-3">
+        <div className="flex min-h-10 items-center justify-between gap-3 border-b border-line bg-well/60 px-3">
           {searchOpen ? (
             <div className="relative flex-1">
               <Search
                 size={13}
-                className="absolute left-2.5 top-2.5 text-zinc-600"
+                className="absolute left-2.5 top-2.5 text-subtle"
               />
               <input
                 autoFocus
@@ -750,7 +750,7 @@ export function ChatPage() {
               />
               {search && (
                 <button
-                  className="absolute right-2 top-2 text-zinc-600 hover:text-zinc-300"
+                  className="absolute right-2 top-2 text-subtle hover:text-ink"
                   onClick={() => { setSearch(""); setSearchHit(undefined); }}
                 >
                   <X size={14} />
@@ -758,20 +758,21 @@ export function ChatPage() {
               )}
             </div>
           ) : (
-            <div className="text-[11px] text-muted">
-              #{twitch.account} <span className="text-zinc-700">•</span>{" "}
-              {t("chat.emoteCount", { count: chatEmotes.length })}{" "}
-              <span className="text-zinc-700">•</span>{" "}
-              {t("chat.messageCount", { count: chatMessages.length })}
+            <div className="flex items-center gap-2 studio-mono text-[11px] text-muted">
+              <span className="font-semibold text-ink">#{twitch.account}</span>
+              <span className="text-rule-strong">/</span>
+              <span>{t("chat.emoteCount", { count: chatEmotes.length })}</span>
+              <span className="text-rule-strong">/</span>
+              <span>{t("chat.messageCount", { count: chatMessages.length })}</span>
             </div>
           )}
           {search && (
-            <span className="shrink-0 text-[10px] text-zinc-600">
+            <span className="shrink-0 studio-mono text-[10px] text-subtle">
               {t("chat.matchCount", { count: visibleMessages.length })}
             </span>
           )}
         </div>
-        <ScrollFade className="flex min-h-0 flex-1 flex-col" color="#242526" size={36}>
+        <ScrollFade className="flex min-h-0 flex-1 flex-col" color="var(--color-panel)" size={36}>
           <div
             ref={listRef}
             onScroll={onScroll}
@@ -809,11 +810,11 @@ export function ChatPage() {
               : t("chat.jumpLatest")}
           </button>
         )}
-        <div className="relative border-t border-line p-2.5">
+        <div className="relative border-t border-line bg-shell/70 p-2.5">
           {completion && (
             <ScrollFade
-              className="absolute bottom-[calc(100%-1px)] left-2.5 right-2.5 z-20 overflow-hidden rounded-lg border border-line bg-raised shadow-2xl"
-              color="#2c2d2e"
+              className="absolute bottom-[calc(100%-1px)] left-2.5 right-2.5 z-20 overflow-hidden rounded-[10px] border border-rule-strong bg-raised/96 shadow-2xl backdrop-blur-xl"
+              color="var(--color-raised)"
               size={28}
             >
               <div className="max-h-64 overflow-y-auto p-1">

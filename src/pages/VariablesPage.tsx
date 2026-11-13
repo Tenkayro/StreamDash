@@ -170,7 +170,7 @@ export function VariablesPage() {
         <div
           role="tablist"
           aria-label={t("nav.variables")}
-          className="inline-flex rounded-xl border border-line bg-black/20 p-1"
+          className="inline-flex rounded-[10px] border border-rule bg-well p-1"
         >
           {tabs.map((item) => (
             <button
@@ -180,33 +180,33 @@ export function VariablesPage() {
               aria-selected={tab === item.id}
               onClick={() => setTab(item.id)}
               className={cn(
-                "flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-medium transition",
+                "flex items-center gap-1.5 rounded-[7px] px-3 py-1.5 text-xs font-medium transition",
                 tab === item.id
-                  ? "bg-white/10 text-zinc-100"
-                  : "text-muted hover:text-zinc-200",
+                  ? "border border-accent-border bg-accent-soft text-accent"
+                  : "border border-transparent text-muted hover:text-ink",
               )}
             >
               {item.label}
               {item.count !== undefined && (
-                <span className="text-[10px] tabular-nums text-zinc-500">
+                <span className="studio-mono text-[10px] text-subtle">
                   {item.count}
                 </span>
               )}
             </button>
           ))}
         </div>
-        <span className="text-[11px] text-muted">
+        <span className="studio-mono text-[11px] text-subtle">
           {t("variables.syntaxHint")}
         </span>
       </div>
 
       {tab === "catalog" && (
         <Card className="flex min-h-0 flex-1 flex-col overflow-hidden">
-          <div className="flex shrink-0 flex-wrap items-center gap-2 border-b border-line p-3">
+          <div className="flex shrink-0 flex-wrap items-center gap-2 border-b border-rule bg-shell/70 p-3">
             <div className="relative min-w-[200px] flex-1 sm:max-w-xs">
               <Search
                 size={13}
-                className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-zinc-500"
+                className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-subtle"
               />
               <input
                 className="input input-leading-icon w-full text-xs"
@@ -222,10 +222,10 @@ export function VariablesPage() {
                   type="button"
                   onClick={() => setCategory(cat)}
                   className={cn(
-                    "rounded-md px-2 py-1 text-[11px] transition",
+                    "rounded-md border px-2 py-1 text-[11px] font-medium transition",
                     category === cat
-                      ? "bg-accent-soft text-accent"
-                      : "text-muted hover:bg-white/4 hover:text-zinc-200",
+                      ? "border-accent-border bg-accent-soft text-accent"
+                      : "border-transparent text-muted hover:border-rule hover:bg-well hover:text-ink",
                   )}
                 >
                   {t(`variables.categories.${cat}`)}
@@ -234,7 +234,7 @@ export function VariablesPage() {
             </div>
           </div>
 
-          <ScrollFade className="min-h-0 flex-1 overflow-y-auto px-3 pb-3">
+          <ScrollFade className="min-h-0 flex-1 overflow-y-auto px-3 pb-3" color="var(--color-panel)">
             {groups.length === 0 ? (
               <EmptyState
                 icon={<Braces size={22} />}
@@ -243,8 +243,8 @@ export function VariablesPage() {
               />
             ) : (
               groups.map((group) => (
-                <section key={group.cat} className="pt-3">
-                  <h2 className="mb-1 px-1 text-xs font-semibold text-muted">
+                <section key={group.cat} className="pt-3.5">
+                  <h2 className="studio-label mb-1.5 px-1">
                     {t(`variables.categories.${group.cat}`)}
                   </h2>
                   <div className="grid gap-1 lg:grid-cols-2">
@@ -256,20 +256,20 @@ export function VariablesPage() {
                           type="button"
                           onClick={() => void copyToken(item.token)}
                           title={t("variables.clickToCopy")}
-                          className="group flex min-w-0 items-center gap-3 rounded-lg px-2.5 py-2 text-left transition hover:bg-white/4"
+                          className="group flex min-w-0 items-center gap-3 rounded-lg border border-transparent px-2.5 py-2 text-left transition hover:border-rule hover:bg-well/75"
                         >
-                          <span className="w-36 shrink-0 truncate font-mono text-[11.5px] font-semibold text-accent">
+                          <span className="studio-mono w-36 shrink-0 truncate text-[11.5px] font-semibold text-accent">
                             {item.token}
                           </span>
                           <span className="min-w-0 flex-1">
-                            <span className="block truncate text-xs text-zinc-200">
+                            <span className="block truncate text-xs text-ink">
                               {t(item.descriptionKey)}
                             </span>
-                            <span className="block truncate text-[10.5px] text-zinc-500">
+                            <span className="studio-mono block truncate text-[10.5px] text-subtle">
                               {liveMap[item.key] ?? "—"}
                             </span>
                           </span>
-                          <span className="shrink-0 text-zinc-600 opacity-0 transition group-hover:opacity-100">
+                          <span className="shrink-0 text-subtle opacity-0 transition group-hover:opacity-100">
                             {copied ? (
                               <Check size={13} className="text-accent" />
                             ) : (
@@ -291,9 +291,9 @@ export function VariablesPage() {
         <Card className="flex min-h-0 flex-1 flex-col overflow-hidden">
           <form
             onSubmit={handleCreateCustom}
-            className="flex shrink-0 flex-wrap items-center gap-2 border-b border-line p-3"
+            className="flex shrink-0 flex-wrap items-center gap-2 border-b border-rule bg-shell/70 p-3"
           >
-            <div className="inline-flex rounded-lg border border-line bg-black/20 p-0.5">
+            <div className="inline-flex rounded-[9px] border border-rule bg-well p-0.5">
               {(
                 [
                   ["counter", Hash, t("variables.typeCounter")],
@@ -308,10 +308,10 @@ export function VariablesPage() {
                     setNewVarValue(type === "counter" ? "0" : "");
                   }}
                   className={cn(
-                    "flex items-center gap-1.5 rounded-md px-2.5 py-1 text-[11px] font-medium transition",
+                    "flex items-center gap-1.5 rounded-[6px] px-2.5 py-1 text-[11px] font-medium transition",
                     newVarType === type
-                      ? "bg-white/10 text-zinc-100"
-                      : "text-muted hover:text-zinc-200",
+                      ? "bg-raised text-ink-strong shadow-xs"
+                      : "text-muted hover:text-ink",
                   )}
                 >
                   <Icon size={12} />
@@ -320,7 +320,7 @@ export function VariablesPage() {
               ))}
             </div>
             <input
-              className="input w-40 font-mono text-xs"
+              className="input studio-mono w-40 text-xs"
               value={newVarName}
               maxLength={32}
               onChange={(event) => setNewVarName(event.target.value)}
@@ -345,7 +345,7 @@ export function VariablesPage() {
             </Button>
           </form>
 
-          <ScrollFade className="min-h-0 flex-1 overflow-y-auto p-3">
+          <ScrollFade className="min-h-0 flex-1 overflow-y-auto p-3" color="var(--color-panel)">
             <p className="mb-3 text-[11px] text-muted">
               {t("variables.customSubtitle")}
             </p>
@@ -361,14 +361,14 @@ export function VariablesPage() {
                   return (
                     <div
                       key={item.id}
-                      className="flex flex-col gap-2 rounded-xl border border-line bg-white/2 p-3"
+                      className="flex flex-col gap-2 rounded-[10px] border border-rule bg-well/80 p-3"
                     >
                       <div className="flex items-center justify-between gap-2">
                         <button
                           type="button"
                           onClick={() => void copyToken(token)}
                           title={t("variables.clickToCopy")}
-                          className="truncate font-mono text-xs font-semibold text-accent hover:brightness-125"
+                          className="studio-mono truncate text-xs font-semibold text-accent hover:brightness-125"
                         >
                           {token}
                         </button>
@@ -383,7 +383,7 @@ export function VariablesPage() {
                             onClick={() => deleteCustomVariable(item.id)}
                             title={t("commands.delete")}
                             aria-label={t("commands.delete")}
-                            className="grid size-6 place-items-center rounded-md text-zinc-500 hover:bg-red-500/10 hover:text-red-300"
+                            className="grid size-6 place-items-center rounded-md text-subtle hover:bg-red-500/12 hover:text-red-300"
                           >
                             <Trash2 size={12} />
                           </button>
@@ -391,7 +391,7 @@ export function VariablesPage() {
                       </div>
                       {item.type === "counter" ? (
                         <div className="flex items-center justify-between">
-                          <span className="font-mono text-lg font-bold tabular-nums text-zinc-100">
+                          <span className="studio-mono text-lg font-bold text-ink-strong">
                             {item.value}
                           </span>
                           <div className="flex items-center gap-1">
@@ -399,7 +399,7 @@ export function VariablesPage() {
                               type="button"
                               onClick={() => adjustCustomCounter(item.id, -1)}
                               aria-label="-1"
-                              className="grid size-7 place-items-center rounded-lg border border-line bg-black/25 text-zinc-300 hover:text-white"
+                              className="grid size-7 place-items-center rounded-md border border-rule bg-panel text-ink transition hover:border-rule-strong hover:text-ink-strong"
                             >
                               <Minus size={12} />
                             </button>
@@ -407,7 +407,7 @@ export function VariablesPage() {
                               type="button"
                               onClick={() => adjustCustomCounter(item.id, 1)}
                               aria-label="+1"
-                              className="grid size-7 place-items-center rounded-lg border border-accent/35 bg-accent-soft text-accent hover:border-accent"
+                              className="grid size-7 place-items-center rounded-md border border-accent-border bg-accent-soft text-accent transition hover:border-accent"
                             >
                               <Plus size={12} />
                             </button>
@@ -418,7 +418,7 @@ export function VariablesPage() {
                               }
                               title={t("variables.resetCounter")}
                               aria-label={t("variables.resetCounter")}
-                              className="grid size-7 place-items-center rounded-lg border border-line bg-black/25 text-zinc-400 hover:text-zinc-200"
+                              className="grid size-7 place-items-center rounded-md border border-rule bg-panel text-muted transition hover:border-rule-strong hover:text-ink"
                             >
                               <RotateCcw size={11} />
                             </button>
@@ -449,31 +449,31 @@ export function VariablesPage() {
         <Card className="shrink-0 space-y-3 p-4">
           <p className="text-[11px] text-muted">{t("variables.testHint")}</p>
           <div>
-            <div className="mb-1 text-[11px] font-semibold text-zinc-200">
+            <div className="studio-label mb-1.5">
               {t("variables.playgroundTitle")}
             </div>
             <textarea
-              className="input min-h-20 w-full resize-y py-2 font-mono text-xs"
+              className="input studio-mono min-h-20 w-full resize-y py-2 text-xs"
               value={testTemplate}
               onChange={(event) => setTestTemplate(event.target.value)}
               placeholder={t("variables.playgroundPlaceholder")}
             />
           </div>
           <div>
-            <div className="mb-1 flex items-center justify-between">
-              <span className="text-[11px] font-semibold text-zinc-200">
+            <div className="mb-1.5 flex items-center justify-between">
+              <span className="studio-label">
                 {t("variables.liveOutput")}
               </span>
               <button
                 type="button"
                 onClick={() => void copyToken(testTemplate)}
-                className="inline-flex items-center gap-1 text-[11px] text-accent hover:brightness-125"
+                className="inline-flex items-center gap-1 text-[11px] font-medium text-accent hover:brightness-125"
               >
                 <Copy size={11} />
                 {t("variables.copyTemplate")}
               </button>
             </div>
-            <div className="min-h-10 rounded-lg border border-line bg-black/25 px-3 py-2 text-xs leading-relaxed text-zinc-100 wrap-break-word">
+            <div className="studio-mono min-h-10 rounded-lg border border-rule bg-well px-3 py-2 text-xs leading-relaxed text-ink-strong wrap-break-word">
               {resolvedPreview || "—"}
             </div>
           </div>

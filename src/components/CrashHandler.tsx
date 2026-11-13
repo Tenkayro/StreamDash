@@ -82,8 +82,8 @@ function BoundaryFallback({
   const { t } = useTranslation();
   return (
     <div className="flex min-h-[280px] flex-1 items-center justify-center p-6">
-      <div className="w-full max-w-md rounded-2xl border border-red-400/25 bg-card p-6 text-center shadow-2xl">
-        <div className="mx-auto mb-3 grid size-11 place-items-center rounded-xl border border-red-400/30 bg-red-400/12 text-red-300">
+      <div className="w-full max-w-md rounded-[14px] border border-red-400/25 bg-panel p-6 text-center shadow-2xl">
+        <div className="mx-auto mb-3 grid size-11 place-items-center rounded-[10px] border border-red-400/30 bg-red-400/12 text-red-300">
           <AlertTriangle size={20} aria-hidden="true" />
         </div>
         <h2 className="text-base font-semibold text-ink">
@@ -93,7 +93,7 @@ function BoundaryFallback({
           {t("crash.description")}
         </p>
         {errorMessage && (
-          <p className="mt-3 truncate rounded-lg border border-line bg-black/25 px-3 py-2 font-mono text-[11px] text-red-200">
+          <p className="studio-mono mt-3 truncate rounded-lg border border-rule bg-well px-3 py-2 text-[11px] text-red-200">
             {errorMessage}
           </p>
         )}
@@ -162,14 +162,14 @@ export function CrashDialog() {
       aria-labelledby="crash-dialog-title"
       className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4 backdrop-blur-xs"
     >
-      <div className="flex max-h-[88vh] w-full max-w-xl flex-col overflow-hidden rounded-2xl border border-red-400/30 bg-card shadow-2xl">
-        <div className="flex items-start justify-between gap-3 border-b border-line px-5 py-4">
+      <div className="flex max-h-[88vh] w-full max-w-xl flex-col overflow-hidden rounded-[14px] border border-red-400/30 bg-panel shadow-2xl">
+        <div className="flex items-start justify-between gap-3 border-b border-rule bg-shell/75 px-5 py-4">
           <div className="flex items-start gap-3">
-            <div className="mt-0.5 grid size-9 shrink-0 place-items-center rounded-xl border border-red-400/30 bg-red-400/12 text-red-300">
+            <div className="mt-0.5 grid size-9 shrink-0 place-items-center rounded-[10px] border border-red-400/30 bg-red-400/12 text-red-300">
               <AlertTriangle size={18} aria-hidden="true" />
             </div>
             <div>
-              <h2 id="crash-dialog-title" className="text-sm font-semibold text-ink">
+              <h2 id="crash-dialog-title" className="text-sm font-semibold text-ink-strong">
                 {activeCrash.fatal ? t("crash.fatalTitle") : t("crash.title")}
               </h2>
               <p className="mt-0.5 text-xs text-muted">{t("crash.description")}</p>
@@ -180,7 +180,7 @@ export function CrashDialog() {
               type="button"
               onClick={dismissCrash}
               aria-label={t("crash.dismiss")}
-              className="grid size-7 shrink-0 place-items-center rounded-lg text-muted transition hover:bg-hover hover:text-ink"
+              className="grid size-7 shrink-0 place-items-center rounded-lg border border-rule bg-well text-muted transition hover:border-rule-strong hover:text-ink-strong"
             >
               <X size={15} />
             </button>
@@ -188,12 +188,12 @@ export function CrashDialog() {
         </div>
 
         <div className="min-h-0 flex-1 space-y-3 overflow-y-auto px-5 py-4">
-          <div className="rounded-xl border border-red-400/20 bg-red-400/8 px-3.5 py-2.5">
-            <div className="text-[11px] font-medium text-red-200/80">
+          <div className="rounded-[10px] border border-red-400/20 bg-red-400/8 px-3.5 py-2.5">
+            <div className="studio-label text-red-200/80">
               {activeCrash.kind.toUpperCase()}
               {activeCrash.page ? ` · ${activeCrash.page}` : ""}
             </div>
-            <p className="mt-1 wrap-break-word font-mono text-xs text-red-100">
+            <p className="studio-mono mt-1 wrap-break-word text-xs text-red-100">
               {activeCrash.message}
             </p>
           </div>
@@ -201,20 +201,20 @@ export function CrashDialog() {
           <button
             type="button"
             onClick={() => setDetailsOpen((open) => !open)}
-            className="flex w-full items-center justify-between rounded-lg border border-line bg-well px-3 py-2 text-xs font-medium text-muted transition hover:text-ink"
+            className="flex w-full items-center justify-between rounded-lg border border-rule bg-well px-3 py-2 text-xs font-medium text-muted transition hover:border-rule-strong hover:text-ink-strong"
           >
             <span>{t("crash.technicalDetails")}</span>
             {detailsOpen ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
           </button>
 
           {detailsOpen && (
-            <pre className="max-h-60 overflow-auto rounded-xl border border-line bg-black/35 p-3 font-mono text-[11px] leading-relaxed text-zinc-300 select-text">
+            <pre className="studio-mono max-h-60 overflow-auto rounded-[10px] border border-rule bg-well p-3 text-[11px] leading-relaxed text-ink select-text">
               {fullReport}
             </pre>
           )}
         </div>
 
-        <div className="flex flex-wrap items-center justify-between gap-2 border-t border-line bg-well px-5 py-3">
+        <div className="flex flex-wrap items-center justify-between gap-2 border-t border-rule bg-shell/75 px-5 py-3">
           <div className="flex flex-wrap items-center gap-2">
             <Button variant="ghost" onClick={() => void handleCopy()}>
               {copied ? <Check size={14} className="text-emerald-300" /> : <Copy size={14} />}

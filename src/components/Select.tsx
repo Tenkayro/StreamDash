@@ -112,7 +112,7 @@ export function Select({ value, children, onChange, decoration, className, disab
         data-index={index} data-active={index === active || undefined} className="glass-select-option"
         onPointerMove={() => !option.disabled && setActive(index)} onMouseDown={(event) => event.preventDefault()} onClick={() => choose(index)}>
         {decoration?.(option.value)}<span className="min-w-0 flex-1 truncate">{option.label}</span>
-        {option.value === String(value) && <Check size={14} className="shrink-0 text-accent" aria-hidden="true" />}
+        {option.value === String(value) && <Check size={13} className="shrink-0 text-accent" aria-hidden="true" />}
       </div>)}
     </div>, document.body)}
   </>;

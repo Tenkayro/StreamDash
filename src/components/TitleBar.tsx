@@ -7,6 +7,7 @@ import {
   Bug,
   Crown,
   Download,
+  Eye,
   GitFork,
   LoaderCircle,
   Menu,
@@ -17,7 +18,6 @@ import {
   RotateCcw,
   Square,
   Store,
-  Tag,
   UserRound,
   WifiOff,
   ZoomIn,
@@ -162,7 +162,7 @@ export function TitleBar({ setup = false }: { setup?: boolean }) {
   const [menuPos, setMenuPos] = useState({ right: 0, top: 0 });
   const closeMenuRef = useRef<HTMLDivElement>(null);
   const closeButtonRef = useRef<HTMLButtonElement>(null);
-  const { settings, setSettings, entitlements } = useAppStore();
+  const { settings, setSettings, entitlements, stats, twitch, setPage } = useAppStore();
   const networkOnline = useNetworkStore((state) => state.online);
   const networkChecking = useNetworkStore((state) => state.checking);
   const checkNetworkNow = useNetworkStore((state) => state.checkNow);
@@ -249,41 +249,75 @@ export function TitleBar({ setup = false }: { setup?: boolean }) {
         <img
           src={titlebarLogo}
           alt="StreamDash"
-          className="h-5 w-auto object-contain"
+          className="h-4.5 w-auto object-contain"
         />
         {proActive && (
-          <span className="inline-flex items-center gap-1 rounded border border-rule bg-hover px-1.5 py-px text-[10px] font-semibold text-muted">
-            <Crown size={9} className="text-amber-300/75" aria-hidden="true" />
-            Pro
+          <span className="inline-flex items-center gap-1 rounded-[5px] border border-amber-400/25 bg-amber-400/10 px-1.5 py-0.5 text-[9.5px] font-semibold tracking-wide text-amber-200">
+            <Crown size={9} className="text-amber-300" aria-hidden="true" />
+            PRO
           </span>
         )}
         <span
           aria-label={t("titleBar.version", { version: version || t("titleBar.loading"), channel })}
-          className="flex items-center gap-1 text-[10px] tabular-nums text-subtle"
+          className="flex items-center gap-1.5 studio-mono text-[10px] text-subtle"
         >
-          <Tag size={9} />
           {version ? (
-            <span>{version}</span>
+            <span>v{version}</span>
           ) : (
             <LoadingIndicator className="h-2 w-7" />
           )}
-          {import.meta.env.DEV && !demoActive ? (
+          {import.meta.env.DEV && !demoActive && (
             <button
               type="button"
               onClick={() => void openDevToolsWindow()}
               title={t("titleBar.openDevTools")}
               aria-label={t("titleBar.openDevTools")}
-              className="no-drag inline-flex items-center gap-1 rounded bg-violet-500/15 px-1.5 py-0.5 text-[10px] font-semibold text-violet-300 transition hover:bg-violet-500/25 hover:text-violet-200 cursor-pointer"
+              className="no-drag inline-flex cursor-pointer items-center gap-1 rounded-[5px] border border-accent-border bg-accent-soft px-1.5 py-0.5 text-[9.5px] font-semibold uppercase tracking-wider text-accent transition hover:brightness-115"
             >
               <Bug size={9} />
               {channel.toLowerCase()}
             </button>
-          ) : (
-            <span className="rounded px-1 py-0.5 text-[10px] font-medium text-subtle">
-              {channel.toLowerCase()}
-            </span>
           )}
         </span>
+        {!setup && twitch.phase === "connected" && (
+          <button
+            type="button"
+            onClick={() => setPage(stats.live ? "livePreview" : "stream")}
+            className={`no-drag hidden h-6 items-center gap-1.5 rounded-md border px-2 text-[10.5px] transition sm:inline-flex ${
+              stats.live
+                ? "border-red-500/35 bg-red-500/12 text-red-100 hover:border-red-400/55 hover:bg-red-500/18"
+                : "border-rule bg-well text-muted hover:border-rule-strong hover:text-ink"
+            }`}
+          >
+            <span
+              className={`size-1.5 rounded-full ${
+                stats.live
+                  ? "animate-pulse bg-red-400 shadow-[0_0_8px_rgba(248,113,113,0.8)]"
+                  : "bg-emerald-400"
+              }`}
+            />
+            <span className="font-semibold tracking-wide">
+              {stats.live ? t("stream.live") : twitch.account ?? t("stream.offline")}
+            </span>
+            {stats.live && (
+              <>
+                <span className="text-red-300/50">·</span>
+                <span className="inline-flex items-center gap-1 studio-mono text-[10px] text-red-200">
+                  <Eye size={10} />
+                  {(stats.viewers ?? 0).toLocaleString()}
+                </span>
+                {twitch.account && (
+                  <>
+                    <span className="hidden text-red-300/50 md:inline">·</span>
+                    <span className="hidden truncate text-red-200/80 md:inline">
+                      {twitch.account}
+                    </span>
+                  </>
+                )}
+              </>
+            )}
+          </button>
+        )}
         {!networkOnline && (
           <button
             type="button"
@@ -291,7 +325,7 @@ export function TitleBar({ setup = false }: { setup?: boolean }) {
             onClick={() => void checkNetworkNow()}
             title={t("network.offlineTooltip")}
             aria-label={t("network.offlineTooltip")}
-            className="no-drag inline-flex items-center gap-1 rounded border border-amber-400/35 bg-amber-400/12 px-1.5 py-0.5 text-[10px] font-medium text-amber-200 transition hover:bg-amber-400/20 disabled:opacity-60"
+            className="no-drag inline-flex items-center gap-1 rounded-md border border-amber-400/35 bg-amber-400/12 px-1.5 py-0.5 text-[10px] font-medium text-amber-200 transition hover:bg-amber-400/20 disabled:opacity-60"
           >
             <WifiOff size={10} className={networkChecking ? "animate-pulse" : undefined} aria-hidden="true" />
             <span>{t("network.offlineBadge")}</span>

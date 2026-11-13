@@ -1,64 +1,75 @@
-/* Hallmark · shape: app screen · genre: modern-minimal · theme: dusk · accent: periwinkle · built: the project · redesign: restyle · v2.0.0 */
-/* Hallmark · pre-emit critique: P5 H5 E5 S5 R5 V4 · weakest: V, moved from flat graphite Console to Dusk smoked-slate surfaces with lit top edges, Wix Madefor typography, and periwinkle/apricot signals */
+/* StreamDash Studio Command Design System · Obsidian & Precision Hairlines */
 @import "tailwindcss";
 
 :root {
   color-scheme: dark;
-  --accent-violet: oklch(77% 0.105 274);
-  --accent-violet-soft: oklch(77% 0.105 274 / 0.16);
-  --accent-violet-border: oklch(77% 0.105 274 / 0.38);
-  --accent-blue: oklch(69% 0.14 252);
-  --accent-blue-soft: oklch(69% 0.14 252 / 0.16);
-  --accent-blue-border: oklch(69% 0.14 252 / 0.38);
-  --accent-emerald: oklch(74% 0.12 162);
-  --accent-emerald-soft: oklch(74% 0.12 162 / 0.16);
-  --accent-emerald-border: oklch(74% 0.12 162 / 0.38);
-  --accent-orange: oklch(81% 0.105 62);
-  --accent-orange-soft: oklch(81% 0.105 62 / 0.16);
-  --accent-orange-border: oklch(81% 0.105 62 / 0.38);
+
+  /* Calibrated Studio Accents */
+  --accent-violet: oklch(73% 0.165 286);
+  --accent-violet-soft: oklch(73% 0.165 286 / 0.13);
+  --accent-violet-border: oklch(73% 0.165 286 / 0.36);
+
+  --accent-blue: oklch(72% 0.155 238);
+  --accent-blue-soft: oklch(72% 0.155 238 / 0.13);
+  --accent-blue-border: oklch(72% 0.155 238 / 0.36);
+
+  --accent-emerald: oklch(75% 0.15 160);
+  --accent-emerald-soft: oklch(75% 0.15 160 / 0.13);
+  --accent-emerald-border: oklch(75% 0.15 160 / 0.36);
+
+  --accent-orange: oklch(75% 0.165 52);
+  --accent-orange-soft: oklch(75% 0.165 52 / 0.14);
+  --accent-orange-border: oklch(75% 0.165 52 / 0.38);
 
   --app-accent: var(--accent-violet);
   --app-accent-soft: var(--accent-violet-soft);
   --app-accent-border: var(--accent-violet-border);
-  --app-accent-glow: color-mix(in oklch, var(--app-accent) 42%, transparent);
-  --app-accent-hover: color-mix(in oklch, var(--app-accent), var(--color-ink-strong) 10%);
-  --app-accent-edge: color-mix(in oklch, var(--app-accent) 22%, var(--color-rule));
+  --app-accent-glow: color-mix(in oklch, var(--app-accent) 36%, transparent);
+  --app-accent-hover: color-mix(in oklch, var(--app-accent), var(--color-ink-strong) 12%);
+  --app-accent-edge: color-mix(in oklch, var(--app-accent) 28%, var(--color-rule));
 
-  --color-canvas: oklch(14.5% 0.013 268);
-  --color-panel: oklch(18.5% 0.015 268);
-  --color-panel-hi: oklch(20.5% 0.016 268);
-  --color-raised: oklch(23.5% 0.017 268);
-  --color-well: oklch(11.5% 0.012 268);
-  --color-ink: oklch(95.5% 0.006 75);
-  --color-ink-strong: oklch(98% 0.004 75);
-  --color-muted: oklch(71% 0.015 262);
-  --color-subtle: oklch(56% 0.014 264);
-  --color-accent-ink: oklch(18% 0.035 274);
-  --color-signal-2: oklch(83% 0.095 62);
+  /* Obsidian Layered Surfaces */
+  --color-canvas: oklch(10.8% 0.005 260);
+  --color-shell: oklch(12.6% 0.006 260);
+  --color-panel: oklch(15.2% 0.007 260);
+  --color-panel-hi: oklch(16.8% 0.008 260);
+  --color-raised: oklch(19.6% 0.009 260);
+  --color-well: oklch(8.8% 0.005 260);
 
-  --color-rule: oklch(30% 0.016 266);
-  --color-rule-strong: oklch(40% 0.019 266);
-  --color-hover: oklch(24% 0.016 268);
-  --color-active: oklch(27% 0.018 268);
-  --color-scroll-thumb: oklch(35% 0.015 266);
-  --color-scroll-thumb-hover: oklch(45% 0.017 266);
-  --color-scroll-thumb-active: oklch(55% 0.017 266);
+  /* Typography & Contrast */
+  --color-ink: oklch(94.5% 0.004 260);
+  --color-ink-strong: oklch(98.5% 0.002 260);
+  --color-muted: oklch(68% 0.009 260);
+  --color-subtle: oklch(52% 0.009 260);
+  --color-accent-ink: oklch(12% 0.02 260);
+  --color-signal-2: oklch(79% 0.135 58);
 
-  --color-twitch: oklch(58% 0.22 293);
-  --color-twitch-soft: oklch(58% 0.22 293 / 0.14);
-  --color-twitch-border: oklch(58% 0.22 293 / 0.35);
-  --color-twitch-ink: oklch(80% 0.13 293);
+  /* Crisp Hairlines & Interaction States */
+  --color-rule: oklch(24.5% 0.008 260);
+  --color-rule-strong: oklch(34% 0.01 260);
+  --color-hover: oklch(22% 0.009 260);
+  --color-active: oklch(25.5% 0.01 260);
+  --color-scroll-thumb: oklch(31% 0.009 260);
+  --color-scroll-thumb-hover: oklch(42% 0.01 260);
+  --color-scroll-thumb-active: oklch(54% 0.012 260);
+
+  /* Brand & Telemetry Signals */
+  --color-twitch: oklch(60% 0.22 293);
+  --color-twitch-soft: oklch(60% 0.22 293 / 0.14);
+  --color-twitch-border: oklch(60% 0.22 293 / 0.35);
+  --color-twitch-ink: oklch(82% 0.13 293);
   --color-spotify: oklch(72% 0.19 148);
-  --color-obs-stage: oklch(19% 0.018 288);
-  --color-chart-grid: oklch(28% 0.014 266);
-  --color-chart-amber: oklch(83% 0.095 62);
-  --color-chart-blue: oklch(69% 0.14 252);
+  --color-obs-stage: oklch(14.5% 0.008 265);
+  --color-chart-grid: oklch(22% 0.008 260);
+  --color-chart-amber: oklch(79% 0.135 58);
+  --color-chart-blue: oklch(72% 0.155 238);
 
-  --dusk-edge: inset 0 1px 0 oklch(100% 0 0 / 0.08);
-  --shadow-card: var(--dusk-edge), 0 14px 28px -18px oklch(6% 0.02 268 / 0.78);
-  --shadow-control: inset 0 1px 0 oklch(100% 0 0 / 0.07);
-  --shadow-popover: var(--dusk-edge), 0 18px 40px -12px oklch(5% 0.02 268 / 0.85);
-  --shadow-inset: inset 0 2px 4px oklch(5% 0.02 268 / 0.55);
+  /* Hardware Lighting & Shadows */
+  --dusk-edge: inset 0 1px 0 oklch(100% 0 0 / 0.055);
+  --shadow-card: var(--dusk-edge), 0 12px 24px -16px oklch(0% 0 0 / 0.85);
+  --shadow-control: inset 0 1px 0 oklch(100% 0 0 / 0.065), 0 1px 2px oklch(0% 0 0 / 0.35);
+  --shadow-popover: var(--dusk-edge), 0 22px 48px -12px oklch(0% 0 0 / 0.92), 0 0 0 1px oklch(100% 0 0 / 0.03);
+  --shadow-inset: inset 0 1px 3px oklch(0% 0 0 / 0.65);
   --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
 
   --font-display: "Wix Madefor Display", "Segoe UI Variable", system-ui, sans-serif;
@@ -70,19 +81,26 @@
   background: var(--color-canvas);
   font-synthesis: none;
   text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
 }
 
 @theme inline {
   --color-canvas: var(--color-canvas);
+  --color-shell: var(--color-shell);
   --color-panel: var(--color-panel);
   --color-raised: var(--color-raised);
   --color-well: var(--color-well);
+  --color-surface: var(--color-panel);
+  --color-card: var(--color-panel);
   --color-ink: var(--color-ink);
+  --color-ink-strong: var(--color-ink-strong);
   --color-line: var(--color-rule);
   --color-rule: var(--color-rule);
   --color-rule-strong: var(--color-rule-strong);
   --color-muted: var(--color-muted);
   --color-subtle: var(--color-subtle);
+  --color-hover: var(--color-hover);
+  --color-active: var(--color-active);
   --color-accent: var(--app-accent);
   --color-accent-soft: var(--app-accent-soft);
   --color-accent-border: var(--app-accent-border);
@@ -96,48 +114,77 @@
 
 @utility glass-panel {
   border: 1px solid var(--color-rule);
-  background: color-mix(in oklch, var(--color-panel) 84%, transparent);
-  backdrop-filter: blur(16px);
+  background: color-mix(in oklch, var(--color-panel) 88%, transparent);
+  backdrop-filter: blur(18px);
   box-shadow: var(--shadow-card);
 }
 
 @utility accent-glow {
-  box-shadow: 0 10px 28px -12px var(--app-accent-glow), var(--dusk-edge);
+  box-shadow: 0 10px 26px -12px var(--app-accent-glow), var(--dusk-edge);
 }
 
 @utility card-hover {
-  transition: border-color 180ms var(--ease-out), box-shadow 180ms var(--ease-out), transform 180ms var(--ease-out);
+  transition: border-color 160ms var(--ease-out), box-shadow 160ms var(--ease-out), background-color 160ms var(--ease-out);
   &:hover {
     border-color: var(--app-accent-edge);
-    box-shadow: var(--dusk-edge), 0 16px 32px -18px var(--app-accent-glow);
+    box-shadow: var(--dusk-edge), 0 14px 30px -16px var(--app-accent-glow);
   }
+}
+
+@utility studio-well {
+  border: 1px solid var(--color-rule);
+  border-radius: 8px;
+  background: var(--color-well);
+  box-shadow: var(--shadow-inset);
+}
+
+@utility studio-label {
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--color-subtle);
+}
+
+@utility studio-mono {
+  font-family: var(--font-mono);
+  font-variant-numeric: tabular-nums;
 }
 
 [data-accent="violet"] {
   --app-accent: var(--accent-violet);
   --app-accent-soft: var(--accent-violet-soft);
   --app-accent-border: var(--accent-violet-border);
-  --app-accent-glow: color-mix(in oklch, var(--app-accent) 42%, transparent);
-  --app-accent-hover: color-mix(in oklch, var(--app-accent), var(--color-ink-strong) 10%);
-  --app-accent-edge: color-mix(in oklch, var(--app-accent) 22%, var(--color-rule));
+  --app-accent-glow: color-mix(in oklch, var(--app-accent) 36%, transparent);
+  --app-accent-hover: color-mix(in oklch, var(--app-accent), var(--color-ink-strong) 12%);
+  --app-accent-edge: color-mix(in oklch, var(--app-accent) 28%, var(--color-rule));
 }
 
 [data-accent="blue"] {
   --app-accent: var(--accent-blue);
   --app-accent-soft: var(--accent-blue-soft);
   --app-accent-border: var(--accent-blue-border);
+  --app-accent-glow: color-mix(in oklch, var(--app-accent) 36%, transparent);
+  --app-accent-hover: color-mix(in oklch, var(--app-accent), var(--color-ink-strong) 12%);
+  --app-accent-edge: color-mix(in oklch, var(--app-accent) 28%, var(--color-rule));
 }
 
 [data-accent="emerald"] {
   --app-accent: var(--accent-emerald);
   --app-accent-soft: var(--accent-emerald-soft);
   --app-accent-border: var(--accent-emerald-border);
+  --app-accent-glow: color-mix(in oklch, var(--app-accent) 36%, transparent);
+  --app-accent-hover: color-mix(in oklch, var(--app-accent), var(--color-ink-strong) 12%);
+  --app-accent-edge: color-mix(in oklch, var(--app-accent) 28%, var(--color-rule));
 }
 
 [data-accent="orange"] {
   --app-accent: var(--accent-orange);
   --app-accent-soft: var(--accent-orange-soft);
   --app-accent-border: var(--accent-orange-border);
+  --app-accent-glow: color-mix(in oklch, var(--app-accent) 36%, transparent);
+  --app-accent-hover: color-mix(in oklch, var(--app-accent), var(--color-ink-strong) 12%);
+  --app-accent-edge: color-mix(in oklch, var(--app-accent) 28%, var(--color-rule));
 }
 
 * {
@@ -156,6 +203,8 @@ body,
 
 body {
   user-select: none;
+  background: var(--color-canvas);
+  color: var(--color-ink);
 }
 
 html.tray-window,
@@ -183,7 +232,7 @@ button {
 
 button:disabled {
   cursor: not-allowed;
-  opacity: 0.5;
+  opacity: 0.48;
 }
 
 button:focus-visible,
@@ -200,12 +249,12 @@ a:focus-visible,
 }
 
 ::-webkit-scrollbar {
-  width: 10px;
-  height: 10px;
+  width: 9px;
+  height: 9px;
 }
 
 ::-webkit-scrollbar-thumb {
-  border: 3px solid transparent;
+  border: 2.5px solid transparent;
   border-radius: 999px;
   background: var(--color-scroll-thumb) padding-box;
 }
@@ -257,12 +306,12 @@ a:focus-visible,
   transition: opacity 160ms ease-in-out;
   --thumb-color: var(--color-scroll-thumb);
   --thumb-color-active: var(--app-accent);
-  --thumb-width: 4;
-  --thumb-width-active: 6;
+  --thumb-width: 3.5;
+  --thumb-width-active: 5.5;
   --track-color: transparent;
   --track-color-active: color-mix(in oklch, var(--app-accent-soft) 55%, transparent);
-  --track-width: 4;
-  --track-width-active: 6;
+  --track-width: 3.5;
+  --track-width-active: 5.5;
 }
 
 .curved-scrollbar-svg:has(.curved-scrollbar-thumb:hover),
@@ -291,7 +340,7 @@ a:focus-visible,
 }
 
 .curved-scrollbar-thumb:hover {
-  stroke: color-mix(in oklch, var(--app-accent) 48%, var(--color-scroll-thumb-hover));
+  stroke: color-mix(in oklch, var(--app-accent) 55%, var(--color-scroll-thumb-hover));
 }
 
 .curved-scrollbar-thumb:active {
@@ -369,18 +418,6 @@ a:focus-visible,
   will-change: transform;
 }
 
-@keyframes page-fade-out {
-  to {
-    opacity: 0;
-  }
-}
-
-@keyframes page-fade-in {
-  from {
-    opacity: 0;
-  }
-}
-
 @media (prefers-reduced-motion: reduce) {
   * {
     animation-duration: 0.01ms !important;
@@ -402,74 +439,95 @@ a:focus-visible,
   pointer-events: none;
 }
 
+/* Precision Instrument Card */
 .card {
   border: 1px solid var(--color-rule);
-  background: linear-gradient(180deg, var(--color-panel-hi), var(--color-panel));
-  border-radius: 12px;
+  background: linear-gradient(180deg, var(--color-panel-hi) 0%, var(--color-panel) 100%);
+  border-radius: 10px;
   box-shadow: var(--shadow-card);
-  transition: border-color 180ms var(--ease-out), box-shadow 180ms var(--ease-out);
+  transition: border-color 160ms var(--ease-out), box-shadow 160ms var(--ease-out);
 }
 
+/* Tactile Hardware Buttons */
 .button {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  gap: 8px;
-  min-height: 36px;
+  gap: 7px;
+  min-height: 34px;
   padding: 0 12px;
   border: 1px solid var(--color-rule);
-  border-radius: 8px;
-  background: var(--color-raised);
+  border-radius: 7px;
+  background: linear-gradient(180deg, color-mix(in oklch, var(--color-raised), white 3%) 0%, var(--color-raised) 100%);
   box-shadow: var(--shadow-control);
   color: var(--color-ink);
+  font-size: 12.5px;
   font-weight: 500;
-  transition: background-color 140ms var(--ease-out), border-color 140ms var(--ease-out), transform 120ms var(--ease-out);
+  transition: background 140ms var(--ease-out), border-color 140ms var(--ease-out), box-shadow 140ms var(--ease-out), transform 100ms var(--ease-out), color 140ms var(--ease-out);
 }
 
 .button:hover:not(:disabled) {
   background: color-mix(in oklch, var(--color-raised), var(--color-ink) 7%);
   border-color: var(--color-rule-strong);
+  color: var(--color-ink-strong);
 }
 
 .button:active:not(:disabled) {
-  transform: translateY(1px);
+  transform: translateY(0.5px);
   background: var(--color-panel);
+  box-shadow: inset 0 1px 2px oklch(0% 0 0 / 0.45);
 }
 
 .button-primary {
-  background: var(--app-accent);
-  border-color: var(--app-accent);
+  background: linear-gradient(180deg, color-mix(in oklch, var(--app-accent), white 10%) 0%, var(--app-accent) 100%);
+  border-color: color-mix(in oklch, var(--app-accent), white 18%);
+  box-shadow: inset 0 1px 0 oklch(100% 0 0 / 0.25), 0 6px 18px -8px var(--app-accent-glow);
   color: var(--color-accent-ink);
   font-weight: 600;
 }
 
 .button-primary:hover:not(:disabled) {
-  background: var(--app-accent-hover);
-  border-color: color-mix(in oklch, var(--app-accent), var(--color-ink-strong) 14%);
-  box-shadow: 0 8px 22px -10px var(--app-accent-glow), var(--shadow-control);
+  background: linear-gradient(180deg, color-mix(in oklch, var(--app-accent), white 16%) 0%, var(--app-accent-hover) 100%);
+  border-color: color-mix(in oklch, var(--app-accent), white 28%);
+  box-shadow: inset 0 1px 0 oklch(100% 0 0 / 0.3), 0 10px 24px -8px var(--app-accent-glow);
+  color: var(--color-accent-ink);
 }
 
 .button.border-transparent.bg-transparent {
   background: transparent;
   box-shadow: none;
+  color: var(--color-muted);
 }
 
+.button.border-transparent.bg-transparent:hover:not(:disabled) {
+  background: var(--color-hover);
+  border-color: var(--color-rule);
+  color: var(--color-ink);
+}
+
+/* Recessed Hardware Inputs */
 .input {
   width: 100%;
-  min-height: 36px;
+  min-height: 34px;
   border: 1px solid var(--color-rule);
-  border-radius: 8px;
+  border-radius: 7px;
   background: var(--color-well);
   box-shadow: var(--shadow-inset);
   color: var(--color-ink);
-  padding: 0 12px;
+  padding: 0 11px;
+  font-size: 13px;
   outline: none;
-  transition: background-color 140ms var(--ease-out);
+  transition: border-color 140ms var(--ease-out), background-color 140ms var(--ease-out), box-shadow 140ms var(--ease-out);
+}
+
+.input:hover:not(:disabled):not(:focus) {
+  border-color: var(--color-rule-strong);
 }
 
 .input:focus,
 .input:focus-visible {
-  outline: 2px solid var(--app-accent);
+  border-color: var(--app-accent-border);
+  outline: 2px solid color-mix(in oklch, var(--app-accent) 45%, transparent);
   outline-offset: -1px;
 }
 
@@ -495,23 +553,28 @@ select.input option {
 }
 
 .label {
-  font-size: 12px;
+  font-size: 11px;
   font-weight: 600;
+  letter-spacing: 0.03em;
   color: var(--color-muted);
 }
 
 [data-density="compact"] .button {
-  min-height: 32px;
-  padding-inline: 12px;
+  min-height: 30px;
+  padding-inline: 10px;
+  font-size: 12px;
 }
 
 [data-density="compact"] .input {
-  min-height: 34px;
+  min-height: 32px;
 }
 
+/* Studio Shell */
 .app-shell {
   isolation: isolate;
-  background: var(--color-canvas);
+  background:
+    radial-gradient(ellipse 75% 40% at 62% -10%, color-mix(in oklch, var(--app-accent) 4.5%, transparent), transparent 65%),
+    var(--color-canvas);
 }
 
 .app-workspace {
@@ -524,7 +587,7 @@ select.input option {
 }
 
 .app-content {
-  padding: 20px 24px;
+  padding: 18px 22px;
 }
 
 .app-bottom-fade {
@@ -533,21 +596,22 @@ select.input option {
 
 .app-header-bar {
   height: 40px;
-  padding-left: 16px;
+  padding-left: 12px;
   border-color: var(--color-rule);
-  background: var(--color-panel);
+  background: var(--color-shell);
+  box-shadow: inset 0 -1px 0 oklch(0% 0 0 / 0.25);
 }
 
 .app-sidebar {
   margin: 0;
-  padding: 12px 8px 8px;
+  padding: 10px 8px 8px;
   border-right: 1px solid var(--color-rule);
   border-radius: 0;
-  background: var(--color-panel);
+  background: var(--color-shell);
 }
 
 .app-sidebar nav button {
-  font-size: 12px;
+  font-size: 12.5px;
   color: var(--color-muted);
 }
 
@@ -564,23 +628,30 @@ select.input option {
 }
 
 .app-sidebar .nav-indicator {
-  background: var(--color-raised);
-  border: 1px solid var(--color-rule);
+  background: linear-gradient(90deg, color-mix(in oklch, var(--app-accent) 14%, var(--color-raised)) 0%, var(--color-raised) 100%);
+  border: 1px solid color-mix(in oklch, var(--app-accent) 26%, var(--color-rule));
+  box-shadow: inset 0 1px 0 oklch(100% 0 0 / 0.06);
 }
 
 .sidebar-search {
   border: 1px solid var(--color-rule);
   background: var(--color-well);
+  box-shadow: var(--shadow-inset);
 }
 
 .sidebar-group-label {
   color: var(--color-subtle);
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
 }
 
 .sidebar-bottom-fade {
-  background: linear-gradient(to top, var(--color-panel), transparent);
+  background: linear-gradient(to top, var(--color-shell), transparent);
 }
 
+/* Studio Page Header */
 .page-header {
   margin-bottom: 16px;
   padding-bottom: 12px;
@@ -591,30 +662,30 @@ select.input option {
 
 .page-header h1 {
   font-family: var(--font-display);
-  font-size: 21px;
+  font-size: 19px;
   font-weight: 600;
-  letter-spacing: -0.022em;
+  letter-spacing: -0.025em;
   text-wrap: balance;
   color: var(--color-ink-strong);
 }
 
 .page-header p {
   margin-top: 2px;
-  line-height: 1.45;
+  line-height: 1.4;
 }
 
 .page-header-icon {
-  border: 1px solid var(--color-rule);
-  background: var(--color-raised);
+  border: 1px solid color-mix(in oklch, var(--app-accent) 28%, var(--color-rule));
+  background: linear-gradient(180deg, color-mix(in oklch, var(--app-accent) 14%, var(--color-raised)) 0%, var(--color-panel) 100%);
   box-shadow: var(--shadow-control);
-  width: 32px;
-  height: 32px;
+  width: 34px;
+  height: 34px;
   border-radius: 8px;
-  margin-right: 4px;
 }
 
+/* Instrument Telemetry Cards */
 .metric-card {
-  padding: 12px 16px;
+  padding: 12px 14px;
   position: relative;
 }
 
@@ -626,22 +697,22 @@ select.input option {
 }
 
 .metric-value {
-  font-family: var(--font-display);
+  font-family: var(--font-mono);
   font-variant-numeric: tabular-nums;
-  font-size: 25px;
+  font-size: 22px;
   font-weight: 600;
-  letter-spacing: -0.025em;
+  letter-spacing: -0.03em;
   line-height: 1.15;
   color: var(--color-ink-strong);
 }
 
 .dashboard-metrics,
 .dashboard-content {
-  gap: 12px;
+  gap: 10px;
 }
 
 .dashboard-content {
-  margin-top: 16px;
+  margin-top: 12px;
 }
 
 .card > .border-b {
@@ -673,25 +744,26 @@ select.input option {
 }
 
 [data-density="compact"] .page-header {
-  margin-bottom: 8px;
+  margin-bottom: 10px;
+  padding-bottom: 10px;
 }
 
 @media (max-width: 900px) {
   .app-workspace {
-    padding: 8px 0 0;
-    gap: 4px;
+    padding: 0;
+    gap: 0;
   }
   .app-sidebar {
-    margin-left: 8px;
-    margin-bottom: 8px;
+    margin-left: 0;
+    margin-bottom: 0;
     padding-inline: 8px;
   }
   .app-content,
   [data-density="compact"] .app-content {
-    padding: 16px 12px;
+    padding: 14px 12px;
   }
   .page-header h1 {
-    font-size: 20px;
+    font-size: 18px;
   }
   .dashboard-metrics,
   .dashboard-content {
@@ -707,11 +779,11 @@ select.input option {
 .tray-panel {
   color: var(--color-ink);
   border: 1px solid var(--color-rule-strong);
-  background: var(--color-panel);
+  background: var(--color-shell);
 }
 
 .tray-header {
-  background: var(--color-hover);
+  background: var(--color-panel);
 }
 
 .tray-status {
@@ -753,7 +825,7 @@ select.input option {
   }
 }
 
-/* Studio controls: shared across settings, filters, stream and OBS. */
+/* Studio Controls: Select, Toggle, Checkboxes, Range */
 .glass-select {
   display: inline-flex;
   align-items: center;
@@ -766,7 +838,8 @@ select.input option {
 }
 
 .glass-select[data-open] {
-  outline: 2px solid var(--app-accent);
+  border-color: var(--app-accent-border);
+  outline: 2px solid color-mix(in oklch, var(--app-accent) 45%, transparent);
   outline-offset: -1px;
 }
 
@@ -784,8 +857,9 @@ select.input option {
   overscroll-behavior: contain;
   padding: 4px;
   border: 1px solid var(--color-rule-strong);
-  border-radius: 12px;
-  background: var(--color-raised);
+  border-radius: 10px;
+  background: color-mix(in oklch, var(--color-raised) 96%, black);
+  backdrop-filter: blur(18px);
   box-shadow: var(--shadow-popover);
   color: var(--color-ink);
   animation: glass-menu-enter 160ms var(--ease-out);
@@ -795,13 +869,13 @@ select.input option {
   display: flex;
   align-items: center;
   gap: 8px;
-  min-height: 36px;
-  padding: 8px 12px;
+  min-height: 32px;
+  padding: 6px 10px;
   border: 1px solid transparent;
-  border-radius: 8px;
+  border-radius: 6px;
   font-size: 12px;
   cursor: pointer;
-  transition: background-color 140ms var(--ease-out), border-color 140ms var(--ease-out);
+  transition: background-color 120ms var(--ease-out), border-color 120ms var(--ease-out);
 }
 
 .glass-select-option[data-active] {
@@ -811,6 +885,7 @@ select.input option {
 
 .glass-select-option[aria-selected="true"] {
   background: var(--app-accent-soft);
+  color: var(--color-ink-strong);
 }
 
 .glass-select-option[aria-disabled="true"] {
@@ -819,11 +894,11 @@ select.input option {
 }
 
 .accent-swatch {
-  width: 13px;
-  height: 13px;
+  width: 12px;
+  height: 12px;
   flex-shrink: 0;
-  border-radius: 50%;
-  border: 1px solid var(--color-rule-strong);
+  border-radius: 4px;
+  border: 1px solid oklch(100% 0 0 / 0.22);
 }
 
 @keyframes glass-menu-enter {
@@ -838,13 +913,14 @@ select.input option {
 }
 
 .toggle-switch {
-  --toggle-knob-size: 20px;
-  --toggle-knob-travel: 18px;
-  width: 44px;
-  height: 26px;
+  --toggle-knob-size: 16px;
+  --toggle-knob-travel: 16px;
+  width: 38px;
+  height: 22px;
   -webkit-tap-highlight-color: transparent;
-  border: 1px solid var(--color-rule);
-  transition: background-color 220ms var(--ease-out), border-color 220ms var(--ease-out);
+  border: 1px solid var(--color-rule-strong);
+  box-shadow: var(--shadow-inset);
+  transition: background-color 200ms var(--ease-out), border-color 200ms var(--ease-out), box-shadow 200ms var(--ease-out);
 }
 
 .toggle-switch[data-state="off"] {
@@ -852,8 +928,9 @@ select.input option {
 }
 
 .toggle-switch[data-state="on"] {
-  border-color: var(--app-accent-border);
+  border-color: color-mix(in oklch, var(--app-accent), white 18%);
   background: var(--app-accent);
+  box-shadow: 0 0 14px -4px var(--app-accent-glow);
 }
 
 .toggle-knob {
@@ -864,12 +941,12 @@ select.input option {
   height: var(--toggle-knob-size);
   border-radius: 9999px;
   background: var(--color-ink-strong);
-  box-shadow: var(--shadow-card);
+  box-shadow: 0 1px 3px oklch(0% 0 0 / 0.55);
   translate: 0 0;
   scale: 1 1;
   transition:
-    translate 240ms var(--ease-out),
-    scale 180ms var(--ease-out);
+    translate 220ms var(--ease-out),
+    scale 160ms var(--ease-out);
 }
 
 .toggle-switch[data-state="on"] .toggle-knob {
@@ -878,15 +955,15 @@ select.input option {
 }
 
 .toggle-switch[data-squish] .toggle-knob {
-  scale: 1.08 0.92;
+  scale: 1.1 0.9;
 }
 
 .toggle-switch:active .toggle-knob {
-  scale: 1.05 0.94;
+  scale: 1.06 0.93;
 }
 
 .toggle-switch:hover {
-  border-color: var(--color-rule-strong);
+  border-color: var(--app-accent-edge);
 }
 
 [data-animations="off"] .toggle-switch,
@@ -915,16 +992,17 @@ select.input option {
 
 input[type="checkbox"] {
   appearance: none;
-  width: 16px;
-  height: 16px;
+  width: 15px;
+  height: 15px;
   flex-shrink: 0;
   display: grid;
   place-content: center;
   margin: 0;
   border: 1px solid var(--color-rule-strong);
-  border-radius: 5px;
+  border-radius: 4px;
   background: var(--color-well);
   cursor: pointer;
+  transition: border-color 140ms var(--ease-out), background-color 140ms var(--ease-out);
 }
 
 input[type="checkbox"]:checked {
@@ -935,7 +1013,7 @@ input[type="checkbox"]:checked {
 input[type="checkbox"]:checked::after {
   content: "";
   width: 4px;
-  height: 8px;
+  height: 7.5px;
   border: solid var(--color-accent-ink);
   border-width: 0 2px 2px 0;
   transform: translateY(-1px) rotate(45deg);
@@ -947,7 +1025,7 @@ input[type="range"] {
 }
 
 input[type="range"]::-webkit-slider-runnable-track {
-  height: 6px;
+  height: 5px;
   border: 1px solid var(--color-rule);
   border-radius: 99px;
   background: var(--color-well);
@@ -955,9 +1033,9 @@ input[type="range"]::-webkit-slider-runnable-track {
 
 input[type="range"]::-webkit-slider-thumb {
   appearance: none;
-  width: 16px;
-  height: 16px;
-  margin-top: -4px;
+  width: 14px;
+  height: 14px;
+  margin-top: -5px;
   border: 1px solid var(--color-rule-strong);
   border-radius: 50%;
   background: var(--color-ink-strong);
@@ -965,7 +1043,7 @@ input[type="range"]::-webkit-slider-thumb {
 }
 
 input[type="range"]::-moz-range-track {
-  height: 6px;
+  height: 5px;
   border: 1px solid var(--color-rule);
   border-radius: 99px;
   background: var(--color-well);
@@ -987,24 +1065,25 @@ input[type="range"]:focus-visible {
 }
 
 input[type="range"]:disabled {
-  opacity: 0.5;
+  opacity: 0.48;
   cursor: not-allowed;
 }
 
 .command-search {
-  background: var(--color-panel);
+  background: color-mix(in oklch, var(--color-panel) 95%, black);
+  backdrop-filter: blur(22px);
   border: 1px solid var(--color-rule-strong);
   box-shadow: var(--shadow-popover);
 }
 
 .command-result {
-  transition: background-color 130ms var(--ease-out), border-color 130ms var(--ease-out);
+  transition: background-color 120ms var(--ease-out), border-color 120ms var(--ease-out);
 }
 
 .search-destination {
   outline: 2px solid var(--app-accent);
   outline-offset: 4px;
-  border-radius: 10px;
+  border-radius: 8px;
   scroll-margin-block: 100px;
 }
 
@@ -1016,19 +1095,20 @@ input[type="range"]:disabled {
   max-width: min(320px, calc(100vw - 16px));
   max-height: min(300px, calc(100dvh - 16px));
   overflow-y: auto;
-  padding: 8px 12px;
+  padding: 7px 11px;
   border: 1px solid var(--color-rule-strong);
-  border-radius: 10px;
-  background: var(--color-raised);
+  border-radius: 8px;
+  background: color-mix(in oklch, var(--color-raised) 96%, black);
+  backdrop-filter: blur(14px);
   color: var(--color-ink);
   font-size: 11px;
   font-weight: 450;
-  line-height: 1.6;
+  line-height: 1.55;
   white-space: pre-wrap;
   overflow-wrap: anywhere;
   user-select: text;
   box-shadow: var(--shadow-popover);
-  animation: tooltip-enter 160ms var(--ease-out);
+  animation: tooltip-enter 140ms var(--ease-out);
   -webkit-app-region: no-drag;
 }
 

@@ -253,38 +253,38 @@ function Metric({
 }) {
   const cardTone =
     tone === "emerald"
-      ? "border-emerald-500/25 bg-linear-to-br from-emerald-500/10 via-emerald-500/3 to-transparent"
+      ? "border-emerald-500/30 bg-linear-to-b from-emerald-500/8 to-transparent"
       : tone === "amber"
-        ? "border-amber-400/25 bg-linear-to-br from-amber-400/10 via-amber-400/3 to-transparent"
+        ? "border-amber-400/30 bg-linear-to-b from-amber-400/8 to-transparent"
         : tone === "violet"
-          ? "border-violet-400/25 bg-linear-to-br from-violet-500/10 via-violet-500/3 to-transparent"
+          ? "border-accent-border bg-linear-to-b from-accent-soft to-transparent"
           : "";
   const iconTone =
     tone === "emerald"
-      ? "!bg-emerald-500/15 !text-emerald-300"
+      ? "border-emerald-400/25 bg-emerald-500/14 text-emerald-300"
       : tone === "amber"
-        ? "!bg-amber-400/15 !text-amber-300"
+        ? "border-amber-400/25 bg-amber-400/14 text-amber-300"
         : tone === "violet"
-          ? "!bg-violet-500/15 !text-violet-300"
-          : "";
+          ? "border-accent-border bg-accent-soft text-accent"
+          : "border-rule bg-well text-muted";
   const valueTone =
     tone === "emerald"
       ? "text-emerald-300"
       : tone === "amber"
         ? "text-amber-200"
         : tone === "violet"
-          ? "text-violet-200"
+          ? "text-ink-strong"
           : "";
   return (
-    <Card className={`metric-card flex min-h-0 flex-col ${cardTone}`}>
+    <Card className={`metric-card flex min-h-0 flex-col overflow-hidden ${cardTone}`}>
       <div className="flex items-center justify-between gap-2">
-        <span className="text-[11px] font-medium text-muted">{label}</span>
-        <span className={`metric-icon ${iconTone}`}>
-          <Icon size={14} aria-hidden="true" />
+        <span className="studio-label truncate">{label}</span>
+        <span className={`grid size-6.5 shrink-0 place-items-center rounded-[6px] border ${iconTone}`}>
+          <Icon size={13} aria-hidden="true" />
         </span>
       </div>
       <div
-        className={`metric-value mt-auto pt-2 font-semibold tracking-[-.03em] ${valueTone}`}
+        className={`metric-value mt-auto pt-2 font-semibold ${valueTone}`}
       >
         {loading ? (
           <LoadingIndicator className={`h-6 ${loadingWidth}`} />
@@ -295,7 +295,7 @@ function Metric({
       {loading && note !== undefined ? (
         <LoadingIndicator className="mt-1 h-2.5 w-3/5" />
       ) : note ? (
-        <div className="mt-0.5 truncate text-[10px] text-zinc-600">{note}</div>
+        <div className="mt-0.5 truncate text-[10.5px] text-subtle">{note}</div>
       ) : null}
     </Card>
   );
@@ -387,14 +387,14 @@ function DashboardWidget({
     <div
       data-dashboard-widget={id}
       className={cn(
-        "relative h-full min-w-0 rounded-xl",
-        editing && "ring-1 ring-accent/30",
+        "relative h-full min-w-0 rounded-[10px]",
+        editing && "ring-1 ring-accent-border",
       )}
     >
       {editing && (
-        <div className="absolute -top-2.5 right-2.5 z-20 flex items-center gap-0.5 rounded-full border border-rule-strong bg-raised px-1 py-0.5 shadow-lg">
+        <div className="absolute -top-2.5 right-2.5 z-20 flex items-center gap-0.5 rounded-lg border border-rule-strong bg-raised/95 px-1 py-0.5 shadow-xl backdrop-blur-md">
           {showWidthControls && onWidthChange && (
-            <div className="flex items-center border-r border-white/10 pr-1 mr-0.5">
+            <div className="mr-0.5 flex items-center border-r border-rule pr-1">
               {(
                 [
                   ["single", "1x"],
@@ -407,10 +407,10 @@ function DashboardWidget({
                   type="button"
                   onClick={() => onWidthChange(w)}
                   className={cn(
-                    "rounded-full px-1.5 py-0.5 text-[9.5px] font-semibold transition",
+                    "rounded-md px-1.5 py-0.5 studio-mono text-[9.5px] font-semibold transition",
                     width === w
                       ? "bg-accent-soft text-accent"
-                      : "text-zinc-500 hover:text-zinc-200",
+                      : "text-subtle hover:text-ink",
                   )}
                 >
                   {text}
@@ -423,7 +423,7 @@ function DashboardWidget({
             title={t("dashboard.moveWidget", { label })}
             aria-label={t("dashboard.moveWidget", { label })}
             onPointerDown={onMoveStart}
-            className="grid size-5.5 touch-none cursor-grab place-items-center rounded-full text-zinc-400 outline-none hover:bg-white/10 hover:text-zinc-100 active:cursor-grabbing"
+            className="grid size-5.5 touch-none cursor-grab place-items-center rounded-md text-muted outline-none hover:bg-hover hover:text-ink active:cursor-grabbing"
           >
             <GripVertical size={11} />
           </button>
@@ -432,7 +432,7 @@ function DashboardWidget({
             title={t("dashboard.hideWidget", { label })}
             aria-label={t("dashboard.hideWidget", { label })}
             onClick={onHide}
-            className="grid size-5.5 place-items-center rounded-full text-zinc-400 hover:bg-white/10 hover:text-zinc-100"
+            className="grid size-5.5 place-items-center rounded-md text-muted hover:bg-hover hover:text-ink"
           >
             <EyeOff size={11} />
           </button>
@@ -442,7 +442,7 @@ function DashboardWidget({
               title={t("dashboard.deleteWidget", { label })}
               aria-label={t("dashboard.deleteWidget", { label })}
               onClick={onDelete}
-              className="grid size-5.5 place-items-center rounded-full text-zinc-400 hover:bg-red-400/15 hover:text-red-300"
+              className="grid size-5.5 place-items-center rounded-md text-muted hover:bg-red-500/15 hover:text-red-300"
             >
               <Trash2 size={11} />
             </button>
@@ -456,7 +456,7 @@ function DashboardWidget({
           title={t("dashboard.resizeWidget", { label })}
           aria-label={t("dashboard.resizeWidget", { label })}
           onPointerDown={onResizeStart}
-          className="absolute bottom-2 right-2 z-20 grid size-6 touch-none cursor-se-resize place-items-center rounded-full border border-rule-strong bg-raised text-accent shadow-md outline-none transition-colors hover:border-accent-border hover:bg-accent-soft"
+          className="absolute bottom-2 right-2 z-20 grid size-6 touch-none cursor-se-resize place-items-center rounded-md border border-rule-strong bg-raised text-accent shadow-md outline-none transition-colors hover:border-accent-border hover:bg-accent-soft"
         >
           <MoveDiagonal2 size={11} />
         </button>
@@ -578,12 +578,12 @@ function CustomizeToolbar({
 }) {
   const { t } = useTranslation();
   return (
-    <div className="card mb-2.5 space-y-2 border-dashed p-2.5 transition">
+    <div className="card mb-2.5 space-y-2 border-accent-border/60 p-2.5 transition">
       {/* Top row: Presets + Zoom + Actions */}
       <div className="flex flex-wrap items-center justify-between gap-2 border-b border-line pb-2">
         <div className="flex flex-wrap items-center gap-1.5">
-          <span className="text-[11px] font-semibold text-muted">
-            {t("dashboard.presets.label")}:
+          <span className="studio-label mr-1">
+            {t("dashboard.presets.label")}
           </span>
           {(["standard", "cockpit", "metrics"] as const).map((preset) => (
             <button
@@ -594,7 +594,7 @@ function CustomizeToolbar({
                 "rounded-md border px-2.5 py-1 text-[11px] font-medium transition-colors",
                 activePreset === preset
                   ? "border-accent-border bg-accent-soft text-accent"
-                  : "border-rule bg-raised text-ink hover:border-accent-border hover:text-accent",
+                  : "border-rule bg-well text-muted hover:border-rule-strong hover:text-ink",
               )}
             >
               {t(`dashboard.presets.${preset}`)}
@@ -608,14 +608,14 @@ function CustomizeToolbar({
               type="button"
               onClick={() => onZoomChange(Math.max(50, zoom - 10))}
               title={t("dashboard.zoomOut")}
-              className="grid size-6 place-items-center rounded-full text-zinc-400 hover:bg-white/8 hover:text-zinc-100"
+              className="grid size-6 place-items-center rounded text-muted hover:bg-hover hover:text-ink"
             >
               <ZoomOut size={12} />
             </button>
             <button
               type="button"
               onClick={() => onZoomChange(100)}
-              className="px-2 font-mono text-[10px] font-semibold tabular-nums text-zinc-300 hover:text-accent"
+              className="px-2 studio-mono text-[10px] font-semibold text-ink hover:text-accent"
             >
               {zoom}%
             </button>
@@ -623,7 +623,7 @@ function CustomizeToolbar({
               type="button"
               onClick={() => onZoomChange(Math.min(150, zoom + 10))}
               title={t("dashboard.zoomIn")}
-              className="grid size-6 place-items-center rounded-full text-zinc-400 hover:bg-white/8 hover:text-zinc-100"
+              className="grid size-6 place-items-center rounded text-muted hover:bg-hover hover:text-ink"
             >
               <ZoomIn size={12} />
             </button>
@@ -633,7 +633,7 @@ function CustomizeToolbar({
             type="button"
             title={t("dashboard.addBrowserSource")}
             onClick={onAddBrowser}
-            className="inline-flex h-7 shrink-0 items-center gap-1.5 rounded-full border border-white/8 bg-black/25 px-2.5 text-[10px] text-zinc-300 transition hover:border-accent/50 hover:text-accent"
+            className="inline-flex h-7 shrink-0 items-center gap-1.5 rounded-md border border-rule bg-well px-2.5 text-[10.5px] font-medium text-ink transition hover:border-accent-border hover:text-accent"
           >
             <Plus size={11} />
             {t("dashboard.browserSource")}
@@ -644,7 +644,7 @@ function CustomizeToolbar({
             title={t("dashboard.resetDashboard")}
             aria-label={t("dashboard.resetDashboard")}
             onClick={onReset}
-            className="grid size-7 shrink-0 place-items-center rounded-full border border-white/8 bg-black/25 text-zinc-400 hover:bg-white/8 hover:text-zinc-200"
+            className="grid size-7 shrink-0 place-items-center rounded-md border border-rule bg-well text-muted hover:border-rule-strong hover:text-ink"
           >
             <RotateCcw size={12} />
           </button>
@@ -2352,7 +2352,7 @@ export function Dashboard() {
                       key={id}
                       data-dashboard-drop-id={id}
                       className={cn(
-                        "min-w-0 rounded-[18px] transition",
+                        "min-w-0 rounded-[10px] transition",
                         draggedWidget === id && "ring-2 ring-accent/60",
                       )}
                       style={{ height: rowHeight }}

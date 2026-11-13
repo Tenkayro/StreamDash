@@ -88,13 +88,13 @@ export function ObsAudioButton({ input }: { input: ObsAudioInput }) {
       className={cn(
         "inline-flex h-7 min-w-0 flex-1 items-center gap-1.5 rounded-md border px-2 text-[11px] transition",
         input.muted
-          ? "border-red-400/30 bg-red-400/10 text-red-300"
-          : "border-line bg-black/15 text-zinc-300 hover:border-accent/30 hover:text-zinc-100",
+          ? "border-red-400/35 bg-red-500/12 text-red-200"
+          : "border-line bg-well text-ink hover:border-accent-border hover:text-ink-strong",
       )}
     >
       <Icon size={12} className="shrink-0" />
       <span className="truncate">{label}</span>
-      <span className="ml-auto shrink-0 text-[10px] tabular-nums text-zinc-500">
+      <span className="ml-auto shrink-0 studio-mono text-[10px] text-subtle">
         {input.muted ? t("obs.muted") : `${Math.round(input.volume * 100)}%`}
       </span>
     </button>
@@ -133,12 +133,12 @@ function ObsControl({
       type="button"
       onClick={onClick}
       className={cn(
-        "flex min-w-0 items-center gap-1.5 rounded-md border px-2 py-1.5 text-[11px] transition",
+        "flex min-w-0 items-center gap-1.5 rounded-md border px-2.5 py-1.5 text-[11px] font-medium transition",
         active
           ? danger
-            ? "border-red-400/30 bg-red-400/10 text-red-200"
-            : "border-accent/30 bg-accent-soft text-accent"
-          : "border-line bg-black/15 text-zinc-400 hover:bg-white/3 hover:text-zinc-200",
+            ? "border-red-400/35 bg-red-500/12 text-red-200"
+            : "border-accent-border bg-accent-soft text-accent"
+          : "border-line bg-well text-muted hover:border-rule-strong hover:bg-hover hover:text-ink",
       )}
     >
       <Icon size={12} className="shrink-0" />

@@ -423,12 +423,12 @@ export function ProCloudSection() {
 
               <form
                 onSubmit={(e) => void handleActivate(e)}
-                className="flex flex-col justify-between gap-3 rounded-xl border border-line bg-black/20 p-4"
+                className="flex flex-col justify-between gap-3 rounded-[10px] border border-rule bg-well p-4"
               >
                 <div className="space-y-2">
                   <label
                     htmlFor="settings-pro-license-key"
-                    className="block text-xs font-semibold text-zinc-200"
+                    className="studio-label block"
                   >
                     {t("pro.licenseKeyLabel")}
                   </label>
@@ -436,11 +436,11 @@ export function ProCloudSection() {
                     <div className="relative flex-1">
                       <KeyRound
                         size={14}
-                        className="pointer-events-none absolute top-1/2 left-3 -translate-y-1/2 text-zinc-500"
+                        className="pointer-events-none absolute top-1/2 left-3 -translate-y-1/2 text-subtle"
                       />
                       <input
                         id="settings-pro-license-key"
-                        className="input input-leading-icon w-full font-mono text-xs"
+                        className="input input-leading-icon studio-mono w-full text-xs"
                         placeholder={t("pro.licenseKeyPlaceholder")}
                         value={licenseKey}
                         onChange={(e) => {
@@ -1044,8 +1044,8 @@ export function ProCloudSection() {
                           <span>{latest.userMessage}</span>
                         </div>
                         {latest.adminNote && (
-                          <div className="rounded-lg border border-line/70 bg-black/25 px-3 py-2 text-zinc-200">
-                            <div className="mb-0.5 text-[11px] font-medium text-muted">
+                          <div className="rounded-lg border border-rule bg-well px-3 py-2 text-ink">
+                            <div className="studio-label mb-0.5">
                               {t("settings.support.adminReply")}
                             </div>
                             <div>{latest.adminNote}</div>
@@ -1074,19 +1074,19 @@ export function ProCloudSection() {
                     !(showTicketCard && latest?.status === "approved") &&
                     (
                     !supportTicket?.hasActiveLicense && !entitlements.pro ? (
-                      <div className="rounded-xl border border-line bg-black/20 p-3 text-xs text-muted">
+                      <div className="rounded-[10px] border border-rule bg-well p-3 text-xs text-muted">
                         {t("settings.support.noActiveProInfo")}
                       </div>
                     ) : supportTicket?.blockedReason === "key_reset_limit_reached" ? (
-                      <div className="flex items-start gap-2.5 rounded-xl border border-amber-500/25 bg-amber-500/8 p-3 text-xs text-amber-100">
+                      <div className="flex items-start gap-2.5 rounded-[10px] border border-amber-500/25 bg-amber-500/8 p-3 text-xs text-amber-100">
                         <ShieldAlert size={14} className="mt-0.5 shrink-0 text-amber-300" />
                         <span>{t("settings.support.errors.resetLimitReached")}</span>
                       </div>
                     ) : supportTicket?.blockedReason === "support_cooldown" &&
                       supportTicket.cooldownUntil ? (
                       showTicketCard && latest?.status === "rejected" ? null : (
-                        <div className="flex items-start gap-2.5 rounded-xl border border-line bg-black/20 p-3 text-xs text-muted">
-                          <Clock3 size={14} className="mt-0.5 shrink-0 text-zinc-400" />
+                        <div className="flex items-start gap-2.5 rounded-[10px] border border-rule bg-well p-3 text-xs text-muted">
+                          <Clock3 size={14} className="mt-0.5 shrink-0 text-subtle" />
                           <span>
                             {t("settings.support.cooldownUntil", {
                               time: new Date(supportTicket.cooldownUntil).toLocaleTimeString([], {
@@ -1155,27 +1155,27 @@ export function ProCloudSection() {
 
       {deleteCloudOpen && (
         <div
-          className="fixed inset-0 z-50 grid place-items-center bg-canvas/80 p-4"
+          className="fixed inset-0 z-50 grid place-items-center bg-black/70 p-4 backdrop-blur-xs"
           onMouseDown={(event) => {
             if (event.target === event.currentTarget) setDeleteCloudOpen(false);
           }}
         >
-          <Card className="w-full max-w-md overflow-hidden border-line bg-surface p-0 shadow-2xl">
-            <div className="flex items-center justify-between border-b border-line px-5 py-3.5">
-              <h3 className="text-sm font-semibold text-zinc-100">
+          <Card className="w-full max-w-md overflow-hidden rounded-[14px] border-rule-strong bg-panel p-0 shadow-2xl">
+            <div className="flex items-center justify-between border-b border-rule bg-shell/75 px-5 py-3.5">
+              <h3 className="text-sm font-semibold text-ink-strong">
                 {t("profiles.cloud.deleteTitle")}
               </h3>
               <button
                 type="button"
                 onClick={() => setDeleteCloudOpen(false)}
                 aria-label={t("common.close")}
-                className="grid size-7 place-items-center rounded-lg text-zinc-500 transition hover:bg-white/5 hover:text-zinc-200"
+                className="grid size-7 place-items-center rounded-lg border border-rule bg-well text-muted transition hover:border-rule-strong hover:text-ink-strong"
               >
                 <X size={15} />
               </button>
             </div>
             <div className="space-y-4 p-5">
-              <p className="text-xs leading-5 text-zinc-400">
+              <p className="text-xs leading-5 text-muted">
                 {t("profiles.cloud.deleteConfirm")}
               </p>
               <div className="flex justify-end gap-2">

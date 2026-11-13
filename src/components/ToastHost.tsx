@@ -30,17 +30,17 @@ export function ToastHost() {
         duration: 4200,
         classNames: {
           toast:
-            "group pointer-events-auto relative flex w-[340px] max-w-[calc(100vw-2rem)] items-start gap-2.5 rounded-xl border border-white/10 bg-[#11141f]/95 px-3.5 py-3 text-zinc-100 shadow-[0_14px_38px_-10px_rgba(0,0,0,0.75)] backdrop-blur-xl transition-all",
-          title: "text-[12.5px] font-medium leading-4.5 text-zinc-100",
-          description: "mt-0.5 text-[11px] leading-4 text-zinc-400",
+            "group pointer-events-auto relative flex w-[340px] max-w-[calc(100vw-2rem)] items-start gap-2.5 rounded-[10px] border border-rule-strong bg-panel/95 px-3.5 py-3 text-ink shadow-[0_18px_44px_-12px_rgba(0,0,0,0.88)] backdrop-blur-xl transition-all",
+          title: "text-[12.5px] font-semibold leading-4.5 text-ink-strong",
+          description: "mt-0.5 text-[11px] leading-4 text-muted",
           content: "min-w-0 flex-1 pr-4",
-          icon: "mt-0.5 flex size-6 shrink-0 items-center justify-center rounded-lg bg-white/6",
+          icon: "mt-0.5 flex size-6 shrink-0 items-center justify-center rounded-[7px] border border-rule bg-well",
           closeButton:
-            "absolute top-2.5 right-2.5 flex size-5 items-center justify-center rounded-md text-zinc-500 opacity-0 transition hover:bg-white/10 hover:text-zinc-200 group-hover:opacity-100",
+            "absolute top-2.5 right-2.5 flex size-5 items-center justify-center rounded-md text-subtle opacity-0 transition hover:bg-hover hover:text-ink group-hover:opacity-100",
           actionButton:
-            "mt-2 inline-flex h-6 items-center rounded-md bg-violet-500/20 px-2 text-[11px] font-medium text-violet-200 transition hover:bg-violet-500/30",
+            "mt-2 inline-flex h-6 items-center rounded-md border border-accent-border bg-accent-soft px-2 text-[11px] font-medium text-accent transition hover:brightness-115",
           cancelButton:
-            "mt-2 inline-flex h-6 items-center rounded-md bg-white/8 px-2 text-[11px] font-medium text-zinc-300 transition hover:bg-white/14",
+            "mt-2 inline-flex h-6 items-center rounded-md border border-rule bg-raised px-2 text-[11px] font-medium text-ink transition hover:bg-hover",
           success:
             "!border-emerald-500/30 [&_[data-icon]]:bg-emerald-500/15",
           error: "!border-red-500/35 [&_[data-icon]]:bg-red-500/15",

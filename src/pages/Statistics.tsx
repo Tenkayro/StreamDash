@@ -114,22 +114,48 @@ export function Statistics() {
       </Card>
       <div className="mt-3 grid grid-cols-1 gap-3 sm:grid-cols-3">
         <Card className="metric-card">
-          <div className="text-xs text-muted">{t("statistics.totalEvents")}</div>
+          <div className="studio-label">{t("statistics.totalEvents")}</div>
           <div className="metric-value mt-1.5">
             {events.length.toLocaleString(i18n.language)}
           </div>
         </Card>
         <Card className="metric-card">
-          <div className="text-xs text-muted">{t("statistics.eventTypes")}</div>
+          <div className="studio-label">{t("statistics.eventTypes")}</div>
           <div className="metric-value mt-1.5">{types.length}</div>
         </Card>
         <Card className="metric-card">
-          <div className="text-xs text-muted">{t("statistics.mostCommon")}</div>
-          <div className="metric-value mt-1.5 text-xl capitalize">
+          <div className="studio-label">{t("statistics.mostCommon")}</div>
+          <div className="metric-value mt-1.5 text-lg capitalize">
             {types[0] ? t(`events.${types[0][0]}`) : "—"}
           </div>
         </Card>
       </div>
+      {types.length > 0 && (
+        <Card className="mt-3 p-4">
+          <div className="mb-3 flex items-center justify-between border-b border-line pb-2">
+            <h2 className="text-xs font-semibold text-ink-strong">{t("statistics.eventTypes")}</h2>
+            <span className="studio-mono text-[11px] text-muted">{events.length.toLocaleString(i18n.language)}</span>
+          </div>
+          <div className="grid gap-2.5 sm:grid-cols-2">
+            {types.map(([eventType, count]) => {
+              const ratio = events.length > 0 ? Math.max(4, Math.round((count / events.length) * 100)) : 0;
+              return (
+                <div key={eventType} className="rounded-lg border border-rule bg-well px-3 py-2.5">
+                  <div className="flex items-center justify-between gap-2 text-xs">
+                    <span className="truncate font-medium capitalize text-ink">{t(`events.${eventType}`)}</span>
+                    <span className="shrink-0 studio-mono text-[11px] text-muted">
+                      {count.toLocaleString(i18n.language)} · {Math.round((count / Math.max(1, events.length)) * 100)}%
+                    </span>
+                  </div>
+                  <div className="mt-2 h-1.5 overflow-hidden rounded-full bg-panel">
+                    <div className="h-full rounded-full bg-accent" style={{ width: `${ratio}%` }} />
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </Card>
+      )}
         </>
       )}
     </>

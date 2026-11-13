@@ -49,13 +49,13 @@ export function AppContextMenu() {
 
   if (!position) return null;
   const actionClass =
-    "flex w-full items-center gap-2.5 rounded-md px-2.5 py-2 text-left text-xs text-zinc-300 transition hover:bg-white/5 hover:text-white disabled:pointer-events-none disabled:opacity-35";
+    "flex w-full items-center gap-2.5 rounded-[6px] px-2.5 py-1.5 text-left text-xs text-ink transition hover:bg-hover hover:text-ink-strong disabled:pointer-events-none disabled:opacity-35";
   return (
     <div
       ref={menuRef}
       role="menu"
       aria-label={t("contextMenu.label")}
-      className="no-drag fixed z-100 w-42 rounded-lg border border-rule-strong bg-raised p-1 shadow-lg"
+      className="no-drag fixed z-100 w-44 rounded-[10px] border border-rule-strong bg-raised/96 p-1 shadow-2xl backdrop-blur-xl"
       style={{ left: position.x, top: position.y }}
     >
       <button

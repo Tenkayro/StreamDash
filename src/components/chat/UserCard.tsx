@@ -494,7 +494,7 @@ export function UserCard({
               {t("userCard.recentMessages")}
             </div>
           </div>
-          <ScrollFade className="flex min-h-0 flex-1 flex-col" color="#101115" size={32}>
+          <ScrollFade className="flex min-h-0 flex-1 flex-col" color="var(--color-panel)" size={32}>
             <div className="min-h-0 flex-1 overflow-y-auto p-2">
               {userMessages.length ? (
                 userMessages.map((message) => (

@@ -87,17 +87,21 @@ function ControlButton({
       disabled={busy}
       onClick={() => void onClick()}
       className={cn(
-        "flex min-h-14 items-center gap-3 rounded-xl border p-2.5 text-left transition disabled:cursor-wait disabled:opacity-60",
+        "flex min-h-14 items-center gap-3 rounded-lg border p-2.5 text-left transition disabled:cursor-wait disabled:opacity-60",
         active
           ? danger
-            ? "border-red-400/30 bg-red-400/10"
-            : "border-accent/30 bg-accent-soft"
-          : "border-line bg-white/2 hover:border-accent/30 hover:bg-white/4",
+            ? "border-red-400/35 bg-red-500/12"
+            : "border-accent-border bg-accent-soft"
+          : "border-rule bg-well hover:border-rule-strong hover:bg-hover/60",
       )}
     >
       <span className={cn(
-        "grid size-8 shrink-0 place-items-center rounded-lg",
-        active ? (danger ? "bg-red-400/15 text-red-300" : "bg-accent/15 text-accent") : "bg-white/5 text-zinc-400",
+        "grid size-8 shrink-0 place-items-center rounded-md border",
+        active
+          ? danger
+            ? "border-red-400/30 bg-red-500/15 text-red-300"
+            : "border-accent-border bg-accent-soft text-accent"
+          : "border-rule bg-panel text-muted",
       )}>
         {busy ? <RefreshCw size={16} className="animate-spin" /> : <Icon size={16} />}
       </span>
@@ -175,14 +179,14 @@ function AudioChannel({ input, busy, run }: {
   const Icon = input.kind === "mic" ? Mic : Monitor;
   const volume = Math.round(input.volume * 100);
   return (
-    <div className="rounded-xl border border-line bg-white/2 p-3">
+    <div className="rounded-lg border border-rule bg-well p-3">
       <div className="flex min-w-0 items-center gap-2">
-        <span className="grid size-8 shrink-0 place-items-center rounded-lg bg-white/5 text-zinc-400"><Icon size={15} /></span>
+        <span className="grid size-8 shrink-0 place-items-center rounded-md border border-rule bg-panel text-muted"><Icon size={15} /></span>
         <div className="min-w-0 flex-1">
-          <div className="truncate text-xs font-medium text-zinc-200" title={input.name}>{input.name}</div>
-          <div className="text-[10px] text-muted">{t(input.kind === "mic" ? "obs.mic" : "obs.desktop")}</div>
+          <div className="truncate text-xs font-medium text-ink-strong" title={input.name}>{input.name}</div>
+          <div className="studio-label">{t(input.kind === "mic" ? "obs.mic" : "obs.desktop")}</div>
         </div>
-        <span className="text-[11px] tabular-nums text-zinc-500">{input.muted ? t("obs.muted") : `${volume}%`}</span>
+        <span className="studio-mono text-[11px] text-muted">{input.muted ? t("obs.muted") : `${volume}%`}</span>
         <button
           type="button"
           disabled={busy}
@@ -190,15 +194,15 @@ function AudioChannel({ input, busy, run }: {
           aria-pressed={input.muted}
           onClick={() => void run(`mute:${input.name}`, () => runtime.setObsMute(input.name, !input.muted))}
           className={cn(
-            "grid size-8 shrink-0 place-items-center rounded-lg border transition disabled:opacity-60",
-            input.muted ? "border-red-400/30 bg-red-400/10 text-red-300" : "border-line text-zinc-400 hover:text-zinc-100",
+            "grid size-8 shrink-0 place-items-center rounded-md border transition disabled:opacity-60",
+            input.muted ? "border-red-400/35 bg-red-500/12 text-red-300" : "border-rule bg-panel text-muted hover:border-rule-strong hover:text-ink",
           )}
         >
           {input.muted ? <VolumeX size={15} /> : <Volume2 size={15} />}
         </button>
       </div>
       <div className="mt-3 flex items-center gap-3">
-        <VolumeX size={12} className="shrink-0 text-zinc-600" />
+        <VolumeX size={12} className="shrink-0 text-subtle" />
         <input
           type="range"
           min="0"
@@ -209,8 +213,8 @@ function AudioChannel({ input, busy, run }: {
           onChange={(event) => void runtime.setObsVolume(input.name, Number(event.target.value) / 100)}
           className="h-1.5 min-w-0 flex-1 cursor-pointer accent-(--accent)"
         />
-        <Volume2 size={12} className="shrink-0 text-zinc-600" />
-        <span className="w-14 text-right text-[10px] tabular-nums text-zinc-600">{input.volumeDb.toFixed(1)} dB</span>
+        <Volume2 size={12} className="shrink-0 text-subtle" />
+        <span className="w-14 text-right studio-mono text-[10px] text-subtle">{input.volumeDb.toFixed(1)} dB</span>
       </div>
     </div>
   );
@@ -253,11 +257,11 @@ function ObsWorkspace({ snapshot }: { snapshot: ObsSnapshot }) {
         <Card className="p-4">
           <SectionTitle icon={Clapperboard} title={t("obs.page.scenes")} />
           {snapshot.scenes.length ? (
-            <ScrollFade color="#242526" size={28}>
+            <ScrollFade color="var(--color-panel)" size={28}>
               <div className="grid max-h-96 gap-1.5 overflow-y-auto pr-1 sm:grid-cols-2 xl:grid-cols-1 2xl:grid-cols-2">
                 {snapshot.scenes.map((scene) => {
                   const active = scene === snapshot.scene;
-                  return <button key={scene} type="button" aria-pressed={active} onClick={() => void run(`scene:${scene}`, () => runtime.setObsScene(scene))} className={cn("flex min-w-0 items-center gap-2 rounded-lg border px-3 py-2 text-left text-xs transition", active ? "border-accent/40 bg-accent-soft text-accent" : "border-line bg-white/2 text-zinc-400 hover:border-accent/30 hover:text-zinc-100")}><span className={cn("size-1.5 shrink-0 rounded-full", active ? "bg-accent" : "bg-zinc-700")} /><span className="truncate">{scene}</span>{active && <Badge tone="purple">{t("obs.page.program")}</Badge>}</button>;
+                  return <button key={scene} type="button" aria-pressed={active} onClick={() => void run(`scene:${scene}`, () => runtime.setObsScene(scene))} className={cn("flex min-w-0 items-center gap-2 rounded-lg border px-3 py-2 text-left text-xs transition", active ? "border-accent-border bg-accent-soft font-medium text-ink-strong" : "border-rule bg-well text-muted hover:border-rule-strong hover:text-ink")}><span className={cn("size-1.5 shrink-0 rounded-full", active ? "bg-accent shadow-[0_0_8px_var(--app-accent-glow)]" : "bg-zinc-600")} /><span className="truncate">{scene}</span>{active && <Badge tone="purple">{t("obs.page.program")}</Badge>}</button>;
                 })}
               </div>
             </ScrollFade>

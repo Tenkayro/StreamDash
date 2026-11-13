@@ -63,30 +63,30 @@ function SectionCheckbox({
       type="button"
       disabled={disabled}
       onClick={() => onChange(!checked)}
-      className={`flex w-full items-center gap-3 rounded-xl border px-3 py-2 text-left transition ${
+      className={`flex w-full items-center gap-3 rounded-[10px] border px-3 py-2 text-left transition ${
         disabled
-          ? "cursor-not-allowed border-line/60 bg-black/10 opacity-45"
+          ? "cursor-not-allowed border-rule bg-well/50 opacity-45"
           : checked
-            ? "border-accent/35 bg-accent-soft/60 text-zinc-100"
-            : "border-line bg-black/15 text-zinc-400 hover:border-white/15 hover:text-zinc-200"
+            ? "border-accent-border bg-accent-soft/75 text-ink-strong"
+            : "border-rule bg-well text-muted hover:border-rule-strong hover:text-ink"
       }`}
     >
       <span
         className={`grid size-7 shrink-0 place-items-center rounded-lg ${
-          checked && !disabled ? "bg-accent/20 text-accent" : "bg-white/[0.04] text-zinc-500"
+          checked && !disabled ? "bg-accent/20 text-accent" : "bg-panel text-subtle"
         }`}
       >
         <Icon size={14} />
       </span>
       <span className="min-w-0 flex-1">
         <span className="block truncate text-xs font-medium">{label}</span>
-        <span className="block truncate text-[10.5px] text-zinc-500">{detail}</span>
+        <span className="block truncate text-[10.5px] text-subtle">{detail}</span>
       </span>
       <span
         className={`grid size-4 shrink-0 place-items-center rounded border ${
           checked && !disabled
             ? "border-accent bg-accent text-black"
-            : "border-zinc-600 bg-transparent"
+            : "border-rule-strong bg-transparent"
         }`}
       >
         {checked && !disabled && <Check size={11} strokeWidth={3} />}
@@ -114,19 +114,19 @@ function ModalShell({
 
   return (
     <div
-      className="fixed inset-0 z-50 grid place-items-center bg-canvas/80 p-4"
+      className="fixed inset-0 z-50 grid place-items-center bg-black/70 p-4 backdrop-blur-xs"
       onMouseDown={(event) => {
         if (event.target === event.currentTarget) onClose();
       }}
     >
-      <Card className="w-full max-w-xl overflow-hidden border-line bg-surface p-0 shadow-2xl">
-        <div className="flex items-center justify-between border-b border-line px-5 py-3.5">
-          <h3 className="text-sm font-semibold text-zinc-100">{title}</h3>
+      <Card className="w-full max-w-xl overflow-hidden rounded-[14px] border-rule-strong bg-panel p-0 shadow-2xl">
+        <div className="flex items-center justify-between border-b border-rule bg-shell/75 px-5 py-3.5">
+          <h3 className="text-sm font-semibold text-ink-strong">{title}</h3>
           <button
             type="button"
             onClick={onClose}
             aria-label={title}
-            className="grid size-7 place-items-center rounded-lg text-zinc-500 transition hover:bg-white/5 hover:text-zinc-200"
+            className="grid size-7 place-items-center rounded-lg border border-rule bg-well text-muted transition hover:border-rule-strong hover:text-ink-strong"
           >
             <X size={15} />
           </button>
@@ -342,14 +342,14 @@ export function ProfilesSection() {
       <Card className="overflow-hidden">
         <div
           data-search-label={t("settings.profilesAutoSwitch")}
-          className="flex flex-wrap items-center justify-between gap-3 border-b border-line px-5 py-3.5"
+          className="flex flex-wrap items-center justify-between gap-3 border-b border-rule bg-shell/60 px-5 py-3.5"
         >
           <div className="flex min-w-0 flex-1 items-center gap-3">
-            <span className="grid size-8 shrink-0 place-items-center rounded-lg bg-black/25 text-zinc-400">
+            <span className="grid size-8 shrink-0 place-items-center rounded-lg border border-rule bg-well text-muted">
               <RefreshCw size={15} />
             </span>
             <div className="min-w-0">
-              <div className="text-sm font-medium">{t("settings.profilesAutoSwitch")}</div>
+              <div className="text-sm font-medium text-ink-strong">{t("settings.profilesAutoSwitch")}</div>
               <div className="text-xs text-muted">
                 {twitchConnected && twitch.account
                   ? t("profiles.autoSwitchDetailConnected", { account: twitch.account })
@@ -364,7 +364,7 @@ export function ProfilesSection() {
           />
         </div>
 
-        <div className="divide-y divide-line">
+        <div className="divide-y divide-rule">
           {profiles.map((profile) => {
             const isActive = profile.id === activeProfileId;
             const isLinkedCurrent =
@@ -377,7 +377,7 @@ export function ProfilesSection() {
                 key={profile.id}
                 data-search-label={profile.name}
                 className={`flex flex-wrap items-center justify-between gap-3 px-5 py-3 transition ${
-                  isActive ? "bg-accent-soft/25" : "hover:bg-white/[0.02]"
+                  isActive ? "bg-accent-soft/35" : "hover:bg-well/55"
                 }`}
               >
                 <div className="flex min-w-0 flex-1 items-center gap-3">
@@ -386,8 +386,8 @@ export function ProfilesSection() {
                       profile.twitchUserId
                         ? "border-twitch-border bg-twitch-soft text-twitch-ink"
                         : isActive
-                          ? "border-accent/35 bg-accent/15 text-accent"
-                          : "border-line bg-black/20 text-zinc-400"
+                          ? "border-accent-border bg-accent-soft text-accent"
+                          : "border-rule bg-well text-muted"
                     }`}
                   >
                     <Layers size={15} />

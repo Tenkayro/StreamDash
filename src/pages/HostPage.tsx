@@ -178,7 +178,7 @@ export function HostPage() {
       </div>
 
       {status?.lastError && (
-        <div className="rounded-xl border border-red-500/30 bg-red-500/10 px-4 py-3 text-xs text-red-200">
+        <div className="rounded-[10px] border border-red-500/30 bg-red-500/10 px-4 py-3 text-xs text-red-200">
           {status.lastError}
         </div>
       )}
@@ -188,32 +188,32 @@ export function HostPage() {
         <Card className="lg:col-span-5">
           <div className="space-y-4 p-5">
             <div className="flex items-center gap-2.5">
-              <span className="grid size-8 place-items-center rounded-lg bg-accent-soft text-accent">
-                <Smartphone size={16} />
+              <span className="grid size-8 place-items-center rounded-lg border border-accent-border bg-accent-soft text-accent">
+                <Smartphone size={15} />
               </span>
               <div>
-                <h2 className="text-sm font-semibold">{t("host.mobileTitle")}</h2>
+                <h2 className="text-sm font-semibold text-ink-strong">{t("host.mobileTitle")}</h2>
                 <p className="text-xs text-muted">{t("host.mobileDescription")}</p>
               </div>
             </div>
 
             {status?.running && qrSvg ? (
-              <div className="flex flex-col items-center gap-3 rounded-xl border border-line bg-black/25 p-4">
+              <div className="flex flex-col items-center gap-3 rounded-[10px] border border-rule bg-well p-4">
                 <div
-                  className="overflow-hidden rounded-xl bg-white p-2.5 shadow-lg"
+                  className="overflow-hidden rounded-[10px] bg-white p-2.5 shadow-lg"
                   dangerouslySetInnerHTML={{ __html: qrSvg }}
                 />
                 <div className="w-full space-y-2">
                   {status.urls.map((url, idx) => (
                     <div
                       key={url}
-                      className="flex items-center justify-between gap-2 rounded-lg border border-line bg-black/30 px-3 py-2 text-xs"
+                      className="flex items-center justify-between gap-2 rounded-lg border border-rule bg-panel px-3 py-2 text-xs"
                     >
-                      <span className="truncate font-mono text-zinc-200">{url}</span>
+                      <span className="studio-mono truncate text-ink">{url}</span>
                       <button
                         type="button"
                         onClick={() => void copyText(`url-${idx}`, url)}
-                        className="shrink-0 rounded p-1 text-zinc-400 transition hover:bg-white/10 hover:text-zinc-100"
+                        className="shrink-0 rounded p-1 text-muted transition hover:bg-hover hover:text-ink-strong"
                         title={t("host.copy")}
                       >
                         {copiedKey === `url-${idx}` ? <Check size={13} className="text-emerald-400" /> : <Copy size={13} />}
@@ -223,8 +223,8 @@ export function HostPage() {
                 </div>
               </div>
             ) : (
-              <div className="flex flex-col items-center justify-center gap-2 rounded-xl border border-dashed border-line bg-well px-4 py-10 text-center">
-                <Globe size={28} className="text-muted" />
+              <div className="flex flex-col items-center justify-center gap-2 rounded-[10px] border border-dashed border-rule bg-well px-4 py-10 text-center">
+                <Globe size={28} className="text-subtle" />
                 <div className="text-xs font-medium text-ink">{t("host.disabledHintTitle")}</div>
                 <p className="max-w-xs text-[11px] text-muted">{t("host.disabledHintBody")}</p>
               </div>
@@ -236,39 +236,39 @@ export function HostPage() {
         <div className="space-y-4 lg:col-span-7">
           <Card>
             <form onSubmit={handleSaveSettings} className="space-y-4 p-5">
-              <div className="flex items-center gap-2.5">
-                <Server size={16} className="text-muted" aria-hidden="true" />
-                <h2 className="text-sm font-semibold">{t("host.serverTitle")}</h2>
+              <div className="flex items-center gap-2.5 border-b border-rule pb-3">
+                <Server size={15} className="text-muted" aria-hidden="true" />
+                <h2 className="text-sm font-semibold text-ink-strong">{t("host.serverTitle")}</h2>
               </div>
 
               <div className="grid gap-3 sm:grid-cols-2">
                 <div className="space-y-1.5">
-                  <label className="block text-xs font-medium text-zinc-300">
+                  <label className="studio-label block">
                     {t("host.portLabel")}
                   </label>
                   <input
                     type="number"
                     min={1024}
                     max={65535}
-                    className="input w-full font-mono text-xs"
+                    className="input studio-mono w-full text-xs"
                     value={portInput}
                     onChange={(e) => setPortInput(e.target.value)}
                   />
                 </div>
 
                 <div className="space-y-1.5">
-                  <label className="block text-xs font-medium text-zinc-300">
+                  <label className="studio-label block">
                     {t("host.tokenLabel")}
                   </label>
                   <div className="flex gap-1.5">
                     <div className="relative flex-1">
                       <KeyRound
                         size={13}
-                        className="pointer-events-none absolute top-1/2 left-3 -translate-y-1/2 text-zinc-500"
+                        className="pointer-events-none absolute top-1/2 left-3 -translate-y-1/2 text-subtle"
                       />
                       <input
                         type="text"
-                        className="input input-leading-icon w-full font-mono text-xs"
+                        className="input input-leading-icon studio-mono w-full text-xs"
                         value={tokenInput}
                         onChange={(e) => setTokenInput(e.target.value)}
                         disabled={!status?.requireAuth}
@@ -286,11 +286,11 @@ export function HostPage() {
                 </div>
               </div>
 
-              <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-line bg-well px-3.5 py-2.5">
+              <div className="flex flex-wrap items-center justify-between gap-3 rounded-[10px] border border-rule bg-well px-3.5 py-2.5">
                 <div className="flex items-center gap-2.5">
                   <ShieldCheck size={15} className="text-emerald-400" />
                   <div>
-                    <div className="text-xs font-medium text-zinc-200">{t("host.requireAuthLabel")}</div>
+                    <div className="text-xs font-medium text-ink-strong">{t("host.requireAuthLabel")}</div>
                     <div className="text-[11px] text-muted">{t("host.requireAuthHint")}</div>
                   </div>
                 </div>
@@ -318,9 +318,9 @@ export function HostPage() {
 
           <Card>
             <div className="space-y-3 p-5">
-              <div className="flex items-center gap-2.5">
-                <Terminal size={16} className="text-muted" aria-hidden="true" />
-                <h2 className="text-sm font-semibold">{t("host.headlessTitle")}</h2>
+              <div className="flex items-center gap-2.5 border-b border-rule pb-3">
+                <Terminal size={15} className="text-muted" aria-hidden="true" />
+                <h2 className="text-sm font-semibold text-ink-strong">{t("host.headlessTitle")}</h2>
               </div>
 
               <div className="space-y-2 text-xs">
@@ -331,13 +331,13 @@ export function HostPage() {
                 ].map((item) => (
                   <div
                     key={item.id}
-                    className="flex items-center justify-between gap-2 rounded-lg border border-line bg-well px-3 py-2"
+                    className="flex items-center justify-between gap-2 rounded-lg border border-rule bg-well px-3 py-2"
                   >
-                    <code className="truncate font-mono text-[11px] text-zinc-200">{item.cmd}</code>
+                    <code className="studio-mono truncate text-[11px] text-ink">{item.cmd}</code>
                     <button
                       type="button"
                       onClick={() => void copyText(item.id, item.cmd)}
-                      className="shrink-0 rounded p-1 text-zinc-400 transition hover:bg-white/10 hover:text-zinc-100"
+                      className="shrink-0 rounded p-1 text-muted transition hover:bg-hover hover:text-ink-strong"
                     >
                       {copiedKey === item.id ? <Check size={13} className="text-emerald-400" /> : <Copy size={13} />}
                     </button>

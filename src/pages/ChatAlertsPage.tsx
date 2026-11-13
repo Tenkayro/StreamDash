@@ -28,9 +28,9 @@ function AlertItemEditor({
   return (
     <div className="space-y-1.5">
       <div className="flex items-center justify-between gap-3">
-        <span className="text-xs font-medium text-zinc-200">{title}</span>
+        <span className="text-xs font-medium text-ink">{title}</span>
         <div className="flex items-center gap-2.5">
-          <span className="text-[10px] tabular-nums text-zinc-500">
+          <span className="studio-mono text-[10px] text-subtle">
             {item.message.length}/500
           </span>
           <Toggle
@@ -153,7 +153,7 @@ export function ChatAlertsPage() {
       <div
         role="tablist"
         aria-label={t("nav.chatAlerts")}
-        className="mb-3 flex shrink-0 flex-wrap items-center gap-1.5 rounded-xl border border-line bg-well p-1"
+        className="mb-3 inline-flex shrink-0 flex-wrap items-center gap-1 rounded-[10px] border border-rule bg-well p-1"
       >
         {tabs.map((item) => (
           <button
@@ -163,15 +163,15 @@ export function ChatAlertsPage() {
             aria-selected={tab === item.id}
             onClick={() => setTab(item.id)}
             className={cn(
-              "inline-flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-medium transition",
+              "inline-flex items-center gap-1.5 rounded-[7px] px-3 py-1.5 text-xs font-medium transition",
               tab === item.id
-                ? "bg-accent-soft text-accent"
-                : "text-muted hover:bg-raised hover:text-ink",
+                ? "border border-accent-border bg-accent-soft text-accent"
+                : "border border-transparent text-muted hover:bg-hover hover:text-ink",
             )}
           >
             <span>{item.label}</span>
             {item.count > 0 && (
-              <span className="rounded-full bg-accent/25 px-1.5 py-0.2 text-[10px] font-semibold text-accent">
+              <span className="studio-mono rounded-full bg-accent/20 px-1.5 py-0.2 text-[10px] font-semibold text-accent">
                 {item.count}
               </span>
             )}
@@ -183,7 +183,7 @@ export function ChatAlertsPage() {
         {tab === "subscriptions" && (
           <div className="grid grid-cols-1 gap-3 lg:grid-cols-2">
             <Card className="p-4">
-              <div className="mb-3 border-b border-line pb-2 text-xs font-semibold tracking-tight text-zinc-200">
+              <div className="studio-label mb-3 border-b border-rule pb-2">
                 {t("chatAlerts.subscriptionAlerts")}
               </div>
               <div className="space-y-3">
@@ -211,7 +211,7 @@ export function ChatAlertsPage() {
             </Card>
 
             <Card className="p-4">
-              <div className="mb-3 border-b border-line pb-2 text-xs font-semibold tracking-tight text-zinc-200">
+              <div className="studio-label mb-3 border-b border-rule pb-2">
                 {t("chatAlerts.resubscriptionAlerts")}
               </div>
               <div className="space-y-3">
@@ -243,7 +243,7 @@ export function ChatAlertsPage() {
         {tab === "gifted" && (
           <div className="grid grid-cols-1 gap-3 lg:grid-cols-2">
             <Card className="p-4">
-              <div className="mb-2 border-b border-line pb-2 text-xs font-semibold tracking-tight text-zinc-200">
+              <div className="studio-label mb-2 border-b border-rule pb-2">
                 {t("chatAlerts.giftedSubAlerts")}
               </div>
               <p className="mb-3 text-[11px] text-muted">
@@ -269,7 +269,7 @@ export function ChatAlertsPage() {
             </Card>
 
             <Card className="p-4">
-              <div className="mb-2 border-b border-line pb-2 text-xs font-semibold tracking-tight text-zinc-200">
+              <div className="studio-label mb-2 border-b border-rule pb-2">
                 {t("chatAlerts.massGiftSubAlerts")}
               </div>
               <p className="mb-3 text-[11px] text-muted">
@@ -299,7 +299,7 @@ export function ChatAlertsPage() {
         {tab === "engagement" && (
           <div className="grid grid-cols-1 gap-3 lg:grid-cols-2">
             <Card className="border-emerald-500/25 bg-linear-to-br from-emerald-500/8 via-emerald-500/2 to-transparent p-4 lg:col-span-2">
-              <div className="mb-3 border-b border-emerald-500/20 pb-2 text-xs font-semibold tracking-tight text-emerald-200">
+              <div className="studio-label mb-3 border-b border-emerald-500/20 pb-2 text-emerald-300">
                 {t("chatAlerts.donationAlerts")}
               </div>
               <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
@@ -316,7 +316,7 @@ export function ChatAlertsPage() {
                 <div>
                   <label
                     htmlFor="donation-min-amount"
-                    className="mb-1 block text-xs font-semibold text-zinc-200"
+                    className="mb-1 block text-xs font-semibold text-ink"
                   >
                     {t("chatAlerts.minimumDonation")}
                   </label>
@@ -325,7 +325,7 @@ export function ChatAlertsPage() {
                     type="number"
                     min={0}
                     step="0.5"
-                    className="input w-full tabular-nums"
+                    className="input studio-mono w-full"
                     value={donationAlert.minimum}
                     onChange={(event) =>
                       updateAlert("donation", {
@@ -342,7 +342,7 @@ export function ChatAlertsPage() {
             </Card>
 
             <Card className="p-4">
-              <div className="mb-3 border-b border-line pb-2 text-xs font-semibold tracking-tight text-zinc-200">
+              <div className="studio-label mb-3 border-b border-rule pb-2">
                 {t("chatAlerts.raidAlerts")}
               </div>
               <div className="space-y-3">
@@ -359,7 +359,7 @@ export function ChatAlertsPage() {
                 <div>
                   <label
                     htmlFor="raid-min-viewers"
-                    className="mb-1 block text-xs font-semibold text-zinc-200"
+                    className="mb-1 block text-xs font-semibold text-ink"
                   >
                     {t("chatAlerts.minimumViewers")}
                   </label>
@@ -368,7 +368,7 @@ export function ChatAlertsPage() {
                       id="raid-min-viewers"
                       type="number"
                       min={1}
-                      className="input w-full pr-20 tabular-nums"
+                      className="input studio-mono w-full pr-20"
                       value={chatAlerts.raid.minimum}
                       onChange={(event) =>
                         updateAlert("raid", {
@@ -380,7 +380,7 @@ export function ChatAlertsPage() {
                         })
                       }
                     />
-                    <span className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-xs text-muted">
+                    <span className="studio-mono pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-[11px] text-subtle">
                       {t("donations.viewers")}
                     </span>
                   </div>
@@ -392,7 +392,7 @@ export function ChatAlertsPage() {
             </Card>
 
             <Card className="p-4">
-              <div className="mb-3 border-b border-line pb-2 text-xs font-semibold tracking-tight text-zinc-200">
+              <div className="studio-label mb-3 border-b border-rule pb-2">
                 {t("chatAlerts.bitsAlerts")}
               </div>
               <div className="space-y-3">
@@ -409,7 +409,7 @@ export function ChatAlertsPage() {
                 <div>
                   <label
                     htmlFor="bits-min-amount"
-                    className="mb-1 block text-xs font-semibold text-zinc-200"
+                    className="mb-1 block text-xs font-semibold text-ink"
                   >
                     {t("chatAlerts.minimumBits")}
                   </label>
@@ -418,7 +418,7 @@ export function ChatAlertsPage() {
                       id="bits-min-amount"
                       type="number"
                       min={1}
-                      className="input w-full pr-16 tabular-nums"
+                      className="input studio-mono w-full pr-16"
                       value={chatAlerts.bits.minimum}
                       onChange={(event) =>
                         updateAlert("bits", {
@@ -430,7 +430,7 @@ export function ChatAlertsPage() {
                         })
                       }
                     />
-                    <span className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-xs text-muted">
+                    <span className="studio-mono pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-[11px] text-subtle">
                       {t("donations.bits")}
                     </span>
                   </div>
@@ -442,7 +442,7 @@ export function ChatAlertsPage() {
             </Card>
 
             <Card className="p-4">
-              <div className="mb-3 border-b border-line pb-2 text-xs font-semibold tracking-tight text-zinc-200">
+              <div className="studio-label mb-3 border-b border-rule pb-2">
                 {t("chatAlerts.followerAlerts")}
               </div>
               <AlertItemEditor
@@ -453,7 +453,7 @@ export function ChatAlertsPage() {
             </Card>
 
             <Card className="p-4">
-              <div className="mb-3 border-b border-line pb-2 text-xs font-semibold tracking-tight text-zinc-200">
+              <div className="studio-label mb-3 border-b border-rule pb-2">
                 {t("chatAlerts.channelPointAlerts")}
               </div>
               <AlertItemEditor
@@ -467,7 +467,7 @@ export function ChatAlertsPage() {
 
         {tab === "stream" && (
           <Card className="p-4">
-            <div className="mb-3 border-b border-line pb-2 text-xs font-semibold tracking-tight text-zinc-200">
+            <div className="studio-label mb-3 border-b border-rule pb-2">
               {t("chatAlerts.streamAlerts")}
             </div>
             <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">

@@ -65,8 +65,8 @@ export function CommandPalette() {
   }, [open, active, listId]);
   if (!open) return null;
   return <div role="presentation" onMouseDown={(event) => { if (event.target === event.currentTarget) close(); }}
-    className="fixed inset-0 z-100 flex justify-center overflow-y-auto bg-canvas/80 px-3 py-[min(10vh,4rem)] sm:px-4">
-    <div ref={dialogRef} role="dialog" aria-modal="true" aria-label={t("search.title")} className="command-search h-fit max-h-full w-full max-w-2xl overflow-hidden rounded-xl border border-rule-strong shadow-lg"
+    className="fixed inset-0 z-100 flex justify-center overflow-y-auto bg-black/70 px-3 py-[min(10vh,4rem)] backdrop-blur-xs sm:px-4">
+    <div ref={dialogRef} role="dialog" aria-modal="true" aria-label={t("search.title")} className="command-search h-fit max-h-full w-full max-w-2xl overflow-hidden rounded-xl border border-rule-strong shadow-2xl"
       onKeyDown={(event) => {
         if (event.key !== "Tab") return;
         const elements = dialogRef.current?.querySelectorAll<HTMLElement>("button:not([disabled]), input");
@@ -90,10 +90,10 @@ export function CommandPalette() {
           placeholder={t("search.placeholder")} aria-label={t("search.placeholder")} className="h-14 w-full bg-transparent pl-12 pr-12 text-sm outline-none placeholder:text-muted" />
         <button type="button" onClick={() => close()} title={t("navigation.close")} aria-label={t("navigation.close")} className="absolute right-3 top-1/2 grid size-7 -translate-y-1/2 place-items-center rounded-lg text-muted hover:bg-white/5"><X size={14} /></button>
       </div>
-      <div className="flex gap-1 overflow-x-auto border-b border-line px-3 py-2" role="group" aria-label={t("search.categories")}>
-        {(["all", ...searchGroups] as const).map((group) => <button key={group} type="button" aria-pressed={scope === group} onClick={() => { setScope(group); setActiveId(""); setLimit(PAGE_SIZE); inputRef.current?.focus(); }} className={`shrink-0 rounded-lg border px-2.5 py-1.5 text-[11px] transition ${scope === group ? "border-accent/20 bg-accent-soft text-accent" : "border-transparent text-muted hover:bg-white/5"}`}>{t(`search.groups.${group}`)}</button>)}
+      <div className="flex gap-1 overflow-x-auto border-b border-line bg-well/60 px-3 py-2" role="group" aria-label={t("search.categories")}>
+        {(["all", ...searchGroups] as const).map((group) => <button key={group} type="button" aria-pressed={scope === group} onClick={() => { setScope(group); setActiveId(""); setLimit(PAGE_SIZE); inputRef.current?.focus(); }} className={`shrink-0 rounded-[6px] border px-2.5 py-1 text-[11px] font-medium transition ${scope === group ? "border-accent-border bg-accent-soft text-accent" : "border-transparent text-muted hover:bg-hover hover:text-ink"}`}>{t(`search.groups.${group}`)}</button>)}
       </div>
-      <div className="flex items-center justify-between gap-2 px-4 py-2 text-[10px] text-muted" role="status" aria-live="polite">
+      <div className="flex items-center justify-between gap-2 px-4 py-1.5 text-[10px] text-subtle" role="status" aria-live="polite">
         <span>{deferredQuery.trim() ? t("search.resultCount", { count: ranked.length }) : t("search.startHint")}</span>
         <span className="hidden sm:inline">{t("search.localOnly")}</span>
       </div>
@@ -101,20 +101,20 @@ export function CommandPalette() {
         {groups.map(({ group, items }) => {
           const Icon = icons[group];
           return <div key={group} role="group" aria-label={t(`search.groups.${group}`)}>
-            <div className="sticky top-0 z-10 flex items-center gap-2 bg-raised px-2 py-2 text-[11px] font-semibold text-muted"><Icon size={12} aria-hidden="true" />{t(`search.groups.${group}`)}<span className="ml-auto tabular-nums">{items.length}</span></div>
+            <div className="sticky top-0 z-10 flex items-center gap-2 bg-panel/95 px-2 py-1.5 studio-label backdrop-blur-sm"><Icon size={11} aria-hidden="true" />{t(`search.groups.${group}`)}<span className="ml-auto studio-mono">{items.length}</span></div>
             {items.slice(0, limit).map((item) => <div id={`${listId}-${item.id}`} key={item.id} role="option" aria-selected={item.id === active?.id}
               onMouseEnter={() => setActiveId(item.id)} onMouseDown={(event) => event.preventDefault()} onClick={() => select(item)}
-              className={`command-result flex cursor-pointer items-center gap-3 rounded-xl border px-3 py-2.5 ${item.id === active?.id ? "border-accent/15 bg-accent-soft" : "border-transparent hover:bg-white/4"}`}>
-              <span className="grid size-8 shrink-0 place-items-center rounded-lg border border-white/5 bg-white/3 text-accent"><Icon size={15} aria-hidden="true" /></span>
-              <span className="min-w-0 flex-1"><span className="block truncate text-sm text-zinc-200"><Highlight text={item.title} query={deferredQuery} /></span><span className="mt-0.5 block truncate text-[11px] text-muted"><Highlight text={item.description} query={deferredQuery} /></span></span>
-              <ArrowUpRight size={13} aria-hidden="true" className="shrink-0 text-muted" />
+              className={`command-result flex cursor-pointer items-center gap-3 rounded-lg border px-2.5 py-2 ${item.id === active?.id ? "border-accent-border bg-accent-soft" : "border-transparent hover:bg-hover/60"}`}>
+              <span className={`grid size-7 shrink-0 place-items-center rounded-[6px] border ${item.id === active?.id ? "border-accent-border bg-well text-accent" : "border-rule bg-well text-muted"}`}><Icon size={14} aria-hidden="true" /></span>
+              <span className="min-w-0 flex-1"><span className="block truncate text-[13px] font-medium text-ink-strong"><Highlight text={item.title} query={deferredQuery} /></span><span className="mt-0.5 block truncate text-[11px] text-muted"><Highlight text={item.description} query={deferredQuery} /></span></span>
+              <ArrowUpRight size={13} aria-hidden="true" className="shrink-0 text-subtle" />
             </div>)}
           </div>;
         })}
-        {!ranked.length && <div className="flex min-h-36 flex-col items-center justify-center gap-2 px-4 text-center"><SearchX size={24} className="text-muted" aria-hidden="true" /><p className="text-sm">{t("navigation.noResults")}</p><p className="max-w-sm text-xs leading-5 text-muted">{t("search.noResultsHint")}</p></div>}
+        {!ranked.length && <div className="flex min-h-36 flex-col items-center justify-center gap-2 px-4 text-center"><SearchX size={24} className="text-muted" aria-hidden="true" /><p className="text-sm font-medium">{t("navigation.noResults")}</p><p className="max-w-sm text-xs leading-5 text-muted">{t("search.noResultsHint")}</p></div>}
       </div>
-      {groups.some(({ items }) => items.length > limit) && <button type="button" onClick={() => setLimit((value) => value + PAGE_SIZE)} className="w-full border-t border-line py-2 text-xs text-accent hover:bg-white/4">{t("search.showMore")}</button>}
-      <div className="flex items-center gap-4 border-t border-line px-4 py-2.5 text-[10px] text-muted"><span>{t("navigation.moveHint")}</span><span>{t("navigation.openHint")}</span><span className="ml-auto">Esc</span></div>
+      {groups.some(({ items }) => items.length > limit) && <button type="button" onClick={() => setLimit((value) => value + PAGE_SIZE)} className="w-full border-t border-line py-2 text-xs font-medium text-accent hover:bg-hover/60">{t("search.showMore")}</button>}
+      <div className="flex items-center gap-4 border-t border-line bg-well/70 px-4 py-2 studio-mono text-[10px] text-subtle"><span>{t("navigation.moveHint")}</span><span>{t("navigation.openHint")}</span><span className="ml-auto rounded border border-rule bg-panel px-1.5 py-0.5">Esc</span></div>
     </div>
   </div>;
 }

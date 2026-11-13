@@ -189,13 +189,13 @@ export function TrayPanel() {
   const viewerCount = status.live ? (status.viewers?.toLocaleString(i18n.language) ?? "—") : "—";
 
   return (
-    <main data-accent={status.accentColor} data-animations={status.animations ? "on" : "off"} className="tray-panel flex h-screen flex-col overflow-hidden rounded-2xl">
-        <header className="tray-header flex h-11 shrink-0 items-center gap-3 border-b border-white/[0.06] px-3.5">
+    <main data-accent={status.accentColor} data-animations={status.animations ? "on" : "off"} className="tray-panel flex h-screen flex-col overflow-hidden rounded-xl">
+        <header className="tray-header flex h-11 shrink-0 items-center gap-3 border-b border-rule px-3.5">
           <img src={titlebarLogo} alt="StreamDash" className="h-4 w-auto object-contain" />
           <span
-            className={`ml-auto inline-flex items-center gap-1.5 rounded-full border px-2.5 py-0.5 text-[10px] font-semibold ${status.live ? "border-red-400/25 bg-red-400/12 text-red-300" : "border-rule bg-hover text-muted"}`}
+            className={`ml-auto inline-flex items-center gap-1.5 rounded-md border px-2 py-0.5 text-[10px] font-semibold ${status.live ? "border-red-500/35 bg-red-500/12 text-red-200" : "border-rule bg-well text-muted"}`}
           >
-            <span className={`size-1.5 rounded-full ${status.live ? "animate-pulse bg-red-400" : "bg-subtle"}`} />
+            <span className={`size-1.5 rounded-full ${status.live ? "animate-pulse bg-red-400 shadow-[0_0_8px_rgba(248,113,113,0.8)]" : "bg-subtle"}`} />
             {status.live ? t("tray.live") : t("tray.offline")}
           </span>
           <button
@@ -203,22 +203,22 @@ export function TrayPanel() {
             title={t("tray.quit")}
             aria-label={t("tray.quit")}
             onClick={() => void invoke("tray_action", { action: "quit" })}
-            className="grid size-7 place-items-center rounded-full border border-rule bg-raised text-muted transition-colors hover:border-red-400/30 hover:bg-red-400/12 hover:text-red-300"
+            className="grid size-7 place-items-center rounded-md border border-rule bg-raised text-muted transition-colors hover:border-red-400/35 hover:bg-red-500/12 hover:text-red-300"
           >
             <Power size={13} aria-hidden="true" />
           </button>
         </header>
 
         <div className="flex min-h-0 flex-1 flex-col justify-between p-2.5">
-          <div className="tray-status flex h-11 shrink-0 items-center rounded-xl px-2.5">
+          <div className="tray-status flex h-11 shrink-0 items-center rounded-lg px-2.5">
             <div
               title={t("tray.currentViewers")}
               aria-label={`${t("tray.currentViewers")}: ${viewerCount}`}
-              className="flex min-w-0 items-center gap-2 px-1 text-zinc-400"
+              className="flex min-w-0 items-center gap-2 px-1 text-muted"
             >
-              <Eye size={16} className="text-accent" aria-hidden="true" />
-              <span className="text-xs text-zinc-400">{t("stream.viewers")}</span>
-              <span className="text-sm font-semibold tabular-nums text-zinc-100">{viewerCount}</span>
+              <Eye size={15} className="text-accent" aria-hidden="true" />
+              <span className="text-xs text-muted">{t("stream.viewers")}</span>
+              <span className="studio-mono text-sm font-semibold text-ink-strong">{viewerCount}</span>
             </div>
             <div className="ml-auto flex items-center gap-2">
               <ServiceStatus icon={twitchIcon} name="Twitch" phase={status.twitchPhase} account={status.twitchAccount} />
@@ -229,7 +229,7 @@ export function TrayPanel() {
           </div>
 
           <div
-            className="tray-actions mt-2 grid grid-cols-3 gap-1.5 rounded-2xl p-1.5"
+            className="tray-actions mt-2 grid grid-cols-3 gap-1.5 rounded-xl p-1.5"
             aria-label={t("tray.quickActions")}
           >
             <QuickAction icon={LayoutDashboard} label={t("nav.dashboard")} action="dashboard" />

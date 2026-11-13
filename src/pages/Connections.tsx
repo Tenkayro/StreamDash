@@ -51,7 +51,7 @@ function RowAction({
     <button
       type="button"
       onClick={onClick}
-      className="shrink-0 rounded-lg px-2.5 py-1.5 text-xs text-zinc-400 transition hover:bg-white/5 hover:text-red-300"
+      className="shrink-0 rounded-lg border border-transparent px-2.5 py-1.5 text-xs text-muted transition hover:border-red-500/25 hover:bg-red-500/10 hover:text-red-300"
     >
       {children}
     </button>
@@ -69,7 +69,7 @@ function AddWidgetAction({
     <button
       type="button"
       onClick={onClick}
-      className="inline-flex shrink-0 items-center gap-1 rounded-lg border border-accent/30 bg-accent/10 px-2.5 py-1.5 text-xs text-accent transition hover:bg-accent/20"
+      className="inline-flex shrink-0 items-center gap-1 rounded-lg border border-accent-border bg-accent-soft px-2.5 py-1.5 text-xs font-medium text-accent transition hover:brightness-110"
     >
       <Plus size={13} />
       {children}
@@ -114,7 +114,7 @@ function ServiceRow({
       <div className="flex flex-wrap items-center gap-3.5 px-4 py-3.5 sm:flex-nowrap">
         <span
           className={cn(
-            "grid size-10 shrink-0 place-items-center rounded-xl",
+            "grid size-10 shrink-0 place-items-center rounded-[10px] border border-rule",
             tint,
           )}
         >
@@ -122,14 +122,14 @@ function ServiceRow({
         </span>
         <div className="min-w-0 flex-1">
           <div className="flex flex-wrap items-center gap-2">
-            <span className="truncate text-sm font-medium">{name}</span>
+            <span className="truncate text-sm font-semibold text-ink-strong">{name}</span>
             <span className="shrink-0 whitespace-nowrap">
               <Badge tone={phaseTone(phase)}>
                 {t(`connectionPhases.${phase}`)}
               </Badge>
             </span>
             {meta && (
-              <span className="inline-flex shrink-0 items-center truncate text-[11px] text-subtle">
+              <span className="studio-mono inline-flex shrink-0 items-center truncate text-[11px] text-subtle">
                 {meta}
               </span>
             )}
@@ -374,7 +374,7 @@ export function Connections() {
                     useAppStore.getState().setPage("settings");
                   }}
                   title={t("profiles.openInSettings")}
-                  className="inline-flex shrink-0 items-center gap-1.5 rounded-lg border border-line bg-black/20 px-2.5 py-1.5 text-[11px] text-zinc-300 transition hover:border-accent/40 hover:text-white"
+                  className="inline-flex shrink-0 items-center gap-1.5 rounded-lg border border-rule bg-well px-2.5 py-1.5 text-[11px] font-medium text-ink transition hover:border-accent-border hover:text-ink-strong"
                 >
                   <Layers size={12} className="text-accent" />
                   <span className="max-w-28 truncate">{activeProfile.name}</span>

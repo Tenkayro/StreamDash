@@ -401,7 +401,7 @@ export function StreamPage() {
               {t("stream.category")}
             </label>
             {busyLoading ? (
-              <div className="mt-1.5 flex items-center gap-3 rounded-xl border border-line bg-white/2 p-2">
+              <div className="mt-1.5 flex items-center gap-3 rounded-lg border border-rule bg-well p-2">
                 <LoadingIndicator className="h-11 w-8 shrink-0" />
                 <div className="flex-1">
                   <LoadingIndicator className="h-3.5 w-32" />
@@ -409,10 +409,10 @@ export function StreamPage() {
                 </div>
               </div>
             ) : category && (
-              <div className="mt-1.5 flex items-center gap-3 rounded-xl border border-line bg-white/2 p-2">
+              <div className="mt-1.5 flex items-center gap-3 rounded-lg border border-rule bg-well p-2">
                 <BoxArt category={category} className="h-11 w-8" />
                 <div className="min-w-0 flex-1">
-                  <div className="truncate text-sm">{category.name}</div>
+                  <div className="truncate text-sm font-medium text-ink-strong">{category.name}</div>
                   <div className="mt-0.5 text-[11px] text-muted">
                     {t("stream.currentCategory")}
                   </div>
@@ -439,7 +439,7 @@ export function StreamPage() {
                 onChange={(event) => setQuery(event.target.value)}
               />
               {showResults && (
-                <ScrollFade className="absolute z-10 mt-1 w-full overflow-hidden rounded-xl border border-line bg-panel shadow-2xl shadow-black/40" color="#242526" size={28}>
+                <ScrollFade className="absolute z-10 mt-1 w-full overflow-hidden rounded-[10px] border border-rule-strong bg-raised/96 shadow-2xl backdrop-blur-xl" color="var(--color-raised)" size={28}>
                   <div className="max-h-72 overflow-y-auto p-1">
                     {searching && (
                       <div className="space-y-2 px-2 py-2">
@@ -566,12 +566,14 @@ export function StreamPage() {
               {statsLoading ? (
                 <LoadingIndicator className="h-3 w-12" />
               ) : (
-                <span>{stats.live ? t("stream.live") : t("stream.offline")}</span>
+                <Badge tone={stats.live ? "green" : "neutral"}>
+                  {stats.live ? t("stream.live") : t("stream.offline")}
+                </Badge>
               )}
             </div>
             <div className="flex items-center justify-between">
               <span className="text-muted">{t("stream.viewers")}</span>
-              <span className="tabular-nums">
+              <span className="studio-mono font-medium text-ink">
                 {statsLoading ? (
                   <LoadingIndicator className="h-3 w-8" />
                 ) : (
@@ -581,7 +583,7 @@ export function StreamPage() {
             </div>
             <div className="flex items-center justify-between">
               <span className="text-muted">{t("stream.account")}</span>
-              <span className="truncate pl-3">{twitch.account ?? "—"}</span>
+              <span className="truncate pl-3 studio-mono text-[11.5px] text-ink">{twitch.account ?? "—"}</span>
             </div>
           </div>
           </Card>

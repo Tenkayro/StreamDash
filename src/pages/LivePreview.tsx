@@ -9,9 +9,9 @@ import { formatObsTime } from "../services/obs/format";
 
 function Stat({ icon: Icon, label, value }: { icon: typeof Eye; label: string; value: ReactNode }) {
   return (
-    <div className="flex min-w-0 items-center gap-2.5 rounded-lg border border-line bg-white/2 px-3 py-2.5">
-      <span className="grid size-7 shrink-0 place-items-center rounded-md bg-white/5 text-zinc-400"><Icon size={13} /></span>
-      <div className="min-w-0"><div className="truncate text-[11px] font-medium text-muted">{label}</div><div className="mt-0.5 truncate text-xs font-semibold tabular-nums text-ink">{value}</div></div>
+    <div className="flex min-w-0 items-center gap-2.5 rounded-lg border border-rule bg-well px-3 py-2">
+      <span className="grid size-7 shrink-0 place-items-center rounded-md border border-rule bg-panel text-muted"><Icon size={13} /></span>
+      <div className="min-w-0"><div className="studio-label truncate">{label}</div><div className="mt-0.5 truncate studio-mono text-xs font-semibold text-ink-strong">{value}</div></div>
     </div>
   );
 }
@@ -48,7 +48,7 @@ export function LivePreview() {
         description={t("pageDescriptions.livePreview")}
       />
       <div className="flex min-h-0 flex-1 flex-col gap-2.5">
-        <div className="relative flex min-h-0 flex-1 items-center justify-center overflow-hidden rounded-xl border border-line bg-black shadow-2xl shadow-black/20">
+        <div className="relative flex min-h-0 flex-1 items-center justify-center overflow-hidden rounded-[10px] border border-rule-strong bg-black shadow-[0_24px_60px_-20px_rgba(0,0,0,0.9)]">
           {networkOnline ? (
             <TwitchPlayer className="aspect-video max-h-full max-w-full" />
           ) : (

@@ -98,35 +98,35 @@ export function ActivityFeed({
                 onUser?.(event.username);
               }
             }}
-            className={`event-enter flex gap-3 border-b border-line/70 px-4 transition-colors ${compact ? "py-2.5" : "py-3.5"} ${support.isMonetized ? support.rowClass : ""} ${canOpenUser ? "cursor-pointer outline-none hover:bg-white/2.5 focus-visible:bg-accent-soft" : ""} last:border-0`}
+            className={`event-enter flex gap-3 border-b border-line/70 px-4 transition-colors ${compact ? "py-2" : "py-3"} ${support.isMonetized ? support.rowClass : ""} ${canOpenUser ? "cursor-pointer outline-none hover:bg-hover/40 focus-visible:bg-accent-soft" : ""} last:border-0`}
           >
             <div
-              className={`mt-0.5 grid size-8 shrink-0 place-items-center rounded-lg ${color}`}
+              className={`mt-0.5 grid size-7.5 shrink-0 place-items-center rounded-[7px] border border-white/6 ${color}`}
             >
-              <Icon size={15} />
+              <Icon size={14} />
             </div>
             <div className="min-w-0 flex-1">
               <div className="flex items-center justify-between gap-2">
-                <span className={`truncate text-sm font-medium ${support.nameClass}`}>
+                <span className={`truncate text-[13px] font-medium ${support.nameClass}`}>
                   {who}
                 </span>
                 {support.isMonetized ? (
                   <span
-                    className={`shrink-0 rounded-full px-2 py-0.5 text-[11px] tabular-nums ${support.badgeClass}`}
+                    className={`shrink-0 rounded-md px-2 py-0.5 studio-mono text-[10.5px] ${support.badgeClass}`}
                   >
                     {pillText}
                   </span>
                 ) : (
-                  <span className="shrink-0 text-xs text-muted">{detail}</span>
+                  <span className="shrink-0 text-[11.5px] text-muted">{detail}</span>
                 )}
               </div>
               {event.message && (
-                <p className="mt-1 truncate text-xs text-zinc-500">
+                <p className="mt-1 truncate text-xs text-muted">
                   “{event.message}”
                 </p>
               )}
             </div>
-            <div className="shrink-0 text-[11px] text-zinc-600">
+            <div className="shrink-0 studio-mono text-[10.5px] text-subtle">
               {formatDistanceToNow(new Date(event.timestamp), {
                 addSuffix: true,
                 locale: dateLocale,

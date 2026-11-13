@@ -334,14 +334,14 @@ export function GiveawaysPage() {
       <div className="grid min-h-0 flex-1 grid-cols-1 gap-2.5 md:grid-cols-[minmax(210px,0.8fr)_minmax(320px,1.35fr)_minmax(250px,1fr)] md:grid-rows-[minmax(0,1fr)]">
         {/* Left column: Users */}
         <Card className="flex min-h-0 flex-col overflow-hidden">
-          <div className="flex h-9 shrink-0 items-center justify-between border-b border-line px-3">
-            <h2 className="text-xs font-semibold">{t("giveaways.users")}</h2>
-            <span className="text-[11px] font-medium text-muted">
+          <div className="flex h-9 shrink-0 items-center justify-between border-b border-rule bg-shell/70 px-3">
+            <h2 className="studio-label">{t("giveaways.users")}</h2>
+            <span className="studio-mono text-[11px] font-medium text-muted">
               {t("giveaways.userCount", { count: giveaway.entries.length })}
             </span>
           </div>
 
-          <div className="border-b border-line p-2">
+          <div className="border-b border-rule bg-shell/40 p-2">
             <div className="flex items-center gap-1.5">
               <input
                 id="giveaway-user-search"
@@ -364,7 +364,7 @@ export function GiveawaysPage() {
                   clearGiveawayEntries();
                   setView("settings");
                 }}
-                className="grid size-8 shrink-0 place-items-center rounded-lg border border-line bg-white/[.03] text-zinc-400 transition hover:border-zinc-600 hover:bg-white/6 hover:text-zinc-100 disabled:pointer-events-none disabled:opacity-40"
+                className="grid size-8 shrink-0 place-items-center rounded-lg border border-rule bg-well text-muted transition hover:border-rule-strong hover:text-ink-strong disabled:pointer-events-none disabled:opacity-40"
               >
                 <RotateCcw size={13} />
               </button>
@@ -373,7 +373,7 @@ export function GiveawaysPage() {
 
           <ScrollFade
             className="flex min-h-0 flex-1 flex-col"
-            color="#242526"
+            color="var(--color-panel)"
             size={24}
           >
             <div className="min-h-0 flex-1 overflow-y-auto p-1.5">
@@ -392,10 +392,10 @@ export function GiveawaysPage() {
                       <div
                         key={entry.login}
                         className={cn(
-                          "flex items-center justify-between gap-2 rounded-lg px-2 py-1 text-xs transition",
+                          "flex items-center justify-between gap-2 rounded-lg border px-2 py-1 text-xs transition",
                           isWinner
-                            ? "bg-accent/12 ring-1 ring-accent/30"
-                            : "hover:bg-white/[.04]",
+                            ? "border-accent-border bg-accent-soft"
+                            : "border-transparent hover:bg-well",
                         )}
                       >
                         <button
@@ -403,11 +403,11 @@ export function GiveawaysPage() {
                           onClick={() => setSelectedUser(entry.login)}
                           className="flex min-w-0 flex-1 items-center gap-1.5 text-left font-medium hover:underline"
                         >
-                          <span className="truncate text-zinc-100">
+                          <span className="truncate text-ink-strong">
                             {entry.displayName}
                           </span>
                           {entry.subscriber && (
-                            <span className="shrink-0 rounded bg-accent/15 px-1.5 py-0.5 text-[10px] font-medium text-accent">
+                            <span className="studio-mono shrink-0 rounded border border-accent-border bg-accent-soft px-1.5 py-0.5 text-[9.5px] font-semibold uppercase text-accent">
                               Sub
                             </span>
                           )}
@@ -421,7 +421,7 @@ export function GiveawaysPage() {
                             name: entry.displayName,
                           })}
                           onClick={() => removeGiveawayEntry(entry.login)}
-                          className="grid size-6 shrink-0 place-items-center rounded-md border border-line bg-black/20 text-red-400 transition hover:border-red-500/40 hover:bg-red-500/15 hover:text-red-300"
+                          className="grid size-6 shrink-0 place-items-center rounded-md border border-rule bg-well text-red-400 transition hover:border-red-500/40 hover:bg-red-500/15 hover:text-red-300"
                         >
                           <Trash2 size={11} />
                         </button>
@@ -436,8 +436,8 @@ export function GiveawaysPage() {
 
         {/* Middle column: Settings or Winner */}
         <Card className="flex min-h-0 flex-col overflow-hidden">
-          <div className="flex h-9 shrink-0 items-center justify-between border-b border-line px-3.5">
-            <h2 className="text-xs font-semibold">
+          <div className="flex h-9 shrink-0 items-center justify-between border-b border-rule bg-shell/70 px-3.5">
+            <h2 className="studio-label">
               {view === "winner" && giveaway.winner
                 ? t("giveaways.winnerTitle")
                 : t("giveaways.settings")}
@@ -467,7 +467,7 @@ export function GiveawaysPage() {
 
           {view === "winner" && giveaway.winner ? (
             <div className="flex min-h-0 flex-1 flex-col p-3">
-              <div className="flex items-center justify-between gap-3 rounded-xl border border-accent/25 bg-accent/[.06] p-3">
+              <div className="flex items-center justify-between gap-3 rounded-[10px] border border-accent-border bg-accent-soft/75 p-3">
                 <div className="flex min-w-0 items-center gap-3">
                   {winnerProfileLoading ? (
                     <LoadingIndicator className="size-11 shrink-0 rounded-full" />
@@ -475,23 +475,23 @@ export function GiveawaysPage() {
                     <img
                       src={winnerProfile.avatarUrl}
                       alt={giveaway.winner.displayName}
-                      className="size-11 shrink-0 rounded-full border border-line object-cover"
+                      className="size-11 shrink-0 rounded-full border border-rule-strong object-cover"
                     />
                   ) : (
-                    <div className="grid size-11 shrink-0 place-items-center rounded-full border border-line bg-white/5 text-zinc-500">
+                    <div className="grid size-11 shrink-0 place-items-center rounded-full border border-rule bg-well text-subtle">
                       <UserRound size={20} />
                     </div>
                   )}
 
                   <div className="min-w-0 flex-1">
-                    <div className="text-[11px] font-medium text-accent">
+                    <div className="studio-label text-accent">
                       {t("giveaways.theWinnerIs")}
                     </div>
                     <div className="mt-0.5 flex flex-wrap items-center gap-1.5">
                       <button
                         type="button"
                         onClick={() => setSelectedUser(giveaway.winner!.login)}
-                        className="truncate text-sm font-semibold text-zinc-100 hover:underline"
+                        className="truncate text-sm font-semibold text-ink-strong hover:underline"
                       >
                         {giveaway.winner.displayName}
                       </button>
@@ -532,13 +532,13 @@ export function GiveawaysPage() {
               </div>
 
               <div className="mt-2.5 flex items-center justify-between text-[11px] font-medium text-muted">
-                <span>{t("giveaways.messages")}</span>
-                <span>{winnerMessages.length}</span>
+                <span className="studio-label">{t("giveaways.messages")}</span>
+                <span className="studio-mono">{winnerMessages.length}</span>
               </div>
 
               <div
                 ref={winnerMessagesRef}
-                className="mt-1 min-h-0 flex-1 overflow-y-auto rounded-xl border border-line bg-black/25 p-2.5 font-sans text-xs"
+                className="mt-1 min-h-0 flex-1 overflow-y-auto rounded-[10px] border border-rule bg-well p-2.5 font-sans text-xs"
               >
                 {winnerMessages.length === 0 ? (
                   <div className="grid h-full place-items-center text-xs text-muted">
@@ -551,10 +551,10 @@ export function GiveawaysPage() {
                         key={message.id}
                         className="flex items-baseline gap-2 leading-5"
                       >
-                        <span className="shrink-0 font-mono text-[11px] tabular-nums text-zinc-400">
+                        <span className="studio-mono shrink-0 text-[11px] text-subtle">
                           {formatTimeWithSeconds(message.timestamp)}
                         </span>
-                        <span className="min-w-0 flex-1 wrap-break-word text-zinc-200">
+                        <span className="min-w-0 flex-1 wrap-break-word text-ink">
                           <ChatParts
                             parts={message.parts}
                             emoteSize={settings.chatEmoteSize}
@@ -580,8 +580,8 @@ export function GiveawaysPage() {
             <div className="flex min-h-0 flex-1 flex-col justify-between p-2.5">
               <div className="space-y-1.5">
                 {/* Status + Chat Announcements row */}
-                <div className="flex items-center justify-between gap-2 rounded-xl border border-line bg-white/2 px-2.5 py-1.5">
-                  <label className="inline-flex cursor-pointer items-center gap-2 text-xs font-medium text-zinc-100">
+                <div className="flex items-center justify-between gap-2 rounded-[10px] border border-rule bg-well/80 px-2.5 py-1.5">
+                  <label className="inline-flex cursor-pointer items-center gap-2 text-xs font-medium text-ink-strong">
                     <Toggle
                       value={giveaway.chatAnnouncements}
                       onChange={(chatAnnouncements) =>
@@ -612,13 +612,13 @@ export function GiveawaysPage() {
                 </div>
 
                 {/* Mode + Keyword Phrase combined block */}
-                <div className="rounded-xl border border-line bg-white/2 px-2.5 py-2">
+                <div className="rounded-[10px] border border-rule bg-well/80 px-2.5 py-2">
                   <div className="grid grid-cols-1 gap-2 sm:grid-cols-[auto_minmax(0,1fr)] sm:items-center">
                     <div>
-                      <div className="mb-1 text-[10px] font-medium text-muted">
+                      <div className="studio-label mb-1">
                         {t("giveaways.giveawayType")}
                       </div>
-                      <div className="inline-flex rounded-lg border border-line bg-black/30 p-0.5">
+                      <div className="inline-flex rounded-lg border border-rule bg-panel p-0.5">
                         {(["active", "keyword"] as const).map((mode) => {
                           const active = giveaway.type === mode;
                           return (
@@ -630,7 +630,7 @@ export function GiveawaysPage() {
                                 "rounded-md px-2.5 py-1 text-xs font-medium transition",
                                 active
                                   ? "bg-accent text-white shadow-xs"
-                                  : "text-zinc-400 hover:text-zinc-200",
+                                  : "text-muted hover:text-ink",
                               )}
                             >
                               {mode === "active"
@@ -645,13 +645,13 @@ export function GiveawaysPage() {
                     <div>
                       <label
                         htmlFor="giveaway-keyword"
-                        className="mb-1 block text-[10px] font-medium text-muted"
+                        className="studio-label mb-1 block"
                       >
                         {t("giveaways.keywordPhrase")}
                       </label>
                       <input
                         id="giveaway-keyword"
-                        className="input h-7 min-h-7 w-full text-xs disabled:opacity-45"
+                        className="input studio-mono h-7 min-h-7 w-full text-xs disabled:opacity-45"
                         placeholder="!enter"
                         disabled={giveaway.type !== "keyword"}
                         value={giveaway.keyword}
@@ -664,16 +664,16 @@ export function GiveawaysPage() {
                 </div>
 
                 {/* Anti-spam slider */}
-                <div className="rounded-xl border border-line bg-white/2 px-2.5 py-1.5">
+                <div className="rounded-[10px] border border-rule bg-well/80 px-2.5 py-1.5">
                   <div className="flex items-center justify-between gap-2">
                     <label
                       htmlFor="giveaway-antispam"
-                      className="inline-flex items-center gap-1.5 text-xs font-semibold text-zinc-100"
+                      className="inline-flex items-center gap-1.5 text-xs font-semibold text-ink-strong"
                     >
                       <ShieldAlert size={12} className="text-accent" />
                       {t("giveaways.antiSpam")}
                     </label>
-                    <span className=" truncate text-[10px] text-muted">
+                    <span className="truncate text-[10px] text-muted">
                       {giveaway.disqualifiedUsers.length > 0
                         ? t("giveaways.disqualifiedCount", {
                             count: giveaway.disqualifiedUsers.length,
@@ -704,9 +704,9 @@ export function GiveawaysPage() {
                             : Math.max(0, Math.min(20, raw));
                         setGiveaway({ antiSpamLimit: next });
                       }}
-                      className="h-1.5 min-w-0 flex-1 cursor-pointer appearance-none rounded-full bg-white/10 accent-accent disabled:cursor-not-allowed disabled:opacity-40"
+                      className="h-1.5 min-w-0 flex-1 cursor-pointer appearance-none rounded-full bg-raised accent-accent disabled:cursor-not-allowed disabled:opacity-40"
                     />
-                    <div className="flex h-6 w-15 shrink-0 items-center rounded-md border border-line bg-black/25 px-1.5 text-xs">
+                    <div className="flex h-6 w-15 shrink-0 items-center rounded-md border border-rule bg-panel px-1.5 text-xs">
                       <input
                         id="giveaway-antispam"
                         type="number"
@@ -723,19 +723,19 @@ export function GiveawaysPage() {
                             antiSpamLimit: raw === 1 ? 2 : raw,
                           });
                         }}
-                        className="min-w-0 flex-1 bg-transparent text-right font-semibold tabular-nums text-zinc-100 outline-none disabled:opacity-40"
+                        className="studio-mono min-w-0 flex-1 bg-transparent text-right font-semibold text-ink-strong outline-none disabled:opacity-40"
                       />
-                      <span className="ml-1 text-[11px] text-muted">×</span>
+                      <span className="studio-mono ml-1 text-[11px] text-subtle">×</span>
                     </div>
                   </div>
                 </div>
 
                 {/* Inactivity timeout */}
-                <div className="rounded-xl border border-line bg-white/2 px-2.5 py-1.5">
+                <div className="rounded-[10px] border border-rule bg-well/80 px-2.5 py-1.5">
                   <div className="flex items-center justify-between gap-2">
                     <label
                       htmlFor="giveaway-timeout"
-                      className="text-xs font-semibold text-zinc-100"
+                      className="text-xs font-semibold text-ink-strong"
                     >
                       {t("giveaways.inactivityTimeout")}
                     </label>
@@ -763,9 +763,9 @@ export function GiveawaysPage() {
                           ),
                         })
                       }
-                      className="h-1.5 min-w-0 flex-1 cursor-pointer appearance-none rounded-full bg-white/10 accent-accent"
+                      className="h-1.5 min-w-0 flex-1 cursor-pointer appearance-none rounded-full bg-raised accent-accent"
                     />
-                    <div className="flex h-6 w-15 shrink-0 items-center rounded-md border border-line bg-black/25 px-1.5 text-xs">
+                    <div className="flex h-6 w-15 shrink-0 items-center rounded-md border border-rule bg-panel px-1.5 text-xs">
                       <input
                         id="giveaway-timeout"
                         type="number"
@@ -780,19 +780,19 @@ export function GiveawaysPage() {
                             ),
                           })
                         }
-                        className="min-w-0 flex-1 bg-transparent text-right font-semibold tabular-nums text-zinc-100 outline-none"
+                        className="studio-mono min-w-0 flex-1 bg-transparent text-right font-semibold text-ink-strong outline-none"
                       />
-                      <span className="ml-1 text-[11px] text-muted">s</span>
+                      <span className="studio-mono ml-1 text-[11px] text-subtle">s</span>
                     </div>
                   </div>
                 </div>
 
                 {/* Subscriber luck multiplier */}
-                <div className="rounded-xl border border-line bg-white/2 px-2.5 py-1.5">
+                <div className="rounded-[10px] border border-rule bg-well/80 px-2.5 py-1.5">
                   <div className="flex items-center justify-between gap-2">
                     <label
                       htmlFor="giveaway-luck"
-                      className="text-xs font-semibold text-zinc-100"
+                      className="text-xs font-semibold text-ink-strong"
                     >
                       {t("giveaways.subscriberLuck")}
                     </label>
@@ -820,9 +820,9 @@ export function GiveawaysPage() {
                           ),
                         })
                       }
-                      className="h-1.5 min-w-0 flex-1 cursor-pointer appearance-none rounded-full bg-white/10 accent-accent"
+                      className="h-1.5 min-w-0 flex-1 cursor-pointer appearance-none rounded-full bg-raised accent-accent"
                     />
-                    <div className="flex h-6 w-15 shrink-0 items-center rounded-md border border-line bg-black/25 px-1.5 text-xs">
+                    <div className="flex h-6 w-15 shrink-0 items-center rounded-md border border-rule bg-panel px-1.5 text-xs">
                       <input
                         id="giveaway-luck"
                         type="number"
@@ -837,9 +837,9 @@ export function GiveawaysPage() {
                             ),
                           })
                         }
-                        className="min-w-0 flex-1 bg-transparent text-right font-semibold tabular-nums text-zinc-100 outline-none"
+                        className="studio-mono min-w-0 flex-1 bg-transparent text-right font-semibold text-ink-strong outline-none"
                       />
-                      <span className="ml-1 text-[11px] text-muted">×</span>
+                      <span className="studio-mono ml-1 text-[11px] text-subtle">×</span>
                     </div>
                   </div>
                 </div>
@@ -860,11 +860,11 @@ export function GiveawaysPage() {
 
         {/* Right column: Minimalist Embedded Live Chat */}
         <Card className="flex min-h-0 flex-col overflow-hidden">
-          <div className="flex h-9 shrink-0 items-center justify-between border-b border-line px-3">
+          <div className="flex h-9 shrink-0 items-center justify-between border-b border-rule bg-shell/70 px-3">
             <div className="flex items-center gap-2">
-              <h2 className="text-xs font-semibold">{t("chat.title")}</h2>
+              <h2 className="studio-label">{t("chat.title")}</h2>
               {twitch.account && (
-                <span className="text-[11px] text-muted">
+                <span className="studio-mono text-[11px] text-subtle">
                   #{twitch.account}
                 </span>
               )}
@@ -887,8 +887,8 @@ export function GiveawaysPage() {
           {twitch.phase !== "connected" && visibleChatMessages.length === 0 ? (
             <div className="grid flex-1 place-items-center p-6 text-center">
               <div>
-                <MessageSquare size={20} className="mx-auto mb-2 text-muted" />
-                <div className="text-xs font-medium">
+                <MessageSquare size={20} className="mx-auto mb-2 text-subtle" />
+                <div className="text-xs font-medium text-ink-strong">
                   {t("stream.notConnected")}
                 </div>
                 <p className="mt-1 text-[11px] leading-4 text-muted">
@@ -907,7 +907,7 @@ export function GiveawaysPage() {
             <>
               <ScrollFade
                 className="flex min-h-0 flex-1 flex-col"
-                color="#242526"
+                color="var(--color-panel)"
                 size={28}
               >
                 <div
@@ -931,8 +931,8 @@ export function GiveawaysPage() {
                           className={cn(
                             "border-l-2 px-3 py-1 text-xs leading-5 transition-colors",
                             highlighted
-                              ? "border-accent bg-accent/[.08]"
-                              : "border-transparent hover:bg-white/[.03]",
+                              ? "border-accent bg-accent-soft/70"
+                              : "border-transparent hover:bg-well/70",
                           )}
                         >
                           {settings.chatBadges &&
@@ -954,12 +954,12 @@ export function GiveawaysPage() {
                           >
                             {message.displayName}
                           </button>
-                          <span className="text-zinc-500">
+                          <span className="text-subtle">
                             {message.action ? " " : ": "}
                           </span>
                           <span
                             className={cn(
-                              "wrap-break-word text-zinc-200",
+                              "wrap-break-word text-ink",
                               message.action && "italic",
                             )}
                           >
@@ -987,7 +987,7 @@ export function GiveawaysPage() {
                       }
                     });
                   }}
-                  className="mx-auto -mb-2 flex -translate-y-3 items-center gap-1 rounded-full border border-line bg-raised px-2.5 py-1 text-[10px] shadow-lg hover:border-zinc-600"
+                  className="mx-auto -mb-2 flex -translate-y-3 items-center gap-1 rounded-full border border-rule-strong bg-raised px-2.5 py-1 text-[10px] font-medium text-ink shadow-lg hover:border-accent-border"
                 >
                   <ChevronDown size={12} />
                   {t("chat.jumpLatest")}
@@ -996,7 +996,7 @@ export function GiveawaysPage() {
 
               <form
                 onSubmit={submitChat}
-                className="flex gap-1.5 border-t border-line p-2"
+                className="flex gap-1.5 border-t border-rule bg-shell/70 p-2"
               >
                 <input
                   className="input h-8 min-h-8 min-w-0 flex-1 text-xs"
