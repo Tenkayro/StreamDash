@@ -605,7 +605,7 @@ function CustomizeToolbar({
             type="button"
             title={t("dashboard.addBrowserSource")}
             onClick={onAddBrowser}
-            className="inline-flex h-7 shrink-0 items-center gap-1.5 rounded-full border border-white/[0.08] bg-black/25 px-2.5 text-[10px] text-zinc-300 transition hover:border-accent/50 hover:text-accent"
+            className="inline-flex h-7 shrink-0 items-center gap-1.5 rounded-full border border-white/8 bg-black/25 px-2.5 text-[10px] text-zinc-300 transition hover:border-accent/50 hover:text-accent"
           >
             <Plus size={11} />
             {t("dashboard.browserSource")}
@@ -616,7 +616,7 @@ function CustomizeToolbar({
             title={t("dashboard.resetDashboard")}
             aria-label={t("dashboard.resetDashboard")}
             onClick={onReset}
-            className="grid size-7 shrink-0 place-items-center rounded-full border border-white/[0.08] bg-black/25 text-zinc-400 hover:bg-white/8 hover:text-zinc-200"
+            className="grid size-7 shrink-0 place-items-center rounded-full border border-white/8 bg-black/25 text-zinc-400 hover:bg-white/8 hover:text-zinc-200"
           >
             <RotateCcw size={12} />
           </button>

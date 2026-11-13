@@ -735,7 +735,7 @@ export function ProCloudSection() {
                     <HardDrive size={13} className="text-muted" />
                     <span className="font-medium">{t("profiles.cloud.storage.title")}</span>
                   </div>
-                  <div className="h-1.5 min-w-[90px] flex-1 overflow-hidden rounded-full bg-raised">
+                  <div className="h-1.5 min-w-22.5 flex-1 overflow-hidden rounded-full bg-raised">
                     <div
                       className={`h-full w-full origin-left rounded-full transition-transform ${
                         storageInfo.usedBytes >= storageInfo.quotaBytes
@@ -864,7 +864,7 @@ export function ProCloudSection() {
                         })}
                       </div>
                       <textarea
-                        className="input min-h-[68px] w-full py-2 text-xs"
+                        className="input min-h-17 w-full py-2 text-xs"
                         placeholder={t("profiles.cloud.storage.messagePlaceholder")}
                         value={storageMessage}
                         onChange={(e) => {

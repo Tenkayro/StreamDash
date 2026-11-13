@@ -984,7 +984,7 @@
     "support": {
       "title": "Restablecer clave de licencia Pro",
       "manageReset": "Restablecer clave",
-      "description": "¿Activaste tu clave de Payhip en la cuenta de Twitch equivocada? Envía un ticket para revisar y liberar tu clave una vez.",
+      "description": "¿Activaste tu Pro-Key en la cuenta de Twitch equivocada? Envía un ticket para revisar y liberar tu clave una vez.",
       "resetsCounter": "Restablecimientos usados: {{used}} / {{max}}",
       "refresh": "Actualizar estado",
       "connectTwitchHint": "Conecta tu cuenta de Twitch para ver el estado de tu licencia o abrir un ticket.",
@@ -1503,7 +1503,7 @@
     "offlineDetail": "El servicio Pro y en la nube está desconectado ahora mismo. StreamDash sigue funcionando localmente.",
     "retryConnection": "Reintentar",
     "cloudGateHint": "Activa StreamDash Pro en @{{account}} para habilitar la sincronización automática en la nube.",
-    "twitchRequiredDetail": "Conecta primero tu cuenta de Twitch. Tu licencia de Payhip se vinculará directamente a tu cuenta para funcionar en todos tus dispositivos.",
+    "twitchRequiredDetail": "Conecta primero tu cuenta de Twitch. Tu Pro-Key se vinculará directamente a tu cuenta para funcionar en todos tus dispositivos.",
     "activeForAccount": "StreamDash Pro está activo para @{{account}}",
     "licenseSummary": "Clave {{key}} · Activada el {{date}}",
     "perks": {
@@ -1515,7 +1515,7 @@
     "buyCardTitle": "¿Aún no tienes licencia?",
     "buyCardDetail": "Paga una vez por PayPal o tarjeta y recibe tu clave al instante.",
     "getProButton": "Obtener Pro",
-    "licenseKeyLabel": "Introduce tu clave de licencia de Payhip",
+    "licenseKeyLabel": "Introduce tu Pro-Key",
     "licenseKeyPlaceholder": "XXXX-XXXX-XXXX-XXXX",
     "activateButton": "Activar",
     "activating": "Verificando…",
