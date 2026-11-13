@@ -4,6 +4,7 @@ import {
   Copy,
   Crown,
   ExternalLink,
+  HardDrive,
   KeyRound,
   LifeBuoy,
   Link2,
@@ -194,6 +195,10 @@ function ProModalContent({ onClose }: { onClose: () => void }) {
                   <Sparkles size={14} className="text-twitch-ink" />
                   <span>{t("pro.perks.futureFeatures")}</span>
                 </div>
+                <div className="flex items-center gap-2 text-zinc-200">
+                  <HardDrive size={14} className="shrink-0 text-signal-2" />
+                  <span>{t("pro.perks.storageQuota")}</span>
+                </div>
               </div>
 
               {error && (
@@ -230,6 +235,10 @@ function ProModalContent({ onClose }: { onClose: () => void }) {
                 <div className="flex items-center gap-2 text-zinc-200">
                   <Sparkles size={14} className="shrink-0 text-twitch-ink" />
                   <span>{t("pro.perks.futureFeatures")}</span>
+                </div>
+                <div className="flex items-center gap-2 text-zinc-200">
+                  <HardDrive size={14} className="shrink-0 text-signal-2" />
+                  <span>{t("pro.perks.storageQuota")}</span>
                 </div>
               </div>
 

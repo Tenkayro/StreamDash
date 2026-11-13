@@ -278,15 +278,13 @@ export function ProCloudSection() {
 
   return (
     <section id="pro" className="scroll-mt-16">
-      <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
-        <div className="flex items-center gap-2 text-xs font-semibold text-zinc-200">
-          <span className="grid size-6 place-items-center rounded-lg bg-white/6 text-zinc-300">
-            <Crown size={13} />
-          </span>
+      <div className="mb-2 flex flex-wrap items-center justify-between gap-2 px-1">
+        <h2 className="flex items-center gap-1.5 text-xs font-semibold text-muted">
+          <Crown size={12} aria-hidden="true" />
           <span>{t("settings.proCloud")}</span>
-        </div>
+        </h2>
         {entitlements.pro ? (
-          <Badge tone="neutral">PRO · @{twitch.account ?? ""}</Badge>
+          <Badge tone="green">PRO · @{twitch.account ?? ""}</Badge>
         ) : (
           <Badge tone="neutral">{t("pro.lockedBadge")}</Badge>
         )}
@@ -331,27 +329,27 @@ export function ProCloudSection() {
         {/* Step / License Block */}
         <div
           data-search-label={`${t("settings.proCloud")} ${t("pro.title")}`}
-          className="border-b border-line p-5"
+          className="border-b border-line px-5 py-4"
         >
           {!twitchConnected ? (
             <div className="flex flex-wrap items-center justify-between gap-4 rounded-xl border border-twitch-border bg-twitch-soft p-4">
               <div className="min-w-0 flex-1 space-y-1">
-                <div className="text-sm font-semibold text-zinc-100">{t("pro.subtitle")}</div>
-                <p className="text-xs text-zinc-300">{t("pro.connectStepHint")}</p>
+                <div className="text-sm font-semibold text-ink-strong">{t("pro.subtitle")}</div>
+                <p className="text-xs text-ink">{t("pro.connectStepHint")}</p>
               </div>
               <Button variant="primary" onClick={() => setPage("connections")}>
                 {t("chat.openConnections")}
               </Button>
             </div>
           ) : entitlements.pro ? (
-            <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-emerald-500/25 bg-emerald-500/8 px-4 py-3.5">
-              <div className="flex min-w-0 flex-1 items-start gap-3">
-                <CheckCircle2 size={17} className="mt-0.5 shrink-0 text-emerald-300" />
-                <div className="min-w-0 space-y-1 text-xs">
-                  <div className="font-semibold text-emerald-200">
+            <div className="flex flex-wrap items-center justify-between gap-3">
+              <div className="flex min-w-0 flex-1 items-center gap-3">
+                <CheckCircle2 size={16} className="shrink-0 text-emerald-400" />
+                <div className="min-w-0">
+                  <div className="text-sm font-medium text-ink-strong">
                     {t("pro.activeForAccount", { account: twitch.account ?? "" })}
                   </div>
-                  <div className="text-zinc-400">
+                  <div className="mt-0.5 text-xs text-muted">
                     {t("pro.licenseSummary", {
                       key: activeMasked ?? "••••",
                       date: entitlements.license?.activatedAt
@@ -363,9 +361,9 @@ export function ProCloudSection() {
               </div>
 
               {activeKeyId && (
-                <div className="flex items-center gap-2 rounded-lg border border-line bg-black/30 px-3 py-1.5 text-xs">
+                <div className="flex items-center gap-2 rounded-lg border border-rule bg-well px-2.5 py-1 text-xs">
                   <span className="text-muted">{t("pro.keyIdLabel")}:</span>
-                  <code className="font-mono font-semibold text-emerald-200">{activeKeyId}</code>
+                  <code className="font-mono font-semibold text-ink-strong">{activeKeyId}</code>
                   <button
                     type="button"
                     onClick={() => {
@@ -373,7 +371,7 @@ export function ProCloudSection() {
                         toast.success(t("pro.keyIdCopied"));
                       });
                     }}
-                    className="grid size-6 place-items-center rounded text-zinc-400 transition hover:bg-white/10 hover:text-zinc-100"
+                    className="grid size-6 place-items-center rounded text-muted transition hover:bg-raised hover:text-ink-strong"
                     title={t("pro.keyIdLabel")}
                     aria-label={t("pro.keyIdLabel")}
                   >
@@ -400,6 +398,10 @@ export function ProCloudSection() {
                     <div className="flex items-center gap-2">
                       <Sparkles size={13} className="shrink-0 text-twitch-ink" />
                       <span>{t("pro.perks.futureFeatures")}</span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <HardDrive size={13} className="shrink-0 text-signal-2" />
+                      <span>{t("pro.perks.storageQuota")}</span>
                     </div>
                   </div>
                 </div>
@@ -470,29 +472,26 @@ export function ProCloudSection() {
         {/* Cloud Sync Block */}
         <div
           data-search-label={t("profiles.cloud.title")}
-          className="border-b border-line bg-black/15 px-5 py-4"
+          className="border-b border-line px-5 py-4"
         >
           <div className="flex flex-wrap items-center justify-between gap-3">
             <div className="flex min-w-0 flex-1 items-center gap-3">
-              <span
-                className={`grid size-8 shrink-0 place-items-center rounded-lg ${
-                  cloudSync.phase === "conflict"
-                    ? "bg-amber-500/15 text-amber-300"
-                    : cloudSync.phase === "error"
-                      ? "bg-red-500/15 text-red-300"
-                      : cloudSyncEnabled && twitchConnected && entitlements.pro
-                        ? "bg-emerald-500/12 text-emerald-300"
-                        : "bg-black/25 text-zinc-400"
-                }`}
-              >
-                {!cloudSyncEnabled ? (
-                  <CloudOff size={15} />
-                ) : cloudSync.phase === "conflict" ? (
-                  <AlertTriangle size={15} />
-                ) : (
-                  <Cloud size={15} />
-                )}
-              </span>
+              {!cloudSyncEnabled ? (
+                <CloudOff size={16} className="shrink-0 text-muted" />
+              ) : cloudSync.phase === "conflict" ? (
+                <AlertTriangle size={16} className="shrink-0 text-amber-300" />
+              ) : cloudSync.phase === "error" ? (
+                <Cloud size={16} className="shrink-0 text-red-300" />
+              ) : (
+                <Cloud
+                  size={16}
+                  className={
+                    cloudSyncEnabled && twitchConnected && entitlements.pro
+                      ? "shrink-0 text-emerald-400"
+                      : "shrink-0 text-muted"
+                  }
+                />
+              )}
               <div className="min-w-0 flex-1">
                 <div className="flex flex-wrap items-center gap-2">
                   <span className="text-sm font-medium">{t("profiles.cloud.title")}</span>
@@ -518,29 +517,58 @@ export function ProCloudSection() {
                     <Badge tone="neutral">{t("profiles.cloud.statusReady")}</Badge>
                   )}
                 </div>
-                <div className="mt-0.5 text-xs text-muted">
-                  {!twitchConnected
-                    ? t("profiles.cloud.connectPrompt")
-                    : serverOffline
-                      ? t("pro.offlineDetail")
-                      : !entitlements.pro
-                        ? t("pro.cloudGateHint", { account: twitch.account ?? "" })
-                        : cloudSync.phase === "error" && cloudSync.error
-                          ? formatCloudError(cloudSync.error, t)
-                          : cloudTimestamp
-                            ? t("profiles.cloud.metaSummary", {
-                                account: twitch.account ?? "",
-                                time: new Date(cloudTimestamp).toLocaleString([], {
-                                  dateStyle: "short",
-                                  timeStyle: "short",
-                                }),
-                                size: cloudBytes
-                                  ? `${Math.max(1, Math.round(cloudBytes / 1024))} KB`
-                                  : "—",
-                              })
-                            : t("profiles.cloud.connectedHint", {
-                                account: twitch.account ?? "",
-                              })}
+                <div className="mt-0.5 flex flex-wrap items-center gap-x-2 gap-y-0.5 text-xs text-muted">
+                  <span>
+                    {!twitchConnected
+                      ? t("profiles.cloud.connectPrompt")
+                      : serverOffline
+                        ? t("pro.offlineDetail")
+                        : !entitlements.pro
+                          ? t("pro.cloudGateHint", { account: twitch.account ?? "" })
+                          : cloudSync.phase === "error" && cloudSync.error
+                            ? formatCloudError(cloudSync.error, t)
+                            : cloudTimestamp
+                              ? t("profiles.cloud.metaSummary", {
+                                  account: twitch.account ?? "",
+                                  time: new Date(cloudTimestamp).toLocaleString([], {
+                                    dateStyle: "short",
+                                    timeStyle: "short",
+                                  }),
+                                  size: cloudBytes
+                                    ? `${Math.max(1, Math.round(cloudBytes / 1024))} KB`
+                                    : "—",
+                                })
+                              : t("profiles.cloud.connectedHint", {
+                                  account: twitch.account ?? "",
+                                })}
+                  </span>
+                  {twitchConnected && entitlements.pro && storageInfo && (() => {
+                    const usedPct = Math.min(
+                      100,
+                      Math.round((storageInfo.usedBytes / Math.max(1, storageInfo.quotaBytes)) * 100),
+                    );
+                    return (
+                    <span className="inline-flex items-center gap-1 text-subtle">
+                      <span>·</span>
+                      <span className="font-mono text-[11px]">
+                        {t("profiles.cloud.storage.usagePercent", { percent: usedPct })}
+                      </span>
+                      <button
+                        type="button"
+                        disabled={storageRefreshing || storageTicket?.loading}
+                        onClick={() => void handleStorageRefresh()}
+                        title={t("settings.support.refresh")}
+                        aria-label={t("settings.support.refresh")}
+                        className="rounded p-0.5 text-subtle transition hover:bg-raised hover:text-ink disabled:opacity-40"
+                      >
+                        <RefreshCw
+                          size={11}
+                          className={storageRefreshing || storageTicket?.loading ? "animate-spin" : ""}
+                        />
+                      </button>
+                    </span>
+                    );
+                  })()}
                 </div>
               </div>
             </div>
@@ -676,22 +704,34 @@ export function ProCloudSection() {
             const nearLimit =
               storageInfo.usedBytes >= storageInfo.quotaBytes * 0.75 ||
               Boolean(cloudSync.historyError?.includes("storage_quota_exceeded"));
+            const showStorageBanner =
+              nearLimit ||
+              storageExpanded ||
+              hasPendingStorageTicket ||
+              Boolean(latestStorageTicket) ||
+              Boolean(cloudSync.historyError) ||
+              (storageInfo.globalSoftThrottled && !storageInfo.customQuotaBytes);
+            if (!showStorageBanner) return null;
             const showRequestAction = nearLimit || hasPendingStorageTicket || Boolean(latestStorageTicket);
+            const usedPct = Math.min(
+              100,
+              Math.round((storageInfo.usedBytes / Math.max(1, storageInfo.quotaBytes)) * 100),
+            );
             const pct = Math.min(
               100,
               Math.max(
                 storageInfo.usedBytes > 0 ? 2 : 0,
-                Math.round((storageInfo.usedBytes / Math.max(1, storageInfo.quotaBytes)) * 100),
+                usedPct,
               ),
             );
             return (
-              <div className="mt-2.5 rounded-lg border border-line/70 bg-black/20 px-3 py-2 text-xs">
+              <div className="mt-3 rounded-lg border border-rule bg-well px-3 py-2.5 text-xs">
                 <div className="flex flex-wrap items-center gap-2.5">
-                  <div className="flex items-center gap-1.5 text-zinc-300">
-                    <HardDrive size={13} className="text-zinc-400" />
+                  <div className="flex items-center gap-1.5 text-ink">
+                    <HardDrive size={13} className="text-muted" />
                     <span className="font-medium">{t("profiles.cloud.storage.title")}</span>
                   </div>
-                  <div className="h-1.5 min-w-[90px] flex-1 overflow-hidden rounded-full bg-white/10">
+                  <div className="h-1.5 min-w-[90px] flex-1 overflow-hidden rounded-full bg-raised">
                     <div
                       className={`h-full w-full origin-left rounded-full transition-transform ${
                         storageInfo.usedBytes >= storageInfo.quotaBytes
@@ -713,6 +753,7 @@ export function ProCloudSection() {
                     }
                   >
                     {t("profiles.cloud.storage.usageBadge", {
+                      percent: usedPct,
                       used: (storageInfo.usedBytes / (1024 * 1024)).toFixed(2),
                       quota: Math.round(storageInfo.quotaBytes / (1024 * 1024)),
                     })}
@@ -853,7 +894,7 @@ export function ProCloudSection() {
             );
           })()}
 
-          <div className="mt-2.5 flex items-center gap-1.5 text-[11px] text-zinc-500">
+          <div className="mt-2.5 flex items-center gap-1.5 text-[11px] text-subtle">
             <Info size={12} className="shrink-0" />
             <span>{t("profiles.cloud.zeroSecretsHint")}</span>
           </div>
@@ -863,13 +904,11 @@ export function ProCloudSection() {
         <div
           id="support"
           data-search-label={t("settings.support.title")}
-          className="scroll-mt-20 px-5 py-4"
+          className="scroll-mt-20 px-5 py-3.5"
         >
           <div className="flex flex-wrap items-center justify-between gap-3">
             <div className="flex min-w-0 flex-1 items-center gap-3">
-              <span className="grid size-8 shrink-0 place-items-center rounded-lg bg-black/25 text-zinc-400">
-                <LifeBuoy size={15} />
-              </span>
+              <LifeBuoy size={16} className="shrink-0 text-muted" />
               <div className="min-w-0 flex-1">
                 <div className="flex flex-wrap items-center gap-2">
                   <span className="text-sm font-medium">{t("settings.support.title")}</span>
@@ -885,7 +924,9 @@ export function ProCloudSection() {
                     <Badge tone="amber">{t("settings.support.status.pending")}</Badge>
                   )}
                 </div>
-                <p className="text-xs text-muted">{t("settings.support.description")}</p>
+                {showResetPanel && (
+                  <p className="mt-0.5 text-xs text-muted">{t("settings.support.description")}</p>
+                )}
               </div>
             </div>
 

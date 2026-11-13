@@ -2157,6 +2157,8 @@ export function RuntimeProvider({ children }: { children: ReactNode }) {
   };
   const disconnectTwitch = async () => {
     twitchAuthAttemptRef.current++;
+    window.clearTimeout(cloudPushTimerRef.current);
+    cloudPushTimerRef.current = undefined;
     setDeviceAuth(undefined);
     twitchRef.current?.stop();
     chatRef.current?.stop();
@@ -2174,9 +2176,13 @@ export function RuntimeProvider({ children }: { children: ReactNode }) {
       lastCheckedAt: undefined,
       cooldownUntil: undefined,
       hasLocalChanges: undefined,
+      storageInfo: undefined,
+      historyLastSyncedAt: undefined,
+      historyError: undefined,
     });
-    state().setEntitlements({ tier: "free", pro: false, features: [] });
+    state().setEntitlements({ tier: "free", pro: false, features: [], license: undefined });
     state().setSupportTicket(undefined);
+    state().setStorageTicket(undefined);
     state().setStatsLoading(false);
     state().setStats({
       followers: undefined,

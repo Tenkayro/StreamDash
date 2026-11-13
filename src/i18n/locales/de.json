@@ -1440,7 +1440,8 @@
       "zeroSecretsHint": "Es werden nur Profile, Layouts, Commands & Einstellungen gesichert – niemals Tokens, Passwörter oder Chat-Verläufe.",
       "storage": {
         "title": "Cloud-Speicher (Aktivitäten & Statistiken)",
-        "usageBadge": "{{used}} / {{quota}} MB",
+        "usageBadge": "{{percent}} % ({{used}} / {{quota}} MB)",
+        "usagePercent": "Cloud-Speicher: {{percent}} %",
         "throttledBadge": "Dynamisches Limit aktiv",
         "requestButton": "Mehr anfragen",
         "description": "Aktivitäten und Dashboard-Statistiken werden komprimiert und getrennt von deinen Profilen synchronisiert. Chat-Verläufe bleiben lokal.",
@@ -1500,7 +1501,8 @@
     "perks": {
       "cloudSync": "Automatische Cloud-Synchronisierung aller Profile & Einstellungen",
       "twitchBound": "Fest an @{{account}} gebunden — sofort aktiv bei neuem PC",
-      "futureFeatures": "Alle zukünftigen StreamDash-Pro-Features automatisch inklusive"
+      "futureFeatures": "Alle zukünftigen StreamDash-Pro-Features automatisch inklusive",
+      "storageQuota": "25 MB Cloud-Speicher inklusive — bei Bedarf kostenlos auf Anfrage erweiterbar"
     },
     "buyCardTitle": "Noch keinen Lizenzschlüssel?",
     "buyCardDetail": "Einmalig per PayPal oder Karte zahlen — Key kommt sofort per E-Mail.",

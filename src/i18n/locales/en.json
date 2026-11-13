@@ -1440,7 +1440,8 @@
       "zeroSecretsHint": "Only profiles, layouts, commands & preferences are synced — never tokens, passwords or chat history.",
       "storage": {
         "title": "Activity & Stats Cloud Storage",
-        "usageBadge": "{{used}} / {{quota}} MB",
+        "usageBadge": "{{percent}}% ({{used}} / {{quota}} MB)",
+        "usagePercent": "Cloud storage: {{percent}}%",
         "throttledBadge": "Dynamic limit active",
         "requestButton": "Request more",
         "description": "Activities and dashboard statistics are compressed and synced separately from your profiles. Raw chat logs stay local.",
@@ -1500,7 +1501,8 @@
     "perks": {
       "cloudSync": "Automatic Cloud Profile & Settings Sync across devices",
       "twitchBound": "Bound directly to @{{account}} — works immediately on new PCs",
-      "futureFeatures": "Unlocks all upcoming StreamDash Pro features automatically"
+      "futureFeatures": "Unlocks all upcoming StreamDash Pro features automatically",
+      "storageQuota": "Includes 25 MB Cloud Storage — expandable for free on request"
     },
     "buyCardTitle": "No license key yet?",
     "buyCardDetail": "Pay once via PayPal or card — receive your key immediately.",

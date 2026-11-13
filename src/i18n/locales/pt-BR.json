@@ -1440,7 +1440,8 @@
       "zeroSecretsHint": "Apenas perfis, layouts, comandos e preferências são sincronizados — nunca tokens, senhas ou histórico do chat.",
       "storage": {
         "title": "Armazenamento na Nuvem (Atividades e Estatísticas)",
-        "usageBadge": "{{used}} / {{quota}} MB",
+        "usageBadge": "{{percent}}% ({{used}} / {{quota}} MB)",
+        "usagePercent": "Armazenamento na nuvem: {{percent}}%",
         "throttledBadge": "Limite dinâmico ativo",
         "requestButton": "Solicitar mais",
         "description": "Atividades e estatísticas do painel são compactadas e sincronizadas separadamente dos seus perfis. O histórico do chat fica local.",
@@ -1500,7 +1501,8 @@
     "perks": {
       "cloudSync": "Sincronização automática na nuvem de perfis e configurações",
       "twitchBound": "Vinculado a @{{account}} — funciona na hora em outros PCs",
-      "futureFeatures": "Libera automaticamente todos os futuros recursos Pro"
+      "futureFeatures": "Libera automaticamente todos os futuros recursos Pro",
+      "storageQuota": "Inclui 25 MB de armazenamento na nuvem — expansível gratuitamente mediante solicitação"
     },
     "buyCardTitle": "Ainda não tem uma chave?",
     "buyCardDetail": "Pague uma vez via PayPal ou cartão e receba sua chave na hora.",

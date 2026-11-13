@@ -1440,7 +1440,8 @@
       "zeroSecretsHint": "Seuls les profils, dispositions, commandes et préférences sont synchronisés — jamais les jetons, mots de passe ou historiques de chat.",
       "storage": {
         "title": "Stockage Cloud (Activités & Statistiques)",
-        "usageBadge": "{{used}} / {{quota}} Mo",
+        "usageBadge": "{{percent}} % ({{used}} / {{quota}} Mo)",
+        "usagePercent": "Stockage cloud : {{percent}} %",
         "throttledBadge": "Limite dynamique active",
         "requestButton": "Demander plus",
         "description": "Les activités et statistiques du tableau de bord sont compressées et synchronisées séparément de vos profils. Les messages de chat restent locaux.",
@@ -1500,7 +1501,8 @@
     "perks": {
       "cloudSync": "Synchronisation Cloud automatique de tous vos profils et réglages",
       "twitchBound": "Lié à @{{account}} — actif immédiatement sur tout nouveau PC",
-      "futureFeatures": "Débloque automatiquement toutes les futures fonctionnalités Pro"
+      "futureFeatures": "Débloque automatiquement toutes les futures fonctionnalités Pro",
+      "storageQuota": "25 Mo de stockage cloud inclus — extensible gratuitement sur demande"
     },
     "buyCardTitle": "Pas encore de clé de licence ?",
     "buyCardDetail": "Payez une seule fois par PayPal ou carte — clé envoyée immédiatement.",
