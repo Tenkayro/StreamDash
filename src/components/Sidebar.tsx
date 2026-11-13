@@ -214,6 +214,7 @@ export function Sidebar() {
             const badge = unread > 0 ? <Badge tone="purple">{unread > 9 ? "9+" : unread}</Badge> : null;
             return (
               <button
+                data-nav-id={id}
                 data-active={page === id ? "true" : undefined}
                 title={
                   attention

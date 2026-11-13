@@ -6,6 +6,7 @@ import path from "node:path";
 const ROOT = process.cwd();
 const DEMO_DATA_DIR = path.join(ROOT, ".dev-data", "demo");
 const EXPORT_DIR = path.join(ROOT, "exports");
+const RAW_FILE = path.join(EXPORT_DIR, ".raw-demo.mp4");
 const OUTPUT_FILE = path.join(EXPORT_DIR, "streamdash-demo.mp4");
 const CAPTURE_SCRIPT = path.join(ROOT, "scripts", "capture-window.ps1");
 const SIGNAL_PORT = 1429;
@@ -32,6 +33,88 @@ function killTree(pid) {
       // Ignore already exited
     }
   }
+}
+
+function getVideoDuration(filePath) {
+  try {
+    const out = execFileSync(
+      "ffprobe",
+      [
+        "-v",
+        "error",
+        "-show_entries",
+        "format=duration",
+        "-of",
+        "default=noprint_wrappers=1:nokey=1",
+        filePath,
+      ],
+      { encoding: "utf8", windowsHide: true },
+    ).trim();
+    const sec = Number.parseFloat(out);
+    return Number.isFinite(sec) && sec > 1 ? sec : 40;
+  } catch {
+    return 40;
+  }
+}
+
+function renderStudioMaster() {
+  const duration = getVideoDuration(RAW_FILE);
+  const introDur = 2.2;
+  const outroDur = 2.4;
+  const fadeDur = 0.45;
+  const mainFadeOffset = Math.max(0.5, Number((introDur - fadeDur).toFixed(2)));
+  const outroFadeOffset = Math.max(
+    mainFadeOffset + 1,
+    Number((mainFadeOffset + duration - fadeDur).toFixed(2)),
+  );
+  const totalCanvasDur = Number((duration + 0.5).toFixed(2));
+  const fontBold = "C\\:/Windows/Fonts/seguisb.ttf";
+  const fontReg = "C\\:/Windows/Fonts/segoeui.ttf";
+
+  const filterComplex = [
+    `gradients=s=1920x1080:c0=#070911:c1=#17112e:c2=#0a1726:c3=#070911:speed=0.0018:duration=${introDur}:rate=60,` +
+      `drawtext=fontfile='${fontBold}':text='StreamDash 2.1':fontcolor=white:fontsize=76:x=(w-text_w)/2:y=(h-text_h)/2-28,` +
+      `drawtext=fontfile='${fontReg}':text='All-in-One Live Stream Control':fontcolor=#a78bfa:fontsize=30:x=(w-text_w)/2:y=(h-text_h)/2+46,` +
+      `fade=t=in:st=0:d=0.45[intro]`,
+
+    `gradients=s=1920x1080:c0=#070911:c1=#130f26:c2=#091320:c3=#070911:speed=0.0012:duration=${totalCanvasDur}:rate=60[bg]`,
+    `[0:v]fps=60,scale=1640:-2:flags=lanczos,pad=iw+4:ih+4:2:2:color=#27273a@0.9[win]`,
+    `[bg][win]overlay=(W-w)/2:(H-h)/2:shortest=1[stage]`,
+
+    `gradients=s=1920x1080:c0=#070911:c1=#17112e:c2=#0a1726:c3=#070911:speed=0.0018:duration=${outroDur}:rate=60,` +
+      `drawtext=fontfile='${fontBold}':text='StreamDash 2.1':fontcolor=white:fontsize=68:x=(w-text_w)/2:y=(h-text_h)/2-28,` +
+      `drawtext=fontfile='${fontReg}':text='Fast. Local. Built for Streamers.':fontcolor=#34d399:fontsize=28:x=(w-text_w)/2:y=(h-text_h)/2+44,` +
+      `fade=t=out:st=${(outroDur - 0.55).toFixed(2)}:d=0.55[outro]`,
+
+    `[intro][stage]xfade=transition=fade:duration=${fadeDur}:offset=${mainFadeOffset}[part1]`,
+    `[part1][outro]xfade=transition=fade:duration=${fadeDur}:offset=${outroFadeOffset},format=yuv420p[vout]`,
+  ].join(";");
+
+  console.log("Rendering 1080p60 Screen-Studio master video (intro + backdrop + outro)...");
+  execFileSync(
+    "ffmpeg",
+    [
+      "-y",
+      "-i",
+      RAW_FILE,
+      "-filter_complex",
+      filterComplex,
+      "-map",
+      "[vout]",
+      "-c:v",
+      "libx264",
+      "-preset",
+      "medium",
+      "-crf",
+      "16",
+      "-pix_fmt",
+      "yuv420p",
+      "-movflags",
+      "+faststart",
+      OUTPUT_FILE,
+    ],
+    { stdio: "inherit", windowsHide: true },
+  );
 }
 
 async function finishRecording() {
@@ -77,6 +160,16 @@ async function finishRecording() {
     killTree(tauriProc.pid);
   }
   server.close();
+
+  if (fs.existsSync(RAW_FILE)) {
+    try {
+      renderStudioMaster();
+      fs.rmSync(RAW_FILE, { force: true });
+    } catch (err) {
+      console.error("Post-processing failed, keeping raw recording:", err);
+      fs.renameSync(RAW_FILE, OUTPUT_FILE);
+    }
+  }
 
   if (fs.existsSync(OUTPUT_FILE)) {
     const sizeMb = (fs.statSync(OUTPUT_FILE).size / (1024 * 1024)).toFixed(2);
@@ -162,14 +255,12 @@ function startFfmpeg(rect) {
       "-c:v",
       "libx264",
       "-preset",
-      "medium",
+      "veryfast",
       "-crf",
-      "16",
+      "12",
       "-pix_fmt",
       "yuv420p",
-      "-movflags",
-      "+faststart",
-      OUTPUT_FILE,
+      RAW_FILE,
     ];
 
     ffmpegProc = spawn("ffmpeg", args, {
@@ -224,14 +315,12 @@ function startFfmpeg(rect) {
     "-c:v",
     "libx264",
     "-preset",
-    "medium",
+    "veryfast",
     "-crf",
-    "16",
+    "12",
     "-pix_fmt",
     "yuv420p",
-    "-movflags",
-    "+faststart",
-    OUTPUT_FILE,
+    RAW_FILE,
   );
 
   ffmpegProc = spawn("ffmpeg", args, {
