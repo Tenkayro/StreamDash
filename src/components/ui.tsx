@@ -2,6 +2,7 @@ export { Select } from "./Select";
 import { useEffect, useRef, useState } from "react";
 import type { ButtonHTMLAttributes, HTMLAttributes, ReactNode } from "react";
 import { cn } from "../lib/utils";
+import { CurvedScrollbar } from "./CurvedScrollbar";
 import type { LucideIcon } from "lucide-react";
 export function Card({ className, ...props }: HTMLAttributes<HTMLDivElement>) {
   return <div className={cn("card", className)} {...props} />;
@@ -107,10 +108,12 @@ export function ScrollFade({
   scrollbar?: boolean;
 }) {
   const wrapper = useRef<HTMLDivElement>(null);
+  const scrollerRef = useRef<HTMLElement | null>(null);
   const [more, setMore] = useState(false);
 
   useEffect(() => {
     const scroller = wrapper.current?.firstElementChild as HTMLElement | null;
+    scrollerRef.current = scroller;
     if (!scroller) return;
     const update = () => {
       const remaining =
@@ -137,12 +140,12 @@ export function ScrollFade({
       <span
         aria-hidden="true"
         className={cn(
-          "pointer-events-none absolute bottom-0 left-0 transition-opacity duration-200",
-          scrollbar ? "right-2.5" : "right-0",
+          "pointer-events-none absolute bottom-0 left-0 right-0 transition-opacity duration-200",
           more ? "opacity-100" : "opacity-0",
         )}
         style={{ height: size, backgroundImage: `linear-gradient(to top, ${color}, transparent)` }}
       />
+      {scrollbar && <CurvedScrollbar scrollerRef={scrollerRef} />}
     </div>
   );
 }

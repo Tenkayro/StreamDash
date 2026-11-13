@@ -31,6 +31,7 @@ function DevCrashTrigger() {
 }
 import { AppContextMenu } from "./components/AppContextMenu";
 import { CrashBoundary } from "./components/CrashHandler";
+import { CurvedScrollbar } from "./components/CurvedScrollbar";
 
 const DemoOverlay = import.meta.env.DEV
   ? lazy(() => import("./components/DemoOverlay"))
@@ -393,10 +394,13 @@ export default function App() {
               </div>
             </main>
             {!isViewportPage && (
-              <div
-                aria-hidden="true"
-                className="app-bottom-fade pointer-events-none absolute inset-x-0 bottom-0 h-10"
-              />
+              <>
+                <CurvedScrollbar scrollerRef={mainRef} />
+                <div
+                  aria-hidden="true"
+                  className="app-bottom-fade pointer-events-none absolute inset-x-0 bottom-0 h-10"
+                />
+              </>
             )}
           </div>
         </div>
