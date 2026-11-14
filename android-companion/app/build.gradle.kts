@@ -11,8 +11,8 @@ android {
         applicationId = "de.tenkayro.streamdash.companion"
         minSdk = 26
         targetSdk = 35
-        versionCode = 20401
-        versionName = "2.4.1"
+        versionCode = 20500
+        versionName = "2.5.0"
 
         manifestPlaceholders["appName"] = "StreamDash Companion"
 
