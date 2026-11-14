@@ -9,7 +9,7 @@ export default defineConfig({
     port: 1420,
     strictPort: true,
     watch: {
-      ignored: ["**/src-tauri/target/**", "**/.dev-data/**"],
+      ignored: ["**/src-tauri/target/**", "**/.dev-data/**", "**/android-companion/**"],
     },
     warmup: {
       clientFiles: [
