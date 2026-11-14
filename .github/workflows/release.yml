@@ -1,13 +1,10 @@
 name: Release All Platforms
 
 on:
-  push:
-    tags:
-      - "v*"
   workflow_dispatch:
     inputs:
       tag:
-        description: "Release tag to build (e.g. v1.13.0)"
+        description: "Release tag to build (e.g. v2.4.2)"
         required: true
         type: string
 
@@ -67,7 +64,20 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: 22
-          cache: npm
+
+      - name: Cache npm dependencies
+        uses: actions/cache@v4
+        with:
+          path: ${{ runner.temp }}/npm-cache
+          key: npm-${{ runner.os }}-${{ hashFiles('package-lock.json') }}
+          restore-keys: |
+            npm-${{ runner.os }}-
+
+      - name: Cache Tauri bundler tools (WiX)
+        uses: actions/cache@v4
+        with:
+          path: ~/AppData/Local/tauri
+          key: tauri-tools-windows-wix314-v1
 
       - name: Setup Rust
         uses: dtolnay/rust-toolchain@stable
@@ -80,6 +90,8 @@ jobs:
           cache-on-failure: true
 
       - name: Install frontend dependencies
+        env:
+          npm_config_cache: ${{ runner.temp }}/npm-cache
         run: npm ci --prefer-offline --no-audit --no-fund
 
       - name: Build signed Windows MSI
@@ -154,7 +166,20 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: 22
-          cache: npm
+
+      - name: Cache npm dependencies
+        uses: actions/cache@v4
+        with:
+          path: ${{ runner.temp }}/npm-cache
+          key: npm-${{ runner.os }}-${{ hashFiles('package-lock.json') }}
+          restore-keys: |
+            npm-${{ runner.os }}-
+
+      - name: Cache Tauri bundler tools (AppImage / linuxdeploy)
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/tauri
+          key: tauri-tools-linux-v1
 
       - name: Setup Rust
         uses: dtolnay/rust-toolchain@stable
@@ -167,6 +192,8 @@ jobs:
           cache-on-failure: true
 
       - name: Install frontend dependencies
+        env:
+          npm_config_cache: ${{ runner.temp }}/npm-cache
         run: npm ci --prefer-offline --no-audit --no-fund
 
       - name: Build Linux packages (.AppImage, .deb, .rpm)
@@ -226,7 +253,14 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: 22
-          cache: npm
+
+      - name: Cache npm dependencies
+        uses: actions/cache@v4
+        with:
+          path: ${{ runner.temp }}/npm-cache
+          key: npm-${{ runner.os }}-${{ hashFiles('package-lock.json') }}
+          restore-keys: |
+            npm-${{ runner.os }}-
 
       - name: Setup Rust (Universal macOS targets)
         uses: dtolnay/rust-toolchain@stable
@@ -241,6 +275,8 @@ jobs:
           cache-on-failure: true
 
       - name: Install frontend dependencies
+        env:
+          npm_config_cache: ${{ runner.temp }}/npm-cache
         run: npm ci --prefer-offline --no-audit --no-fund
 
       - name: Build macOS Universal (.dmg & .app.tar.gz)
@@ -306,6 +342,16 @@ jobs:
         with:
           packages: platform-tools platforms;android-35 build-tools;35.0.0
 
+      - name: Cache Gradle packages
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.gradle/caches
+            ~/.gradle/wrapper
+          key: gradle-${{ hashFiles('android-companion/**/*.gradle*', 'android-companion/gradle/wrapper/gradle-wrapper.properties') }}
+          restore-keys: |
+            gradle-
+
       - name: Build Android Companion APK
         working-directory: android-companion
         env:
@@ -316,7 +362,7 @@ jobs:
           ANDROID_KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
         run: |
           chmod +x gradlew
-          ./gradlew testDebugUnitTest assembleDebug --no-daemon
+          ./gradlew testDebugUnitTest --no-daemon
           TAG="${{ needs.create-release.outputs.tag }}"
           VERSION="${{ needs.create-release.outputs.version }}"
           if [ -n "$ANDROID_KEYSTORE_BASE64" ]; then
@@ -325,6 +371,7 @@ jobs:
             rm -f "$ANDROID_KEYSTORE_PATH"
             cp app/build/outputs/apk/release/app-release.apk "../StreamDash-Companion-${TAG}.apk"
           else
+            ./gradlew assembleDebug --no-daemon
             cp app/build/outputs/apk/debug/app-debug.apk "../StreamDash-Companion-${TAG}.apk"
           fi
           cp "../StreamDash-Companion-${TAG}.apk" "../StreamDash-Companion.apk"

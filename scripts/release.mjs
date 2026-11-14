@@ -296,6 +296,12 @@ async function main() {
     await run("git", ["push", "--atomic", "origin", "main", tag], {
       stream: true,
     });
+    releaseStatus(92, `Starting GitHub Actions release workflow for ${tag}`);
+    await run(
+      "gh",
+      ["workflow", "run", "release.yml", "--repo", repo, "--ref", "main", "-f", `tag=${tag}`],
+      { stream: true },
+    );
     releaseStatus(100, `Tag ${tag} pushed — GitHub Actions is building all platforms`);
     p.note(
       [
