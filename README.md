@@ -74,14 +74,16 @@ Want your setup available anywhere without manual file transfers? **StreamDash P
 3. *First launch (unsigned build):* Right-click **StreamDash** → **Open** (built-in updates are signed and work automatically afterwards)
 
 ### Linux (x64)
-- **Recommended (Auto-Installer):** Automatically detects your distro (`.deb`, `.rpm`, or `.AppImage`), sets up desktop integration, and includes an interactive install / update / uninstall menu:
+- **Recommended (Auto-Installer):** Automatically detects your distro (`.deb`, `.rpm`, `.AppImage`, or raw `.tar.gz` binary), sets up desktop integration, and includes an interactive install / update / uninstall menu:
 
 ```bash
-curl -fsSL https://tenkayro.de/sh/streamdash.sh | bash
+curl -fsSL https://raw.githubusercontent.com/Tenkayro/StreamDash/main/install.sh | bash
 ```
 
 - **Manual Packages** *(from [GitHub Releases](https://github.com/Tenkayro/StreamDash/releases/latest))*:
-  - **AppImage** (Universal · includes built-in auto-updates): `chmod +x StreamDash_*.AppImage && ./StreamDash_*.AppImage`
+  - **Raw Binary Archive (`StreamDash-linux-x86_64.tar.gz`)** *(Universal / Headless Server — no AppImage/FUSE or package manager needed)*:
+    `tar -xzf StreamDash-linux-x86_64.tar.gz && chmod +x streamdash && ./streamdash`
+  - **AppImage** (Universal · built-in updater via `install.sh`): `chmod +x StreamDash_*.AppImage && ./StreamDash_*.AppImage`
   - **Debian / Ubuntu / Mint (`.deb`)**: `sudo apt install ./StreamDash_*.deb`
   - **Fedora / RHEL / openSUSE (`.rpm`)**: `sudo dnf install ./StreamDash-*.rpm` *(or `sudo zypper install ./StreamDash-*.rpm`)*
 

@@ -36,6 +36,8 @@ export function UpdateProvider({ children }: { children: ReactNode }) {
     channel: import.meta.env.DEV ? "dev" : "standalone",
   });
 
+  const platformRef = useRef<string | null>(null);
+
   const resolveChannel = useCallback(async () => {
     if (channelRef.current) return channelRef.current;
     const channel = await invoke<"store" | "standalone">(
@@ -43,6 +45,13 @@ export function UpdateProvider({ children }: { children: ReactNode }) {
     );
     channelRef.current = channel;
     return channel;
+  }, []);
+
+  const resolvePlatform = useCallback(async () => {
+    if (platformRef.current) return platformRef.current;
+    const platform = await invoke<string>("runtime_platform");
+    platformRef.current = platform;
+    return platform;
   }, []);
 
   const checkForUpdates = useCallback(async (notifyWhenCurrent = true) => {
@@ -111,6 +120,25 @@ export function UpdateProvider({ children }: { children: ReactNode }) {
       }
       return;
     }
+
+    const platform = await resolvePlatform().catch(() => "");
+    if (platform === "linux") {
+      setState((current) => ({ ...current, phase: "installing", progress: 100 }));
+      try {
+        await invoke("linux_script_update");
+        if (updateRef.current) {
+          await updateRef.current.close().catch(() => undefined);
+          updateRef.current = null;
+        }
+        await invoke("app_relaunch");
+      } catch (error) {
+        const message = error instanceof Error ? error.message : String(error);
+        setState((current) => ({ ...current, phase: "error", error: message }));
+        toast.error(t("updater.installError"), { description: message });
+      }
+      return;
+    }
+
     const available = updateRef.current;
     if (!available) return;
     let downloaded = 0;
@@ -136,12 +164,15 @@ export function UpdateProvider({ children }: { children: ReactNode }) {
             progress: 100,
           }));
       });
+      if (platform === "macos") {
+        await invoke("app_relaunch");
+      }
     } catch (error) {
       const message = error instanceof Error ? error.message : String(error);
       setState((current) => ({ ...current, phase: "error", error: message }));
       toast.error(t("updater.installError"), { description: message });
     }
-  }, [t]);
+  }, [resolvePlatform, t]);
 
   useEffect(() => {
     if (!isTauri() || automaticCheckStarted) return;

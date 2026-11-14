@@ -1831,6 +1831,147 @@ fn tray_configure(
 }
 
 #[tauri::command]
+fn runtime_platform() -> &'static str {
+    std::env::consts::OS
+}
+
+#[cfg(target_os = "linux")]
+const LINUX_INSTALL_SCRIPT_URL: &str =
+    "https://raw.githubusercontent.com/Tenkayro/StreamDash/main/install.sh";
+
+#[tauri::command]
+async fn linux_script_update() -> Result<(), String> {
+    #[cfg(target_os = "linux")]
+    {
+        use std::os::unix::fs::PermissionsExt;
+        use std::process::{Command, Stdio};
+        use std::time::Duration;
+
+        let client = reqwest::Client::builder()
+            .user_agent("streamdash-updater")
+            .timeout(Duration::from_secs(30))
+            .build()
+            .map_err(|e| e.to_string())?;
+        let resp = client
+            .get(LINUX_INSTALL_SCRIPT_URL)
+            .send()
+            .await
+            .map_err(|e| format!("Failed to download Linux updater script: {e}"))?;
+        if !resp.status().is_success() {
+            return Err(format!(
+                "Linux updater script request failed with HTTP {}",
+                resp.status()
+            ));
+        }
+        let script = resp
+            .text()
+            .await
+            .map_err(|e| format!("Failed to read Linux updater script: {e}"))?;
+        if !script.trim_start().starts_with("#!/") {
+            return Err("Downloaded Linux updater script has unexpected content".into());
+        }
+
+        let script_path = std::env::temp_dir().join(format!(
+            "streamdash-update-{}.sh",
+            std::process::id()
+        ));
+        std::fs::write(&script_path, script.as_bytes())
+            .map_err(|e| format!("Could not write temporary updater script: {e}"))?;
+        let _ = std::fs::set_permissions(&script_path, std::fs::Permissions::from_mode(0o700));
+
+        let active_appimage = std::env::var_os("APPIMAGE")
+            .filter(|v| !v.is_empty())
+            .map(PathBuf::from);
+        let active_exe = std::env::current_exe().ok().map(|p| {
+            let raw = p.to_string_lossy();
+            if let Some(stripped) = raw.strip_suffix(" (deleted)") {
+                PathBuf::from(stripped)
+            } else {
+                p
+            }
+        });
+
+        let script_path_for_run = script_path.clone();
+        let output = tokio::task::spawn_blocking(move || {
+            let mut cmd = Command::new("bash");
+            cmd.arg(&script_path_for_run)
+                .arg("--update")
+                .arg("--yes")
+                .env("NO_COLOR", "1")
+                .stdin(Stdio::null())
+                .stdout(Stdio::piped())
+                .stderr(Stdio::piped());
+            if let Some(appimage) = active_appimage {
+                cmd.env("STREAMDASH_ACTIVE_APPIMAGE", appimage);
+            } else if let Some(exe) = active_exe {
+                cmd.env("STREAMDASH_ACTIVE_EXE", exe);
+            }
+            cmd.output()
+        })
+        .await
+        .map_err(|e| e.to_string())?
+        .map_err(|e| format!("Failed to launch bash updater: {e}"))?;
+
+        let _ = std::fs::remove_file(&script_path);
+
+        if !output.status.success() {
+            let stderr = String::from_utf8_lossy(&output.stderr);
+            let stdout = String::from_utf8_lossy(&output.stdout);
+            let detail = stderr
+                .lines()
+                .chain(stdout.lines())
+                .rev()
+                .map(str::trim)
+                .find(|line| !line.is_empty())
+                .unwrap_or("Updater script exited with an error")
+                .to_string();
+            return Err(detail);
+        }
+        Ok(())
+    }
+
+    #[cfg(not(target_os = "linux"))]
+    Err("Linux script update is only supported on Linux".into())
+}
+
+#[tauri::command]
+fn app_relaunch(app: tauri::AppHandle) -> Result<(), String> {
+    #[cfg(target_os = "linux")]
+    {
+        use std::process::Command;
+
+        let target = std::env::var_os("APPIMAGE")
+            .filter(|v| !v.is_empty())
+            .map(PathBuf::from)
+            .filter(|p| p.exists())
+            .or_else(|| {
+                std::env::current_exe().ok().map(|p| {
+                    let raw = p.to_string_lossy();
+                    if let Some(stripped) = raw.strip_suffix(" (deleted)") {
+                        PathBuf::from(stripped)
+                    } else {
+                        p
+                    }
+                })
+            })
+            .ok_or_else(|| "Could not determine StreamDash executable path".to_string())?;
+
+        Command::new(&target)
+            .args(std::env::args_os().skip(1))
+            .spawn()
+            .map_err(|e| format!("Failed to relaunch {}: {e}", target.display()))?;
+        app.exit(0);
+        #[allow(unreachable_code)]
+        Ok(())
+    }
+
+    #[cfg(not(target_os = "linux"))]
+    {
+        app.restart();
+    }
+}
+
+#[tauri::command]
 fn distribution_channel() -> &'static str {
     #[cfg(windows)]
     {
@@ -2166,6 +2307,9 @@ pub fn run() {
             twitch_chat_start,
             twitch_chat_send,
             twitch_chat_stop,
+            runtime_platform,
+            linux_script_update,
+            app_relaunch,
             distribution_channel,
             store_update_available,
             app_quit,
