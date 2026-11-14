@@ -10,6 +10,8 @@ A fast, lightweight **Windows, macOS & Linux** desktop app (with a native **Andr
 
 [![Release All Platforms](https://github.com/Tenkayro/StreamDash/actions/workflows/release.yml/badge.svg)](https://github.com/Tenkayro/StreamDash/actions/workflows/release.yml)
 
+📚 **[Installation & Updates](docs/install.md)** · 🐧 **[Headless Linux Server](docs/headless-server.md)** · 📱 **[Web Host & Android Companion](docs/companion.md)**
+
 </div>
 
 ---
@@ -64,56 +66,28 @@ Want your setup available anywhere without manual file transfers? **StreamDash P
 
 ## 📦 Download & Install
 
-### Windows (10 & 11 · x64)
-- **Installer (Recommended):** Download [`StreamDash-Setup.msi`](https://github.com/Tenkayro/StreamDash/releases/latest/download/StreamDash-Setup.msi) and run it (includes signed built-in auto-updates)
-- **Microsoft Store:** Available on the [Microsoft Store](https://apps.microsoft.com/detail/9P8MCZJVPTDQ)
+Quick links below — see **[docs/install.md](docs/install.md)** for full platform & update instructions.
 
-### macOS (Apple Silicon & Intel)
-1. Download the Universal **`.dmg`** from [GitHub Releases](https://github.com/Tenkayro/StreamDash/releases/latest)
-2. Open the `.dmg` and drag **StreamDash** into **Applications**
-3. *First launch (unsigned build):* Right-click **StreamDash** → **Open** (built-in updates are signed and work automatically afterwards)
-
-### Linux (x64)
-- **Recommended (Auto-Installer):** Automatically detects your distro (`.deb`, `.rpm`, `.AppImage`, or raw `.tar.gz` binary), sets up desktop integration, and includes an interactive install / update / uninstall menu:
-
-```bash
-curl -fsSL https://raw.githubusercontent.com/Tenkayro/StreamDash/main/install.sh | bash
-```
-
-- **Manual Packages** *(from [GitHub Releases](https://github.com/Tenkayro/StreamDash/releases/latest))*:
-  - **Raw Binary Archive (`StreamDash-linux-x86_64.tar.gz`)** *(Universal / Headless Server — no AppImage/FUSE or package manager needed)*:
-    `tar -xzf StreamDash-linux-x86_64.tar.gz && chmod +x streamdash && ./streamdash`
-  - **AppImage** (Universal · built-in updater via `install.sh`): `chmod +x StreamDash_*.AppImage && ./StreamDash_*.AppImage`
-  - **Debian / Ubuntu / Mint (`.deb`)**: `sudo apt install ./StreamDash_*.deb`
-  - **Fedora / RHEL / openSUSE (`.rpm`)**: `sudo dnf install ./StreamDash-*.rpm` *(or `sudo zypper install ./StreamDash-*.rpm`)*
-
-### Android (Companion App · Android 8.0+)
-- **APK:** Download [`StreamDash-Android.apk`](https://github.com/Tenkayro/StreamDash/releases/latest/download/StreamDash-Android.apk) *(or the versioned `StreamDash_*_android.apk` from [GitHub Releases](https://github.com/Tenkayro/StreamDash/releases/latest))*
-- Connects to StreamDash Desktop **Host Mode** on your local network via QR code scan or manual host URL + PIN, and includes signed built-in updates via GitHub Releases.
+- **Windows (10 & 11 · x64):** [`StreamDash-Setup.msi`](https://github.com/Tenkayro/StreamDash/releases/latest/download/StreamDash-Setup.msi) · [Microsoft Store](https://apps.microsoft.com/detail/9P8MCZJVPTDQ)
+- **macOS (Apple Silicon & Intel):** Universal **`.dmg`** from [GitHub Releases](https://github.com/Tenkayro/StreamDash/releases/latest) *(first launch: right-click → Open; signed in-app updates work automatically afterwards)*
+- **Linux (x86_64):** Auto-installer (`.deb`, `.rpm`, `.AppImage`, or raw `.tar.gz` binary):
+  ```bash
+  curl -fsSL https://raw.githubusercontent.com/Tenkayro/StreamDash/main/install.sh | bash
+  ```
+- **Android Companion (8.0+):** [`StreamDash-Android.apk`](https://github.com/Tenkayro/StreamDash/releases/latest/download/StreamDash-Android.apk) — see **[docs/companion.md](docs/companion.md)**
 
 ---
 
-## 🌐 Web & Mobile Host / Headless Mode
+## 🌐 Web & Mobile Host / Headless Server
 
-StreamDash can host its full UI over your local network so you can control your stream from a phone, tablet, or any browser — or run invisibly in the background on a server.
-
-- Open **Host** in the sidebar to enable the Web Host, scan the generated **QR code** (from a mobile browser or the **StreamDash Android Companion** app), copy the LAN URL, or configure the port and access token/PIN.
-- Live state syncs in real time and actions (chat, OBS scenes/audio/stream/recording, giveaways) execute on the host instance.
-
-### CLI Startup Flags
+Host the full UI on your LAN or run StreamDash silently on a Linux server — see **[docs/headless-server.md](docs/headless-server.md)** for systemd autostart, runtime libraries, and firewall setup.
 
 ```bash
-# Start invisibly without a desktop window and automatically enable the Web Host
-streamdash --headless
+# Headless server with custom port & PIN
+xvfb-run -a streamdash --headless --port 48950 --pin MYSECRET
 
-# Start with custom port and fixed access token/PIN
-streamdash --headless --port 48950 --pin MYSECRET
-
-# Start normally with desktop window + Web Host enabled
+# Desktop window + Web Host enabled
 streamdash --host
-
-# On a display-less Linux server (no X11/Wayland session)
-xvfb-run -a streamdash --headless --port 48950
 ```
 
 | Flag | Description |
