@@ -143,4 +143,13 @@
     <string name="permission_continue">Continuer</string>
     <string name="permission_open_settings">Ouvrir Paramètres</string>
     <string name="permission_settings_prompt">Permission refusée de façon permanente. Activez-la dans les paramètres Android de l\'application.</string>
+    <string name="pair_dialog_title">Confirmer sur le PC</string>
+    <string name="pair_dialog_subtitle">%1$s (%2$s:%3$d)</string>
+    <string name="pair_dialog_code_label">Code de vérification</string>
+    <string name="pair_dialog_waiting">En attente de confirmation sur le PC…</string>
+    <string name="pair_dialog_hint">Vérifiez que ce code correspond à celui affiché dans StreamDash sur votre PC et cliquez sur Confirmer.</string>
+    <string name="pair_dialog_cancel">Annuler</string>
+    <string name="pair_request_connecting">Envoi de la demande…</string>
+    <string name="pair_request_denied">Connexion refusée sur %1$s.</string>
+    <string name="pair_request_expired">Demande expirée. Touchez à nouveau le PC.</string>
 </resources>

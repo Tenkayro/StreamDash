@@ -34,6 +34,7 @@ import androidx.activity.SystemBarStyle
 import androidx.activity.enableEdgeToEdge
 import androidx.activity.result.ActivityResultLauncher
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 import androidx.appcompat.app.AppCompatDelegate
 import androidx.core.content.ContextCompat
@@ -81,6 +82,8 @@ class MainActivity : AppCompatActivity() {
     private var pendingTestAlertAfterPermission = false
     private var openSettingsBinding: BottomSheetSettingsBinding? = null
     private var openSettingsDialog: BottomSheetDialog? = null
+    private var openPairDialog: AlertDialog? = null
+    private var activePairCancel: AtomicBoolean? = null
     private var suppressSettingsUiEvents = false
     private var explicitNotificationPrompt = false
 
@@ -210,8 +213,11 @@ class MainActivity : AppCompatActivity() {
     override fun onDestroy() {
         isDestroyed = true
         activeScanCancel?.set(true)
+        activePairCancel?.set(true)
         stopHostEventStream()
         cancelReconnectLoop()
+        runCatching { openPairDialog?.dismiss() }
+        openPairDialog = null
         runCatching { openSettingsDialog?.dismiss() }
         openSettingsDialog = null
         openSettingsBinding = null
@@ -572,10 +578,194 @@ class MainActivity : AppCompatActivity() {
                 if (!host.authRequired) {
                     connectTo(host.ip, host.port, "")
                 } else {
-                    binding.etPairingCode.requestFocus()
+                    startOneTapPairing(host)
                 }
             }
             container.addView(itemView)
+        }
+    }
+
+    private fun buildDeviceDisplayName(): String {
+        val manufacturer = Build.MANUFACTURER.orEmpty().trim()
+        val model = Build.MODEL.orEmpty().trim()
+        val combined = when {
+            model.isEmpty() && manufacturer.isEmpty() -> "Android Phone"
+            model.isEmpty() -> manufacturer
+            manufacturer.isEmpty() -> model
+            model.startsWith(manufacturer, ignoreCase = true) -> model
+            else -> "$manufacturer $model"
+        }
+        return combined.take(48)
+    }
+
+    private fun startOneTapPairing(host: DiscoveredHost) {
+        if (isFinishing || isDestroyed || isConnecting) return
+        activePairCancel?.set(true)
+        runCatching { openPairDialog?.dismiss() }
+        openPairDialog = null
+
+        val cancelFlag = AtomicBoolean(false)
+        activePairCancel = cancelFlag
+        var activeRequestId: String? = null
+
+        val dialogView = LayoutInflater.from(this).inflate(R.layout.dialog_pair_approval, null)
+        val tvSubtitle = dialogView.findViewById<TextView>(R.id.tvPairHostSubtitle)
+        val tvCode = dialogView.findViewById<TextView>(R.id.tvPairVerifyCode)
+        val tvStatus = dialogView.findViewById<TextView>(R.id.tvPairWaitingStatus)
+
+        tvSubtitle.text = getString(R.string.pair_dialog_subtitle, host.hostName, host.ip, host.port)
+        tvCode.text = "··· ···"
+        tvStatus.setText(R.string.pair_request_connecting)
+
+        val dialog = MaterialAlertDialogBuilder(this)
+            .setTitle(R.string.pair_dialog_title)
+            .setView(dialogView)
+            .setCancelable(true)
+            .setNegativeButton(R.string.pair_dialog_cancel) { d, _ ->
+                d.cancel()
+            }
+            .setOnCancelListener {
+                if (!cancelFlag.getAndSet(true)) {
+                    val reqId = activeRequestId
+                    if (!reqId.isNullOrBlank()) {
+                        ioExecutor.execute { HostApi.cancelPairing(host.ip, host.port, reqId) }
+                    }
+                }
+                if (openPairDialog === it) openPairDialog = null
+            }
+            .create()
+
+        dialog.setCanceledOnTouchOutside(false)
+        openPairDialog = dialog
+        dialog.show()
+
+        val deviceName = buildDeviceDisplayName()
+        ioExecutor.execute {
+            val reqResult = HostApi.requestPairing(host.ip, host.port, deviceName)
+            if (cancelFlag.get() || isDestroyed) {
+                if (reqResult is HostApi.PairRequestResult.Pending) {
+                    HostApi.cancelPairing(host.ip, host.port, reqResult.requestId)
+                }
+                return@execute
+            }
+
+            when (reqResult) {
+                is HostApi.PairRequestResult.Unsupported -> {
+                    mainHandler.post {
+                        if (isDestroyed) return@post
+                        if (openPairDialog === dialog) openPairDialog = null
+                        runCatching { dialog.dismiss() }
+                        showError(getString(R.string.err_code_required))
+                        binding.etPairingCode.requestFocus()
+                    }
+                    return@execute
+                }
+                is HostApi.PairRequestResult.TooManyRequests,
+                is HostApi.PairRequestResult.Unreachable -> {
+                    mainHandler.post {
+                        if (isDestroyed) return@post
+                        if (openPairDialog === dialog) openPairDialog = null
+                        runCatching { dialog.dismiss() }
+                        showError(getString(R.string.err_pc_unreachable, host.ip, host.port))
+                    }
+                    return@execute
+                }
+                is HostApi.PairRequestResult.Pending -> {
+                    activeRequestId = reqResult.requestId
+                    mainHandler.post {
+                        if (isDestroyed || cancelFlag.get()) return@post
+                        tvSubtitle.text = getString(
+                            R.string.pair_dialog_subtitle,
+                            reqResult.hostName,
+                            host.ip,
+                            host.port
+                        )
+                        tvCode.text = reqResult.verifyCode
+                        tvStatus.setText(R.string.pair_dialog_waiting)
+                    }
+
+                    val deadlineMs = System.currentTimeMillis() + (reqResult.expiresInSec + 3) * 1000L
+                    while (!cancelFlag.get() && !isDestroyed && System.currentTimeMillis() < deadlineMs) {
+                        try {
+                            Thread.sleep(700)
+                        } catch (_: InterruptedException) {
+                            break
+                        }
+                        if (cancelFlag.get() || isDestroyed) break
+
+                        when (val status = HostApi.pollPairingStatus(host.ip, host.port, reqResult.requestId)) {
+                            is HostApi.PairStatusResult.Approved -> {
+                                cancelFlag.set(true)
+                                mainHandler.post {
+                                    if (isDestroyed) return@post
+                                    if (openPairDialog === dialog) openPairDialog = null
+                                    runCatching { dialog.dismiss() }
+                                    CompanionNotifier.triggerVibration(
+                                        this,
+                                        store.getCompanionSettings(),
+                                        CompanionNotifier.HapticPattern.DOUBLE_PULSE
+                                    )
+                                    binding.etPairingCode.setText(status.token)
+                                    val saved = SavedConnection(
+                                        host = host.ip.trim(),
+                                        port = host.port,
+                                        token = status.token,
+                                        hostName = status.hostName
+                                    )
+                                    store.saveConnection(saved)
+                                    activeConnection = saved
+                                    openDashboard(saved)
+                                }
+                                return@execute
+                            }
+                            HostApi.PairStatusResult.Denied -> {
+                                cancelFlag.set(true)
+                                mainHandler.post {
+                                    if (isDestroyed) return@post
+                                    if (openPairDialog === dialog) openPairDialog = null
+                                    runCatching { dialog.dismiss() }
+                                    CompanionNotifier.triggerVibration(
+                                        this,
+                                        store.getCompanionSettings(),
+                                        CompanionNotifier.HapticPattern.DISCONNECT
+                                    )
+                                    showError(getString(R.string.pair_request_denied, reqResult.hostName))
+                                }
+                                return@execute
+                            }
+                            HostApi.PairStatusResult.Expired -> {
+                                cancelFlag.set(true)
+                                mainHandler.post {
+                                    if (isDestroyed) return@post
+                                    if (openPairDialog === dialog) openPairDialog = null
+                                    runCatching { dialog.dismiss() }
+                                    CompanionNotifier.triggerVibration(
+                                        this,
+                                        store.getCompanionSettings(),
+                                        CompanionNotifier.HapticPattern.DISCONNECT
+                                    )
+                                    showError(getString(R.string.pair_request_expired))
+                                }
+                                return@execute
+                            }
+                            HostApi.PairStatusResult.Pending,
+                            HostApi.PairStatusResult.Error -> {
+                                // Continue polling until timeout or decision
+                            }
+                        }
+                    }
+
+                    if (!cancelFlag.getAndSet(true) && !isDestroyed) {
+                        HostApi.cancelPairing(host.ip, host.port, reqResult.requestId)
+                        mainHandler.post {
+                            if (isDestroyed) return@post
+                            if (openPairDialog === dialog) openPairDialog = null
+                            runCatching { dialog.dismiss() }
+                            showError(getString(R.string.pair_request_expired))
+                        }
+                    }
+                }
+            }
         }
     }
 

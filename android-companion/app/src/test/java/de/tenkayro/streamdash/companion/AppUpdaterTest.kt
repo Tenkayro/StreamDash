@@ -19,13 +19,13 @@ class AppUpdaterTest {
     @Test
     fun parseCompanionManifest_parsesValidHttpsEntry() {
         val json = """
-            {"version":"2.4.2","tag":"v2.4.2","url":"https://github.com/Tenkayro/StreamDash/releases/download/v2.4.2/StreamDash_2.4.2_android.apk"}
+            {"version":"2.4.2","tag":"v2.4.2","url":"https://github.com/Tenkayro/StreamDash/releases/download/v2.4.2/StreamDash-Android.apk"}
         """.trimIndent()
         val parsed = AppUpdater.parseCompanionManifest(json)
         assertNotNull(parsed)
         assertEquals("2.4.2", parsed?.version)
         assertEquals(
-            "https://github.com/Tenkayro/StreamDash/releases/download/v2.4.2/StreamDash_2.4.2_android.apk",
+            "https://github.com/Tenkayro/StreamDash/releases/download/v2.4.2/StreamDash-Android.apk",
             parsed?.downloadUrl
         )
     }
@@ -41,8 +41,8 @@ class AppUpdaterTest {
                   "browser_download_url": "https://github.com/Tenkayro/StreamDash/releases/download/v2.4.3/StreamDash-Setup.msi"
                 },
                 {
-                  "name": "StreamDash_2.4.3_android.apk",
-                  "browser_download_url": "https://github.com/Tenkayro/StreamDash/releases/download/v2.4.3/StreamDash_2.4.3_android.apk"
+                  "name": "StreamDash-Android.apk",
+                  "browser_download_url": "https://github.com/Tenkayro/StreamDash/releases/download/v2.4.3/StreamDash-Android.apk"
                 }
               ]
             }
@@ -51,7 +51,7 @@ class AppUpdaterTest {
         assertNotNull(parsed)
         assertEquals("2.4.3", parsed?.version)
         assertEquals(
-            "https://github.com/Tenkayro/StreamDash/releases/download/v2.4.3/StreamDash_2.4.3_android.apk",
+            "https://github.com/Tenkayro/StreamDash/releases/download/v2.4.3/StreamDash-Android.apk",
             parsed?.downloadUrl
         )
     }

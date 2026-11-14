@@ -11,6 +11,11 @@ const isWin = process.platform === "win32";
 const debugMode = process.argv.includes("--debug");
 const releaseMode = !debugMode;
 const skipTests = process.argv.includes("--skip-tests");
+const installMode = process.argv.includes("--install");
+const explicitSerial =
+  process.argv.find((arg) => arg.startsWith("--serial="))?.slice("--serial=".length).trim() ||
+  process.env.ANDROID_SERIAL?.trim() ||
+  "";
 
 function resolveAndroidToolchainEnv() {
   const env = { ...process.env };
@@ -78,14 +83,81 @@ if (result.status !== 0) {
 }
 
 const apkDir = join(androidDir, "app", "build", "outputs", "apk", releaseMode ? "release" : "debug");
+const preferredApkName = releaseMode ? "StreamDash-Android.apk" : "StreamDash-Android-debug.apk";
+let builtApkPath = "";
 if (existsSync(apkDir)) {
   const apks = readdirSync(apkDir).filter((f) => f.endsWith(".apk"));
   for (const apk of apks) {
     const fullPath = join(apkDir, apk);
     const sizeMb = (statSync(fullPath).size / (1024 * 1024)).toFixed(2);
     console.log(`\nAPK built: ${apk} (${sizeMb} MB)`);
+    if (apk === preferredApkName || !builtApkPath) {
+      builtApkPath = fullPath;
+    }
   }
   console.log(`Open folder: ${pathToFileURL(apkDir).href}`);
+}
+
+function resolveAdbExecutable(androidEnv) {
+  const exeName = isWin ? "adb.exe" : "adb";
+  if (androidEnv.ANDROID_HOME) {
+    const candidate = join(androidEnv.ANDROID_HOME, "platform-tools", exeName);
+    if (existsSync(candidate)) return candidate;
+  }
+  return exeName;
+}
+
+function selectTargetSerial(adbPath) {
+  if (explicitSerial) return explicitSerial;
+  const listed = spawnSync(adbPath, ["devices"], { encoding: "utf8" });
+  if (listed.error || listed.status !== 0) {
+    console.error("Failed to run adb devices:", listed.error?.message || listed.stderr || listed.status);
+    process.exit(1);
+  }
+  const rows = (listed.stdout || "")
+    .split(/\r?\n/)
+    .map((line) => line.trim())
+    .filter((line) => line && !line.startsWith("List of devices attached"))
+    .map((line) => line.split(/\s+/))
+    .filter((parts) => parts.length >= 2);
+
+  const ready = rows.filter((parts) => parts[1] === "device").map((parts) => parts[0]);
+  if (ready.length === 0) {
+    const blocked = rows.map((parts) => `${parts[0]} (${parts[1]})`).join(", ");
+    console.error(
+      blocked
+        ? `No ready Android device found via ADB (detected: ${blocked}). Unlock phone and accept USB debugging prompt.`
+        : "No Android device found via ADB. Connect your phone with USB debugging enabled."
+    );
+    process.exit(1);
+  }
+  if (ready.length === 1) return ready[0];
+
+  const usbPreferred = ready.find((id) => !id.startsWith("emulator-") && !id.includes("_adb-tls-connect"));
+  const chosen = usbPreferred || ready[0];
+  console.log(`Multiple ADB devices found (${ready.join(", ")}); installing to ${chosen}. Override with -- --serial=<id>.`);
+  return chosen;
+}
+
+if (installMode) {
+  if (!builtApkPath || !existsSync(builtApkPath)) {
+    console.error(`Built APK not found in ${apkDir}`);
+    process.exit(1);
+  }
+  const adbPath = resolveAdbExecutable(env);
+  const serial = selectTargetSerial(adbPath);
+  console.log(`\nInstalling ${builtApkPath} onto ${serial}...`);
+  const installResult = spawnSync(adbPath, ["-s", serial, "install", "-r", builtApkPath], {
+    stdio: "inherit",
+  });
+  if (installResult.error) {
+    console.error("Failed to execute adb install:", installResult.error.message);
+    process.exit(1);
+  }
+  if (installResult.status !== 0) {
+    process.exit(installResult.status ?? 1);
+  }
+  console.log("Android Companion installed successfully.");
 }
 
 if (releaseMode) {

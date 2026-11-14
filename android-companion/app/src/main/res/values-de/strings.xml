@@ -143,4 +143,13 @@
     <string name="permission_continue">Weiter</string>
     <string name="permission_open_settings">Einstellungen öffnen</string>
     <string name="permission_settings_prompt">Berechtigung dauerhaft abgelehnt. Aktiviere sie in den Android-App-Einstellungen, um diese Funktion zu nutzen.</string>
+    <string name="pair_dialog_title">Am PC bestätigen</string>
+    <string name="pair_dialog_subtitle">%1$s (%2$s:%3$d)</string>
+    <string name="pair_dialog_code_label">Sicherheitscode</string>
+    <string name="pair_dialog_waiting">Warte auf Bestätigung am PC…</string>
+    <string name="pair_dialog_hint">Prüfe, ob derselbe Code in der Desktop-App von StreamDash angezeigt wird, und klicke dort auf Bestätigen.</string>
+    <string name="pair_dialog_cancel">Abbrechen</string>
+    <string name="pair_request_connecting">Verbindungsanfrage wird gesendet…</string>
+    <string name="pair_request_denied">Verbindung auf %1$s abgelehnt.</string>
+    <string name="pair_request_expired">Bestätigung abgelaufen. Tippe den PC erneut an.</string>
 </resources>

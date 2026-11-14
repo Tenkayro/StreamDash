@@ -657,7 +657,14 @@
     "appSourceRelease": "APK Release",
     "appSourceDev": "APK Dev local",
     "appDownloadApk": "Télécharger l'APK",
-    "appClose": "Fermer"
+    "appClose": "Fermer",
+    "pairConfirmTitle": "Connecter l'appareil Companion ?",
+    "pairConfirmSubtitle": "{{device}} souhaite se connecter à cet hôte StreamDash.",
+    "pairCodeLabel": "Code de vérification",
+    "pairConfirmHint": "Vérifiez que ce code correspond à celui affiché sur votre téléphone avant de confirmer.",
+    "pairExpiresIn": "{{seconds}} s",
+    "pairConfirm": "Confirmer",
+    "pairDecline": "Refuser"
   },
   "channelPoints": {
     "backgroundColor": "Couleur d’arrière-plan",

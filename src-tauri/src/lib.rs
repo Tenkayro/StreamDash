@@ -1717,6 +1717,22 @@ fn web_host_publish_companion_event(host: tauri::State<'_, web_host::WebHostRunt
 }
 
 #[tauri::command]
+fn web_host_pair_pending(
+    host: tauri::State<'_, web_host::WebHostRuntime>,
+) -> Vec<web_host::PendingPairRequestView> {
+    host.pending_pair_requests()
+}
+
+#[tauri::command]
+fn web_host_pair_respond(
+    host: tauri::State<'_, web_host::WebHostRuntime>,
+    request_id: String,
+    approve: bool,
+) -> bool {
+    host.respond_pair_request(&request_id, approve)
+}
+
+#[tauri::command]
 async fn open_devtools_window(app: tauri::AppHandle) -> Result<(), String> {
     if !cfg!(debug_assertions) {
         return Err("DevTools are only available in dev builds".into());
@@ -2161,6 +2177,8 @@ pub fn run() {
             web_host_regenerate_token,
             web_host_publish_state,
             web_host_publish_companion_event,
+            web_host_pair_pending,
+            web_host_pair_respond,
             tray_action,
             tray_configure,
             tray_set_tooltip,

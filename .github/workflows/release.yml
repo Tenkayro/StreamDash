@@ -364,20 +364,18 @@ jobs:
           chmod +x gradlew
           TAG="${{ needs.create-release.outputs.tag }}"
           VERSION="${{ needs.create-release.outputs.version }}"
-          RELEASE_APK_NAME="StreamDash_${VERSION}_android.apk"
-          CANONICAL_APK_NAME="StreamDash-Android.apk"
+          APK_NAME="StreamDash-Android.apk"
           if [ -n "$ANDROID_KEYSTORE_BASE64" ]; then
             printf '%s' "$ANDROID_KEYSTORE_BASE64" | base64 -d > "$ANDROID_KEYSTORE_PATH"
             ./gradlew testDebugUnitTest assembleRelease --no-daemon
             rm -f "$ANDROID_KEYSTORE_PATH"
-            cp app/build/outputs/apk/release/*.apk "../${RELEASE_APK_NAME}"
+            cp app/build/outputs/apk/release/*.apk "../${APK_NAME}"
           else
             ./gradlew testDebugUnitTest assembleDebug --no-daemon
-            cp app/build/outputs/apk/debug/*.apk "../${RELEASE_APK_NAME}"
+            cp app/build/outputs/apk/debug/*.apk "../${APK_NAME}"
           fi
-          cp "../${RELEASE_APK_NAME}" "../${CANONICAL_APK_NAME}"
           cat > ../companion-latest.json <<EOF
-          {"version":"${VERSION}","tag":"${TAG}","url":"https://github.com/${{ github.repository }}/releases/download/${TAG}/${RELEASE_APK_NAME}"}
+          {"version":"${VERSION}","tag":"${TAG}","url":"https://github.com/${{ github.repository }}/releases/download/${TAG}/${APK_NAME}"}
           EOF
 
       - name: Upload Companion APK to Draft Release
@@ -385,8 +383,7 @@ jobs:
           GH_TOKEN: ${{ github.token }}
         run: |
           TAG="${{ needs.create-release.outputs.tag }}"
-          VERSION="${{ needs.create-release.outputs.version }}"
-          gh release upload "$TAG" "StreamDash_${VERSION}_android.apk" "StreamDash-Android.apk" "companion-latest.json" --clobber --repo "${{ github.repository }}"
+          gh release upload "$TAG" "StreamDash-Android.apk" "companion-latest.json" --clobber --repo "${{ github.repository }}"
 
   publish-release:
     needs: [create-release, build-windows, build-linux, build-macos, build-android-companion]

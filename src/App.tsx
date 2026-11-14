@@ -37,6 +37,7 @@ function DevCrashTrigger() {
 import { AppContextMenu } from "./components/AppContextMenu";
 import { CrashBoundary } from "./components/CrashHandler";
 import { CurvedScrollbar } from "./components/CurvedScrollbar";
+import { HostPairDialog } from "./components/HostPairDialog";
 
 const DemoOverlay = import.meta.env.DEV
   ? lazy(() => import("./components/DemoOverlay"))
@@ -344,6 +345,7 @@ export default function App() {
       >
         <TitleBar setup />
         <AppContextMenu />
+        <HostPairDialog />
         {import.meta.env.DEV && DemoOverlay && (
           <Suspense fallback={null}>
             <DevDemoAutoStart />
@@ -369,6 +371,7 @@ export default function App() {
       <div className="app-shell flex h-dvh flex-col">
         <TitleBar />
         <AppContextMenu />
+        <HostPairDialog />
         <Suspense fallback={null}>
           <CommandPalette />
         </Suspense>

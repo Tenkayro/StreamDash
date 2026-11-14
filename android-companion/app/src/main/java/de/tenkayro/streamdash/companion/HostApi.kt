@@ -53,6 +53,26 @@ object HostApi {
         data class Unreachable(val reason: String) : VerifyResult()
     }
 
+    sealed class PairRequestResult {
+        data class Pending(
+            val requestId: String,
+            val verifyCode: String,
+            val hostName: String,
+            val expiresInSec: Int
+        ) : PairRequestResult()
+        data object Unsupported : PairRequestResult()
+        data object TooManyRequests : PairRequestResult()
+        data class Unreachable(val reason: String) : PairRequestResult()
+    }
+
+    sealed class PairStatusResult {
+        data object Pending : PairStatusResult()
+        data class Approved(val token: String, val hostName: String) : PairStatusResult()
+        data object Denied : PairStatusResult()
+        data object Expired : PairStatusResult()
+        data object Error : PairStatusResult()
+    }
+
     data class HealthInfo(
         val ok: Boolean,
         val authRequired: Boolean,
@@ -240,6 +260,116 @@ object HostApi {
             conn.responseCode in 200..299
         } catch (_: Exception) {
             false
+        } finally {
+            conn?.disconnect()
+        }
+    }
+
+    fun requestPairing(host: String, port: Int, deviceName: String): PairRequestResult {
+        val ipv4Host = resolveIpv4Host(host)
+            ?: return PairRequestResult.Unreachable("IPv6 hosts are disabled")
+        val url = URL("http://$ipv4Host:$port/api/pair/request")
+        var conn: HttpURLConnection? = null
+        return try {
+            val payload = JSONObject()
+                .put("deviceName", deviceName)
+                .toString()
+                .toByteArray(Charsets.UTF_8)
+            conn = (url.openConnection() as HttpURLConnection).apply {
+                connectTimeout = 3000
+                readTimeout = 3000
+                requestMethod = "POST"
+                doOutput = true
+                instanceFollowRedirects = false
+                setRequestProperty("Content-Type", "application/json")
+            }
+            conn.outputStream.use { it.write(payload) }
+            when (val code = conn.responseCode) {
+                200 -> {
+                    val body = conn.inputStream.bufferedReader().use(BufferedReader::readText)
+                    val json = JSONObject(body)
+                    val requestId = json.optString("requestId").trim()
+                    val verifyCode = json.optString("verifyCode").trim()
+                    if (requestId.isEmpty() || verifyCode.isEmpty()) {
+                        PairRequestResult.Unreachable("Malformed pairing response")
+                    } else {
+                        PairRequestResult.Pending(
+                            requestId = requestId,
+                            verifyCode = verifyCode,
+                            hostName = json.optString("hostName").trim().ifEmpty { ipv4Host },
+                            expiresInSec = json.optInt("expiresInSec", 60).coerceIn(10, 120)
+                        )
+                    }
+                }
+                404, 405 -> PairRequestResult.Unsupported
+                429 -> PairRequestResult.TooManyRequests
+                else -> PairRequestResult.Unreachable("HTTP $code")
+            }
+        } catch (e: Exception) {
+            PairRequestResult.Unreachable(e.message ?: "Request failed")
+        } finally {
+            conn?.disconnect()
+        }
+    }
+
+    fun pollPairingStatus(host: String, port: Int, requestId: String): PairStatusResult {
+        val ipv4Host = resolveIpv4Host(host) ?: return PairStatusResult.Error
+        val encoded = URLEncoder.encode(requestId, "UTF-8")
+        val url = URL("http://$ipv4Host:$port/api/pair/status?id=$encoded")
+        var conn: HttpURLConnection? = null
+        return try {
+            conn = (url.openConnection() as HttpURLConnection).apply {
+                connectTimeout = 2500
+                readTimeout = 2500
+                requestMethod = "GET"
+                instanceFollowRedirects = false
+            }
+            if (conn.responseCode != 200) {
+                return if (conn.responseCode == 400 || conn.responseCode == 404) {
+                    PairStatusResult.Expired
+                } else {
+                    PairStatusResult.Error
+                }
+            }
+            val body = conn.inputStream.bufferedReader().use(BufferedReader::readText)
+            val json = JSONObject(body)
+            when (json.optString("status").trim().lowercase()) {
+                "pending" -> PairStatusResult.Pending
+                "approved" -> PairStatusResult.Approved(
+                    token = json.optString("token").trim(),
+                    hostName = json.optString("hostName").trim().ifEmpty { ipv4Host }
+                )
+                "denied" -> PairStatusResult.Denied
+                "expired" -> PairStatusResult.Expired
+                else -> PairStatusResult.Error
+            }
+        } catch (_: Exception) {
+            PairStatusResult.Error
+        } finally {
+            conn?.disconnect()
+        }
+    }
+
+    fun cancelPairing(host: String, port: Int, requestId: String) {
+        val ipv4Host = resolveIpv4Host(host) ?: return
+        val url = URL("http://$ipv4Host:$port/api/pair/cancel")
+        var conn: HttpURLConnection? = null
+        try {
+            val payload = JSONObject()
+                .put("requestId", requestId)
+                .toString()
+                .toByteArray(Charsets.UTF_8)
+            conn = (url.openConnection() as HttpURLConnection).apply {
+                connectTimeout = 2000
+                readTimeout = 2000
+                requestMethod = "POST"
+                doOutput = true
+                instanceFollowRedirects = false
+                setRequestProperty("Content-Type", "application/json")
+            }
+            conn.outputStream.use { it.write(payload) }
+            runCatching { conn.responseCode }
+        } catch (_: Exception) {
         } finally {
             conn?.disconnect()
         }

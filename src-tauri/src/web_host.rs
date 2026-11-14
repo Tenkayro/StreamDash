@@ -1,11 +1,12 @@
 use std::{
+    collections::HashMap,
     convert::Infallible,
     net::{IpAddr, SocketAddr, UdpSocket},
     sync::{
         atomic::{AtomicBool, AtomicU16, AtomicUsize, Ordering},
         Arc, Mutex, RwLock,
     },
-    time::Duration,
+    time::{Duration, Instant},
 };
 
 use axum::{
@@ -29,6 +30,8 @@ use tokio::sync::broadcast;
 pub const DEFAULT_HOST_PORT: u16 = 48_950;
 pub const DISCOVERY_PORT: u16 = 48_951;
 pub const DISCOVERY_MAGIC: &[u8] = b"STREAMDASH_DISCOVER_V1";
+const PAIR_REQUEST_TTL: Duration = Duration::from_secs(60);
+const MAX_PENDING_PAIR_REQUESTS: usize = 8;
 
 static HEADLESS_MODE: AtomicBool = AtomicBool::new(false);
 
@@ -158,6 +161,31 @@ impl Drop for ClientGuard {
     }
 }
 
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+enum PairDecision {
+    Pending,
+    Approved,
+    Denied,
+}
+
+#[derive(Debug, Clone)]
+struct PairRequestRecord {
+    request_id: String,
+    verify_code: String,
+    device_name: String,
+    decision: PairDecision,
+    created_at: Instant,
+}
+
+#[derive(Debug, Clone, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct PendingPairRequestView {
+    pub request_id: String,
+    pub verify_code: String,
+    pub device_name: String,
+    pub expires_in_sec: u64,
+}
+
 #[derive(Clone)]
 struct AxumHostState {
     app: AppHandle,
@@ -167,6 +195,7 @@ struct AxumHostState {
     tx: broadcast::Sender<String>,
     companion_tx: broadcast::Sender<String>,
     connected_clients: Arc<AtomicUsize>,
+    pair_requests: Arc<Mutex<HashMap<String, PairRequestRecord>>>,
 }
 
 pub struct WebHostRuntime {
@@ -181,6 +210,7 @@ pub struct WebHostRuntime {
     tx: broadcast::Sender<String>,
     companion_tx: broadcast::Sender<String>,
     connected_clients: Arc<AtomicUsize>,
+    pair_requests: Arc<Mutex<HashMap<String, PairRequestRecord>>>,
     last_error: Arc<RwLock<Option<String>>>,
     server_task: Mutex<Option<tauri::async_runtime::JoinHandle<()>>>,
     discovery_task: Mutex<Option<tauri::async_runtime::JoinHandle<()>>>,
@@ -215,6 +245,7 @@ impl WebHostRuntime {
             tx,
             companion_tx,
             connected_clients: Arc::new(AtomicUsize::new(0)),
+            pair_requests: Arc::new(Mutex::new(HashMap::new())),
             last_error: Arc::new(RwLock::new(None)),
             server_task: Mutex::new(None),
             discovery_task: Mutex::new(None),
@@ -336,6 +367,41 @@ impl WebHostRuntime {
         }
     }
 
+    pub fn pending_pair_requests(&self) -> Vec<PendingPairRequestView> {
+        let mut guard = self.pair_requests.lock().unwrap_or_else(|e| e.into_inner());
+        prune_expired_pair_requests(&mut guard);
+        let mut list: Vec<PendingPairRequestView> = guard
+            .values()
+            .filter(|rec| rec.decision == PairDecision::Pending)
+            .map(pair_record_to_view)
+            .collect();
+        list.sort_by_key(|v| std::cmp::Reverse(v.expires_in_sec));
+        list
+    }
+
+    pub fn respond_pair_request(&self, request_id: &str, approve: bool) -> bool {
+        let mut guard = self.pair_requests.lock().unwrap_or_else(|e| e.into_inner());
+        prune_expired_pair_requests(&mut guard);
+        let Some(entry) = guard.get_mut(request_id) else {
+            let _ = self
+                .app
+                .emit("web-host-pair-resolved", json!({ "requestId": request_id }));
+            return false;
+        };
+        if entry.decision != PairDecision::Pending {
+            return false;
+        }
+        entry.decision = if approve {
+            PairDecision::Approved
+        } else {
+            PairDecision::Denied
+        };
+        let _ = self
+            .app
+            .emit("web-host-pair-resolved", json!({ "requestId": request_id }));
+        true
+    }
+
     fn stop_server(&self) {
         if let Ok(mut guard) = self.server_task.lock()
             && let Some(handle) = guard.take()
@@ -372,10 +438,14 @@ impl WebHostRuntime {
             tx: self.tx.clone(),
             companion_tx: self.companion_tx.clone(),
             connected_clients: self.connected_clients.clone(),
+            pair_requests: self.pair_requests.clone(),
         };
 
         let router = Router::new()
             .route("/api/health", get(api_health))
+            .route("/api/pair/request", post(api_pair_request))
+            .route("/api/pair/status", get(api_pair_status))
+            .route("/api/pair/cancel", post(api_pair_cancel))
             .route("/api/host-status", get(api_host_status))
             .route("/api/state", get(api_state))
             .route("/api/events", get(api_events))
@@ -640,6 +710,199 @@ async fn api_health(AxumState(state): AxumState<AxumHostState>) -> Json<Value> {
         "hostName": detect_host_name(),
         "version": env!("CARGO_PKG_VERSION"),
     }))
+}
+
+fn generate_pair_id() -> String {
+    let rng = SystemRandom::new();
+    let mut bytes = [0u8; 16];
+    if rng.fill(&mut bytes).is_ok() {
+        hex::encode(bytes)
+    } else {
+        let nanos = std::time::SystemTime::now()
+            .duration_since(std::time::UNIX_EPOCH)
+            .map(|d| d.as_nanos())
+            .unwrap_or(0);
+        format!("{nanos:032x}")
+    }
+}
+
+fn generate_verify_code() -> String {
+    let rng = SystemRandom::new();
+    let mut digits = [0u8; 6];
+    let mut buf = [0u8; 16];
+    let mut filled = 0;
+    while filled < 6 {
+        if rng.fill(&mut buf).is_err() {
+            let fallback = std::time::SystemTime::now()
+                .duration_since(std::time::UNIX_EPOCH)
+                .map(|d| d.subsec_nanos())
+                .unwrap_or(135_791);
+            let num = 100_000 + (fallback % 900_000);
+            let s = format!("{num:06}");
+            return format!("{} {}", &s[..3], &s[3..]);
+        }
+        for &b in &buf {
+            if b < 250 && filled < 6 {
+                digits[filled] = b'0' + (b % 10);
+                filled += 1;
+            }
+        }
+    }
+    let s = String::from_utf8_lossy(&digits).into_owned();
+    format!("{} {}", &s[..3], &s[3..])
+}
+
+fn sanitize_device_name(raw: Option<&str>) -> String {
+    let cleaned: String = raw
+        .unwrap_or("")
+        .trim()
+        .chars()
+        .filter(|c| !c.is_control())
+        .take(48)
+        .collect();
+    let trimmed = cleaned.trim();
+    if trimmed.is_empty() {
+        "Android Companion".to_string()
+    } else {
+        trimmed.to_string()
+    }
+}
+
+fn prune_expired_pair_requests(map: &mut HashMap<String, PairRequestRecord>) {
+    let now = Instant::now();
+    map.retain(|_, rec| now.duration_since(rec.created_at) < PAIR_REQUEST_TTL);
+}
+
+fn pair_record_to_view(rec: &PairRequestRecord) -> PendingPairRequestView {
+    let elapsed = Instant::now().saturating_duration_since(rec.created_at);
+    let remaining = PAIR_REQUEST_TTL.saturating_sub(elapsed).as_secs().max(1);
+    PendingPairRequestView {
+        request_id: rec.request_id.clone(),
+        verify_code: rec.verify_code.clone(),
+        device_name: rec.device_name.clone(),
+        expires_in_sec: remaining,
+    }
+}
+
+#[derive(Deserialize)]
+#[serde(rename_all = "camelCase")]
+struct PairRequestBody {
+    device_name: Option<String>,
+}
+
+#[derive(Deserialize)]
+struct PairStatusQuery {
+    id: Option<String>,
+}
+
+#[derive(Deserialize)]
+#[serde(rename_all = "camelCase")]
+struct PairCancelBody {
+    request_id: Option<String>,
+}
+
+async fn api_pair_request(
+    AxumState(state): AxumState<AxumHostState>,
+    Json(body): Json<PairRequestBody>,
+) -> impl IntoResponse {
+    let device_name = sanitize_device_name(body.device_name.as_deref());
+    let request_id = generate_pair_id();
+    let verify_code = generate_verify_code();
+    let record = PairRequestRecord {
+        request_id: request_id.clone(),
+        verify_code: verify_code.clone(),
+        device_name,
+        decision: PairDecision::Pending,
+        created_at: Instant::now(),
+    };
+    let view = pair_record_to_view(&record);
+
+    {
+        let mut guard = state.pair_requests.lock().unwrap_or_else(|e| e.into_inner());
+        prune_expired_pair_requests(&mut guard);
+        if guard.len() >= MAX_PENDING_PAIR_REQUESTS {
+            return (
+                StatusCode::TOO_MANY_REQUESTS,
+                Json(json!({ "error": "too_many_requests" })),
+            )
+                .into_response();
+        }
+        guard.insert(request_id.clone(), record);
+    }
+
+    let _ = state.app.emit("web-host-pair-request", &view);
+    Json(json!({
+        "requestId": request_id,
+        "verifyCode": verify_code,
+        "hostName": detect_host_name(),
+        "expiresInSec": PAIR_REQUEST_TTL.as_secs(),
+    }))
+    .into_response()
+}
+
+async fn api_pair_status(
+    AxumState(state): AxumState<AxumHostState>,
+    Query(query): Query<PairStatusQuery>,
+) -> impl IntoResponse {
+    let Some(request_id) = query.id.as_deref().map(str::trim).filter(|s| !s.is_empty()) else {
+        return (StatusCode::BAD_REQUEST, Json(json!({ "status": "expired" }))).into_response();
+    };
+    let mut guard = state.pair_requests.lock().unwrap_or_else(|e| e.into_inner());
+    prune_expired_pair_requests(&mut guard);
+    let Some(decision) = guard.get(request_id).map(|rec| rec.decision) else {
+        return Json(json!({ "status": "expired" })).into_response();
+    };
+    match decision {
+        PairDecision::Pending => {
+            let code = guard
+                .get(request_id)
+                .map(|r| r.verify_code.clone())
+                .unwrap_or_default();
+            Json(json!({ "status": "pending", "verifyCode": code })).into_response()
+        }
+        PairDecision::Denied => {
+            guard.remove(request_id);
+            Json(json!({ "status": "denied" })).into_response()
+        }
+        PairDecision::Approved => {
+            guard.remove(request_id);
+            let token = if state.require_auth.load(Ordering::Relaxed) {
+                state.token.read().unwrap_or_else(|e| e.into_inner()).clone()
+            } else {
+                String::new()
+            };
+            Json(json!({
+                "status": "approved",
+                "token": token,
+                "hostName": detect_host_name(),
+            }))
+            .into_response()
+        }
+    }
+}
+
+async fn api_pair_cancel(
+    AxumState(state): AxumState<AxumHostState>,
+    Json(body): Json<PairCancelBody>,
+) -> impl IntoResponse {
+    let Some(request_id) = body
+        .request_id
+        .as_deref()
+        .map(str::trim)
+        .filter(|s| !s.is_empty())
+    else {
+        return Json(json!({ "ok": true })).into_response();
+    };
+    let removed = {
+        let mut guard = state.pair_requests.lock().unwrap_or_else(|e| e.into_inner());
+        guard.remove(request_id).is_some()
+    };
+    if removed {
+        let _ = state
+            .app
+            .emit("web-host-pair-resolved", json!({ "requestId": request_id }));
+    }
+    Json(json!({ "ok": true })).into_response()
 }
 
 async fn api_host_status(
@@ -1012,5 +1275,22 @@ mod tests {
         assert_eq!(payload["port"], 48950);
         assert_eq!(payload["authRequired"], true);
         assert!(payload.get("token").is_none());
+    }
+
+    #[test]
+    fn generate_verify_code_is_formatted_six_digits() {
+        let code = generate_verify_code();
+        let parts: Vec<&str> = code.split(' ').collect();
+        assert_eq!(parts.len(), 2);
+        assert_eq!(parts[0].len(), 3);
+        assert_eq!(parts[1].len(), 3);
+        assert!(parts.iter().all(|p| p.chars().all(|c| c.is_ascii_digit())));
+    }
+
+    #[test]
+    fn sanitize_device_name_strips_controls_and_defaults() {
+        assert_eq!(sanitize_device_name(Some("  Pixel\n8  ")), "Pixel8");
+        assert_eq!(sanitize_device_name(Some("   ")), "Android Companion");
+        assert_eq!(sanitize_device_name(None), "Android Companion");
     }
 }

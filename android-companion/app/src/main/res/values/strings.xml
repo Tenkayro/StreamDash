@@ -143,4 +143,13 @@
     <string name="permission_continue">Continue</string>
     <string name="permission_open_settings">Open Settings</string>
     <string name="permission_settings_prompt">Permission was permanently denied. Enable it in Android App Settings to use this feature.</string>
+    <string name="pair_dialog_title">Confirm on PC</string>
+    <string name="pair_dialog_subtitle">%1$s (%2$s:%3$d)</string>
+    <string name="pair_dialog_code_label">Verification Code</string>
+    <string name="pair_dialog_waiting">Waiting for confirmation on PC…</string>
+    <string name="pair_dialog_hint">Verify that this code matches the popup in StreamDash on your PC and click Confirm.</string>
+    <string name="pair_dialog_cancel">Cancel</string>
+    <string name="pair_request_connecting">Requesting connection…</string>
+    <string name="pair_request_denied">Connection was declined on %1$s.</string>
+    <string name="pair_request_expired">Confirmation timed out. Tap the PC again to retry.</string>
 </resources>

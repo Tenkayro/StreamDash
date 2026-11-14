@@ -75,13 +75,12 @@ android {
 
     applicationVariants.all {
         val buildTypeName = buildType.name
-        val baseVersion = versionName.substringBefore("-")
         outputs.all {
             (this as com.android.build.gradle.internal.api.BaseVariantOutputImpl).outputFileName =
                 if (buildTypeName == "release") {
-                    "StreamDash_${baseVersion}_android.apk"
+                    "StreamDash-Android.apk"
                 } else {
-                    "StreamDash_${baseVersion}_android-debug.apk"
+                    "StreamDash-Android-debug.apk"
                 }
         }
     }

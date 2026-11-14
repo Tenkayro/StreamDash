@@ -392,6 +392,13 @@ export interface WebHostStatus {
   lastError?: string | null;
 }
 
+export interface WebHostPairRequest {
+  requestId: string;
+  verifyCode: string;
+  deviceName: string;
+  expiresInSec: number;
+}
+
 export const webHostNative = {
   status: async (): Promise<WebHostStatus> => {
     if (isTauri()) return invoke<WebHostStatus>("web_host_status");
@@ -431,4 +438,12 @@ export const webHostNative = {
     isTauri()
       ? invoke<void>("web_host_publish_companion_event", { event })
       : Promise.resolve(),
+  pendingPairRequests: (): Promise<WebHostPairRequest[]> =>
+    isTauri()
+      ? invoke<WebHostPairRequest[]>("web_host_pair_pending")
+      : Promise.resolve([]),
+  respondPairRequest: (requestId: string, approve: boolean): Promise<boolean> =>
+    isTauri()
+      ? invoke<boolean>("web_host_pair_respond", { requestId, approve })
+      : Promise.resolve(false),
 };

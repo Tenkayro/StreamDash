@@ -98,14 +98,14 @@
         android:layout_height="1dp"
         android:background="@color/obsidian_border" />
 
-    <!-- NestedScrollView integrates with BottomSheetBehavior so dragging down scrolls up before dismissing -->
+    <!-- NestedScrollView enables nested scrolling by default in its constructor;
+         setting android:nestedScrollingEnabled in XML crashes View.<init> before mChildHelper exists -->
     <androidx.core.widget.NestedScrollView
         android:id="@+id/sheetScrollView"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:clipToPadding="false"
         android:fillViewport="false"
-        android:nestedScrollingEnabled="true"
         android:overScrollMode="ifContentScrolls"
         android:scrollbars="none">
 

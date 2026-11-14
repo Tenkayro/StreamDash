@@ -143,4 +143,13 @@
     <string name="permission_continue">Continuar</string>
     <string name="permission_open_settings">Abrir Ajustes</string>
     <string name="permission_settings_prompt">El permiso fue denegado permanentemente. Actívalo en los Ajustes de la app en Android.</string>
+    <string name="pair_dialog_title">Confirmar en el PC</string>
+    <string name="pair_dialog_subtitle">%1$s (%2$s:%3$d)</string>
+    <string name="pair_dialog_code_label">Código de verificación</string>
+    <string name="pair_dialog_waiting">Esperando confirmación en el PC…</string>
+    <string name="pair_dialog_hint">Comprueba que este código coincida con el de StreamDash en tu PC y haz clic en Confirmar.</string>
+    <string name="pair_dialog_cancel">Cancelar</string>
+    <string name="pair_request_connecting">Solicitando conexión…</string>
+    <string name="pair_request_denied">Conexión rechazada en %1$s.</string>
+    <string name="pair_request_expired">La solicitud ha caducado. Toca el PC de nuevo.</string>
 </resources>
