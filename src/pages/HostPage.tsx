@@ -22,7 +22,7 @@ import { webHostNative, type WebHostStatus } from "../services/native";
 import { isTauri } from "../lib/utils";
 
 const RELEASE_APK_URL =
-  "https://github.com/Tenkayro/StreamDash/releases/latest/download/StreamDash-Companion.apk";
+  "https://github.com/Tenkayro/StreamDash/releases/latest/download/StreamDash-Android.apk";
 
 export function HostPage() {
   const { t } = useTranslation();

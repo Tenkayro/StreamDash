@@ -630,9 +630,9 @@ fn resolve_dev_apk_path() -> Option<std::path::PathBuf> {
     if !cfg!(debug_assertions) {
         return None;
     }
-    let rel_candidates = [
-        "android-companion/app/build/outputs/apk/release/app-release.apk",
-        "android-companion/app/build/outputs/apk/debug/app-debug.apk",
+    let rel_dirs = [
+        "android-companion/app/build/outputs/apk/release",
+        "android-companion/app/build/outputs/apk/debug",
     ];
     let mut bases = vec![std::path::PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("..")];
     if let Ok(cwd) = std::env::current_dir() {
@@ -643,15 +643,23 @@ fn resolve_dev_apk_path() -> Option<std::path::PathBuf> {
     }
     let mut best: Option<(std::time::SystemTime, std::path::PathBuf)> = None;
     for base in bases {
-        for rel in rel_candidates {
-            let candidate = base.join(rel);
-            if candidate.is_file() {
-                let mtime = candidate
-                    .metadata()
-                    .and_then(|m| m.modified())
-                    .unwrap_or(std::time::UNIX_EPOCH);
-                if best.as_ref().is_none_or(|(best_time, _)| mtime > *best_time) {
-                    best = Some((mtime, candidate));
+        for rel in rel_dirs {
+            let dir = base.join(rel);
+            let Ok(entries) = std::fs::read_dir(&dir) else {
+                continue;
+            };
+            for entry in entries.flatten() {
+                let candidate = entry.path();
+                if candidate.is_file()
+                    && candidate.extension().and_then(|e| e.to_str()) == Some("apk")
+                {
+                    let mtime = candidate
+                        .metadata()
+                        .and_then(|m| m.modified())
+                        .unwrap_or(std::time::UNIX_EPOCH);
+                    if best.as_ref().is_none_or(|(best_time, _)| mtime > *best_time) {
+                        best = Some((mtime, candidate));
+                    }
                 }
             }
         }
@@ -702,7 +710,7 @@ async fn api_dev_apk(
         .file_name()
         .and_then(|n| n.to_str())
         .filter(|n| n.ends_with(".apk"))
-        .unwrap_or("StreamDash-Companion.apk");
+        .unwrap_or("StreamDash-Android.apk");
     let disposition = format!("attachment; filename=\"{}\"", filename);
     (
         [

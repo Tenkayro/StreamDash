@@ -89,7 +89,9 @@ object AppUpdater {
             val name = asset.optString("name")
             val url = asset.optString("browser_download_url")
             if (name.endsWith(".apk", ignoreCase = true) && url.startsWith("https://")) {
-                if (name.contains("Companion", ignoreCase = true)) {
+                if (name.contains("android", ignoreCase = true) ||
+                    name.contains("Companion", ignoreCase = true)
+                ) {
                     return AppUpdateInfo(version = tag, downloadUrl = url)
                 }
                 if (fallbackApkUrl.isEmpty()) fallbackApkUrl = url

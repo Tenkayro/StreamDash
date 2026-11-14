@@ -19,13 +19,13 @@ class AppUpdaterTest {
     @Test
     fun parseCompanionManifest_parsesValidHttpsEntry() {
         val json = """
-            {"version":"2.4.2","tag":"v2.4.2","url":"https://github.com/Tenkayro/StreamDash/releases/download/v2.4.2/StreamDash-Companion-v2.4.2.apk"}
+            {"version":"2.4.2","tag":"v2.4.2","url":"https://github.com/Tenkayro/StreamDash/releases/download/v2.4.2/StreamDash_2.4.2_android.apk"}
         """.trimIndent()
         val parsed = AppUpdater.parseCompanionManifest(json)
         assertNotNull(parsed)
         assertEquals("2.4.2", parsed?.version)
         assertEquals(
-            "https://github.com/Tenkayro/StreamDash/releases/download/v2.4.2/StreamDash-Companion-v2.4.2.apk",
+            "https://github.com/Tenkayro/StreamDash/releases/download/v2.4.2/StreamDash_2.4.2_android.apk",
             parsed?.downloadUrl
         )
     }
@@ -37,12 +37,12 @@ class AppUpdaterTest {
               "tag_name": "v2.4.3",
               "assets": [
                 {
-                  "name": "StreamDash_2.4.3_x64-setup.exe",
-                  "browser_download_url": "https://github.com/Tenkayro/StreamDash/releases/download/v2.4.3/StreamDash_2.4.3_x64-setup.exe"
+                  "name": "StreamDash-Setup.msi",
+                  "browser_download_url": "https://github.com/Tenkayro/StreamDash/releases/download/v2.4.3/StreamDash-Setup.msi"
                 },
                 {
-                  "name": "StreamDash-Companion-v2.4.3.apk",
-                  "browser_download_url": "https://github.com/Tenkayro/StreamDash/releases/download/v2.4.3/StreamDash-Companion-v2.4.3.apk"
+                  "name": "StreamDash_2.4.3_android.apk",
+                  "browser_download_url": "https://github.com/Tenkayro/StreamDash/releases/download/v2.4.3/StreamDash_2.4.3_android.apk"
                 }
               ]
             }
@@ -51,7 +51,7 @@ class AppUpdaterTest {
         assertNotNull(parsed)
         assertEquals("2.4.3", parsed?.version)
         assertEquals(
-            "https://github.com/Tenkayro/StreamDash/releases/download/v2.4.3/StreamDash-Companion-v2.4.3.apk",
+            "https://github.com/Tenkayro/StreamDash/releases/download/v2.4.3/StreamDash_2.4.3_android.apk",
             parsed?.downloadUrl
         )
     }

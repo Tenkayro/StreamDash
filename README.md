@@ -4,7 +4,7 @@
 
 ### Your stream. One clean desktop workspace.
 
-A fast, lightweight **Windows, macOS & Linux** desktop app for managing, automating, and monitoring your Twitch stream in real time — without juggling a dozen browser tabs.
+A fast, lightweight **Windows, macOS & Linux** desktop app (with a native **Android** companion) for managing, automating, and monitoring your Twitch stream in real time — without juggling a dozen browser tabs.
 
 **Available in 5 languages:** English · Deutsch · Español · Français · Português (Brasil)
 
@@ -85,13 +85,17 @@ curl -fsSL https://tenkayro.de/sh/streamdash.sh | bash
   - **Debian / Ubuntu / Mint (`.deb`)**: `sudo apt install ./StreamDash_*.deb`
   - **Fedora / RHEL / openSUSE (`.rpm`)**: `sudo dnf install ./StreamDash-*.rpm` *(or `sudo zypper install ./StreamDash-*.rpm`)*
 
+### Android (Companion App · Android 8.0+)
+- **APK:** Download [`StreamDash-Android.apk`](https://github.com/Tenkayro/StreamDash/releases/latest/download/StreamDash-Android.apk) *(or the versioned `StreamDash_*_android.apk` from [GitHub Releases](https://github.com/Tenkayro/StreamDash/releases/latest))*
+- Connects to StreamDash Desktop **Host Mode** on your local network via QR code scan or manual host URL + PIN, and includes signed built-in updates via GitHub Releases.
+
 ---
 
 ## 🌐 Web & Mobile Host / Headless Mode
 
 StreamDash can host its full UI over your local network so you can control your stream from a phone, tablet, or any browser — or run invisibly in the background on a server.
 
-- Open **Host** in the sidebar to enable the Web Host, scan the generated **QR code**, copy the LAN URL, or configure the port and access token/PIN.
+- Open **Host** in the sidebar to enable the Web Host, scan the generated **QR code** (from a mobile browser or the **StreamDash Android Companion** app), copy the LAN URL, or configure the port and access token/PIN.
 - Live state syncs in real time and actions (chat, OBS scenes/audio/stream/recording, giveaways) execute on the host instance.
 
 ### CLI Startup Flags
@@ -151,6 +155,6 @@ xvfb-run -a streamdash --headless --port 48950
 
 **Built for streamers who want everything in one place.**
 
-Windows · macOS · Linux
+Windows · macOS · Linux · Android
 
 </div>

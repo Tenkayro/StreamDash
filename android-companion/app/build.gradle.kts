@@ -73,6 +73,19 @@ android {
         buildConfig = true
     }
 
+    applicationVariants.all {
+        val buildTypeName = buildType.name
+        val baseVersion = versionName.substringBefore("-")
+        outputs.all {
+            (this as com.android.build.gradle.internal.api.BaseVariantOutputImpl).outputFileName =
+                if (buildTypeName == "release") {
+                    "StreamDash_${baseVersion}_android.apk"
+                } else {
+                    "StreamDash_${baseVersion}_android-debug.apk"
+                }
+        }
+    }
+
     packaging {
         resources {
             excludes += "/META-INF/{AL2.0,LGPL2.1}"
