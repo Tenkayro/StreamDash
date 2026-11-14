@@ -165,6 +165,7 @@ struct AxumHostState {
     token: Arc<RwLock<String>>,
     snapshot_json: Arc<RwLock<String>>,
     tx: broadcast::Sender<String>,
+    companion_tx: broadcast::Sender<String>,
     connected_clients: Arc<AtomicUsize>,
 }
 
@@ -176,7 +177,9 @@ pub struct WebHostRuntime {
     require_auth: Arc<AtomicBool>,
     token: Arc<RwLock<String>>,
     snapshot_json: Arc<RwLock<String>>,
+    last_companion_json: Arc<Mutex<String>>,
     tx: broadcast::Sender<String>,
+    companion_tx: broadcast::Sender<String>,
     connected_clients: Arc<AtomicUsize>,
     last_error: Arc<RwLock<Option<String>>>,
     server_task: Mutex<Option<tauri::async_runtime::JoinHandle<()>>>,
@@ -192,6 +195,7 @@ impl WebHostRuntime {
         token: String,
     ) -> Self {
         let (tx, _) = broadcast::channel::<String>(32);
+        let (companion_tx, _) = broadcast::channel::<String>(64);
         let runtime = Self {
             app,
             enabled: AtomicBool::new(enabled),
@@ -207,7 +211,9 @@ impl WebHostRuntime {
                 }
             })),
             snapshot_json: Arc::new(RwLock::new("{}".to_string())),
+            last_companion_json: Arc::new(Mutex::new(String::new())),
             tx,
+            companion_tx,
             connected_clients: Arc::new(AtomicUsize::new(0)),
             last_error: Arc::new(RwLock::new(None)),
             server_task: Mutex::new(None),
@@ -295,12 +301,38 @@ impl WebHostRuntime {
     }
 
     pub fn publish_state(&self, snapshot: Value) {
+        if let Some(companion_val) = snapshot
+            .get("settings")
+            .and_then(|s| s.get("companion"))
+            && let Ok(companion_str) = serde_json::to_string(companion_val)
+        {
+            let mut guard = self
+                .last_companion_json
+                .lock()
+                .unwrap_or_else(|e| e.into_inner());
+            if *guard != companion_str {
+                *guard = companion_str;
+                let event_payload = json!({
+                    "kind": "settings",
+                    "companion": companion_val,
+                });
+                if let Ok(evt_str) = serde_json::to_string(&event_payload) {
+                    let _ = self.companion_tx.send(evt_str);
+                }
+            }
+        }
         if let Ok(json_str) = serde_json::to_string(&snapshot) {
             *self
                 .snapshot_json
                 .write()
                 .unwrap_or_else(|e| e.into_inner()) = json_str.clone();
             let _ = self.tx.send(json_str);
+        }
+    }
+
+    pub fn publish_companion_event(&self, event: Value) {
+        if let Ok(json_str) = serde_json::to_string(&event) {
+            let _ = self.companion_tx.send(json_str);
         }
     }
 
@@ -338,6 +370,7 @@ impl WebHostRuntime {
             token: self.token.clone(),
             snapshot_json: self.snapshot_json.clone(),
             tx: self.tx.clone(),
+            companion_tx: self.companion_tx.clone(),
             connected_clients: self.connected_clients.clone(),
         };
 
@@ -346,6 +379,8 @@ impl WebHostRuntime {
             .route("/api/host-status", get(api_host_status))
             .route("/api/state", get(api_state))
             .route("/api/events", get(api_events))
+            .route("/api/companion-settings", get(api_companion_settings))
+            .route("/api/companion-events", get(api_companion_events))
             .route("/api/action", post(api_action))
             .route("/api/dev-apk-info", get(api_dev_apk_info))
             .route("/api/dev-apk", get(api_dev_apk))
@@ -376,9 +411,25 @@ impl WebHostRuntime {
         }
 
         let disc_running = self.running.clone();
-        let disc_auth = self.require_auth.load(Ordering::Relaxed);
+        let disc_auth = self.require_auth.clone();
         let disc_handle = tauri::async_runtime::spawn(async move {
-            let Ok(sock) = tokio::net::UdpSocket::bind(("0.0.0.0", DISCOVERY_PORT)).await else {
+            let mut bound_sock = None;
+            for _ in 0..8 {
+                if !disc_running.load(Ordering::Relaxed) {
+                    return;
+                }
+                match tokio::net::UdpSocket::bind(("0.0.0.0", DISCOVERY_PORT)).await {
+                    Ok(s) => {
+                        let _ = s.set_broadcast(true);
+                        bound_sock = Some(s);
+                        break;
+                    }
+                    Err(_) => {
+                        tokio::time::sleep(Duration::from_millis(50)).await;
+                    }
+                }
+            }
+            let Some(sock) = bound_sock else {
                 return;
             };
             let mut buf = [0u8; 256];
@@ -389,7 +440,7 @@ impl WebHostRuntime {
                 if !buf[..len].starts_with(DISCOVERY_MAGIC) {
                     continue;
                 }
-                let reply = build_discovery_payload(port, disc_auth);
+                let reply = build_discovery_payload(port, disc_auth.load(Ordering::Relaxed));
                 if let Ok(bytes) = serde_json::to_vec(&reply) {
                     let _ = sock.send_to(&bytes, peer).await;
                 }
@@ -574,6 +625,7 @@ async fn serve_app_asset(
 async fn api_health(AxumState(state): AxumState<AxumHostState>) -> Json<Value> {
     Json(json!({
         "ok": true,
+        "service": "streamdash-host",
         "authRequired": state.require_auth.load(Ordering::Relaxed),
         "hostName": detect_host_name(),
         "version": env!("CARGO_PKG_VERSION"),
@@ -759,6 +811,81 @@ async fn api_events(
                 }
             }
         });
+
+    Sse::new(stream)
+        .keep_alive(KeepAlive::new().interval(Duration::from_secs(15)).text("ping"))
+        .into_response()
+}
+
+fn extract_companion_from_snapshot(raw: &str) -> Value {
+    serde_json::from_str::<Value>(raw)
+        .ok()
+        .and_then(|v| v.get("settings").and_then(|s| s.get("companion")).cloned())
+        .unwrap_or(Value::Null)
+}
+
+async fn api_companion_settings(
+    AxumState(state): AxumState<AxumHostState>,
+    headers: HeaderMap,
+    Query(query): Query<TokenQuery>,
+) -> impl IntoResponse {
+    if !is_authorized(&state, &headers, query.token.as_deref()) {
+        return (StatusCode::UNAUTHORIZED, Json(json!({ "error": "unauthorized" }))).into_response();
+    }
+    let raw = state
+        .snapshot_json
+        .read()
+        .unwrap_or_else(|e| e.into_inner())
+        .clone();
+    let companion = extract_companion_from_snapshot(&raw);
+    Json(json!({ "companion": companion })).into_response()
+}
+
+async fn api_companion_events(
+    AxumState(state): AxumState<AxumHostState>,
+    headers: HeaderMap,
+    Query(query): Query<TokenQuery>,
+) -> impl IntoResponse {
+    if !is_authorized(&state, &headers, query.token.as_deref()) {
+        return StatusCode::UNAUTHORIZED.into_response();
+    }
+    let raw = state
+        .snapshot_json
+        .read()
+        .unwrap_or_else(|e| e.into_inner())
+        .clone();
+    let initial_companion = extract_companion_from_snapshot(&raw);
+    let initial = if initial_companion.is_object() {
+        serde_json::to_string(&json!({
+            "kind": "settings",
+            "companion": initial_companion,
+        }))
+        .ok()
+    } else {
+        None
+    };
+
+    let rx = state.companion_tx.subscribe();
+    let stream = stream::unfold((rx, initial), |(mut rx, mut initial)| async move {
+        if let Some(first) = initial.take() {
+            return Some((
+                Ok::<Event, Infallible>(Event::default().event("companion").data(first)),
+                (rx, None),
+            ));
+        }
+        loop {
+            match rx.recv().await {
+                Ok(msg) => {
+                    return Some((
+                        Ok(Event::default().event("companion").data(msg)),
+                        (rx, None),
+                    ));
+                }
+                Err(broadcast::error::RecvError::Lagged(_)) => continue,
+                Err(broadcast::error::RecvError::Closed) => return None,
+            }
+        }
+    });
 
     Sse::new(stream)
         .keep_alive(KeepAlive::new().interval(Duration::from_secs(15)).text("ping"))

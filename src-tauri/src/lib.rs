@@ -1712,6 +1712,11 @@ fn web_host_publish_state(host: tauri::State<'_, web_host::WebHostRuntime>, snap
 }
 
 #[tauri::command]
+fn web_host_publish_companion_event(host: tauri::State<'_, web_host::WebHostRuntime>, event: Value) {
+    host.publish_companion_event(event);
+}
+
+#[tauri::command]
 async fn open_devtools_window(app: tauri::AppHandle) -> Result<(), String> {
     if !cfg!(debug_assertions) {
         return Err("DevTools are only available in dev builds".into());
@@ -2155,6 +2160,7 @@ pub fn run() {
             web_host_configure,
             web_host_regenerate_token,
             web_host_publish_state,
+            web_host_publish_companion_event,
             tray_action,
             tray_configure,
             tray_set_tooltip,

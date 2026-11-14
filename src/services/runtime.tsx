@@ -18,6 +18,7 @@ import {
   sendNotification,
 } from "@tauri-apps/plugin-notification";
 import { toast } from "sonner";
+import { defaultSettings } from "../lib/defaults";
 import { useAppStore } from "../stores/app-store";
 import { useNetworkStore } from "../stores/network-store";
 import { errorMessage, isTauri, money } from "../lib/utils";
@@ -215,7 +216,17 @@ function loadBootstrap() {
       cloudSyncEnabled?: unknown;
       cloudSyncCheckpoints?: unknown;
     };
-    const settings: Partial<AppSettings> = { ...restSettings };
+    const settings: Partial<AppSettings> = {
+      ...restSettings,
+      ...(restSettings.companion && typeof restSettings.companion === "object"
+        ? {
+            companion: {
+              ...defaultSettings.companion,
+              ...restSettings.companion,
+            },
+          }
+        : {}),
+    };
     if (typeof settings.onboardingCompleted !== "boolean") {
       settings.onboardingCompleted = Object.keys(settings).length > 0;
       await saveSetting("onboardingCompleted", settings.onboardingCompleted);
@@ -743,6 +754,24 @@ export function RuntimeProvider({ children }: { children: ReactNode }) {
                 : i18n.t(`events.${event.eventType}`),
             body: `${event.displayName || event.username || i18n.t("runtime.someone")}${event.message ? ` — ${event.message}` : ""}`,
           });
+      }
+      if (isTauri()) {
+        void webHostNative
+          .publishCompanionEvent({
+            kind: "activity",
+            id: event.id,
+            eventType: event.eventType,
+            displayName: event.displayName || event.username || "",
+            amount: event.amount,
+            currency: event.currency,
+            bits: event.bits,
+            giftCount: event.giftCount,
+            viewerCount: event.viewerCount,
+            tier: event.tier,
+            message: event.message,
+            timestamp: event.timestamp,
+          })
+          .catch(() => undefined);
       }
     },
     [sendCommandReply, state],
@@ -1529,6 +1558,31 @@ export function RuntimeProvider({ children }: { children: ReactNode }) {
           const isLive = current.stats.live;
           const currentCategory = (current.stats.category ?? "").toLowerCase();
           const currentTitle = (current.stats.title ?? "").toLowerCase();
+          if (isTauri()) {
+            const broadcasterLogin = (current.twitch.account ?? session.login).toLowerCase();
+            if (message.login.toLowerCase() !== broadcasterLogin) {
+              const highlightWords = current.settings.chatHighlightWords ?? [];
+              const mentioned =
+                lowerText.includes(`@${broadcasterLogin}`) ||
+                lowerText.split(/[\s,.:;!?]+/).includes(broadcasterLogin) ||
+                highlightWords.some((w) => {
+                  const trimmed = w.trim().toLowerCase();
+                  return trimmed.length > 0 && lowerText.includes(trimmed);
+                });
+              if (mentioned) {
+                void webHostNative
+                  .publishCompanionEvent({
+                    kind: "chat_mention",
+                    id: message.id,
+                    eventType: "chat_mention",
+                    displayName: message.displayName || message.login,
+                    message: rawText,
+                    timestamp: new Date(message.timestamp).toISOString(),
+                  })
+                  .catch(() => undefined);
+              }
+            }
+          }
           const userRoles = new Set<CommandRole>();
           const badgeIds = new Set(message.badges.map((b) => b.id.toLowerCase()));
           if (
@@ -2194,6 +2248,13 @@ export function RuntimeProvider({ children }: { children: ReactNode }) {
                 state().clearEvents();
               } else if (actionType === "chat.clear") {
                 state().clearChat();
+              } else if (actionType === "companion.settings" && data && typeof data === "object") {
+                const nextCompanion = {
+                  ...state().settings.companion,
+                  ...(data as Record<string, unknown>),
+                };
+                state().setSettings({ companion: nextCompanion });
+                void saveLocalState("companion", nextCompanion);
               } else if (actionType === "runtime.call" && typeof data.method === "string") {
                 const method = data.method;
                 const fn = runtimeMethodsRef.current[method];

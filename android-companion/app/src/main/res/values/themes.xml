@@ -2,18 +2,31 @@
 <resources>
     <style name="Theme.StreamDashCompanion" parent="Theme.Material3.Dark.NoActionBar">
         <item name="colorPrimary">@color/accent_violet</item>
-        <item name="colorOnPrimary">@color/text_primary</item>
+        <item name="colorOnPrimary">@color/accent_violet_ink</item>
         <item name="colorSurface">@color/obsidian_surface</item>
+        <item name="colorSurfaceContainerHigh">@color/obsidian_surface</item>
         <item name="colorOnSurface">@color/text_primary</item>
+        <item name="colorOnSurfaceVariant">@color/text_muted</item>
+        <item name="colorOutline">@color/obsidian_border_strong</item>
         <item name="android:colorBackground">@color/obsidian_bg</item>
         <item name="android:windowBackground">@color/obsidian_bg</item>
-        <item name="android:statusBarColor">@color/obsidian_bg</item>
-        <item name="android:navigationBarColor">@color/obsidian_bg</item>
+        <item name="bottomSheetDialogTheme">@style/ThemeOverlay.StreamDash.BottomSheet</item>
+        <item name="materialAlertDialogTheme">@style/ThemeOverlay.StreamDash.AlertDialog</item>
+    </style>
+
+    <style name="ThemeOverlay.StreamDash.BottomSheet" parent="Theme.Material3.Dark.BottomSheetDialog">
+        <item name="colorSurface">@color/obsidian_surface</item>
+        <item name="android:colorBackground">@color/obsidian_surface</item>
+    </style>
+
+    <style name="ThemeOverlay.StreamDash.AlertDialog" parent="ThemeOverlay.Material3.MaterialAlertDialog">
+        <item name="colorSurface">@color/obsidian_surface</item>
+        <item name="colorSurfaceContainerHigh">@color/obsidian_surface</item>
+        <item name="colorOnSurface">@color/text_primary</item>
+        <item name="colorOnSurfaceVariant">@color/text_secondary</item>
     </style>
 
     <style name="Theme.StreamDashCompanion.Scanner" parent="Theme.AppCompat.NoActionBar">
         <item name="android:windowBackground">@android:color/black</item>
-        <item name="android:statusBarColor">@android:color/black</item>
-        <item name="android:navigationBarColor">@android:color/black</item>
     </style>
 </resources>

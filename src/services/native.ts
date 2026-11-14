@@ -427,4 +427,8 @@ export const webHostNative = {
     isTauri()
       ? invoke<void>("web_host_publish_state", { snapshot })
       : Promise.resolve(),
+  publishCompanionEvent: (event: unknown): Promise<void> =>
+    isTauri()
+      ? invoke<void>("web_host_publish_companion_event", { event })
+      : Promise.resolve(),
 };

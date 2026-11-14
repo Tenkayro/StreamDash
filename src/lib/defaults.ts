@@ -60,6 +60,22 @@ export const defaultSettings: AppSettings = {
   donationToolDoneIds: [],
   goals: {},
   goalAutomation: {},
+  companion: {
+    language: "system",
+    keepScreenOn: true,
+    autoReconnect: true,
+    notificationsEnabled: true,
+    notifyFollows: true,
+    notifySubs: true,
+    notifyRaids: true,
+    notifyCheers: true,
+    notifyDonations: true,
+    notifyChannelPoints: false,
+    notifyStreamStatus: true,
+    notifyChatMentions: true,
+    hapticsEnabled: true,
+    hapticStrength: "strong",
+  },
 };
 
 export const emptyStats: DashboardStats = {

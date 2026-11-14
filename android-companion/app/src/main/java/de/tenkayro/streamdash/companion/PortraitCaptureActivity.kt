@@ -2,9 +2,12 @@ package de.tenkayro.streamdash.companion
 
 import android.annotation.SuppressLint
 import android.content.Intent
+import android.graphics.Color
 import android.os.Bundle
 import android.util.Size
 import android.view.MotionEvent
+import androidx.activity.SystemBarStyle
+import androidx.activity.enableEdgeToEdge
 import androidx.appcompat.app.AppCompatActivity
 import androidx.camera.core.Camera
 import androidx.camera.core.CameraSelector
@@ -17,7 +20,6 @@ import androidx.camera.core.resolutionselector.ResolutionStrategy
 import androidx.camera.lifecycle.ProcessCameraProvider
 import androidx.core.content.ContextCompat
 import androidx.core.view.ViewCompat
-import androidx.core.view.WindowCompat
 import androidx.core.view.WindowInsetsCompat
 import androidx.core.view.updatePadding
 import com.google.zxing.BinaryBitmap
@@ -36,6 +38,8 @@ class PortraitCaptureActivity : AppCompatActivity() {
     private val analysisExecutor = Executors.newSingleThreadExecutor()
     private val foundResult = AtomicBoolean(false)
     private var activeCamera: Camera? = null
+    private var cameraProvider: ProcessCameraProvider? = null
+    private var yuvBuffer = ByteArray(0)
 
     private val qrReader = QRCodeReader()
     private val decodeHints: Map<DecodeHintType, Any> = mapOf(
@@ -44,8 +48,11 @@ class PortraitCaptureActivity : AppCompatActivity() {
     )
 
     override fun onCreate(savedInstanceState: Bundle?) {
+        enableEdgeToEdge(
+            statusBarStyle = SystemBarStyle.dark(Color.TRANSPARENT),
+            navigationBarStyle = SystemBarStyle.dark(Color.TRANSPARENT)
+        )
         super.onCreate(savedInstanceState)
-        WindowCompat.setDecorFitsSystemWindows(window, true)
         binding = ActivityScannerBinding.inflate(layoutInflater)
         setContentView(binding.root)
 
@@ -70,6 +77,9 @@ class PortraitCaptureActivity : AppCompatActivity() {
     }
 
     override fun onDestroy() {
+        runCatching { cameraProvider?.unbindAll() }
+        cameraProvider = null
+        activeCamera = null
         analysisExecutor.shutdownNow()
         super.onDestroy()
     }
@@ -95,7 +105,9 @@ class PortraitCaptureActivity : AppCompatActivity() {
     private fun startCamera() {
         val providerFuture = ProcessCameraProvider.getInstance(this)
         providerFuture.addListener({
-            val cameraProvider = runCatching { providerFuture.get() }.getOrNull() ?: return@addListener
+            val provider = runCatching { providerFuture.get() }.getOrNull() ?: return@addListener
+            if (isFinishing || isDestroyed) return@addListener
+            cameraProvider = provider
 
             val preview = Preview.Builder()
                 .build()
@@ -120,9 +132,9 @@ class PortraitCaptureActivity : AppCompatActivity() {
             }
 
             runCatching {
-                cameraProvider.unbindAll()
+                provider.unbindAll()
                 // CameraX enables continuous picture autofocus (CONTROL_AF_MODE_CONTINUOUS_PICTURE) by default
-                activeCamera = cameraProvider.bindToLifecycle(
+                activeCamera = provider.bindToLifecycle(
                     this,
                     CameraSelector.DEFAULT_BACK_CAMERA,
                     preview,
@@ -158,11 +170,14 @@ class PortraitCaptureActivity : AppCompatActivity() {
             val rowStride = yPlane.rowStride
             val width = imageProxy.width
             val height = imageProxy.height
-            val bytes = ByteArray(buffer.remaining())
-            buffer.get(bytes)
+            val remaining = buffer.remaining()
+            if (yuvBuffer.size != remaining) {
+                yuvBuffer = ByteArray(remaining)
+            }
+            buffer.get(yuvBuffer)
 
             val source = PlanarYUVLuminanceSource(
-                bytes,
+                yuvBuffer,
                 rowStride,
                 height,
                 0,
@@ -178,6 +193,7 @@ class PortraitCaptureActivity : AppCompatActivity() {
             val text = decoded?.text?.trim().orEmpty()
             if (text.isNotEmpty() && foundResult.compareAndSet(false, true)) {
                 runOnUiThread {
+                    if (isFinishing || isDestroyed) return@runOnUiThread
                     setResult(RESULT_OK, Intent().putExtra(EXTRA_QR_RESULT, text))
                     finish()
                 }

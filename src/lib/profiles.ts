@@ -44,6 +44,7 @@ const APPEARANCE_KEYS = [
   "notifyGiftSubs",
   "maximumEvents",
   "disabledEventTypes",
+  "companion",
 ] as const;
 
 const DASHBOARD_KEYS = [
@@ -128,6 +129,12 @@ export function normalizeSettings(raw?: Partial<AppSettings>): AppSettings {
   merged.goalAutomation = isRecord(merged.goalAutomation)
     ? merged.goalAutomation
     : {};
+  merged.companion = isRecord(incoming.companion)
+    ? {
+        ...cloneJson(defaultSettings.companion),
+        ...cloneJson(incoming.companion as Partial<AppSettings["companion"]>),
+      }
+    : cloneJson(defaultSettings.companion);
   return merged;
 }
 

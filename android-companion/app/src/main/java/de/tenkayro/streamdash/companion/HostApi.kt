@@ -62,25 +62,49 @@ object HostApi {
         }
     }
 
-    fun checkHealth(host: String, port: Int): HealthInfo? {
+    fun isHostDashboardUrl(rawUrl: String?, expectedHost: String?, expectedPort: Int): Boolean {
+        if (rawUrl.isNullOrBlank() || expectedHost.isNullOrBlank() || expectedPort !in 1..65535) {
+            return false
+        }
+        val uri = runCatching { URI(rawUrl.trim()) }.getOrNull() ?: return false
+        val scheme = uri.scheme?.lowercase().orEmpty()
+        if (scheme != "http" && scheme != "https") return false
+        val urlHost = uri.host?.trim().orEmpty()
+        val urlPort = when {
+            uri.port > 0 -> uri.port
+            scheme == "https" -> 443
+            else -> 80
+        }
+        return urlHost.equals(expectedHost.trim(), ignoreCase = true) && urlPort == expectedPort
+    }
+
+    internal fun parseHealthJson(raw: String, fallbackHost: String): HealthInfo? {
+        val json = runCatching { JSONObject(raw) }.getOrNull() ?: return null
+        if (!json.optBoolean("ok", false)) return null
+        val service = json.optString("service").trim()
+        val isStreamDash = service == "streamdash-host" ||
+            (json.has("hostName") && json.has("authRequired"))
+        if (!isStreamDash) return null
+        return HealthInfo(
+            ok = true,
+            authRequired = json.optBoolean("authRequired", true),
+            hostName = json.optString("hostName").trim().ifEmpty { fallbackHost.trim() },
+            version = json.optString("version").trim()
+        )
+    }
+
+    fun checkHealth(host: String, port: Int, timeoutMs: Int = 2500): HealthInfo? {
         val url = URL("http://${host.trim()}:$port/api/health")
         var conn: HttpURLConnection? = null
         return try {
             conn = (url.openConnection() as HttpURLConnection).apply {
-                connectTimeout = 2500
-                readTimeout = 2500
+                connectTimeout = timeoutMs
+                readTimeout = timeoutMs
                 requestMethod = "GET"
             }
             if (conn.responseCode != 200) return null
             val body = conn.inputStream.bufferedReader().use(BufferedReader::readText)
-            val json = JSONObject(body)
-            if (!json.optBoolean("ok", false)) return null
-            HealthInfo(
-                ok = true,
-                authRequired = json.optBoolean("authRequired", true),
-                hostName = json.optString("hostName").trim().ifEmpty { host.trim() },
-                version = json.optString("version").trim()
-            )
+            parseHealthJson(body, host)
         } catch (_: Exception) {
             null
         } finally {
@@ -116,6 +140,62 @@ object HostApi {
             }
         } catch (e: Exception) {
             VerifyResult.Unreachable(e.message ?: "Connection failed")
+        } finally {
+            conn?.disconnect()
+        }
+    }
+
+    fun fetchCompanionSettings(host: String, port: Int, token: String): CompanionSettings? {
+        val url = URL("http://${host.trim()}:$port/api/companion-settings")
+        var conn: HttpURLConnection? = null
+        return try {
+            conn = (url.openConnection() as HttpURLConnection).apply {
+                connectTimeout = 3000
+                readTimeout = 3000
+                requestMethod = "GET"
+                if (token.isNotBlank()) {
+                    setRequestProperty("X-SD-Token", token.trim())
+                }
+            }
+            if (conn.responseCode != 200) return null
+            val body = conn.inputStream.bufferedReader().use(BufferedReader::readText)
+            val obj = JSONObject(body).optJSONObject("companion") ?: return null
+            CompanionSettings.fromJson(obj)
+        } catch (_: Exception) {
+            null
+        } finally {
+            conn?.disconnect()
+        }
+    }
+
+    fun pushCompanionSettings(
+        host: String,
+        port: Int,
+        token: String,
+        settings: CompanionSettings
+    ): Boolean {
+        val url = URL("http://${host.trim()}:$port/api/action")
+        var conn: HttpURLConnection? = null
+        return try {
+            val payload = JSONObject()
+                .put("type", "companion.settings")
+                .put("payload", settings.toJson())
+                .toString()
+                .toByteArray(Charsets.UTF_8)
+            conn = (url.openConnection() as HttpURLConnection).apply {
+                connectTimeout = 3000
+                readTimeout = 3000
+                requestMethod = "POST"
+                doOutput = true
+                setRequestProperty("Content-Type", "application/json")
+                if (token.isNotBlank()) {
+                    setRequestProperty("X-SD-Token", token.trim())
+                }
+            }
+            conn.outputStream.use { it.write(payload) }
+            conn.responseCode in 200..299
+        } catch (_: Exception) {
+            false
         } finally {
             conn?.disconnect()
         }

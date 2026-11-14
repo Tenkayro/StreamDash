@@ -20,8 +20,8 @@
             android:gravity="center_horizontal"
             android:orientation="vertical"
             android:paddingHorizontal="18dp"
-            android:paddingTop="24dp"
-            android:paddingBottom="24dp">
+            android:paddingTop="20dp"
+            android:paddingBottom="28dp">
 
             <LinearLayout
                 android:layout_width="match_parent"
@@ -29,7 +29,7 @@
                 android:maxWidth="440dp"
                 android:orientation="vertical">
 
-                <!-- Brand Header (Studio Command style) -->
+                <!-- Brand Header (Studio Command style) + Burger Menu -->
                 <LinearLayout
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
@@ -37,8 +37,8 @@
                     android:orientation="horizontal">
 
                     <ImageView
-                        android:layout_width="38dp"
-                        android:layout_height="38dp"
+                        android:layout_width="40dp"
+                        android:layout_height="40dp"
                         android:contentDescription="@string/app_name"
                         android:src="@mipmap/ic_launcher_round" />
 
@@ -46,6 +46,7 @@
                         android:layout_width="0dp"
                         android:layout_height="wrap_content"
                         android:layout_marginStart="12dp"
+                        android:layout_marginEnd="10dp"
                         android:layout_weight="1"
                         android:orientation="vertical">
 
@@ -88,6 +89,16 @@
                             android:textColor="@color/text_muted"
                             android:textSize="12sp" />
                     </LinearLayout>
+
+                    <ImageButton
+                        android:id="@+id/btnHeaderMenu"
+                        android:layout_width="48dp"
+                        android:layout_height="48dp"
+                        android:background="@drawable/bg_icon_button"
+                        android:contentDescription="@string/cd_open_menu"
+                        android:padding="13dp"
+                        android:scaleType="centerInside"
+                        android:src="@drawable/ic_menu" />
                 </LinearLayout>
 
                 <!-- Optional Update Banner -->
@@ -100,13 +111,14 @@
                     android:gravity="center_vertical"
                     android:orientation="horizontal"
                     android:paddingHorizontal="12dp"
-                    android:paddingVertical="9dp"
+                    android:paddingVertical="10dp"
                     android:visibility="gone">
 
                     <TextView
                         android:id="@+id/tvUpdateBanner"
                         android:layout_width="0dp"
                         android:layout_height="wrap_content"
+                        android:layout_marginEnd="8dp"
                         android:layout_weight="1"
                         android:textColor="@color/text_primary"
                         android:textSize="12sp"
@@ -115,12 +127,14 @@
                     <com.google.android.material.button.MaterialButton
                         android:id="@+id/btnInstallUpdate"
                         android:layout_width="wrap_content"
-                        android:layout_height="32dp"
+                        android:layout_height="wrap_content"
                         android:backgroundTint="@color/accent_violet"
                         android:insetTop="0dp"
                         android:insetBottom="0dp"
+                        android:minWidth="0dp"
                         android:minHeight="32dp"
                         android:paddingHorizontal="12dp"
+                        android:paddingVertical="6dp"
                         android:text="@string/update_banner_cta"
                         android:textAllCaps="false"
                         android:textColor="@color/accent_violet_ink"
@@ -133,8 +147,8 @@
                 <com.google.android.material.button.MaterialButton
                     android:id="@+id/btnScanQr"
                     android:layout_width="match_parent"
-                    android:layout_height="46dp"
-                    android:layout_marginTop="16dp"
+                    android:layout_height="48dp"
+                    android:layout_marginTop="18dp"
                     android:backgroundTint="@color/accent_violet"
                     android:insetTop="0dp"
                     android:insetBottom="0dp"
@@ -143,7 +157,12 @@
                     android:textColor="@color/accent_violet_ink"
                     android:textSize="14sp"
                     android:textStyle="bold"
-                    app:cornerRadius="10dp" />
+                    app:cornerRadius="12dp"
+                    app:icon="@drawable/ic_qr_code"
+                    app:iconGravity="textStart"
+                    app:iconPadding="9dp"
+                    app:iconSize="18dp"
+                    app:iconTint="@color/accent_violet_ink" />
 
                 <!-- Inline Error Banner -->
                 <TextView
@@ -153,7 +172,7 @@
                     android:layout_marginTop="12dp"
                     android:background="@drawable/bg_error"
                     android:paddingHorizontal="12dp"
-                    android:paddingVertical="9dp"
+                    android:paddingVertical="10dp"
                     android:textColor="@color/text_primary"
                     android:textSize="12sp"
                     android:visibility="gone" />
@@ -173,6 +192,13 @@
                         android:gravity="center_vertical"
                         android:orientation="horizontal">
 
+                        <View
+                            android:id="@+id/lanStatusDot"
+                            android:layout_width="8dp"
+                            android:layout_height="8dp"
+                            android:layout_marginEnd="8dp"
+                            android:background="@drawable/bg_status_dot" />
+
                         <TextView
                             android:layout_width="0dp"
                             android:layout_height="wrap_content"
@@ -186,22 +212,31 @@
 
                         <com.google.android.material.button.MaterialButton
                             android:id="@+id/btnRefreshLan"
-                            style="@style/Widget.Material3.Button.TextButton"
+                            style="@style/Widget.Material3.Button.OutlinedButton"
                             android:layout_width="wrap_content"
-                            android:layout_height="30dp"
-                            android:minHeight="30dp"
-                            android:paddingHorizontal="8dp"
+                            android:layout_height="wrap_content"
+                            android:backgroundTint="@color/accent_violet_subtle"
+                            android:insetTop="0dp"
+                            android:insetBottom="0dp"
+                            android:minWidth="0dp"
+                            android:minHeight="32dp"
+                            android:paddingHorizontal="13dp"
+                            android:paddingVertical="5dp"
                             android:text="@string/btn_refresh"
                             android:textAllCaps="false"
                             android:textColor="@color/accent_violet"
-                            android:textSize="12sp" />
+                            android:textSize="12sp"
+                            android:textStyle="bold"
+                            app:cornerRadius="999dp"
+                            app:strokeColor="@color/accent_violet_border"
+                            app:strokeWidth="1dp" />
                     </LinearLayout>
 
                     <LinearLayout
                         android:id="@+id/rowScanning"
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:layout_marginTop="6dp"
+                        android:layout_marginTop="10dp"
                         android:gravity="center_vertical"
                         android:orientation="horizontal"
                         android:visibility="gone">
@@ -213,29 +248,50 @@
                             android:indeterminateTint="@color/accent_violet" />
 
                         <TextView
+                            android:id="@+id/tvScanningLan"
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
                             android:layout_marginStart="8dp"
                             android:text="@string/scanning_lan"
-                            android:textColor="@color/text_muted"
+                            android:textColor="@color/text_secondary"
                             android:textSize="12sp" />
                     </LinearLayout>
 
-                    <TextView
-                        android:id="@+id/tvNoPcsFound"
+                    <LinearLayout
+                        android:id="@+id/emptyPcsBox"
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:layout_marginTop="6dp"
-                        android:text="@string/no_pcs_found"
-                        android:textColor="@color/text_muted"
-                        android:textSize="12sp"
-                        android:visibility="gone" />
+                        android:layout_marginTop="10dp"
+                        android:background="@drawable/bg_well"
+                        android:orientation="vertical"
+                        android:paddingHorizontal="12dp"
+                        android:paddingVertical="10dp"
+                        android:visibility="gone">
+
+                        <TextView
+                            android:id="@+id/tvNoPcsFound"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:text="@string/no_pcs_found"
+                            android:textColor="@color/text_secondary"
+                            android:textSize="12sp"
+                            android:textStyle="bold" />
+
+                        <TextView
+                            android:id="@+id/tvNoPcsHint"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="3dp"
+                            android:text="@string/no_pcs_hint"
+                            android:textColor="@color/text_muted"
+                            android:textSize="11sp" />
+                    </LinearLayout>
 
                     <LinearLayout
                         android:id="@+id/discoveredListContainer"
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:layout_marginTop="8dp"
+                        android:layout_marginTop="10dp"
                         android:orientation="vertical" />
                 </LinearLayout>
 
@@ -261,7 +317,7 @@
                     <EditText
                         android:id="@+id/etPairingCode"
                         android:layout_width="match_parent"
-                        android:layout_height="42dp"
+                        android:layout_height="44dp"
                         android:layout_marginTop="8dp"
                         android:background="@drawable/bg_input"
                         android:fontFamily="monospace"
@@ -280,10 +336,13 @@
                         android:id="@+id/btnToggleManual"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:layout_marginTop="8dp"
-                        android:paddingVertical="2dp"
+                        android:layout_marginTop="4dp"
+                        android:background="?attr/selectableItemBackground"
+                        android:gravity="center_vertical"
+                        android:minHeight="48dp"
+                        android:paddingHorizontal="2dp"
                         android:text="@string/toggle_manual_show"
-                        android:textColor="@color/text_muted"
+                        android:textColor="@color/text_secondary"
                         android:textSize="12sp" />
 
                     <LinearLayout
@@ -297,7 +356,7 @@
                         <EditText
                             android:id="@+id/etManualHost"
                             android:layout_width="0dp"
-                            android:layout_height="40dp"
+                            android:layout_height="42dp"
                             android:layout_weight="1"
                             android:background="@drawable/bg_input"
                             android:fontFamily="monospace"
@@ -312,8 +371,8 @@
 
                         <EditText
                             android:id="@+id/etManualPort"
-                            android:layout_width="86dp"
-                            android:layout_height="40dp"
+                            android:layout_width="90dp"
+                            android:layout_height="42dp"
                             android:layout_marginStart="8dp"
                             android:background="@drawable/bg_input"
                             android:fontFamily="monospace"
@@ -332,7 +391,7 @@
                     <com.google.android.material.button.MaterialButton
                         android:id="@+id/btnConnect"
                         android:layout_width="match_parent"
-                        android:layout_height="42dp"
+                        android:layout_height="44dp"
                         android:layout_marginTop="12dp"
                         android:backgroundTint="@color/obsidian_surface_elevated"
                         android:insetTop="0dp"
@@ -340,9 +399,9 @@
                         android:text="@string/btn_connect"
                         android:textAllCaps="false"
                         android:textColor="@color/text_primary"
-                        android:textSize="13sp"
+                        android:textSize="14sp"
                         android:textStyle="bold"
-                        app:cornerRadius="9dp"
+                        app:cornerRadius="10dp"
                         app:strokeColor="@color/obsidian_border_strong"
                         app:strokeWidth="1dp" />
                 </LinearLayout>
@@ -351,71 +410,102 @@
     </ScrollView>
 
     <!-- 2. Offline / Reconnecting Panel -->
-    <LinearLayout
+    <FrameLayout
         android:id="@+id/panelReconnect"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        android:gravity="center"
-        android:orientation="vertical"
-        android:padding="24dp"
         android:visibility="gone">
 
-        <ProgressBar
-            android:layout_width="34dp"
-            android:layout_height="34dp"
-            android:indeterminate="true"
-            android:indeterminateTint="@color/accent_violet" />
-
-        <TextView
-            android:id="@+id/tvReconnectTitle"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="14dp"
-            android:gravity="center"
-            android:textColor="@color/text_primary"
-            android:textSize="17sp"
-            android:textStyle="bold" />
-
-        <TextView
-            android:id="@+id/tvReconnectSubtitle"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="6dp"
-            android:fontFamily="monospace"
-            android:gravity="center"
-            android:textColor="@color/text_muted"
-            android:textSize="12sp" />
+        <ImageButton
+            android:id="@+id/btnReconnectMenu"
+            android:layout_width="48dp"
+            android:layout_height="48dp"
+            android:layout_gravity="top|end"
+            android:layout_marginTop="12dp"
+            android:layout_marginEnd="14dp"
+            android:background="@drawable/bg_icon_button"
+            android:contentDescription="@string/cd_open_menu"
+            android:padding="13dp"
+            android:scaleType="centerInside"
+            android:src="@drawable/ic_menu" />
 
         <LinearLayout
-            android:layout_width="wrap_content"
+            android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_marginTop="20dp"
-            android:orientation="horizontal">
+            android:layout_gravity="center"
+            android:layout_marginHorizontal="20dp"
+            android:background="@drawable/bg_card"
+            android:gravity="center"
+            android:maxWidth="380dp"
+            android:orientation="vertical"
+            android:padding="24dp">
 
-            <com.google.android.material.button.MaterialButton
-                android:id="@+id/btnRetryNow"
-                android:layout_width="wrap_content"
-                android:layout_height="40dp"
-                android:backgroundTint="@color/accent_violet"
-                android:text="@string/btn_retry_now"
-                android:textAllCaps="false"
-                android:textColor="@color/accent_violet_ink"
-                android:textStyle="bold"
-                app:cornerRadius="9dp" />
+            <ProgressBar
+                android:layout_width="36dp"
+                android:layout_height="36dp"
+                android:indeterminate="true"
+                android:indeterminateTint="@color/accent_violet" />
 
-            <com.google.android.material.button.MaterialButton
-                android:id="@+id/btnSwitchPc"
-                style="@style/Widget.Material3.Button.OutlinedButton"
+            <TextView
+                android:id="@+id/tvReconnectTitle"
                 android:layout_width="wrap_content"
-                android:layout_height="40dp"
-                android:layout_marginStart="10dp"
-                android:text="@string/btn_switch_pc"
-                android:textAllCaps="false"
-                android:textColor="@color/text_secondary"
-                app:cornerRadius="9dp"
-                app:strokeColor="@color/obsidian_border_strong" />
+                android:layout_height="wrap_content"
+                android:layout_marginTop="16dp"
+                android:gravity="center"
+                android:textColor="@color/text_primary"
+                android:textSize="17sp"
+                android:textStyle="bold" />
+
+            <TextView
+                android:id="@+id/tvReconnectSubtitle"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="6dp"
+                android:fontFamily="monospace"
+                android:gravity="center"
+                android:textColor="@color/text_muted"
+                android:textSize="12sp" />
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="22dp"
+                android:orientation="horizontal">
+
+                <com.google.android.material.button.MaterialButton
+                    android:id="@+id/btnRetryNow"
+                    android:layout_width="0dp"
+                    android:layout_height="42dp"
+                    android:layout_weight="1"
+                    android:backgroundTint="@color/accent_violet"
+                    android:insetTop="0dp"
+                    android:insetBottom="0dp"
+                    android:text="@string/btn_retry_now"
+                    android:textAllCaps="false"
+                    android:textColor="@color/accent_violet_ink"
+                    android:textSize="13sp"
+                    android:textStyle="bold"
+                    app:cornerRadius="10dp" />
+
+                <com.google.android.material.button.MaterialButton
+                    android:id="@+id/btnSwitchPc"
+                    style="@style/Widget.Material3.Button.OutlinedButton"
+                    android:layout_width="0dp"
+                    android:layout_height="42dp"
+                    android:layout_marginStart="10dp"
+                    android:layout_weight="1"
+                    android:insetTop="0dp"
+                    android:insetBottom="0dp"
+                    android:text="@string/btn_switch_pc"
+                    android:textAllCaps="false"
+                    android:textColor="@color/text_secondary"
+                    android:textSize="13sp"
+                    app:cornerRadius="10dp"
+                    app:strokeColor="@color/obsidian_border_strong"
+                    app:strokeWidth="1dp" />
+            </LinearLayout>
         </LinearLayout>
-    </LinearLayout>
+    </FrameLayout>
 
     <!-- 3. Dashboard WebView Panel -->
     <FrameLayout
@@ -436,22 +526,18 @@
                 android:background="@color/obsidian_bg" />
         </androidx.swiperefreshlayout.widget.SwipeRefreshLayout>
 
-        <!-- Discreet Floating Companion Menu Button -->
-        <TextView
+        <!-- Discreet Floating Companion Burger Menu Button -->
+        <ImageButton
             android:id="@+id/btnQuickMenu"
-            android:layout_width="wrap_content"
-            android:layout_height="32dp"
+            android:layout_width="48dp"
+            android:layout_height="48dp"
             android:layout_gravity="top|end"
-            android:layout_marginTop="10dp"
-            android:layout_marginEnd="10dp"
+            android:layout_marginTop="6dp"
+            android:layout_marginEnd="6dp"
             android:background="@drawable/bg_pill"
-            android:clickable="true"
-            android:focusable="true"
-            android:gravity="center"
-            android:paddingHorizontal="12dp"
-            android:text="•••"
-            android:textColor="@color/text_primary"
-            android:textSize="13sp"
-            android:textStyle="bold" />
+            android:contentDescription="@string/cd_open_menu"
+            android:padding="13dp"
+            android:scaleType="centerInside"
+            android:src="@drawable/ic_menu" />
     </FrameLayout>
 </FrameLayout>

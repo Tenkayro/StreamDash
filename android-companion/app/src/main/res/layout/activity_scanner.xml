@@ -37,19 +37,16 @@
     </LinearLayout>
 
     <!-- Close button -->
-    <TextView
+    <ImageButton
         android:id="@+id/btnCloseScanner"
-        android:layout_width="40dp"
-        android:layout_height="40dp"
+        android:layout_width="48dp"
+        android:layout_height="48dp"
         android:layout_gravity="top|end"
-        android:layout_marginTop="16dp"
-        android:layout_marginEnd="16dp"
+        android:layout_marginTop="12dp"
+        android:layout_marginEnd="12dp"
         android:background="@drawable/bg_pill"
-        android:clickable="true"
-        android:focusable="true"
-        android:gravity="center"
-        android:text="✕"
-        android:textColor="@color/text_primary"
-        android:textSize="16sp"
-        android:textStyle="bold" />
+        android:contentDescription="@string/cd_close"
+        android:padding="13dp"
+        android:scaleType="centerInside"
+        android:src="@drawable/ic_close" />
 </FrameLayout>

@@ -101,6 +101,26 @@ export type TrayStyle = 'custom' | 'classic'
 export type GoalMetric = 'followers' | 'subscribers' | 'donations' | 'bits' | 'raids' | 'giftSubscriptions'
 export interface GoalAutomation { enabled: boolean; increasePercent: number }
 
+export type CompanionLanguage = 'system' | 'en' | 'de' | 'es' | 'fr' | 'pt-BR'
+export type CompanionHapticStrength = 'off' | 'subtle' | 'strong'
+
+export interface CompanionSettings {
+  language: CompanionLanguage
+  keepScreenOn: boolean
+  autoReconnect: boolean
+  notificationsEnabled: boolean
+  notifyFollows: boolean
+  notifySubs: boolean
+  notifyRaids: boolean
+  notifyCheers: boolean
+  notifyDonations: boolean
+  notifyChannelPoints: boolean
+  notifyStreamStatus: boolean
+  notifyChatMentions: boolean
+  hapticsEnabled: boolean
+  hapticStrength: CompanionHapticStrength
+}
+
 export interface AppSettings {
   onboardingCompleted: boolean
   language: AppLanguage
@@ -140,6 +160,7 @@ export interface AppSettings {
   donationToolDoneIds: string[]
   goals: Partial<Record<GoalMetric, number>>
   goalAutomation: Partial<Record<GoalMetric, GoalAutomation>>
+  companion: CompanionSettings
 }
 
 export interface TwitchSession { userId: string; login: string; scopes: string[]; expiresIn: number }
