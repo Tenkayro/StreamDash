@@ -3,6 +3,7 @@ import { existsSync, readFileSync, readdirSync, statSync } from "node:fs";
 import { homedir } from "node:os";
 import { join, resolve } from "node:path";
 import process from "node:process";
+import { pathToFileURL } from "node:url";
 
 const root = resolve(import.meta.dirname, "..");
 const androidDir = join(root, "android-companion");
@@ -82,8 +83,9 @@ if (existsSync(apkDir)) {
   for (const apk of apks) {
     const fullPath = join(apkDir, apk);
     const sizeMb = (statSync(fullPath).size / (1024 * 1024)).toFixed(2);
-    console.log(`\nAPK built: ${fullPath} (${sizeMb} MB)`);
+    console.log(`\nAPK built: ${apk} (${sizeMb} MB)`);
   }
+  console.log(`Open folder: ${pathToFileURL(apkDir).href}`);
 }
 
 if (releaseMode) {
