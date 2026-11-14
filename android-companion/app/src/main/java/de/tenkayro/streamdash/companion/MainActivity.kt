@@ -41,6 +41,7 @@ import androidx.core.os.LocaleListCompat
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
 import androidx.core.view.updatePadding
+import com.google.android.material.bottomsheet.BottomSheetBehavior
 import com.google.android.material.bottomsheet.BottomSheetDialog
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import com.google.android.material.materialswitch.MaterialSwitch
@@ -858,9 +859,26 @@ class MainActivity : AppCompatActivity() {
         val sheet = BottomSheetSettingsBinding.inflate(layoutInflater)
         openSettingsBinding = sheet
         dialog.setContentView(sheet.root)
+        dialog.behavior.apply {
+            state = BottomSheetBehavior.STATE_EXPANDED
+            skipCollapsed = true
+        }
+        val baseContentBottom = sheet.sheetContentContainer.paddingBottom
+        ViewCompat.setOnApplyWindowInsetsListener(sheet.sheetContentContainer) { view, insets ->
+            val navBars = insets.getInsets(WindowInsetsCompat.Type.navigationBars())
+            view.updatePadding(bottom = baseContentBottom + navBars.bottom)
+            insets
+        }
+        ViewCompat.requestApplyInsets(sheet.root)
         dialog.setOnShowListener {
             dialog.findViewById<View>(com.google.android.material.R.id.design_bottom_sheet)
-                ?.setBackgroundColor(Color.TRANSPARENT)
+                ?.let { bottomSheet ->
+                    bottomSheet.setBackgroundColor(Color.TRANSPARENT)
+                    BottomSheetBehavior.from(bottomSheet).apply {
+                        state = BottomSheetBehavior.STATE_EXPANDED
+                        skipCollapsed = true
+                    }
+                }
         }
         dialog.setOnDismissListener {
             if (openSettingsBinding == sheet) {
@@ -983,14 +1001,12 @@ class MainActivity : AppCompatActivity() {
                 requestNotificationPermission(explicit = true)
             }
         }
-        bindToggle(sheet.rowNotifyFollows, sheet.switchNotifyFollows, { c, n -> c.copy(notifyFollows = n) })
-        bindToggle(sheet.rowNotifySubs, sheet.switchNotifySubs, { c, n -> c.copy(notifySubs = n) })
-        bindToggle(sheet.rowNotifyRaids, sheet.switchNotifyRaids, { c, n -> c.copy(notifyRaids = n) })
-        bindToggle(sheet.rowNotifyCheers, sheet.switchNotifyCheers, { c, n -> c.copy(notifyCheers = n) })
-        bindToggle(sheet.rowNotifyDonations, sheet.switchNotifyDonations, { c, n -> c.copy(notifyDonations = n) })
-        bindToggle(sheet.rowNotifyChatMentions, sheet.switchNotifyChatMentions, { c, n -> c.copy(notifyChatMentions = n) })
-        bindToggle(sheet.rowNotifyChannelPoints, sheet.switchNotifyChannelPoints, { c, n -> c.copy(notifyChannelPoints = n) })
-        bindToggle(sheet.rowNotifyStreamStatus, sheet.switchNotifyStreamStatus, { c, n -> c.copy(notifyStreamStatus = n) })
+        sheet.rowSettingNotifyTypes.setOnClickListener {
+            triggerTapHaptic(it)
+            showNotificationCategoriesDialog { mutator ->
+                updateCompanionSetting(it, mutator)
+            }
+        }
 
         // Haptics & Vibration Strength
         bindToggle(
@@ -1045,7 +1061,7 @@ class MainActivity : AppCompatActivity() {
         } else {
             sheet.tvSettingUpdatesTitle.setText(R.string.menu_check_updates)
         }
-        sheet.tvSettingUpdatesDesc.text = getString(R.string.setting_updates_desc, currentVersion)
+        sheet.tvSettingUpdatesDesc.text = "v$currentVersion"
         sheet.rowSettingCheckUpdates.setOnClickListener {
             triggerTapHaptic(it)
             dialog.dismiss()
@@ -1105,40 +1121,81 @@ class MainActivity : AppCompatActivity() {
             sheet.switchKeepScreenOn.isChecked = settings.keepScreenOn
             sheet.switchAutoReconnect.isChecked = settings.autoReconnect
             sheet.switchNotificationsEnabled.isChecked = settings.notificationsEnabled
-            sheet.switchNotifyFollows.isChecked = settings.notifyFollows
-            sheet.switchNotifySubs.isChecked = settings.notifySubs
-            sheet.switchNotifyRaids.isChecked = settings.notifyRaids
-            sheet.switchNotifyCheers.isChecked = settings.notifyCheers
-            sheet.switchNotifyDonations.isChecked = settings.notifyDonations
-            sheet.switchNotifyChatMentions.isChecked = settings.notifyChatMentions
-            sheet.switchNotifyChannelPoints.isChecked = settings.notifyChannelPoints
-            sheet.switchNotifyStreamStatus.isChecked = settings.notifyStreamStatus
             sheet.switchHapticsEnabled.isChecked = settings.hapticsEnabled
             sheet.tvSettingHapticStrengthValue.text = getHapticStrengthLabel(
                 if (settings.hapticsEnabled) settings.hapticStrength else "off"
             )
 
+            val enabledCategories = listOf(
+                settings.notifyFollows,
+                settings.notifySubs,
+                settings.notifyRaids,
+                settings.notifyCheers,
+                settings.notifyDonations,
+                settings.notifyChatMentions,
+                settings.notifyChannelPoints,
+                settings.notifyStreamStatus
+            ).count { it }
             val notifActive = settings.notificationsEnabled
-            sheet.groupNotificationCategories.alpha = if (notifActive) 1f else 0.45f
-            listOf(
-                sheet.rowNotifyFollows to sheet.switchNotifyFollows,
-                sheet.rowNotifySubs to sheet.switchNotifySubs,
-                sheet.rowNotifyRaids to sheet.switchNotifyRaids,
-                sheet.rowNotifyCheers to sheet.switchNotifyCheers,
-                sheet.rowNotifyDonations to sheet.switchNotifyDonations,
-                sheet.rowNotifyChatMentions to sheet.switchNotifyChatMentions,
-                sheet.rowNotifyChannelPoints to sheet.switchNotifyChannelPoints,
-                sheet.rowNotifyStreamStatus to sheet.switchNotifyStreamStatus
-            ).forEach { (row, sw) ->
-                row.isEnabled = notifActive
-                sw.isEnabled = notifActive
-            }
+            sheet.tvSettingNotifyTypesSummary.text = getString(
+                R.string.setting_notify_types_summary,
+                enabledCategories,
+                8
+            )
+            sheet.rowSettingNotifyTypes.isEnabled = notifActive
+            sheet.rowSettingNotifyTypes.alpha = if (notifActive) 1f else 0.45f
 
             sheet.rowSettingHapticStrength.alpha = if (settings.hapticsEnabled) 1f else 0.55f
             updateSyncBadgeUi(sheet)
         } finally {
             suppressSettingsUiEvents = false
         }
+    }
+
+    private fun showNotificationCategoriesDialog(
+        onMutate: ((CompanionSettings) -> CompanionSettings) -> CompanionSettings
+    ) {
+        val current = store.getCompanionSettings()
+        val labels = arrayOf(
+            getString(R.string.setting_notify_follows),
+            getString(R.string.setting_notify_subs),
+            getString(R.string.setting_notify_raids),
+            getString(R.string.setting_notify_cheers),
+            getString(R.string.setting_notify_donations),
+            getString(R.string.setting_notify_mentions),
+            getString(R.string.setting_notify_channel_points),
+            getString(R.string.setting_notify_stream_status)
+        )
+        val checked = booleanArrayOf(
+            current.notifyFollows,
+            current.notifySubs,
+            current.notifyRaids,
+            current.notifyCheers,
+            current.notifyDonations,
+            current.notifyChatMentions,
+            current.notifyChannelPoints,
+            current.notifyStreamStatus
+        )
+
+        MaterialAlertDialogBuilder(this)
+            .setTitle(R.string.setting_notify_types_title)
+            .setMultiChoiceItems(labels, checked) { _, which, isChecked ->
+                checked[which] = isChecked
+                onMutate { settings ->
+                    when (which) {
+                        0 -> settings.copy(notifyFollows = isChecked)
+                        1 -> settings.copy(notifySubs = isChecked)
+                        2 -> settings.copy(notifyRaids = isChecked)
+                        3 -> settings.copy(notifyCheers = isChecked)
+                        4 -> settings.copy(notifyDonations = isChecked)
+                        5 -> settings.copy(notifyChatMentions = isChecked)
+                        6 -> settings.copy(notifyChannelPoints = isChecked)
+                        else -> settings.copy(notifyStreamStatus = isChecked)
+                    }
+                }
+            }
+            .setPositiveButton(R.string.cd_close, null)
+            .show()
     }
 
     private fun updateSyncBadgeUi(sheet: BottomSheetSettingsBinding) {
