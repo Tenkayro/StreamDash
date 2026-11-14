@@ -25,7 +25,7 @@ use ring::rand::{SecureRandom, SystemRandom};
 use serde::{Deserialize, Serialize};
 use serde_json::{json, Value};
 use tauri::{AppHandle, Emitter, Manager};
-use tokio::sync::broadcast;
+use tokio::sync::{broadcast, watch};
 
 pub const DEFAULT_HOST_PORT: u16 = 48_950;
 pub const DISCOVERY_PORT: u16 = 48_951;
@@ -194,6 +194,7 @@ struct AxumHostState {
     snapshot_json: Arc<RwLock<String>>,
     tx: broadcast::Sender<String>,
     companion_tx: broadcast::Sender<String>,
+    shutdown_rx: watch::Receiver<bool>,
     connected_clients: Arc<AtomicUsize>,
     pair_requests: Arc<Mutex<HashMap<String, PairRequestRecord>>>,
 }
@@ -212,6 +213,7 @@ pub struct WebHostRuntime {
     connected_clients: Arc<AtomicUsize>,
     pair_requests: Arc<Mutex<HashMap<String, PairRequestRecord>>>,
     last_error: Arc<RwLock<Option<String>>>,
+    stop_tx: Mutex<Option<watch::Sender<bool>>>,
     server_task: Mutex<Option<tauri::async_runtime::JoinHandle<()>>>,
     discovery_task: Mutex<Option<tauri::async_runtime::JoinHandle<()>>>,
 }
@@ -247,6 +249,7 @@ impl WebHostRuntime {
             connected_clients: Arc::new(AtomicUsize::new(0)),
             pair_requests: Arc::new(Mutex::new(HashMap::new())),
             last_error: Arc::new(RwLock::new(None)),
+            stop_tx: Mutex::new(None),
             server_task: Mutex::new(None),
             discovery_task: Mutex::new(None),
         };
@@ -316,7 +319,7 @@ impl WebHostRuntime {
         }
 
         if !enabled {
-            self.stop_server();
+            self.stop_server(false);
             *self.last_error.write().unwrap_or_else(|e| e.into_inner()) = None;
         } else if !prev_enabled || prev_port != safe_port || !self.running.load(Ordering::Relaxed) {
             self.restart_server()?;
@@ -402,11 +405,26 @@ impl WebHostRuntime {
         true
     }
 
-    fn stop_server(&self) {
+    fn stop_server(&self, immediate_abort: bool) {
+        if let Ok(mut guard) = self.pair_requests.lock() {
+            guard.clear();
+        }
+        if let Ok(mut guard) = self.stop_tx.lock()
+            && let Some(tx) = guard.take()
+        {
+            let _ = tx.send(true);
+        }
         if let Ok(mut guard) = self.server_task.lock()
             && let Some(handle) = guard.take()
         {
-            handle.abort();
+            if immediate_abort {
+                handle.abort();
+            } else {
+                tauri::async_runtime::spawn(async move {
+                    tokio::time::sleep(Duration::from_millis(250)).await;
+                    handle.abort();
+                });
+            }
         }
         if let Ok(mut guard) = self.discovery_task.lock()
             && let Some(handle) = guard.take()
@@ -417,18 +435,36 @@ impl WebHostRuntime {
     }
 
     fn restart_server(&self) -> Result<(), String> {
-        self.stop_server();
+        self.stop_server(false);
         let port = self.port.load(Ordering::Relaxed);
         let addr = SocketAddr::from(([0, 0, 0, 0], port));
-        let listener = std::net::TcpListener::bind(addr).map_err(|e| {
-            let msg = format!("Port {port}: {e}");
-            *self.last_error.write().unwrap_or_else(|e| e.into_inner()) = Some(msg.clone());
-            msg
-        })?;
+        let listener = {
+            let mut attempt = 0;
+            loop {
+                match std::net::TcpListener::bind(addr) {
+                    Ok(l) => break l,
+                    Err(e) if e.kind() == std::io::ErrorKind::AddrInUse && attempt < 10 => {
+                        attempt += 1;
+                        std::thread::sleep(Duration::from_millis(40));
+                    }
+                    Err(e) => {
+                        let msg = format!("Port {port}: {e}");
+                        *self.last_error.write().unwrap_or_else(|e| e.into_inner()) =
+                            Some(msg.clone());
+                        return Err(msg);
+                    }
+                }
+            }
+        };
         listener.set_nonblocking(true).map_err(|e| e.to_string())?;
 
         *self.last_error.write().unwrap_or_else(|e| e.into_inner()) = None;
         self.running.store(true, Ordering::Relaxed);
+
+        let (shutdown_tx, shutdown_rx) = watch::channel(false);
+        if let Ok(mut guard) = self.stop_tx.lock() {
+            *guard = Some(shutdown_tx);
+        }
 
         let shared = AxumHostState {
             app: self.app.clone(),
@@ -437,6 +473,7 @@ impl WebHostRuntime {
             snapshot_json: self.snapshot_json.clone(),
             tx: self.tx.clone(),
             companion_tx: self.companion_tx.clone(),
+            shutdown_rx: shutdown_rx.clone(),
             connected_clients: self.connected_clients.clone(),
             pair_requests: self.pair_requests.clone(),
         };
@@ -469,7 +506,18 @@ impl WebHostRuntime {
                     return;
                 }
             };
-            if let Err(e) = axum::serve(listener, router).await {
+            let mut shutdown_wait = shutdown_rx;
+            let shutdown_signal = async move {
+                while !*shutdown_wait.borrow() {
+                    if shutdown_wait.changed().await.is_err() {
+                        break;
+                    }
+                }
+            };
+            if let Err(e) = axum::serve(listener, router)
+                .with_graceful_shutdown(shutdown_signal)
+                .await
+            {
                 log::error!("Web host server stopped: {e}");
                 *err_slot.write().unwrap_or_else(|er| er.into_inner()) = Some(e.to_string());
             }
@@ -1068,22 +1116,59 @@ async fn api_events(
         .unwrap_or_else(|e| e.into_inner())
         .clone();
     let rx = state.tx.subscribe();
+    let shutdown_rx = state.shutdown_rx.clone();
 
-    let stream =
-        stream::unfold((rx, Some(initial), guard), |(mut rx, mut initial, guard)| async move {
+    let stream = stream::unfold(
+        (rx, Some(initial), shutdown_rx, false, guard),
+        |(mut rx, mut initial, mut shutdown_rx, done, guard)| async move {
+            if done {
+                return None;
+            }
+            if *shutdown_rx.borrow() {
+                return Some((
+                    Ok::<Event, Infallible>(
+                        Event::default()
+                            .event("host_stopped")
+                            .data("{\"reason\":\"disabled\"}"),
+                    ),
+                    (rx, None, shutdown_rx, true, guard),
+                ));
+            }
             if let Some(first) = initial.take() {
-                return Some((Ok::<Event, Infallible>(Event::default().event("state").data(first)), (rx, None, guard)));
+                return Some((
+                    Ok::<Event, Infallible>(Event::default().event("state").data(first)),
+                    (rx, None, shutdown_rx, false, guard),
+                ));
             }
             loop {
-                match rx.recv().await {
-                    Ok(msg) => {
-                        return Some((Ok(Event::default().event("state").data(msg)), (rx, None, guard)));
+                tokio::select! {
+                    changed = shutdown_rx.changed() => {
+                        let _ = changed;
+                        return Some((
+                            Ok::<Event, Infallible>(
+                                Event::default()
+                                    .event("host_stopped")
+                                    .data("{\"reason\":\"disabled\"}"),
+                            ),
+                            (rx, None, shutdown_rx, true, guard),
+                        ));
                     }
-                    Err(broadcast::error::RecvError::Lagged(_)) => continue,
-                    Err(broadcast::error::RecvError::Closed) => return None,
+                    res = rx.recv() => {
+                        match res {
+                            Ok(msg) => {
+                                return Some((
+                                    Ok(Event::default().event("state").data(msg)),
+                                    (rx, None, shutdown_rx, false, guard),
+                                ));
+                            }
+                            Err(broadcast::error::RecvError::Lagged(_)) => continue,
+                            Err(broadcast::error::RecvError::Closed) => return None,
+                        }
+                    }
                 }
             }
-        });
+        },
+    );
 
     Sse::new(stream)
         .keep_alive(KeepAlive::new().interval(Duration::from_secs(15)).text("ping"))
@@ -1139,26 +1224,58 @@ async fn api_companion_events(
     };
 
     let rx = state.companion_tx.subscribe();
-    let stream = stream::unfold((rx, initial), |(mut rx, mut initial)| async move {
-        if let Some(first) = initial.take() {
-            return Some((
-                Ok::<Event, Infallible>(Event::default().event("companion").data(first)),
-                (rx, None),
-            ));
-        }
-        loop {
-            match rx.recv().await {
-                Ok(msg) => {
-                    return Some((
-                        Ok(Event::default().event("companion").data(msg)),
-                        (rx, None),
-                    ));
-                }
-                Err(broadcast::error::RecvError::Lagged(_)) => continue,
-                Err(broadcast::error::RecvError::Closed) => return None,
+    let shutdown_rx = state.shutdown_rx.clone();
+    let stream = stream::unfold(
+        (rx, initial, shutdown_rx, false),
+        |(mut rx, mut initial, mut shutdown_rx, done)| async move {
+            if done {
+                return None;
             }
-        }
-    });
+            if *shutdown_rx.borrow() {
+                return Some((
+                    Ok::<Event, Infallible>(
+                        Event::default()
+                            .event("host_stopped")
+                            .data("{\"kind\":\"host_stopped\",\"reason\":\"disabled\"}"),
+                    ),
+                    (rx, None, shutdown_rx, true),
+                ));
+            }
+            if let Some(first) = initial.take() {
+                return Some((
+                    Ok::<Event, Infallible>(Event::default().event("companion").data(first)),
+                    (rx, None, shutdown_rx, false),
+                ));
+            }
+            loop {
+                tokio::select! {
+                    changed = shutdown_rx.changed() => {
+                        let _ = changed;
+                        return Some((
+                            Ok::<Event, Infallible>(
+                                Event::default()
+                                    .event("host_stopped")
+                                    .data("{\"kind\":\"host_stopped\",\"reason\":\"disabled\"}"),
+                            ),
+                            (rx, None, shutdown_rx, true),
+                        ));
+                    }
+                    res = rx.recv() => {
+                        match res {
+                            Ok(msg) => {
+                                return Some((
+                                    Ok(Event::default().event("companion").data(msg)),
+                                    (rx, None, shutdown_rx, false),
+                                ));
+                            }
+                            Err(broadcast::error::RecvError::Lagged(_)) => continue,
+                            Err(broadcast::error::RecvError::Closed) => return None,
+                        }
+                    }
+                }
+            }
+        },
+    );
 
     Sse::new(stream)
         .keep_alive(KeepAlive::new().interval(Duration::from_secs(15)).text("ping"))

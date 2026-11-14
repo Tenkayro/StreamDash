@@ -910,27 +910,80 @@ class MainActivity : AppCompatActivity() {
 
     private fun startHostEventStream(conn: SavedConnection) {
         stopHostEventStream()
-        val stream = HostEventStream(conn.host, conn.port, conn.token) { rawJson ->
-            mainHandler.post {
-                if (isDestroyed) return@post
-                CompanionNotifier.handleIncomingEvent(
-                    context = this,
-                    settings = store.getCompanionSettings(),
-                    rawJson = rawJson,
-                    onSettingsUpdated = { incoming ->
-                        if (store.hasPendingCompanionSync()) return@handleIncomingEvent
-                        store.saveCompanionSettings(incoming, pendingHostSync = false)
-                        applyKeepScreenOn(incoming.keepScreenOn)
-                        openSettingsBinding?.let { sheet ->
-                            applyCompanionSettingsToSheet(sheet, incoming)
+        val stream = HostEventStream(
+            host = conn.host,
+            port = conn.port,
+            token = conn.token,
+            onEventData = { rawJson ->
+                mainHandler.post {
+                    if (isDestroyed) return@post
+                    CompanionNotifier.handleIncomingEvent(
+                        context = this,
+                        settings = store.getCompanionSettings(),
+                        rawJson = rawJson,
+                        onSettingsUpdated = { incoming ->
+                            if (store.hasPendingCompanionSync()) return@handleIncomingEvent
+                            store.saveCompanionSettings(incoming, pendingHostSync = false)
+                            applyKeepScreenOn(incoming.keepScreenOn)
+                            openSettingsBinding?.let { sheet ->
+                                applyCompanionSettingsToSheet(sheet, incoming)
+                            }
+                            applyLanguageTagIfNeeded(incoming.language)
                         }
-                        applyLanguageTagIfNeeded(incoming.language)
+                    )
+                }
+            },
+            onHostStopped = {
+                mainHandler.post {
+                    if (!isDestroyed && screenMode == ScreenMode.WEBVIEW) {
+                        handleHostDisabledFromDesktop()
                     }
-                )
+                }
+            },
+            onUnauthorized = {
+                mainHandler.post {
+                    if (!isDestroyed && screenMode == ScreenMode.WEBVIEW) {
+                        disconnectToPairingScreen(
+                            clearSaved = true,
+                            initialError = getString(R.string.err_token_rotated)
+                        )
+                    }
+                }
+            },
+            onConnectionLost = {
+                ioExecutor.execute {
+                    val result = HostApi.verifyConnection(conn.host, conn.port, conn.token)
+                    mainHandler.post {
+                        if (isDestroyed || screenMode != ScreenMode.WEBVIEW) return@post
+                        when (result) {
+                            is HostApi.VerifyResult.Success -> {
+                                // Transient SSE hiccup while Desktop Host is still reachable
+                            }
+                            is HostApi.VerifyResult.InvalidToken,
+                            is HostApi.VerifyResult.CodeRequired -> {
+                                disconnectToPairingScreen(
+                                    clearSaved = true,
+                                    initialError = getString(R.string.err_token_rotated)
+                                )
+                            }
+                            is HostApi.VerifyResult.Unreachable -> {
+                                showReconnectScreen(conn)
+                                scheduleReconnect()
+                            }
+                        }
+                    }
+                }
             }
-        }
+        )
         hostEventStream = stream
         stream.start()
+    }
+
+    private fun handleHostDisabledFromDesktop() {
+        disconnectToPairingScreen(
+            clearSaved = false,
+            initialError = getString(R.string.err_host_disabled)
+        )
     }
 
     private fun stopHostEventStream() {
@@ -1023,9 +1076,18 @@ class MainActivity : AppCompatActivity() {
             .show()
     }
 
+    private fun dismissActiveDialogs() {
+        runCatching { openPairDialog?.dismiss() }
+        openPairDialog = null
+        runCatching { openSettingsDialog?.dismiss() }
+        openSettingsDialog = null
+    }
+
     private fun showReconnectScreen(conn: SavedConnection) {
         activeScanCancel?.set(true)
         stopHostEventStream()
+        dismissActiveDialogs()
+        binding.swipeRefresh.isRefreshing = false
         switchScreen(ScreenMode.RECONNECT)
         binding.tvReconnectTitle.text = getString(R.string.reconnect_title, conn.hostName)
         binding.tvReconnectSubtitle.text = getString(R.string.reconnect_subtitle, conn.host, conn.port)
@@ -1034,6 +1096,8 @@ class MainActivity : AppCompatActivity() {
     private fun disconnectToPairingScreen(clearSaved: Boolean, initialError: String? = null) {
         cancelReconnectLoop()
         stopHostEventStream()
+        dismissActiveDialogs()
+        binding.swipeRefresh.isRefreshing = false
         if (clearSaved) {
             store.clearConnection()
             activeConnection = null

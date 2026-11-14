@@ -37,7 +37,7 @@ import {
   openProPurchasePage,
 } from "../../lib/pro";
 import { parseRateLimitWaitSeconds } from "../../lib/cloud-sync-limiter";
-import { errorMessage } from "../../lib/utils";
+import { errorMessage, isTauri } from "../../lib/utils";
 import { useRuntime } from "../../services/runtime-context";
 import { useAppStore } from "../../stores/app-store";
 import { useNetworkStore } from "../../stores/network-store";
@@ -111,7 +111,7 @@ export function ProCloudSection() {
   const hasPendingStorageTicket = latestStorageTicket?.status === "pending";
 
   useEffect(() => {
-    if (twitchConnected && entitlements.pro && !storageTicket) {
+    if (isTauri() && twitchConnected && entitlements.pro && !storageTicket) {
       void runtime.refreshStorageTicket(false);
     }
   }, [twitchConnected, entitlements.pro, storageTicket, runtime]);
@@ -208,7 +208,7 @@ export function ProCloudSection() {
   };
 
   useEffect(() => {
-    if (!twitchConnected) return;
+    if (!isTauri() || !twitchConnected) return;
     void runtime.refreshProEntitlements().catch(() => undefined);
     void runtime.refreshSupportTicket(false);
   }, [twitchConnected, twitch.userId, runtime]);
@@ -221,7 +221,11 @@ export function ProCloudSection() {
 
   useEffect(() => {
     const until = cloudSync.cooldownUntil;
-    if (!until || until <= Date.now()) return;
+    if (!until) return;
+    if (until <= Date.now()) {
+      const clear = window.setTimeout(() => setNowMs(Date.now()), 0);
+      return () => window.clearTimeout(clear);
+    }
     const kick = window.setTimeout(() => setNowMs(Date.now()), 0);
     const timer = window.setInterval(() => {
       const now = Date.now();
@@ -326,13 +330,13 @@ export function ProCloudSection() {
                   .checkNow()
                   .then((online) => {
                     if (!online) return undefined;
-                    return runtime.refreshProEntitlements().then((ent) => {
+                    return runtime.refreshProEntitlements(true).then((ent) => {
                       const jobs: Promise<unknown>[] = [
-                        runtime.refreshSupportTicket(false),
+                        runtime.refreshSupportTicket(true),
                       ];
-                      if (ent.pro) {
+                      if (ent?.pro ?? entitlements.pro) {
                         jobs.push(runtime.syncCloudNow("smart"));
-                        jobs.push(runtime.refreshStorageTicket(false));
+                        jobs.push(runtime.refreshStorageTicket(true));
                       }
                       return Promise.allSettled(jobs);
                     });
@@ -563,7 +567,9 @@ export function ProCloudSection() {
                           ? t("pro.cloudGateHint", { account: twitch.account ?? "" })
                           : cloudSync.phase === "error" && cloudSync.error
                             ? formatCloudError(cloudSync.error, t)
-                            : cloudTimestamp
+                            : cooldownSeconds > 0
+                              ? t("profiles.cloud.rateLimited", { seconds: cooldownSeconds })
+                              : cloudTimestamp
                               ? t("profiles.cloud.metaSummary", {
                                   account: twitch.account ?? "",
                                   time: new Date(cloudTimestamp).toLocaleString([], {

@@ -152,4 +152,5 @@
     <string name="pair_request_connecting">Envoi de la demande…</string>
     <string name="pair_request_denied">Connexion refusée sur %1$s.</string>
     <string name="pair_request_expired">Demande expirée. Touchez à nouveau le PC.</string>
+    <string name="err_host_disabled">Le mode Hôte a été désactivé sur le PC.</string>
 </resources>

@@ -152,4 +152,5 @@
     <string name="pair_request_connecting">Solicitando conexión…</string>
     <string name="pair_request_denied">Conexión rechazada en %1$s.</string>
     <string name="pair_request_expired">La solicitud ha caducado. Toca el PC de nuevo.</string>
+    <string name="err_host_disabled">El Modo Host se desactivó en el PC.</string>
 </resources>

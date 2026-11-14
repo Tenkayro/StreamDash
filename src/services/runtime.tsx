@@ -1,6 +1,7 @@
 import {
   useCallback,
   useEffect,
+  useMemo,
   useRef,
   useState,
   type ReactNode,
@@ -163,11 +164,25 @@ function serializeHostSnapshot(storeState: ReturnType<typeof useAppStore.getStat
   return out;
 }
 
-function createRemoteRuntimeProxy(
-  localFallback: Partial<RuntimeValue>,
-  dispatch: (actionType: string, payload?: Record<string, unknown>) => Promise<void>,
+const REMOTE_LOCAL_METHODS = new Set([
+  "getChatUserProfile",
+  "exportProfiles",
+  "importProfiles",
+]);
+
+const noopAsync = async () => undefined;
+
+function createStableRuntimeProxy(
+  dataProps: { deviceAuth?: DeviceAuth; botDeviceAuth?: DeviceAuth },
+  getMethods: () => Record<string, unknown>,
+  getDispatch: () => (
+    actionType: string,
+    payload?: Record<string, unknown>,
+  ) => Promise<void>,
+  remoteMode: boolean,
 ): RuntimeValue {
-  return new Proxy(localFallback as Record<string, unknown>, {
+  const fnCache = new Map<string, (...args: unknown[]) => unknown>();
+  return new Proxy(dataProps as Record<string, unknown>, {
     get(target, prop, receiver) {
       if (typeof prop !== "string" || prop === "then" || prop === "$$typeof") {
         return Reflect.get(target, prop, receiver);
@@ -175,10 +190,25 @@ function createRemoteRuntimeProxy(
       if (Object.prototype.hasOwnProperty.call(target, prop)) {
         return Reflect.get(target, prop, receiver);
       }
-      if (REMOTE_BLOCKED_METHODS.has(prop)) {
-        return async () => undefined;
+      let cached = fnCache.get(prop);
+      if (!cached) {
+        if (remoteMode && !REMOTE_LOCAL_METHODS.has(prop)) {
+          cached = REMOTE_BLOCKED_METHODS.has(prop)
+            ? noopAsync
+            : (...args: unknown[]) =>
+                getDispatch()("runtime.call", { method: prop, args });
+        } else {
+          cached = (...args: unknown[]) => {
+            const fn = getMethods()[prop];
+            if (typeof fn !== "function") {
+              return Promise.resolve(undefined);
+            }
+            return (fn as (...a: unknown[]) => unknown)(...args);
+          };
+        }
+        fnCache.set(prop, cached);
       }
-      return (...args: unknown[]) => dispatch("runtime.call", { method: prop, args });
+      return cached;
     },
   }) as unknown as RuntimeValue;
 }
@@ -1057,7 +1087,7 @@ export function RuntimeProvider({ children }: { children: ReactNode }) {
       userId: string,
       mode: "smart" | "push" | "pull" = "smart",
       attempt = 0,
-      options?: { force?: boolean; delayBeforeWriteMs?: number },
+      options?: { force?: boolean; delayBeforePullMs?: number; delayBeforeWriteMs?: number },
     ): Promise<void> => {
       const computeHistoryFingerprint = (
         evts: ActivityEvent[],
@@ -1102,6 +1132,11 @@ export function RuntimeProvider({ children }: { children: ReactNode }) {
             remoteSha !== prevHistory.remoteSha;
 
           if (mode === "pull" || (mode === "smart" && meta.exists && remoteChanged)) {
+            if (options?.delayBeforePullMs && currentAttempt === 0) {
+              await new Promise((resolve) =>
+                window.setTimeout(resolve, options.delayBeforePullMs),
+              );
+            }
             const pulled = await historySyncNative.pull(TWITCH_CLIENT_ID);
             if (pulled.payload?.events?.length) {
               const inserted = await mergeEvents(pulled.payload.events, 50_000);
@@ -1248,6 +1283,43 @@ export function RuntimeProvider({ children }: { children: ReactNode }) {
     [buildLocalCloudPayload, setCloudSyncCheckpoint, state],
   );
 
+  const applyCloudSyncErrorState = useCallback(
+    (userId: string, rawMsg: string, options?: { notifyToast?: boolean }) => {
+      const waitSeconds = cloudSyncLimiter.applyServerRateLimit(rawMsg);
+      if (waitSeconds) {
+        const current = state();
+        const fallbackPhase = current.cloudSync.hasLocalChanges
+          ? "pending"
+          : current.cloudSyncCheckpoints[userId]
+            ? "synced"
+            : "idle";
+        current.setCloudSync({
+          phase: fallbackPhase,
+          cooldownUntil: Date.now() + waitSeconds * 1000,
+          error: undefined,
+        });
+        if (options?.notifyToast) {
+          toast.info(i18n.t("profiles.cloud.rateLimited", { seconds: waitSeconds }));
+        }
+        return true;
+      }
+      state().setCloudSync({
+        phase: "error",
+        cooldownUntil: cloudSyncLimiter.getManualRemainingMs()
+          ? Date.now() + cloudSyncLimiter.getManualRemainingMs()
+          : state().cloudSync.cooldownUntil,
+        error: rawMsg,
+      });
+      if (options?.notifyToast) {
+        toast.error(i18n.t("profiles.cloud.syncError"), {
+          description: formatCloudError(rawMsg, i18n.t),
+        });
+      }
+      return false;
+    },
+    [state],
+  );
+
   const reconcileCloudOnConnect = useCallback(
     async (
       userId: string,
@@ -1342,7 +1414,9 @@ export function RuntimeProvider({ children }: { children: ReactNode }) {
             toast.success(
               i18n.t("profiles.cloud.restoredToast", { account: accountLogin }),
             );
-            if (!options?.manual) void syncHistoryWithCloud(userId, "smart");
+            if (!options?.manual) {
+              void syncHistoryWithCloud(userId, "smart", 0, { delayBeforePullMs: 3_200 });
+            }
             return "pulled";
           }
 
@@ -1403,7 +1477,9 @@ export function RuntimeProvider({ children }: { children: ReactNode }) {
         if (!localDirty) {
           await applyPulledCloudBundle(userId, pulled.bundle, pulled.meta, false);
           toast.info(i18n.t("profiles.cloud.updatedFromCloudToast"));
-          if (!options?.manual) void syncHistoryWithCloud(userId, "smart");
+          if (!options?.manual) {
+            void syncHistoryWithCloud(userId, "smart", 0, { delayBeforePullMs: 3_200 });
+          }
           return "pulled";
         }
 
@@ -1419,21 +1495,14 @@ export function RuntimeProvider({ children }: { children: ReactNode }) {
         toast.warning(i18n.t("profiles.cloud.conflictToast"));
         return "conflict";
       } catch (error) {
-        const msg = errorMessage(error);
-        cloudSyncLimiter.applyServerRateLimit(msg);
-        state().setCloudSync({
-          phase: "error",
-          cooldownUntil: cloudSyncLimiter.getManualRemainingMs()
-            ? Date.now() + cloudSyncLimiter.getManualRemainingMs()
-            : state().cloudSync.cooldownUntil,
-          error: msg,
-        });
+        applyCloudSyncErrorState(userId, errorMessage(error));
         return "skipped";
       } finally {
         cloudSyncInFlightRef.current = false;
       }
     },
     [
+      applyCloudSyncErrorState,
       applyPulledCloudBundle,
       buildLocalCloudPayload,
       pushLocalToCloud,
@@ -1986,6 +2055,7 @@ export function RuntimeProvider({ children }: { children: ReactNode }) {
     if (isTauri()) await twitchNative.chatStop().catch(() => undefined);
   }, [buildLocalCloudPayload, buildSyncedProfiles, pushLocalToCloud, state]);
 
+  const [remoteHostStopped, setRemoteHostStopped] = useState(false);
   const [remoteAuthNeeded, setRemoteAuthNeeded] = useState(false);
   const [remoteTokenInput, setRemoteTokenInput] = useState("");
   const [remoteAuthError, setRemoteAuthError] = useState<string>();
@@ -2058,13 +2128,22 @@ export function RuntimeProvider({ children }: { children: ReactNode }) {
       const connectSse = (tok: string) => {
         if (remoteSse) remoteSse.close();
         const q = tok ? `?token=${encodeURIComponent(tok)}` : "";
-        remoteSse = new EventSource(`/api/events${q}`);
-        remoteSse.addEventListener("state", (ev) => {
+        const es = new EventSource(`/api/events${q}`);
+        remoteSse = es;
+        es.addEventListener("state", (ev) => {
+          if (disposed) return;
           try {
+            setRemoteHostStopped(false);
             applyRemoteSnapshot(JSON.parse(ev.data) as Record<string, unknown>);
           } catch {
             // ignore
           }
+        });
+        es.addEventListener("host_stopped", () => {
+          if (disposed) return;
+          setRemoteHostStopped(true);
+          es.close();
+          if (remoteSse === es) remoteSse = undefined;
         });
       };
       const fetchInitial = async () => {
@@ -2085,6 +2164,7 @@ export function RuntimeProvider({ children }: { children: ReactNode }) {
           if (res.ok) {
             const snap = (await res.json()) as Record<string, unknown>;
             if (!disposed) {
+              setRemoteHostStopped(false);
               setRemoteAuthNeeded(false);
               const applied = applyRemoteSnapshot(snap);
               connectSse(token);
@@ -3285,25 +3365,20 @@ export function RuntimeProvider({ children }: { children: ReactNode }) {
         pulled.meta,
         Boolean(options?.merge),
       );
-      await syncHistoryWithCloud(userId, "pull", 0, { force: true });
+      await syncHistoryWithCloud(userId, "pull", 0, {
+        force: true,
+        delayBeforePullMs: 3_200,
+      });
       const until = cloudSyncLimiter.recordManualOutcome({ serverWork: true });
       state().setCloudSync({ cooldownUntil: until });
       toast.success(i18n.t("profiles.cloud.downloadSuccess"));
     } catch (error) {
-      const rawMsg = errorMessage(error);
-      const waitSeconds = cloudSyncLimiter.applyServerRateLimit(rawMsg);
-      const displayMsg = waitSeconds
-        ? i18n.t("profiles.cloud.rateLimited", { seconds: waitSeconds })
-        : formatCloudError(rawMsg, i18n.t);
-      state().setCloudSync({
-        phase: "error",
-        cooldownUntil: cloudSyncLimiter.getManualRemainingMs()
-          ? Date.now() + cloudSyncLimiter.getManualRemainingMs()
-          : state().cloudSync.cooldownUntil,
-        error: rawMsg,
+      const rateLimited = applyCloudSyncErrorState(userId, errorMessage(error), {
+        notifyToast: true,
       });
-      toast.error(i18n.t("profiles.cloud.syncError"), { description: displayMsg });
-      throw error;
+      if (!rateLimited) {
+        throw error;
+      }
     } finally {
       cloudSyncInFlightRef.current = false;
     }
@@ -3341,29 +3416,21 @@ export function RuntimeProvider({ children }: { children: ReactNode }) {
       });
       toast.success(i18n.t("profiles.cloud.deleteSuccess"));
     } catch (error) {
-      const rawMsg = errorMessage(error);
-      const waitSeconds = cloudSyncLimiter.applyServerRateLimit(rawMsg);
-      const displayMsg = waitSeconds
-        ? i18n.t("profiles.cloud.rateLimited", { seconds: waitSeconds })
-        : formatCloudError(rawMsg, i18n.t);
-      current.setCloudSync({
-        phase: "error",
-        cooldownUntil: cloudSyncLimiter.getManualRemainingMs()
-          ? Date.now() + cloudSyncLimiter.getManualRemainingMs()
-          : current.cloudSync.cooldownUntil,
-        error: rawMsg,
+      const rateLimited = applyCloudSyncErrorState(userId, errorMessage(error), {
+        notifyToast: true,
       });
-      toast.error(i18n.t("profiles.cloud.syncError"), { description: displayMsg });
-      throw error;
+      if (!rateLimited) {
+        throw error;
+      }
     } finally {
       cloudSyncInFlightRef.current = false;
     }
   };
 
-  const refreshProEntitlements = async () => {
+  const refreshProEntitlements = async (force = false) => {
     const current = state();
     if (!isTauri()) {
-      void sendRemoteAction("pro.refresh");
+      void sendRemoteAction("runtime.call", { method: "refreshProEntitlements", args: [force] });
       return current.entitlements;
     }
     const userId = current.twitch.userId;
@@ -3371,6 +3438,10 @@ export function RuntimeProvider({ children }: { children: ReactNode }) {
       const freeState = { tier: "free" as const, pro: false, features: [] };
       current.setEntitlements(freeState);
       return freeState;
+    }
+    const cached = cloudSyncLimiter.getCachedEntitlements(userId);
+    if (!force && cached && !cloudSyncLimiter.canAutoRefreshEntitlements(userId, false)) {
+      return cached;
     }
     current.setEntitlements({ loading: true, error: undefined });
     try {
@@ -3380,6 +3451,7 @@ export function RuntimeProvider({ children }: { children: ReactNode }) {
       return entitlements;
     } catch (error) {
       const msg = errorMessage(error);
+      cloudSyncLimiter.applyServerRateLimit(msg);
       state().setEntitlements({ loading: false, error: msg });
       throw error;
     }
@@ -3509,15 +3581,24 @@ export function RuntimeProvider({ children }: { children: ReactNode }) {
       current.setStorageTicket(undefined);
       return undefined;
     }
+    const gate = cloudSyncLimiter.canFetchStorageTicket(userId, force);
+    if (!gate.allowed) {
+      if (force && gate.waitSeconds > 0) {
+        toast.info(i18n.t("profiles.cloud.rateLimited", { seconds: gate.waitSeconds }));
+      }
+      return current.storageTicket;
+    }
     current.setStorageTicket({ loading: true, error: undefined });
     try {
       const next = await supportNative.storageStatus(TWITCH_CLIENT_ID);
       if (state().twitch.userId !== userId) return undefined;
+      cloudSyncLimiter.markStorageTicketFetched(userId, force);
       state().setStorageTicket({ ...next, loading: false, error: undefined });
       state().setCloudSync({ storageInfo: next.storage });
       return next;
     } catch (error) {
       const msg = errorMessage(error);
+      cloudSyncLimiter.applyServerRateLimit(msg);
       state().setStorageTicket({ loading: false, error: msg });
       if (force) {
         toast.error(i18n.t("profiles.cloud.storage.loadError"), {
@@ -3540,6 +3621,7 @@ export function RuntimeProvider({ children }: { children: ReactNode }) {
     }
     try {
       await supportNative.submitStorageRequest(TWITCH_CLIENT_ID, requestedMb, trimmed);
+      cloudSyncLimiter.markStorageTicketFetched(userId, true);
       const updated = await supportNative.storageStatus(TWITCH_CLIENT_ID);
       state().setStorageTicket({ ...updated, loading: false, error: undefined });
       state().setCloudSync({ storageInfo: updated.storage });
@@ -3724,9 +3806,46 @@ export function RuntimeProvider({ children }: { children: ReactNode }) {
     shutdown,
   };
 
+  const sendRemoteActionRef = useRef(sendRemoteAction);
+
   useEffect(() => {
     runtimeMethodsRef.current = { ...rawRuntimeValue };
+    sendRemoteActionRef.current = sendRemoteAction;
   });
+
+  const isTauriHost = isTauri();
+  const providerValue: RuntimeValue = useMemo(
+    () =>
+      createStableRuntimeProxy(
+        { deviceAuth, botDeviceAuth },
+        () => runtimeMethodsRef.current,
+        () => sendRemoteActionRef.current,
+        !isTauriHost,
+      ),
+    [deviceAuth, botDeviceAuth, isTauriHost],
+  );
+
+  if (!isTauri() && remoteHostStopped) {
+    return (
+      <div className="flex min-h-dvh items-center justify-center bg-canvas p-4 text-ink">
+        <div className="w-full max-w-sm space-y-4 rounded-xl border border-rule-strong bg-panel p-6 shadow-lg">
+          <div className="space-y-1.5">
+            <h1 className="text-base font-semibold">{i18n.t("host.hostStoppedTitle")}</h1>
+            <p className="text-xs leading-relaxed text-zinc-400">
+              {i18n.t("host.hostStoppedDetail")}
+            </p>
+          </div>
+          <button
+            type="button"
+            onClick={() => window.location.reload()}
+            className="w-full rounded-xl bg-accent px-4 py-2.5 text-sm font-semibold text-white transition hover:brightness-110"
+          >
+            {i18n.t("host.reconnectButton")}
+          </button>
+        </div>
+      </div>
+    );
+  }
 
   if (!isTauri() && remoteAuthNeeded) {
     return (
@@ -3780,19 +3899,6 @@ export function RuntimeProvider({ children }: { children: ReactNode }) {
       </div>
     );
   }
-
-  const providerValue: RuntimeValue = isTauri()
-    ? rawRuntimeValue
-    : createRemoteRuntimeProxy(
-        {
-          deviceAuth,
-          botDeviceAuth,
-          getChatUserProfile,
-          exportProfiles,
-          importProfiles,
-        },
-        sendRemoteAction,
-      );
 
   return (
     <RuntimeContext.Provider value={providerValue}>

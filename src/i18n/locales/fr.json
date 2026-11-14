@@ -664,7 +664,10 @@
     "pairConfirmHint": "Vérifiez que ce code correspond à celui affiché sur votre téléphone avant de confirmer.",
     "pairExpiresIn": "{{seconds}} s",
     "pairConfirm": "Confirmer",
-    "pairDecline": "Refuser"
+    "pairDecline": "Refuser",
+    "hostStoppedTitle": "Mode Hôte désactivé",
+    "hostStoppedDetail": "L'hôte StreamDash a été arrêté sur le PC. Réactivez-le sur le PC pour vous reconnecter.",
+    "reconnectButton": "Reconnecter"
   },
   "channelPoints": {
     "backgroundColor": "Couleur d’arrière-plan",

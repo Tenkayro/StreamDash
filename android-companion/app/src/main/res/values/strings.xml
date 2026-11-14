@@ -152,4 +152,5 @@
     <string name="pair_request_connecting">Requesting connection…</string>
     <string name="pair_request_denied">Connection was declined on %1$s.</string>
     <string name="pair_request_expired">Confirmation timed out. Tap the PC again to retry.</string>
+    <string name="err_host_disabled">Host Mode was disabled on the PC.</string>
 </resources>

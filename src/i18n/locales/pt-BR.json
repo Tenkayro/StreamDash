@@ -664,7 +664,10 @@
     "pairConfirmHint": "Confira se este código é igual ao exibido no seu celular antes de confirmar.",
     "pairExpiresIn": "{{seconds}}s",
     "pairConfirm": "Confirmar",
-    "pairDecline": "Recusar"
+    "pairDecline": "Recusar",
+    "hostStoppedTitle": "Modo Host desativado",
+    "hostStoppedDetail": "O host do StreamDash foi encerrado no PC. Ative-o novamente no PC para reconectar.",
+    "reconnectButton": "Reconectar"
   },
   "channelPoints": {
     "backgroundColor": "Cor de fundo",

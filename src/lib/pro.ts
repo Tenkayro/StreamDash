@@ -1,4 +1,5 @@
 import { openUrl } from "@tauri-apps/plugin-opener";
+import { parseRateLimitWaitSeconds } from "./cloud-sync-limiter";
 
 export const PRO_PURCHASE_URLS = [
   "https://tenkayro.de/app/streamdash/pro/",
@@ -58,7 +59,14 @@ export function isCloudServerUnavailableError(rawError?: string): boolean {
   );
 }
 
-export function formatCloudError(rawError: string, t: (key: string) => string): string {
+export function formatCloudError(
+  rawError: string,
+  t: (key: string, opts?: Record<string, unknown>) => string,
+): string {
+  const waitSeconds = parseRateLimitWaitSeconds(rawError);
+  if (waitSeconds) {
+    return t("profiles.cloud.rateLimited", { seconds: waitSeconds });
+  }
   if (isCloudServerUnavailableError(rawError)) {
     return t("pro.offlineDetail");
   }

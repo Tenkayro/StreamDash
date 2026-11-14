@@ -94,7 +94,7 @@ export interface RuntimeValue {
     options?: { force?: boolean; merge?: boolean },
   ) => Promise<void>;
   deleteCloudBackup: () => Promise<void>;
-  refreshProEntitlements: () => Promise<ProEntitlements>;
+  refreshProEntitlements: (force?: boolean) => Promise<ProEntitlements>;
   activateProLicense: (licenseKey: string) => Promise<ProEntitlements>;
   refreshSupportTicket: (force?: boolean) => Promise<SupportTicketState | undefined>;
   submitKeyResetTicket: (message: string) => Promise<void>;

@@ -10,8 +10,17 @@ class HostEventStream(
     private val host: String,
     private val port: Int,
     private val token: String,
-    private val onEventData: (String) -> Unit
+    private val onEventData: (String) -> Unit,
+    private val onHostStopped: () -> Unit = {},
+    private val onUnauthorized: () -> Unit = {},
+    private val onConnectionLost: () -> Unit = {}
 ) {
+    private enum class StreamOutcome {
+        HOST_STOPPED,
+        UNAUTHORIZED,
+        DISCONNECTED,
+    }
+
     private val stopped = AtomicBoolean(false)
     @Volatile
     private var activeConn: HttpURLConnection? = null
@@ -21,15 +30,29 @@ class HostEventStream(
     fun start() {
         if (stopped.get()) return
         val thread = Thread({
-            var backoffMs = 2000L
+            var backoffMs = 1500L
             while (!stopped.get()) {
-                val connectedCleanly = streamOnce()
-                if (stopped.get()) break
-                backoffMs = if (connectedCleanly) 2000L else (backoffMs * 2).coerceAtMost(10000L)
-                try {
-                    Thread.sleep(backoffMs)
-                } catch (_: InterruptedException) {
-                    break
+                when (streamOnce()) {
+                    StreamOutcome.HOST_STOPPED -> {
+                        stopped.set(true)
+                        onHostStopped()
+                        break
+                    }
+                    StreamOutcome.UNAUTHORIZED -> {
+                        stopped.set(true)
+                        onUnauthorized()
+                        break
+                    }
+                    StreamOutcome.DISCONNECTED -> {
+                        if (stopped.get()) break
+                        onConnectionLost()
+                        backoffMs = (backoffMs * 2).coerceAtMost(10000L)
+                        try {
+                            Thread.sleep(backoffMs)
+                        } catch (_: InterruptedException) {
+                            break
+                        }
+                    }
                 }
             }
         }, "sd-companion-sse")
@@ -44,10 +67,10 @@ class HostEventStream(
         workerThread?.interrupt()
     }
 
-    private fun streamOnce(): Boolean {
+    private fun streamOnce(): StreamOutcome {
         var conn: HttpURLConnection? = null
         return try {
-            val ipv4Host = HostApi.resolveIpv4Host(host) ?: return false
+            val ipv4Host = HostApi.resolveIpv4Host(host) ?: return StreamOutcome.DISCONNECTED
             val url = URL("http://$ipv4Host:$port/api/companion-events")
             conn = (url.openConnection() as HttpURLConnection).apply {
                 connectTimeout = 5000
@@ -59,30 +82,43 @@ class HostEventStream(
                 }
             }
             activeConn = conn
-            if (conn.responseCode != 200) return false
+            val code = conn.responseCode
+            if (code == 401 || code == 403) return StreamOutcome.UNAUTHORIZED
+            if (code != 200) return StreamOutcome.DISCONNECTED
 
             BufferedReader(InputStreamReader(conn.inputStream, Charsets.UTF_8)).use { reader ->
+                var currentEvent = ""
                 val dataBuf = StringBuilder()
                 while (!stopped.get()) {
                     val line = reader.readLine() ?: break
                     when {
+                        line.startsWith("event:") -> {
+                            currentEvent = line.removePrefix("event:").trim()
+                        }
                         line.startsWith("data:") -> {
                             if (dataBuf.isNotEmpty()) dataBuf.append('\n')
                             dataBuf.append(line.removePrefix("data:").trimStart())
                         }
                         line.isEmpty() -> {
-                            if (dataBuf.isNotEmpty()) {
+                            if (dataBuf.isNotEmpty() || currentEvent.isNotEmpty()) {
+                                val eventName = currentEvent
                                 val payload = dataBuf.toString()
+                                currentEvent = ""
                                 dataBuf.setLength(0)
-                                onEventData(payload)
+                                if (eventName == "host_stopped" || payload.contains("\"kind\":\"host_stopped\"")) {
+                                    return StreamOutcome.HOST_STOPPED
+                                }
+                                if (payload.isNotEmpty()) {
+                                    onEventData(payload)
+                                }
                             }
                         }
                     }
                 }
             }
-            true
+            StreamOutcome.DISCONNECTED
         } catch (_: Exception) {
-            false
+            StreamOutcome.DISCONNECTED
         } finally {
             if (activeConn == conn) activeConn = null
             runCatching { conn?.disconnect() }

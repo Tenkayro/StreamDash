@@ -152,4 +152,5 @@
     <string name="pair_request_connecting">Verbindungsanfrage wird gesendet…</string>
     <string name="pair_request_denied">Verbindung auf %1$s abgelehnt.</string>
     <string name="pair_request_expired">Bestätigung abgelaufen. Tippe den PC erneut an.</string>
+    <string name="err_host_disabled">Host-Modus wurde auf dem PC deaktiviert.</string>
 </resources>

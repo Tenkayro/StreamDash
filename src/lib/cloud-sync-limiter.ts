@@ -28,10 +28,13 @@ class CloudSyncClientLimiter {
   private lastHistoryFingerprintByUser = new Map<string, string>()
   private lastHistoryRemoteShaByUser = new Map<string, string>()
   private entitlementsCache = new Map<string, { value: ProEntitlements; fetchedAt: number }>()
+  private lastEntitlementsAutoFetchByUser = new Map<string, number>()
   private activateTimestamps: number[] = []
   private activateCooldownUntil = 0
   private lastSupportFetchByUser = new Map<string, number>()
   private supportRefreshCooldownUntil = 0
+  private lastStorageFetchByUser = new Map<string, number>()
+  private storageRefreshCooldownUntil = 0
 
   private pruneWindow(list: number[], windowMs: number, now: number): number[] {
     return list.filter((ts) => now - ts < windowMs)
@@ -82,6 +85,8 @@ class CloudSyncClientLimiter {
     const until = now + seconds * 1000
     this.cooldownUntil = Math.max(this.cooldownUntil, until)
     this.activateCooldownUntil = Math.max(this.activateCooldownUntil, until)
+    this.supportRefreshCooldownUntil = Math.max(this.supportRefreshCooldownUntil, until)
+    this.storageRefreshCooldownUntil = Math.max(this.storageRefreshCooldownUntil, until)
     return seconds
   }
 
@@ -108,11 +113,24 @@ class CloudSyncClientLimiter {
 
   setCachedEntitlements(userId: string, value: ProEntitlements, now = Date.now()): void {
     this.entitlementsCache.set(userId, { value, fetchedAt: now })
+    this.lastEntitlementsAutoFetchByUser.set(userId, now)
+  }
+
+  canAutoRefreshEntitlements(userId: string, force = false, now = Date.now()): boolean {
+    if (force) return true
+    if (this.getManualRemainingMs(now) > 0) return false
+    const last = this.lastEntitlementsAutoFetchByUser.get(userId) ?? 0
+    return now - last >= SUPPORT_AUTO_GAP_MS
   }
 
   invalidateEntitlements(userId?: string): void {
-    if (userId) this.entitlementsCache.delete(userId)
-    else this.entitlementsCache.clear()
+    if (userId) {
+      this.entitlementsCache.delete(userId)
+      this.lastEntitlementsAutoFetchByUser.delete(userId)
+    } else {
+      this.entitlementsCache.clear()
+      this.lastEntitlementsAutoFetchByUser.clear()
+    }
   }
 
   canActivatePro(now = Date.now()): { allowed: boolean; waitSeconds: number } {
@@ -156,6 +174,30 @@ class CloudSyncClientLimiter {
     this.lastSupportFetchByUser.set(userId, now)
     if (manual) {
       this.supportRefreshCooldownUntil = now + SUPPORT_MANUAL_COOLDOWN_MS
+    }
+  }
+
+  canFetchStorageTicket(userId: string, force = false, now = Date.now()): { allowed: boolean; waitSeconds: number } {
+    if (force) {
+      if (this.storageRefreshCooldownUntil > now) {
+        return {
+          allowed: false,
+          waitSeconds: Math.ceil((this.storageRefreshCooldownUntil - now) / 1000),
+        }
+      }
+      return { allowed: true, waitSeconds: 0 }
+    }
+    const last = this.lastStorageFetchByUser.get(userId) ?? 0
+    if (now - last < SUPPORT_AUTO_GAP_MS) {
+      return { allowed: false, waitSeconds: 0 }
+    }
+    return { allowed: true, waitSeconds: 0 }
+  }
+
+  markStorageTicketFetched(userId: string, manual: boolean, now = Date.now()): void {
+    this.lastStorageFetchByUser.set(userId, now)
+    if (manual) {
+      this.storageRefreshCooldownUntil = now + SUPPORT_MANUAL_COOLDOWN_MS
     }
   }
 
