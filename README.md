@@ -80,10 +80,13 @@ Quick links below — see **[docs/install.md](docs/install.md)** for full platfo
 
 ## 🌐 Web & Mobile Host / Headless Server
 
-Host the full UI on your LAN or run StreamDash silently on a Linux server — see **[docs/headless-server.md](docs/headless-server.md)** for systemd autostart, runtime libraries, and firewall setup.
+Host the full UI on your LAN or run StreamDash silently on a Linux server — use the interactive server setup wizard or see **[docs/headless-server.md](docs/headless-server.md)**:
 
 ```bash
-# Headless server with custom port & PIN
+# Interactive Headless Linux Server Setup Wizard (dependencies + binary + systemd)
+curl -fsSL https://raw.githubusercontent.com/Tenkayro/StreamDash/main/install.sh | bash -s -- --server
+
+# Or run manually in headless mode with custom port & PIN
 xvfb-run -a streamdash --headless --port 48950 --pin MYSECRET
 
 # Desktop window + Web Host enabled

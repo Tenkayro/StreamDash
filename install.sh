@@ -19,10 +19,16 @@ DESKTOP_FILE="${HOME}/.local/share/applications/streamdash.desktop"
 ICON_FILE="${HOME}/.local/share/icons/hicolor/128x128/apps/streamdash.png"
 STATE_DIR="${HOME}/.local/share/streamdash-installer"
 STATE_FILE="${STATE_DIR}/state"
+USER_SYSTEMD_UNIT="${HOME}/.config/systemd/user/streamdash.service"
+SYSTEM_SYSTEMD_UNIT="/etc/systemd/system/streamdash.service"
+USER_SERVER_ENV="${HOME}/.config/streamdash/server.env"
+SYSTEM_SERVER_ENV="/etc/streamdash/server.env"
 
 AUTO_YES=0
 ACTION=""
 FORCED_METHOD=""
+SERVER_PORT=""
+SERVER_PIN=""
 TMP_DIR=""
 
 # ── Colors & Formatting ────────────────────────────────────────────────────────
@@ -90,6 +96,7 @@ confirm() {
 while [ $# -gt 0 ]; do
   case "$1" in
     --install)   ACTION="install" ;;
+    --server|--headless) ACTION="server" ;;
     --update)    ACTION="update" ;;
     --uninstall) ACTION="uninstall" ;;
     --yes|-y)    AUTO_YES=1 ;;
@@ -97,19 +104,31 @@ while [ $# -gt 0 ]; do
       shift
       FORCED_METHOD="${1:-}"
       ;;
+    --port)
+      shift
+      SERVER_PORT="${1:-}"
+      ;;
+    --pin|--token)
+      shift
+      SERVER_PIN="${1:-}"
+      ;;
     --help|-h)
       cat <<EOF
 StreamDash Linux Installer
 
 Usage:
   curl -fsSL https://raw.githubusercontent.com/Tenkayro/StreamDash/main/install.sh | bash
+  curl -fsSL https://raw.githubusercontent.com/Tenkayro/StreamDash/main/install.sh | bash -s -- --server
   ./install.sh [OPTIONS]
 
 Options:
   --install            Install StreamDash non-interactively
+  --server             Run the interactive Headless Server setup wizard (systemd + xvfb)
   --update             Update StreamDash to the latest release
   --uninstall          Uninstall StreamDash
   --method <type>      Force package type: deb, rpm, appimage, or binary
+  --port <port>        Web Host port for --server setup (default: 48950)
+  --pin <pin>          Access PIN/token for --server setup
   -y, --yes            Skip confirmation prompts
   -h, --help           Show this help message
 EOF
@@ -452,6 +471,312 @@ install_binary() {
   fi
 }
 
+generate_random_pin() {
+  if has_cmd python3; then
+    python3 -c 'import secrets; alphabet="ABCDEFGHJKLMNPQRSTUVWXYZabcdefghjkmnpqrstuvwxyz23456789"; print("".join(secrets.choice(alphabet) for _ in range(8)))'
+  elif has_cmd tr; then
+    tr -dc 'A-HJ-NP-Za-km-z2-9' </dev/urandom 2>/dev/null | head -c 8 || printf "SD489500"
+  else
+    printf "SD489500"
+  fi
+}
+
+detect_primary_ip() {
+  local ip=""
+  if has_cmd ip; then
+    ip="$(ip -4 route get 1.1.1.1 2>/dev/null | awk '{for(i=1;i<=NF;i++) if($i=="src"){print $(i+1); exit}}' || true)"
+  fi
+  if [ -z "$ip" ] && has_cmd hostname; then
+    ip="$(hostname -I 2>/dev/null | awk '{print $1}' || true)"
+  fi
+  printf "%s" "${ip:-<SERVER-IP>}"
+}
+
+restart_server_services_if_present() {
+  if ! has_cmd systemctl || [ ! -d /run/systemd/system ]; then
+    return 0
+  fi
+  if [ -f "$SYSTEM_SYSTEMD_UNIT" ]; then
+    step "Restarting system service (streamdash.service)..."
+    run_sudo systemctl restart streamdash.service && ok "Restarted streamdash.service" || warn "Could not restart system service automatically."
+  elif [ -f "$USER_SYSTEMD_UNIT" ]; then
+    step "Restarting user service (streamdash.service)..."
+    systemctl --user restart streamdash.service >/dev/null 2>&1 && ok "Restarted user streamdash.service" || warn "Could not restart user service automatically (run: systemctl --user restart streamdash)."
+  fi
+}
+
+remove_server_services() {
+  if [ -f "$USER_SYSTEMD_UNIT" ]; then
+    step "Removing user systemd service..."
+    systemctl --user disable --now streamdash.service >/dev/null 2>&1 || true
+    rm -f "$USER_SYSTEMD_UNIT"
+    systemctl --user daemon-reload >/dev/null 2>&1 || true
+    ok "Removed ${USER_SYSTEMD_UNIT}"
+  fi
+  if [ -f "$SYSTEM_SYSTEMD_UNIT" ]; then
+    step "Removing system systemd service (requires sudo)..."
+    run_sudo systemctl disable --now streamdash.service >/dev/null 2>&1 || true
+    run_sudo rm -f "$SYSTEM_SYSTEMD_UNIT"
+    run_sudo systemctl daemon-reload >/dev/null 2>&1 || true
+    ok "Removed ${SYSTEM_SYSTEMD_UNIT}"
+  fi
+}
+
+install_server_dependencies() {
+  step "[1/4] Checking server runtime libraries & virtual display (xvfb)..."
+
+  local need_pkgs=0
+  if ! has_cmd xvfb-run; then
+    need_pkgs=1
+  elif has_cmd ldconfig && ! ldconfig -p 2>/dev/null | grep -q "webkit2gtk-4\.1"; then
+    need_pkgs=1
+  fi
+
+  if [ "$need_pkgs" -eq 0 ]; then
+    ok "xvfb-run and WebKitGTK 4.1 runtime look ready."
+    return 0
+  fi
+
+  local pkg_mgr=""
+  local pkgs=()
+  local combined=" ${DISTRO_ID,,} ${DISTRO_LIKE,,} "
+
+  if has_cmd apt-get; then
+    pkg_mgr="apt"
+    local indicator_pkg="libayatana-appindicator3-1"
+    if ! apt-cache show libayatana-appindicator3-1 >/dev/null 2>&1; then
+      indicator_pkg="libappindicator3-1"
+    fi
+    pkgs=(xvfb libwebkit2gtk-4.1-0 libgtk-3-0 librsvg2-2 "$indicator_pkg")
+  elif has_cmd dnf && [[ "$combined" =~ [[:space:]](fedora|rhel|centos|almalinux|rocky|nobara)[[:space:]] ]]; then
+    pkg_mgr="dnf"
+    pkgs=(xorg-x11-server-Xvfb webkit2gtk4.1 gtk3 librsvg2 libappindicator-gtk3)
+  elif has_cmd zypper; then
+    pkg_mgr="zypper"
+    pkgs=(xvfb-run libwebkit2gtk-4_1-0 gtk3 librsvg-2-2 libappindicator3-1)
+  elif has_cmd pacman; then
+    pkg_mgr="pacman"
+    pkgs=(xorg-server-xvfb webkit2gtk-4.1 gtk3 librsvg libappindicator-gtk3)
+  fi
+
+  if [ -z "$pkg_mgr" ]; then
+    warn "Unsupported package manager for automatic dependency install."
+    warn "Please install xvfb, GTK3, WebKitGTK 4.1, and librsvg2 manually."
+    return 0
+  fi
+
+  printf "  ${C_DIM}Packages:${C_RESET} %s\n" "${pkgs[*]}"
+  if ! confirm "Install required server runtime packages via ${pkg_mgr}?" "y"; then
+    warn "Skipped runtime package installation."
+    return 0
+  fi
+
+  case "$pkg_mgr" in
+    apt)    run_sudo apt-get update -qq && run_sudo apt-get install -y "${pkgs[@]}" ;;
+    dnf)    run_sudo dnf install -y "${pkgs[@]}" ;;
+    zypper) run_sudo zypper --non-interactive install "${pkgs[@]}" ;;
+    pacman) run_sudo pacman -S --needed --noconfirm "${pkgs[@]}" ;;
+  esac
+  ok "Server runtime dependencies installed."
+}
+
+configure_server_firewall() {
+  local port="$1"
+  if has_cmd ufw && run_sudo ufw status 2>/dev/null | grep -q "Status: active"; then
+    if confirm "Open TCP port ${port} in UFW firewall?" "n"; then
+      run_sudo ufw allow "${port}/tcp" >/dev/null
+      ok "Opened ${port}/tcp in UFW"
+      if confirm "Also open UDP port 48951 for local Android LAN discovery?" "n"; then
+        run_sudo ufw allow 48951/udp >/dev/null
+        ok "Opened 48951/udp in UFW"
+      fi
+    fi
+  elif has_cmd firewall-cmd && firewall-cmd --state >/dev/null 2>&1; then
+    if confirm "Open TCP port ${port} in firewalld?" "n"; then
+      run_sudo firewall-cmd --permanent --add-port="${port}/tcp" >/dev/null
+      if confirm "Also open UDP port 48951 for local Android LAN discovery?" "n"; then
+        run_sudo firewall-cmd --permanent --add-port=48951/udp >/dev/null
+      fi
+      run_sudo firewall-cmd --reload >/dev/null
+      ok "Updated firewalld rules"
+    fi
+  fi
+}
+
+setup_headless_server() {
+  printf "\n"
+  printf "  ${C_PURPLE}${C_BOLD}StreamDash${C_RESET} ${C_DIM}· Headless Server Setup Wizard${C_RESET}\n"
+  printf "  ${C_DIM}────────────────────────────────────────────${C_RESET}\n"
+  printf "  ${C_DIM}System:${C_RESET}   %s (%s)\n" "$DISTRO_NAME" "$ARCH"
+  printf "  ${C_DIM}Release:${C_RESET}  ${C_BOLD}%s${C_RESET}\n" "${LATEST_TAG:-unknown}"
+  printf "  ${C_DIM}────────────────────────────────────────────${C_RESET}\n\n"
+
+  install_server_dependencies
+
+  printf "\n"
+  step "[2/4] Installing StreamDash headless binary..."
+  install_binary
+
+  printf "\n"
+  step "[3/4] Configuring Headless Web Host..."
+
+  local env_file="$USER_SERVER_ENV"
+  local use_system_service=0
+  if [ "$(id -u)" -eq 0 ]; then
+    use_system_service=1
+    env_file="$SYSTEM_SERVER_ENV"
+  fi
+
+  local default_port="48950"
+  local default_pin=""
+  if [ -r "$env_file" ]; then
+    # shellcheck disable=SC1090
+    . "$env_file" || true
+    [ -n "${STREAMDASH_PORT:-}" ] && default_port="$STREAMDASH_PORT"
+    [ -n "${STREAMDASH_PIN:-}" ] && default_pin="$STREAMDASH_PIN"
+  fi
+  [ -n "$SERVER_PORT" ] && default_port="$SERVER_PORT"
+  if [ -n "$SERVER_PIN" ]; then
+    default_pin="$SERVER_PIN"
+  elif [ -z "$default_pin" ]; then
+    default_pin="$(generate_random_pin)"
+  fi
+
+  local chosen_port="$default_port"
+  local chosen_pin="$default_pin"
+  if [ "$AUTO_YES" -eq 0 ]; then
+    while true; do
+      chosen_port="$(prompt_read "  ${C_BOLD}Web Host port${C_RESET} ${C_DIM}[${default_port}]${C_RESET}: " "$default_port")"
+      if [[ "$chosen_port" =~ ^[0-9]+$ ]] && [ "$chosen_port" -ge 1024 ] && [ "$chosen_port" -le 65535 ]; then
+        break
+      fi
+      warn "Please enter a valid port between 1024 and 65535."
+    done
+
+    while true; do
+      chosen_pin="$(prompt_read "  ${C_BOLD}Access PIN / Token${C_RESET} ${C_DIM}[${default_pin}]${C_RESET}: " "$default_pin")"
+      chosen_pin="${chosen_pin#"${chosen_pin%%[![:space:]]*}"}"
+      chosen_pin="${chosen_pin%"${chosen_pin##*[![:space:]]}"}"
+      if [ -n "$chosen_pin" ]; then
+        break
+      fi
+      warn "Access PIN cannot be empty."
+    done
+  fi
+
+  if [ "$use_system_service" -eq 1 ]; then
+    mkdir -p "$(dirname "$env_file")"
+  else
+    mkdir -p "$(dirname "$env_file")"
+  fi
+  cat > "$env_file" <<EOF
+STREAMDASH_PORT=${chosen_port}
+STREAMDASH_PIN=${chosen_pin}
+EOF
+  chmod 600 "$env_file"
+  ok "Saved server config to ${env_file}"
+
+  if [ "$AUTO_YES" -eq 0 ]; then
+    configure_server_firewall "$chosen_port"
+  fi
+
+  printf "\n"
+  step "[4/4] Setting up systemd background service..."
+
+  local xvfb_bin
+  xvfb_bin="$(command -v xvfb-run || printf '/usr/bin/xvfb-run')"
+  local service_active=0
+  local service_kind="none"
+
+  if has_cmd systemctl && [ -d /run/systemd/system ]; then
+    if confirm "Install & enable systemd auto-start service?" "y"; then
+      if [ "$use_system_service" -eq 1 ]; then
+        cat > "$SYSTEM_SYSTEMD_UNIT" <<EOF
+[Unit]
+Description=StreamDash Headless Host
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+EnvironmentFile=${SYSTEM_SERVER_ENV}
+ExecStart=${xvfb_bin} -a ${BIN_FILE} --headless --port \${STREAMDASH_PORT} --pin \${STREAMDASH_PIN}
+Restart=on-failure
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target
+EOF
+        systemctl daemon-reload
+        systemctl enable --now streamdash.service
+        systemctl restart streamdash.service
+        service_active=1
+        service_kind="system"
+        ok "Enabled & started system service (streamdash.service)"
+      else
+        mkdir -p "$(dirname "$USER_SYSTEMD_UNIT")"
+        cat > "$USER_SYSTEMD_UNIT" <<EOF
+[Unit]
+Description=StreamDash Headless Host
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+EnvironmentFile=%h/.config/streamdash/server.env
+ExecStart=${xvfb_bin} -a %h/.local/bin/streamdash --headless --port \${STREAMDASH_PORT} --pin \${STREAMDASH_PIN}
+Restart=on-failure
+RestartSec=5
+
+[Install]
+WantedBy=default.target
+EOF
+        if has_cmd loginctl; then
+          loginctl enable-linger "$USER" >/dev/null 2>&1 || run_sudo loginctl enable-linger "$USER" >/dev/null 2>&1 || true
+        fi
+        if systemctl --user daemon-reload >/dev/null 2>&1; then
+          systemctl --user enable --now streamdash.service
+          systemctl --user restart streamdash.service
+          service_active=1
+          service_kind="user"
+          ok "Enabled & started user service (streamdash.service)"
+        else
+          warn "User systemd bus is not active in this session."
+          warn "Start manually or enable user session: systemctl --user enable --now streamdash.service"
+        fi
+      fi
+    fi
+  else
+    warn "systemd is not running in this environment — skipping service setup."
+  fi
+
+  local server_ip
+  server_ip="$(detect_primary_ip)"
+
+  printf "\n"
+  printf "  ${C_GREEN}✓${C_RESET} ${C_BOLD}StreamDash Headless Server Setup Complete!${C_RESET}\n"
+  printf "  ${C_DIM}────────────────────────────────────────────────────────${C_RESET}\n"
+  printf "  ${C_DIM}Web URL:${C_RESET}      ${C_BOLD}http://%s:%s${C_RESET}\n" "$server_ip" "$chosen_port"
+  printf "  ${C_DIM}Access PIN:${C_RESET}   ${C_BOLD}%s${C_RESET}\n" "$chosen_pin"
+  printf "  ${C_DIM}Config File:${C_RESET}  %s\n" "$env_file"
+  if [ "$service_kind" = "system" ]; then
+    printf "  ${C_DIM}Status:${C_RESET}       ${C_GREEN}Running (systemd system service)${C_RESET}\n"
+    printf "  ${C_DIM}Manage:${C_RESET}       systemctl status|restart streamdash\n"
+    printf "  ${C_DIM}Logs:${C_RESET}         journalctl -u streamdash -f\n"
+  elif [ "$service_kind" = "user" ]; then
+    printf "  ${C_DIM}Status:${C_RESET}       ${C_GREEN}Running (systemd user service)${C_RESET}\n"
+    printf "  ${C_DIM}Manage:${C_RESET}       systemctl --user status|restart streamdash\n"
+    printf "  ${C_DIM}Logs:${C_RESET}         journalctl --user -u streamdash -f\n"
+  else
+    printf "  ${C_DIM}Run manually:${C_RESET} %s -a %s --headless --port %s --pin %s\n" "$xvfb_bin" "$BIN_FILE" "$chosen_port" "$chosen_pin"
+  fi
+  if [ "$service_active" -eq 0 ] && [ "$service_kind" = "none" ]; then
+    printf "  ${C_DIM}SSH Tunnel:${C_RESET}   ssh -L %s:127.0.0.1:%s %s@%s\n" "$chosen_port" "$chosen_port" "${USER:-user}" "$server_ip"
+  fi
+  printf "  ${C_DIM}Update:${C_RESET}       curl -fsSL https://raw.githubusercontent.com/Tenkayro/StreamDash/main/install.sh | bash -s -- --update --yes\n"
+  printf "  ${C_DIM}────────────────────────────────────────────────────────${C_RESET}\n\n"
+}
+
 do_install() {
   local method="$1"
   printf "\n"
@@ -479,6 +804,7 @@ do_update() {
   fi
 
   do_install "$target_method"
+  restart_server_services_if_present
 }
 
 do_uninstall() {
@@ -493,6 +819,8 @@ do_uninstall() {
     step "Uninstall cancelled."
     return 0
   fi
+
+  remove_server_services
 
   case "$INSTALLED_METHOD" in
     deb)
@@ -536,7 +864,14 @@ do_uninstall() {
     rm -rf "${HOME}/.local/share/com.tenkayro.streamdash" \
            "${HOME}/.config/com.tenkayro.streamdash" \
            "${HOME}/.cache/com.tenkayro.streamdash" \
-           "${HOME}/.local/share/StreamDash"
+           "${HOME}/.local/share/dev.streamdash.desktop" \
+           "${HOME}/.config/dev.streamdash.desktop" \
+           "${HOME}/.cache/dev.streamdash.desktop" \
+           "${HOME}/.local/share/StreamDash" \
+           "${HOME}/.config/streamdash"
+    if [ "$(id -u)" -eq 0 ]; then
+      rm -rf "/etc/streamdash"
+    fi
     ok "Removed local user data."
   fi
 }
@@ -563,23 +898,25 @@ run_menu() {
   local rec_method="$1"
   print_header "$rec_method"
 
-  local install_label="Install StreamDash (${rec_method})"
-  [ -n "$INSTALLED_METHOD" ] && install_label="Reinstall / Repair (${rec_method})"
+  local install_label="Install StreamDash Desktop (${rec_method})"
+  [ -n "$INSTALLED_METHOD" ] && install_label="Reinstall / Repair Desktop (${rec_method})"
 
   printf "\n"
   printf "  ${C_BOLD}1)${C_RESET} %s\n" "$install_label"
-  printf "  ${C_BOLD}2)${C_RESET} Update to latest (${LATEST_TAG})\n"
-  printf "  ${C_BOLD}3)${C_RESET} Switch package format (deb / rpm / appimage / binary)\n"
-  printf "  ${C_BOLD}4)${C_RESET} Uninstall StreamDash\n"
-  printf "  ${C_BOLD}5)${C_RESET} Quit\n\n"
+  printf "  ${C_BOLD}2)${C_RESET} Headless Server Setup Wizard (systemd + xvfb + Web Host)\n"
+  printf "  ${C_BOLD}3)${C_RESET} Update to latest (${LATEST_TAG})\n"
+  printf "  ${C_BOLD}4)${C_RESET} Switch package format (deb / rpm / appimage / binary)\n"
+  printf "  ${C_BOLD}5)${C_RESET} Uninstall StreamDash\n"
+  printf "  ${C_BOLD}6)${C_RESET} Quit\n\n"
 
   local choice
-  choice="$(prompt_read "  ${C_BOLD}Select an option [1-5]:${C_RESET} " "1")"
+  choice="$(prompt_read "  ${C_BOLD}Select an option [1-6]:${C_RESET} " "1")"
 
   case "$choice" in
     1) do_install "$rec_method" ;;
-    2) do_update ;;
-    3)
+    2) setup_headless_server ;;
+    3) do_update ;;
+    4)
       printf "\n"
       printf "  ${C_BOLD}1)${C_RESET} .deb (Debian / Ubuntu / Mint)\n"
       printf "  ${C_BOLD}2)${C_RESET} .rpm (Fedora / RHEL / openSUSE)\n"
@@ -595,8 +932,8 @@ run_menu() {
         *) die "Invalid selection." ;;
       esac
       ;;
-    4) do_uninstall ;;
-    5|q|Q) printf "\n  ${C_DIM}Bye.${C_RESET}\n\n" ;;
+    5) do_uninstall ;;
+    6|q|Q) printf "\n  ${C_DIM}Bye.${C_RESET}\n\n" ;;
     *) die "Invalid selection: ${choice}" ;;
   esac
 }
@@ -611,6 +948,7 @@ fi
 
 case "$ACTION" in
   install)   do_install "$RECOMMENDED_METHOD" ;;
+  server)    setup_headless_server ;;
   update)    do_update ;;
   uninstall) do_uninstall ;;
   "")

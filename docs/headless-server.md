@@ -4,7 +4,28 @@ Run StreamDash silently in the background on a Linux VPS, home server, or mini-P
 
 ---
 
-## 1. Install Runtime Libraries + `xvfb`
+## One-Line Interactive Server Setup (Recommended)
+
+Run this on your Linux server to launch the interactive **Headless Server Setup Wizard**:
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/Tenkayro/StreamDash/main/install.sh | bash -s -- --server
+```
+
+The wizard walks you through:
+1. Installing required runtime libraries + `xvfb` (Debian/Ubuntu, Fedora/RHEL, openSUSE, Arch)
+2. Downloading & installing the raw Linux binary (`--method binary`, no AppImage/FUSE needed)
+3. Setting your Web Host port (default `48950`) and generating or choosing an access PIN (`server.env`)
+4. Optionally opening firewall ports (`ufw` / `firewalld`)
+5. Creating, enabling, and starting the `systemd` background service (automatic user service with lingering, or system service when run as `root`)
+
+*(For unattended automation: add `--yes --port 48950 --pin YOUR_PIN`.)*
+
+---
+
+## Manual Setup Steps
+
+### 1. Install Runtime Libraries + `xvfb`
 
 Even in `--headless` mode, the Linux binary links GTK3 / WebKitGTK 4.1 and expects a virtual X11 display (`xvfb-run`). No monitor or GPU is needed.
 
