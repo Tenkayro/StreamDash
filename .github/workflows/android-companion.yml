@@ -1,10 +1,6 @@
 name: Android Companion APK
 
 on:
-  push:
-    paths:
-      - "android-companion/**"
-      - ".github/workflows/android-companion.yml"
   workflow_dispatch:
 
 jobs:
@@ -23,6 +19,8 @@ jobs:
 
       - name: Set up Android SDK
         uses: android-actions/setup-android@v3
+        with:
+          packages: platform-tools platforms;android-35 build-tools;35.0.0
 
       - name: Cache Gradle packages
         uses: actions/cache@v4

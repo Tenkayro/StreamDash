@@ -22,8 +22,21 @@ skills-lock.json
 
 # Android Companion
 android-companion/.gradle/
+android-companion/.kotlin/
+android-companion/.cxx/
 android-companion/build/
 android-companion/app/build/
+android-companion/captures/
 android-companion/local.properties
+android-companion/*.iml
+android-companion/app/*.iml
+*.apk
+*.ap_
+*.aab
+*.dex
 *.keystore
 *.jks
+*.p12
+*.pk8
+*signing.env
+companion-latest.json
