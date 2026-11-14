@@ -1,7 +1,7 @@
 import { useMemo } from "react";
 import { useTranslation } from "react-i18next";
 import { useAppStore } from "../stores/app-store";
-import { cn } from "../lib/utils";
+import { cn, isTauri } from "../lib/utils";
 import { Button, EmptyState } from "./ui";
 import { MonitorOff } from "lucide-react";
 
@@ -18,7 +18,13 @@ export function TwitchPlayer({ className }: { className?: string }) {
   const { t } = useTranslation();
   const account = useAppStore((state) => state.twitch.account);
   const setPage = useAppStore((state) => state.setPage);
-  const src = useMemo(() => (account ? playerUrl(account) : ""), [account]);
+  const blockedOnLanHttp =
+    typeof window !== "undefined" &&
+    !isTauri() &&
+    window.location.protocol === "http:" &&
+    window.location.hostname !== "localhost" &&
+    window.location.hostname !== "127.0.0.1";
+  const src = useMemo(() => (account && !blockedOnLanHttp ? playerUrl(account) : ""), [account, blockedOnLanHttp]);
 
   if (!account)
     return (
@@ -32,6 +38,17 @@ export function TwitchPlayer({ className }: { className?: string }) {
               {t("chat.openConnections")}
             </Button>
           }
+        />
+      </div>
+    );
+
+  if (blockedOnLanHttp)
+    return (
+      <div className={cn("grid min-h-52 place-items-center bg-panel sm:min-h-75", className)}>
+        <EmptyState
+          icon={<MonitorOff size={22} />}
+          title={t("livePreview.remoteHttpTitle")}
+          body={t("livePreview.remoteHttpDetail")}
         />
       </div>
     );

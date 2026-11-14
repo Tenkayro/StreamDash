@@ -153,8 +153,8 @@ object AppUpdater {
         port: Int,
         token: String
     ): UpdateCheckResult {
-        val cleanHost = host.trim()
-        if (cleanHost.isEmpty() || port !in 1..65535) return UpdateCheckResult.Failed
+        val cleanHost = HostApi.resolveIpv4Host(host) ?: return UpdateCheckResult.Failed
+        if (port !in 1..65535) return UpdateCheckResult.Failed
         val infoUrl = "http://$cleanHost:$port/api/dev-apk-info"
         val headers = if (token.isNotBlank()) mapOf("X-SD-Token" to token.trim()) else emptyMap()
         val raw = fetchText(infoUrl, extraHeaders = headers) ?: return UpdateCheckResult.Failed

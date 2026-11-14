@@ -2071,7 +2071,10 @@ export function RuntimeProvider({ children }: { children: ReactNode }) {
         if (disposed) return;
         try {
           const q = token ? `?token=${encodeURIComponent(token)}` : "";
-          const res = await fetch(`/api/state${q}`);
+          const res = await fetch(`/api/state${q}`, {
+            cache: "no-store",
+            signal: AbortSignal.timeout(4500),
+          });
           if (res.status === 401) {
             if (!disposed) {
               setRemoteAuthNeeded(true);

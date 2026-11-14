@@ -468,7 +468,9 @@
   },
   "livePreview": {
     "notConnected": "Conecta Twitch para ver la vista previa",
-    "notConnectedDetail": "StreamDash mostrará aquí tu propio canal cuando conectes tu cuenta de broadcaster."
+    "notConnectedDetail": "StreamDash mostrará aquí tu propio canal cuando conectes tu cuenta de broadcaster.",
+    "remoteHttpTitle": "Reproductor en vivo no disponible por HTTP local",
+    "remoteHttpDetail": "Twitch requiere HTTPS o localhost para video incrustado. Tus métricas, chat y controles siguen en vivo en Companion."
   },
   "navigation": {
     "close": "Cerrar navegación rápida",

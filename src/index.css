@@ -583,7 +583,14 @@ select.input option {
 }
 
 .app-main {
-  scrollbar-gutter: stable;
+  -webkit-overflow-scrolling: touch;
+  overscroll-behavior-y: contain;
+}
+
+@media (min-width: 768px) {
+  .app-main {
+    scrollbar-gutter: stable;
+  }
 }
 
 .app-content {
@@ -760,10 +767,15 @@ select.input option {
   }
   .app-content,
   [data-density="compact"] .app-content {
-    padding: 14px 12px;
+    padding: 12px 10px calc(4.75rem + env(safe-area-inset-bottom));
+  }
+  .page-header {
+    margin-bottom: 10px;
+    padding-bottom: 10px;
+    gap: 8px;
   }
   .page-header h1 {
-    font-size: 18px;
+    font-size: 16px;
   }
   .dashboard-metrics,
   .dashboard-content {

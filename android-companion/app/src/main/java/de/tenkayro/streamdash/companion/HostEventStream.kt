@@ -47,7 +47,8 @@ class HostEventStream(
     private fun streamOnce(): Boolean {
         var conn: HttpURLConnection? = null
         return try {
-            val url = URL("http://${host.trim()}:$port/api/companion-events")
+            val ipv4Host = HostApi.resolveIpv4Host(host) ?: return false
+            val url = URL("http://$ipv4Host:$port/api/companion-events")
             conn = (url.openConnection() as HttpURLConnection).apply {
                 connectTimeout = 5000
                 readTimeout = 35000 // > 15s keep-alive interval on server

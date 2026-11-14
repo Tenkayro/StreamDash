@@ -80,6 +80,7 @@ class MainActivity : AppCompatActivity() {
     private var hostEventStream: HostEventStream? = null
     private var pendingTestAlertAfterPermission = false
     private var openSettingsBinding: BottomSheetSettingsBinding? = null
+    private var openSettingsDialog: BottomSheetDialog? = null
     private var suppressSettingsUiEvents = false
     private var explicitNotificationPrompt = false
 
@@ -154,6 +155,9 @@ class MainActivity : AppCompatActivity() {
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {
+        // Force IPv4-only stack across OkHttp/HttpURLConnection/sockets so local LAN lookups never stall on IPv6
+        System.setProperty("java.net.preferIPv4Stack", "true")
+        System.setProperty("java.net.preferIPv6Addresses", "false")
         enableEdgeToEdge(
             statusBarStyle = SystemBarStyle.dark(Color.TRANSPARENT),
             navigationBarStyle = SystemBarStyle.dark(Color.TRANSPARENT)
@@ -208,6 +212,8 @@ class MainActivity : AppCompatActivity() {
         activeScanCancel?.set(true)
         stopHostEventStream()
         cancelReconnectLoop()
+        runCatching { openSettingsDialog?.dismiss() }
+        openSettingsDialog = null
         openSettingsBinding = null
         binding.webView.destroy()
         ioExecutor.shutdownNow()
@@ -306,12 +312,11 @@ class MainActivity : AppCompatActivity() {
         binding.swipeRefresh.setProgressBackgroundColorSchemeColor(
             ContextCompat.getColor(this, R.color.obsidian_surface)
         )
+        // Disable pull-to-refresh gesture interception so inner scrollable panels & lists in WebView scroll smoothly;
+        // users can reload anytime from the companion menu's Reload action.
+        binding.swipeRefresh.isEnabled = false
         binding.swipeRefresh.setOnRefreshListener {
             binding.webView.reload()
-        }
-        // Only enable pull-to-refresh when WebView is scrolled to top so internal lists scroll smoothly
-        binding.swipeRefresh.setOnChildScrollUpCallback { _, _ ->
-            binding.webView.scrollY > 0
         }
     }
 
@@ -335,16 +340,24 @@ class MainActivity : AppCompatActivity() {
         cookieManager.setAcceptThirdPartyCookies(binding.webView, true)
 
         binding.webView.setBackgroundColor(Color.parseColor("#111317"))
+        binding.webView.setLayerType(View.LAYER_TYPE_HARDWARE, null)
+        binding.webView.isVerticalScrollBarEnabled = true
+        binding.webView.isHorizontalScrollBarEnabled = false
+        binding.webView.overScrollMode = View.OVER_SCROLL_IF_CONTENT_SCROLLS
         binding.webView.settings.apply {
             javaScriptEnabled = true
             domStorageEnabled = true
+            databaseEnabled = true
             loadsImagesAutomatically = true
             mediaPlaybackRequiresUserGesture = false
             useWideViewPort = true
             loadWithOverviewMode = true
             allowFileAccess = false
             allowContentAccess = false
-            safeBrowsingEnabled = true
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                // Skip remote Google SafeBrowsing checks for local LAN dashboard traffic
+                safeBrowsingEnabled = false
+            }
             mixedContentMode = WebSettings.MIXED_CONTENT_NEVER_ALLOW
             cacheMode = WebSettings.LOAD_DEFAULT
         }
@@ -855,13 +868,20 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun showSettingsSheet() {
-        val dialog = BottomSheetDialog(this)
+        if (isFinishing || isDestroyed) return
+        if (openSettingsDialog?.isShowing == true) return
+        runCatching { openSettingsDialog?.dismiss() }
+
+        val dialog = BottomSheetDialog(this, R.style.ThemeOverlay_StreamDash_BottomSheet)
         val sheet = BottomSheetSettingsBinding.inflate(layoutInflater)
+        openSettingsDialog = dialog
         openSettingsBinding = sheet
         dialog.setContentView(sheet.root)
-        dialog.behavior.apply {
-            state = BottomSheetBehavior.STATE_EXPANDED
-            skipCollapsed = true
+        runCatching {
+            dialog.behavior.apply {
+                state = BottomSheetBehavior.STATE_EXPANDED
+                skipCollapsed = true
+            }
         }
         val baseContentBottom = sheet.sheetContentContainer.paddingBottom
         ViewCompat.setOnApplyWindowInsetsListener(sheet.sheetContentContainer) { view, insets ->
@@ -869,20 +889,25 @@ class MainActivity : AppCompatActivity() {
             view.updatePadding(bottom = baseContentBottom + navBars.bottom)
             insets
         }
-        ViewCompat.requestApplyInsets(sheet.root)
         dialog.setOnShowListener {
-            dialog.findViewById<View>(com.google.android.material.R.id.design_bottom_sheet)
-                ?.let { bottomSheet ->
-                    bottomSheet.setBackgroundColor(Color.TRANSPARENT)
-                    BottomSheetBehavior.from(bottomSheet).apply {
-                        state = BottomSheetBehavior.STATE_EXPANDED
-                        skipCollapsed = true
+            runCatching {
+                dialog.findViewById<View>(com.google.android.material.R.id.design_bottom_sheet)
+                    ?.let { bottomSheet ->
+                        bottomSheet.setBackgroundColor(Color.TRANSPARENT)
+                        BottomSheetBehavior.from(bottomSheet).apply {
+                            state = BottomSheetBehavior.STATE_EXPANDED
+                            skipCollapsed = true
+                        }
                     }
-                }
+                ViewCompat.requestApplyInsets(sheet.root)
+            }
         }
         dialog.setOnDismissListener {
             if (openSettingsBinding == sheet) {
                 openSettingsBinding = null
+            }
+            if (openSettingsDialog == dialog) {
+                openSettingsDialog = null
             }
         }
 
@@ -1109,7 +1134,10 @@ class MainActivity : AppCompatActivity() {
             }
         }
 
-        dialog.show()
+        runCatching { dialog.show() }.onFailure {
+            if (openSettingsBinding == sheet) openSettingsBinding = null
+            if (openSettingsDialog == dialog) openSettingsDialog = null
+        }
     }
 
     private fun applyCompanionSettingsToSheet(

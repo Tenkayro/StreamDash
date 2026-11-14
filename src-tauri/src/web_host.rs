@@ -570,14 +570,18 @@ async fn serve_app_asset(
     if cfg!(debug_assertions) {
         static VITE_BASE: std::sync::OnceLock<String> = std::sync::OnceLock::new();
         let base = VITE_BASE.get_or_init(|| {
-            for candidate in ["127.0.0.1:1420", "[::1]:1420"] {
-                if let Ok(addr) = candidate.parse()
-                    && std::net::TcpStream::connect_timeout(&addr, Duration::from_millis(150)).is_ok()
-                {
-                    return format!("http://{candidate}");
-                }
+            // Prefer IPv4 loopback strictly before any IPv6 fallback to avoid Windows IPv6 stall
+            if let Ok(addr) = "127.0.0.1:1420".parse()
+                && std::net::TcpStream::connect_timeout(&addr, Duration::from_millis(120)).is_ok()
+            {
+                return "http://127.0.0.1:1420".to_string();
             }
-            "http://localhost:1420".to_string()
+            if let Ok(addr) = "[::1]:1420".parse()
+                && std::net::TcpStream::connect_timeout(&addr, Duration::from_millis(120)).is_ok()
+            {
+                return "http://[::1]:1420".to_string();
+            }
+            "http://127.0.0.1:1420".to_string()
         });
         let dev_url = format!(
             "{base}/{}{}",
@@ -612,9 +616,15 @@ async fn serve_app_asset(
     });
 
     if let Some(asset) = asset {
+        let cache_control = if rel_path.starts_with("assets/") {
+            "public, max-age=31536000, immutable"
+        } else {
+            "no-store"
+        };
         return Response::builder()
             .status(StatusCode::OK)
             .header(header::CONTENT_TYPE, asset.mime_type)
+            .header(header::CACHE_CONTROL, cache_control)
             .body(Body::from(asset.bytes))
             .unwrap_or_else(|_| StatusCode::INTERNAL_SERVER_ERROR.into_response());
     }

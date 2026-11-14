@@ -468,7 +468,9 @@
   },
   "livePreview": {
     "notConnected": "Twitch verbinden, um die Vorschau anzuzeigen",
-    "notConnectedDetail": "Nach dem Verbinden deines Broadcaster-Accounts zeigt StreamDash hier deinen eigenen Kanal."
+    "notConnectedDetail": "Nach dem Verbinden deines Broadcaster-Accounts zeigt StreamDash hier deinen eigenen Kanal.",
+    "remoteHttpTitle": "Live-Player über lokales HTTP nicht verfügbar",
+    "remoteHttpDetail": "Twitch erfordert HTTPS oder localhost für eingebettetes Video. Metriken, Chat und Steuerung bleiben im Companion live."
   },
   "navigation": {
     "close": "Schnellnavigation schließen",

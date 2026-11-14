@@ -233,7 +233,8 @@ export default function App() {
     mainRef.current?.scrollTo({ top: 0, behavior: "auto" });
   }, [page]);
   useEffect(() => {
-    if (!ready) return;
+    // Only preload all 16 route chunks on desktop; on mobile HTTP/1.1 this starves the active view.
+    if (!ready || !isTauri()) return;
     const preload = () => {
       for (const load of Object.values(pageLoaders)) void load();
     };
@@ -382,15 +383,15 @@ export default function App() {
           <div className="relative flex min-w-0 flex-1">
             <main
               ref={mainRef}
-              className={`app-main min-w-0 flex-1 ${isViewportPage ? "overflow-hidden" : "overflow-y-auto"}`}
+              className={`app-main min-w-0 flex-1 ${isViewportPage ? "overflow-y-auto md:overflow-hidden" : "overflow-y-auto"}`}
             >
               <div
                 style={
-                  page === "dashboard"
+                  page === "dashboard" || !isTauri()
                     ? undefined
                     : { zoom: Math.max(50, Math.min(150, settings.dashboardZoom || 100)) / 100 }
                 }
-                className={`app-content mx-auto w-full ${isFullWidthPage ? "max-w-none" : widths[settings.contentWidth]} ${isViewportPage ? "flex h-full min-h-0 flex-col" : ""} pb-16 md:pb-0 ${settings.uiDensity === "compact" ? "p-3 lg:p-4" : "p-3 sm:p-4 xl:p-5"}`}
+                className={`app-content mx-auto w-full ${isFullWidthPage ? "max-w-none" : widths[settings.contentWidth]} ${isViewportPage ? "flex min-h-full flex-col md:h-full md:min-h-0" : ""} ${settings.uiDensity === "compact" ? "p-3 lg:p-4" : "p-3 sm:p-4 xl:p-5"}`}
               >
                 <CrashBoundary key={page}>
                   {import.meta.env.DEV && <DevCrashTrigger />}
@@ -400,7 +401,7 @@ export default function App() {
                 </CrashBoundary>
               </div>
             </main>
-            {!isViewportPage && (
+            {!isViewportPage && isTauri() && (
               <>
                 <CurvedScrollbar scrollerRef={mainRef} />
                 <div

@@ -197,8 +197,10 @@ export function TitleBar({ setup = false }: { setup?: boolean }) {
       ? "STORE"
       : "RELEASE";
   useEffect(() => {
-    startNetworkMonitoring();
-    if (isTauri()) void getVersion().then(setVersion);
+    if (isTauri()) {
+      startNetworkMonitoring();
+      void getVersion().then(setVersion);
+    }
   }, []);
   useEffect(() => {
     if (!closeMenuOpen) return;
@@ -229,7 +231,7 @@ export function TitleBar({ setup = false }: { setup?: boolean }) {
   return (
     <div
       data-tauri-drag-region
-      className="app-header-bar drag-region relative flex shrink-0 items-center border-b border-line pl-3 text-[11px] text-muted"
+      className={`app-header-bar drag-region relative flex shrink-0 items-center border-b border-line pl-3 text-[11px] text-muted ${!isTauri() ? "pr-12 md:pr-0" : ""}`}
     >
       <div
         data-tauri-drag-region
@@ -282,7 +284,7 @@ export function TitleBar({ setup = false }: { setup?: boolean }) {
           <button
             type="button"
             onClick={() => setPage(stats.live ? "livePreview" : "stream")}
-            className={`no-drag hidden h-6 items-center gap-1.5 rounded-md border px-2 text-[10.5px] transition sm:inline-flex ${
+            className={`no-drag inline-flex h-6 items-center gap-1.5 rounded-md border px-2 text-[10.5px] transition ${
               stats.live
                 ? "border-red-500/35 bg-red-500/12 text-red-100 hover:border-red-400/55 hover:bg-red-500/18"
                 : "border-rule bg-well text-muted hover:border-rule-strong hover:text-ink"

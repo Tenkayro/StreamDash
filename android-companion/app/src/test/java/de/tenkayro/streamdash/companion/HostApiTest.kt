@@ -160,4 +160,17 @@ class HostApiTest {
             HostApi.isHostDashboardUrl("intent://scan/#Intent;end", "192.168.178.42", 48950)
         )
     }
+
+    @Test
+    fun ipv4Enforcement_acceptsIpv4AndRejectsIpv6() {
+        assertEquals(true, HostApi.isIpv4Literal("192.168.178.42"))
+        assertEquals(false, HostApi.isIpv4Literal("999.168.1.1"))
+        assertEquals(false, HostApi.isIpv4Literal("fe80::1"))
+        assertEquals(true, HostApi.isIpv6Literal("[::1]"))
+        assertEquals("192.168.1.5", HostApi.resolveIpv4Host("192.168.1.5"))
+        assertEquals("192.168.1.5", HostApi.resolveIpv4Host("::ffff:192.168.1.5"))
+        assertNull(HostApi.resolveIpv4Host("fe80::1"))
+        assertNull(HostApi.resolveIpv4Host("[::1]"))
+        assertNull(HostApi.parseQrUrl("http://[::1]:48950/?token=abc"))
+    }
 }

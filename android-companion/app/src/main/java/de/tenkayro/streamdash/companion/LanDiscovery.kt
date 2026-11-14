@@ -324,11 +324,12 @@ object LanDiscovery {
         if (ipsJson != null) {
             for (i in 0 until ipsJson.length()) {
                 val ip = ipsJson.optString(i).trim()
-                if (ip.isNotEmpty()) ips.add(ip)
+                if (HostApi.isIpv4Literal(ip)) ips.add(ip)
             }
         }
 
-        val chosenIp = senderIp.ifBlank { ips.firstOrNull().orEmpty() }
+        val cleanSender = senderIp.trim().takeIf { HostApi.isIpv4Literal(it) }.orEmpty()
+        val chosenIp = cleanSender.ifBlank { ips.firstOrNull().orEmpty() }
         if (chosenIp.isBlank()) return null
 
         val hostName = json.optString("hostName").trim().ifEmpty { chosenIp }

@@ -2249,6 +2249,8 @@ export function Dashboard() {
   };
 
   const zoom = Math.max(50, Math.min(150, settings.dashboardZoom || 100));
+  const isCompactMobile = containerWidth > 0 && containerWidth < 680;
+  const effectiveZoom = isCompactMobile ? 100 : zoom;
   const displayedWidgets = dragOrder ?? widgets;
   const visibleMetricWidgets = displayedWidgets.filter((id) =>
     metricWidgetIds.has(id),
@@ -2256,14 +2258,18 @@ export function Dashboard() {
   const visibleContentWidgets = displayedWidgets.filter(
     (id) => !metricWidgetIds.has(id),
   );
-  const maxMetricCols = Math.max(
-    1,
-    Math.min(6, Math.floor((containerWidth + 8) / (180 + 8))),
-  );
-  const maxContentCols = Math.max(
-    1,
-    Math.min(4, Math.floor((containerWidth + 8) / (280 + 8))),
-  );
+  const maxMetricCols = isCompactMobile
+    ? 2
+    : Math.max(
+        1,
+        Math.min(6, Math.floor((containerWidth + 8) / (180 + 8))),
+      );
+  const maxContentCols = isCompactMobile
+    ? 1
+    : Math.max(
+        1,
+        Math.min(4, Math.floor((containerWidth + 8) / (280 + 8))),
+      );
   const metricRows = packMetricRows(visibleMetricWidgets, maxMetricCols);
   const contentRows = packContentRows(
     visibleContentWidgets,
@@ -2282,7 +2288,11 @@ export function Dashboard() {
     <div
       ref={dashboardRef}
       className={cn(draggedWidget && "[&_iframe]:pointer-events-none")}
-      style={{ zoom: zoom / 100, width: `${10_000 / zoom}%` }}
+      style={
+        effectiveZoom === 100
+          ? undefined
+          : { zoom: effectiveZoom / 100, width: `${10_000 / effectiveZoom}%` }
+      }
     >
       <PageHeader
         icon={LayoutGrid}
@@ -2335,9 +2345,10 @@ export function Dashboard() {
       {metricRows.length > 0 && (
         <div className="dashboard-metrics space-y-2">
           {metricRows.map((row, rowIndex) => {
-            const rowHeight = Math.max(
+            const rawRowHeight = Math.max(
               ...row.map((id) => dimensionsFor(id).height),
             );
+            const rowHeight = isCompactMobile ? Math.min(rawRowHeight, 92) : rawRowHeight;
             return (
               <div
                 key={`metric-row-${rowIndex}`}
@@ -2402,6 +2413,9 @@ export function Dashboard() {
                   availableWidgets.find((widget) => widget.id === id)?.label ??
                   t("dashboard.widget");
                 const dimensions = dimensionsFor(id);
+                const itemHeight = isCompactMobile
+                  ? Math.min(Math.max(row.height, 210), 340)
+                  : row.height;
                 return (
                   <div
                     key={id}
@@ -2410,7 +2424,7 @@ export function Dashboard() {
                       "min-w-0 rounded-xl transition",
                       draggedWidget === id && "ring-2 ring-accent/60",
                     )}
-                    style={{ height: row.height }}
+                    style={{ height: itemHeight }}
                   >
                     <DashboardWidget
                       id={id}
