@@ -362,16 +362,15 @@ jobs:
           ANDROID_KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
         run: |
           chmod +x gradlew
-          ./gradlew testDebugUnitTest --no-daemon
           TAG="${{ needs.create-release.outputs.tag }}"
           VERSION="${{ needs.create-release.outputs.version }}"
           if [ -n "$ANDROID_KEYSTORE_BASE64" ]; then
             printf '%s' "$ANDROID_KEYSTORE_BASE64" | base64 -d > "$ANDROID_KEYSTORE_PATH"
-            ./gradlew assembleRelease --no-daemon
+            ./gradlew testDebugUnitTest assembleRelease --no-daemon
             rm -f "$ANDROID_KEYSTORE_PATH"
             cp app/build/outputs/apk/release/app-release.apk "../StreamDash-Companion-${TAG}.apk"
           else
-            ./gradlew assembleDebug --no-daemon
+            ./gradlew testDebugUnitTest assembleDebug --no-daemon
             cp app/build/outputs/apk/debug/app-debug.apk "../StreamDash-Companion-${TAG}.apk"
           fi
           cp "../StreamDash-Companion-${TAG}.apk" "../StreamDash-Companion.apk"

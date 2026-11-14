@@ -57,7 +57,7 @@ const gradlew = isWin ? join(androidDir, "gradlew.bat") : "./gradlew";
 const tasks = [];
 if (!skipTests) tasks.push("testDebugUnitTest");
 tasks.push(releaseMode ? "assembleRelease" : "assembleDebug");
-tasks.push("--no-daemon");
+if (process.env.CI) tasks.push("--no-daemon");
 
 const result = isWin
   ? spawnSync(process.env.ComSpec || "cmd.exe", ["/d", "/s", "/c", `"${gradlew} ${tasks.join(" ")}"`], {
