@@ -7,19 +7,36 @@ export const PRO_PURCHASE_URLS = [
 ] as const;
 
 export const PAYHIP_PRO_URL = PRO_PURCHASE_URLS[0];
+export const PRO_TERMS_URL = "https://tenkayro.de/terms/";
+export const PRO_PRIVACY_URL = "https://tenkayro.de/privacy/#streamdash";
+export const PRO_CONTACT_URL = "https://tenkayro.de/contact/";
+
+async function openExternalWithFallback(urls: readonly string[]): Promise<void> {
+  for (const url of urls) {
+    try {
+      await openUrl(url);
+      return;
+    } catch {
+      // Try next fallback URL or browser window.
+    }
+  }
+  if (typeof window !== "undefined" && urls[0]) {
+    window.open(urls[0], "_blank", "noopener,noreferrer");
+  }
+}
 
 /**
  * Opens the StreamDash Pro purchase page with automatic fallbacks if opening a URL fails.
  */
 export async function openProPurchasePage(): Promise<void> {
-  for (const url of PRO_PURCHASE_URLS) {
-    try {
-      await openUrl(url);
-      return;
-    } catch {
-      // Try next fallback URL.
-    }
-  }
+  await openExternalWithFallback(PRO_PURCHASE_URLS);
+}
+
+/**
+ * Opens a public legal or support URL in the user's browser.
+ */
+export async function openLegalPage(url: string): Promise<void> {
+  await openExternalWithFallback([url]);
 }
 
 export function isCloudServerUnavailableError(rawError?: string): boolean {

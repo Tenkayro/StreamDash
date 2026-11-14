@@ -937,6 +937,7 @@
     "dashboardLayoutDetail": "{{count}} widgets sont actuellement visibles.",
     "dashboardResetError": "Impossible de réinitialiser la disposition du tableau de bord",
     "data": "Données",
+    "legal": "Mentions légales",
     "donations": "Dons",
     "donationsDetail": "Notifier lorsqu’un don est reçu.",
     "emerald": "Émeraude",
@@ -1552,6 +1553,12 @@
     "requestResetButton": "Mauvais compte ? Demander un reset",
     "requiredToast": "StreamDash Pro est requis pour la synchronisation Cloud",
     "activatedToast": "StreamDash Pro activé pour @{{account}} !",
+    "termsLink": "Conditions d’utilisation (Sans remboursement)",
+    "privacyLink": "Politique de confidentialité",
+    "legalConsentPrefix": "J’accepte les ",
+    "legalConsentAnd": " et la ",
+    "legalConsentSuffix": ", je consens à la livraison numérique immédiate de la clé et je comprends que tout achat est définitif sans remboursement même en cas d’arrêt futur des serveurs Pro ou Cloud.",
+    "acceptTermsHint": "Requis avant d’acheter ou d’activer une clé Pro.",
     "errors": {
       "invalidKey": "Clé de licence introuvable ou invalide.",
       "disabledKey": "Cette clé de licence a été désactivée.",
@@ -1559,6 +1566,43 @@
       "rateLimited": "Trop de tentatives. Veuillez patienter un instant.",
       "serviceUnavailable": "Le serveur de licences est temporairement indisponible.",
       "generic": "Impossible de vérifier la clé de licence."
+    }
+  },
+  "legal": {
+    "modalSubtitle": "Publié par Tenkayro · StreamDash Desktop, Companion & Pro",
+    "termsTab": "Conditions & Remboursements",
+    "privacyTab": "Confidentialité",
+    "openWebsite": "Ouvrir sur tenkayro.de",
+    "readInApp": "Voir les détails",
+    "openSupportPage": "Ouvrir le support",
+    "updatedLabel": "Mis à jour 14/11/2026",
+    "settingsTermsLabel": "Conditions d’utilisation (CGU) & Non-remboursement",
+    "settingsTermsDetail": "Clés Pro numériques uniques, liaison à 1 compte Twitch et aucun remboursement si les serveurs ferment.",
+    "settingsPrivacyLabel": "Politique de confidentialité",
+    "settingsPrivacyDetail": "Stockage local SQLite/trousseau, Cloud Zero-Secrets et permissions Android Companion.",
+    "settingsOperatorLabel": "Éditeur & Contact",
+    "settingsOperatorDetail": "Publié par Tenkayro (tenkayro.de/contact) — sans télémétrie ni suivi publicitaire.",
+    "termsSections": {
+      "s1Title": "1. Champ d’application & Licence",
+      "s1Body": "StreamDash Desktop et Android Companion sont des logiciels gratuits locaux publiés par Tenkayro. L’option StreamDash Pro est une clé numérique à paiement unique liée définitivement à un (1) compte Twitch, personnelle et non cessible.",
+      "s2Title": "2. Achat, Livraison numérique & Non-remboursement",
+      "s2Body": "Les paiements passent par Payhip (store.tenkayro.de) avec livraison immédiate de la clé numérique. S’agissant d’un contenu numérique fourni instantanément, toute vente est définitive et non remboursable dès la commande ou l’activation, dans la limite autorisée par la loi.",
+      "s3Title": "3. Disponibilité & Fermeture des serveurs (Aucun remboursement)",
+      "s3Body": "Les services en ligne (Cloud Sync, vérification des licences, tickets sur streamdash-api.tenkayro.de) sont fournis en l’état sans garantie de disponibilité. Tenkayro se réserve le droit de modifier, suspendre ou arrêter définitivement les serveurs à tout moment sans préavis ni remboursement total ou partiel. Les fonctions locales restent utilisables hors ligne.",
+      "s4Title": "4. Stockage Cloud & Usage acceptable",
+      "s4Body": "Pro inclut 25 Mo de stockage Cloud (extensible sur demande) réservé aux réglages sans jetons ni logs de chat. Tout abus, rétro-ingénierie ou opposition frauduleuse entraîne la révocation immédiate sans remboursement.",
+      "s5Title": "5. Services tiers & Limitation de responsabilité",
+      "s5Body": "StreamDash est indépendant de Twitch, OBS, Spotify, StreamElements, TipeeeStream, Payhip et GitHub. Logiciels et serveurs sont fournis sans garantie ; la responsabilité est limitée au montant payé pour Pro dans les limites légales."
+    },
+    "privacySections": {
+      "p1Title": "1. Données locales & Zero-Secrets",
+      "p1Body": "Messages, événements, statistiques et profils restent localement en SQLite. Les jetons OAuth, mots de passe OBS/dons et clés de licence demeurent strictement dans votre trousseau local.",
+      "p2Title": "2. Application Android Companion",
+      "p2Body": "Elle communique uniquement en Wi-Fi local avec le Mode Hôte du PC. L’accès caméra sert exclusivement au scan QR sur l’appareil (aucune image enregistrée ou envoyée).",
+      "p3Title": "3. StreamDash Pro & Cloud Sync optionnel",
+      "p3Body": "Lors de l’activation Pro, le serveur stocke votre ID et nom Twitch, l’ID de clé, vos tickets de support et la sauvegarde de configuration (hors jetons/chats). Payhip gère le paiement.",
+      "p4Title": "4. Suppression & Contact",
+      "p4Body": "Vous pouvez supprimer votre sauvegarde Cloud à tout moment dans Paramètres > Pro & Cloud ou contacter Tenkayro via tenkayro.de/contact/."
     }
   }
 }

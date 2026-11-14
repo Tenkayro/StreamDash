@@ -27,6 +27,8 @@ import {
 import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { toast } from "sonner";
+import { LegalModal, type LegalTab } from "../LegalModal";
+import { ProTermsConsent } from "../ProTermsConsent";
 import { Badge, Button, Card, Toggle } from "../ui";
 import {
   formatCloudError,
@@ -80,6 +82,8 @@ export function ProCloudSection() {
   const setPage = useAppStore((s) => s.setPage);
 
   const [licenseKey, setLicenseKey] = useState("");
+  const [termsAccepted, setTermsAccepted] = useState(false);
+  const [legalTab, setLegalTab] = useState<LegalTab | null>(null);
   const [activating, setActivating] = useState(false);
   const [activateError, setActivateError] = useState<string>();
 
@@ -234,7 +238,7 @@ export function ProCloudSection() {
 
   const handleActivate = async (event: React.FormEvent) => {
     event.preventDefault();
-    if (activating) return;
+    if (activating || !termsAccepted) return;
     const trimmed = licenseKey.trim();
     if (!trimmed) {
       setActivateError(t("pro.errors.invalidKey"));
@@ -401,6 +405,15 @@ export function ProCloudSection() {
             </div>
           ) : (
             <div className="grid gap-4 md:grid-cols-2">
+              <div className="md:col-span-2">
+                <ProTermsConsent
+                  id="settings-pro-terms-accept"
+                  accepted={termsAccepted}
+                  onChange={setTermsAccepted}
+                  onOpenLegal={setLegalTab}
+                />
+              </div>
+
               <div className="flex flex-col justify-between gap-3 rounded-xl border border-accent/25 bg-accent-soft/20 p-4">
                 <div className="space-y-2.5">
                   <div className="text-sm font-semibold text-zinc-100">{t("pro.buyCardTitle")}</div>
@@ -428,7 +441,11 @@ export function ProCloudSection() {
                   <Button
                     type="button"
                     variant="primary"
-                    onClick={() => void openProPurchasePage()}
+                    disabled={!termsAccepted}
+                    onClick={() => {
+                      if (!termsAccepted) return;
+                      void openProPurchasePage();
+                    }}
                   >
                     <ExternalLink size={13} />
                     {t("pro.getProButton")}
@@ -469,7 +486,7 @@ export function ProCloudSection() {
                     <Button
                       type="submit"
                       variant="primary"
-                      disabled={serverOffline || activating || !licenseKey.trim()}
+                      disabled={serverOffline || activating || !termsAccepted || !licenseKey.trim()}
                     >
                       {activating ? t("pro.activating") : t("pro.activateButton")}
                     </Button>
@@ -1221,6 +1238,11 @@ export function ProCloudSection() {
           </Card>
         </div>
       )}
+      <LegalModal
+        open={legalTab !== null}
+        initialTab={legalTab ?? "terms"}
+        onClose={() => setLegalTab(null)}
+      />
     </section>
   );
 }

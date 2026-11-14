@@ -11,7 +11,9 @@ import {
   Crown,
   Database,
   DatabaseBackup,
+  ExternalLink,
   EyeOff,
+  FileText,
   Gift,
   Globe2,
   Highlighter,
@@ -33,6 +35,7 @@ import {
   Rocket,
   Rows3,
   Settings2,
+  ShieldCheck,
   Smile,
   Sparkles,
   Star,
@@ -43,8 +46,15 @@ import {
 import { useEffect, useLayoutEffect, useRef, useState, type ReactNode } from "react";
 import { toast } from "sonner";
 import { Button, Card, Toggle } from "../components/ui";
+import { LegalModal, type LegalTab } from "../components/LegalModal";
 import { ProCloudSection } from "../components/settings/ProCloudSection";
 import { ProfilesSection } from "../components/settings/ProfilesSection";
+import {
+  openLegalPage,
+  PRO_CONTACT_URL,
+  PRO_PRIVACY_URL,
+  PRO_TERMS_URL,
+} from "../lib/pro";
 import { defaultDashboardWidgets, useAppStore } from "../stores/app-store";
 import { saveSetting } from "../services/native";
 import { errorMessage, isTauri } from "../lib/utils";
@@ -74,6 +84,7 @@ const settingsSections: Array<{ id: string; label: string; icon: LucideIcon }> =
   { id: "chat", label: "chat", icon: MessageSquare },
   { id: "events", label: "events", icon: ListFilter },
   { id: "data", label: "data", icon: Database },
+  { id: "legal", label: "legal", icon: FileText },
 ];
 
 function currentTranslateX(element: HTMLElement) {
@@ -446,6 +457,7 @@ function LanguageSelect({
 export function SettingsPage() {
   const { settings, setSettings } = useAppStore();
   const { t } = useTranslation();
+  const [legalTab, setLegalTab] = useState<LegalTab | null>(null);
 
   const update = async <K extends keyof AppSettings>(
     key: K,
@@ -858,7 +870,57 @@ export function SettingsPage() {
             </Row>
           </Card>
         </section>
+        <section id="legal" className="scroll-mt-16">
+          <SectionTitle icon={FileText}>{t("settings.legal")}</SectionTitle>
+          <Card className="px-5">
+            <Row
+              icon={FileText}
+              label={t("legal.settingsTermsLabel")}
+              detail={t("legal.settingsTermsDetail")}
+            >
+              <div className="flex flex-wrap items-center gap-2">
+                <Button onClick={() => setLegalTab("terms")}>
+                  {t("legal.readInApp")}
+                </Button>
+                <Button onClick={() => void openLegalPage(PRO_TERMS_URL)}>
+                  <ExternalLink size={13} />
+                  {t("legal.openWebsite")}
+                </Button>
+              </div>
+            </Row>
+            <Row
+              icon={ShieldCheck}
+              label={t("legal.settingsPrivacyLabel")}
+              detail={t("legal.settingsPrivacyDetail")}
+            >
+              <div className="flex flex-wrap items-center gap-2">
+                <Button onClick={() => setLegalTab("privacy")}>
+                  {t("legal.readInApp")}
+                </Button>
+                <Button onClick={() => void openLegalPage(PRO_PRIVACY_URL)}>
+                  <ExternalLink size={13} />
+                  {t("legal.openWebsite")}
+                </Button>
+              </div>
+            </Row>
+            <Row
+              icon={Globe2}
+              label={t("legal.settingsOperatorLabel")}
+              detail={t("legal.settingsOperatorDetail")}
+            >
+              <Button onClick={() => void openLegalPage(PRO_CONTACT_URL)}>
+                <ExternalLink size={13} />
+                {t("legal.openSupportPage")}
+              </Button>
+            </Row>
+          </Card>
+        </section>
       </div>
+      <LegalModal
+        open={legalTab !== null}
+        initialTab={legalTab ?? "terms"}
+        onClose={() => setLegalTab(null)}
+      />
     </>
   );
 }

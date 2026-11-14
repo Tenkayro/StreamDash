@@ -17,6 +17,8 @@ import {
 import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { toast } from "sonner";
+import { LegalModal, type LegalTab } from "./LegalModal";
+import { ProTermsConsent } from "./ProTermsConsent";
 import { Badge, Button, Card } from "./ui";
 import {
   isCloudServerUnavailableError,
@@ -47,6 +49,8 @@ function ProModalContent({ onClose }: { onClose: () => void }) {
   const setPage = useAppStore((s) => s.setPage);
 
   const [licenseKey, setLicenseKey] = useState("");
+  const [termsAccepted, setTermsAccepted] = useState(false);
+  const [legalTab, setLegalTab] = useState<LegalTab | null>(null);
   const [busy, setBusy] = useState(false);
   const [retrying, setRetrying] = useState(false);
   const [error, setError] = useState<string>();
@@ -70,7 +74,7 @@ function ProModalContent({ onClose }: { onClose: () => void }) {
   const handleActivate = async (event: React.FormEvent) => {
     event.preventDefault();
     const trimmed = licenseKey.trim();
-    if (!trimmed || busy) return;
+    if (!trimmed || !termsAccepted || busy) return;
     setBusy(true);
     setError(undefined);
     setRawError(undefined);
@@ -103,7 +107,7 @@ function ProModalContent({ onClose }: { onClose: () => void }) {
         if (event.target === event.currentTarget) onClose();
       }}
     >
-      <Card className="w-full max-w-lg overflow-hidden border-rule-strong bg-panel p-0 shadow-2xl">
+      <Card className="flex max-h-[90vh] w-full max-w-lg flex-col overflow-hidden border-rule-strong bg-panel p-0 shadow-2xl">
         <div className="flex items-center justify-between border-b border-line bg-well px-5 py-4">
           <div className="flex items-center gap-2.5">
             <span className="grid size-8 place-items-center rounded-lg border border-amber-400/25 bg-amber-400/12 text-amber-300">
@@ -131,7 +135,7 @@ function ProModalContent({ onClose }: { onClose: () => void }) {
           </button>
         </div>
 
-        <div className="space-y-4 p-5">
+        <div className="space-y-4 overflow-y-auto p-5">
           {!twitchConnected ? (
             <div className="space-y-3 rounded-[10px] border border-rule bg-well p-4">
               <div className="flex items-start gap-3">
@@ -221,14 +225,23 @@ function ProModalContent({ onClose }: { onClose: () => void }) {
               )}
 
               <div className="flex flex-wrap items-center justify-between gap-2 pt-1">
-                <Button
-                  type="button"
-                  onClick={openSupportReset}
-                  className="hover:border-amber-500/30 hover:text-amber-200"
-                >
-                  <LifeBuoy size={13} />
-                  {t("pro.requestResetButton")}
-                </Button>
+                <div className="flex flex-wrap items-center gap-2">
+                  <Button
+                    type="button"
+                    onClick={openSupportReset}
+                    className="hover:border-amber-500/30 hover:text-amber-200"
+                  >
+                    <LifeBuoy size={13} />
+                    {t("pro.requestResetButton")}
+                  </Button>
+                  <button
+                    type="button"
+                    onClick={() => setLegalTab("terms")}
+                    className="text-[11px] text-muted underline underline-offset-2 transition hover:text-ink"
+                  >
+                    {t("pro.termsLink")}
+                  </button>
+                </div>
                 <Button variant="primary" onClick={onClose}>
                   {t("common.done")}
                 </Button>
@@ -288,6 +301,13 @@ function ProModalContent({ onClose }: { onClose: () => void }) {
                 </div>
               </div>
 
+              <ProTermsConsent
+                id="pro-modal-terms-accept"
+                accepted={termsAccepted}
+                onChange={setTermsAccepted}
+                onOpenLegal={setLegalTab}
+              />
+
               <div className="flex flex-wrap items-center justify-between gap-3 rounded-[10px] border border-accent-border bg-accent-soft/55 px-3.5 py-3">
                 <div className="min-w-0 flex-1">
                   <div className="text-xs font-semibold text-ink-strong">
@@ -300,7 +320,11 @@ function ProModalContent({ onClose }: { onClose: () => void }) {
                 <Button
                   type="button"
                   variant="primary"
-                  onClick={() => void openProPurchasePage()}
+                  disabled={!termsAccepted}
+                  onClick={() => {
+                    if (!termsAccepted) return;
+                    void openProPurchasePage();
+                  }}
                 >
                   <ExternalLink size={13} />
                   {t("pro.getProButton")}
@@ -332,7 +356,7 @@ function ProModalContent({ onClose }: { onClose: () => void }) {
                   <Button
                     type="submit"
                     variant="primary"
-                    disabled={busy || !licenseKey.trim() || serverOffline}
+                    disabled={busy || !termsAccepted || !licenseKey.trim() || serverOffline}
                   >
                     {busy ? t("pro.activating") : t("pro.activateButton")}
                   </Button>
@@ -345,6 +369,11 @@ function ProModalContent({ onClose }: { onClose: () => void }) {
           )}
         </div>
       </Card>
+      <LegalModal
+        open={legalTab !== null}
+        initialTab={legalTab ?? "terms"}
+        onClose={() => setLegalTab(null)}
+      />
     </div>
   );
 }
