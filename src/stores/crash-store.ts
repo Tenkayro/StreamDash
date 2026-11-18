@@ -104,7 +104,7 @@ export function formatCrashReport(report: CrashReport, history: CrashReport[]): 
     report.page ? `Page: ${report.page}` : undefined,
     recentPages ? `Recent Navigation: ${recentPages}` : undefined,
     `Language: ${app.settings.language} | Density: ${app.settings.uiDensity} | Viewport: ${viewport}`,
-    `Network: ${network.online ? "online" : "offline"} | Pro: ${app.entitlements.pro ? "yes" : "no"} | Cloud: ${app.cloudSync.phase}`,
+    `Network: ${network.online ? "online" : "offline"}`,
     `Connections: Twitch=${app.twitch.phase}, Bot=${app.twitchBot.phase}, OBS=${app.obs.phase}, SE=${app.streamElements.phase}, Tipeee=${app.tipeeStream.phase}`,
     `Platform: ${typeof navigator !== "undefined" ? navigator.userAgent : "unknown"}`,
     "",

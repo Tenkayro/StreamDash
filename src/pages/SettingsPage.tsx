@@ -8,7 +8,6 @@ import {
   Bell,
   CircleDollarSign,
   Clock3,
-  Crown,
   Database,
   DatabaseBackup,
   ExternalLink,
@@ -47,14 +46,13 @@ import { useEffect, useLayoutEffect, useRef, useState, type ReactNode } from "re
 import { toast } from "sonner";
 import { Button, Card, Toggle } from "../components/ui";
 import { LegalModal, type LegalTab } from "../components/LegalModal";
-import { ProCloudSection } from "../components/settings/ProCloudSection";
 import { ProfilesSection } from "../components/settings/ProfilesSection";
 import {
+  CONTACT_URL,
   openLegalPage,
-  PRO_CONTACT_URL,
-  PRO_PRIVACY_URL,
-  PRO_TERMS_URL,
-} from "../lib/pro";
+  PRIVACY_URL,
+  TERMS_URL,
+} from "../lib/legal";
 import { defaultDashboardWidgets, useAppStore } from "../stores/app-store";
 import { saveSetting } from "../services/native";
 import { errorMessage, isTauri } from "../lib/utils";
@@ -76,7 +74,6 @@ const eventOptions: Array<{ id: ActivityType; label: string; icon: LucideIcon }>
 ];
 
 const settingsSections: Array<{ id: string; label: string; icon: LucideIcon }> = [
-  { id: "pro", label: "proCloud", icon: Crown },
   { id: "profiles", label: "profiles", icon: Layers },
   { id: "general", label: "general", icon: Settings2 },
   { id: "appearance", label: "appearance", icon: Palette },
@@ -478,7 +475,6 @@ export function SettingsPage() {
     <>
       <SettingsNav smooth={settings.animations} />
       <div className="mx-auto max-w-4xl space-y-5">
-        <ProCloudSection />
         <ProfilesSection />
         <section id="general" className="scroll-mt-16">
           <SectionTitle icon={Settings2}>{t("settings.general")}</SectionTitle>
@@ -882,7 +878,7 @@ export function SettingsPage() {
                 <Button onClick={() => setLegalTab("terms")}>
                   {t("legal.readInApp")}
                 </Button>
-                <Button onClick={() => void openLegalPage(PRO_TERMS_URL)}>
+                <Button onClick={() => void openLegalPage(TERMS_URL)}>
                   <ExternalLink size={13} />
                   {t("legal.openWebsite")}
                 </Button>
@@ -897,7 +893,7 @@ export function SettingsPage() {
                 <Button onClick={() => setLegalTab("privacy")}>
                   {t("legal.readInApp")}
                 </Button>
-                <Button onClick={() => void openLegalPage(PRO_PRIVACY_URL)}>
+                <Button onClick={() => void openLegalPage(PRIVACY_URL)}>
                   <ExternalLink size={13} />
                   {t("legal.openWebsite")}
                 </Button>
@@ -908,7 +904,7 @@ export function SettingsPage() {
               label={t("legal.settingsOperatorLabel")}
               detail={t("legal.settingsOperatorDetail")}
             >
-              <Button onClick={() => void openLegalPage(PRO_CONTACT_URL)}>
+              <Button onClick={() => void openLegalPage(CONTACT_URL)}>
                 <ExternalLink size={13} />
                 {t("legal.openSupportPage")}
               </Button>

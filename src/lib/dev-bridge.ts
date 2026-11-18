@@ -25,10 +25,6 @@ export interface DevStateSnapshot {
   demoActive: boolean;
   online: boolean;
   networkChecking: boolean;
-  pro: boolean;
-  tier: "free" | "pro";
-  cloudSyncEnabled: boolean;
-  cloudSyncPhase: string;
   language: string;
   density: string;
   connections: {
@@ -57,7 +53,6 @@ export type DevCommand =
   | { type: "clear-crashes" }
   | { type: "set-online"; online: boolean }
   | { type: "check-network" }
-  | { type: "set-pro"; pro: boolean }
   | { type: "navigate"; page: string }
   | { type: "set-language"; language: "en" | "de" | "es" | "fr" | "pt-BR" }
   | {
@@ -130,10 +125,6 @@ function buildDevSnapshot(): DevStateSnapshot {
     demoActive: useDemoStore.getState().active,
     online: network.online,
     networkChecking: network.checking,
-    pro: app.entitlements.pro,
-    tier: app.entitlements.tier,
-    cloudSyncEnabled: app.cloudSyncEnabled,
-    cloudSyncPhase: app.cloudSync.phase,
     language: app.settings.language,
     density: app.settings.uiDensity,
     connections: {
@@ -408,16 +399,6 @@ export function installDevBridge(): () => void {
         break;
       case "check-network":
         void useNetworkStore.getState().checkNow();
-        break;
-      case "set-pro":
-        useAppStore.getState().setEntitlements({
-          tier: cmd.pro ? "pro" : "free",
-          pro: cmd.pro,
-          features: cmd.pro
-            ? ["cloud_sync", "pro_themes", "unlimited_profiles"]
-            : [],
-        });
-        toast.info(`Pro entitlements simulated: ${cmd.pro ? "PRO" : "FREE"}`);
         break;
       case "navigate":
         useAppStore.getState().setPage(cmd.page);

@@ -18,17 +18,12 @@ import type {
   ChatCommand,
   ChatEmote,
   ChatMessage,
-  CloudSyncState,
-  CloudSyncUserCheckpoint,
   ConnectionState,
   CustomVariable,
   DashboardStats,
   GiveawayEntry,
   GiveawayState,
   ObsSnapshot,
-  ProEntitlements,
-  StorageTicketState,
-  SupportTicketState,
   UserProfile,
 } from "../types";
 import {
@@ -122,20 +117,6 @@ interface AppStore {
   setLastTwitchUserId: (id?: string) => void;
   profilesAutoSwitch: boolean;
   setProfilesAutoSwitch: (enabled: boolean) => void;
-  cloudSyncEnabled: boolean;
-  setCloudSyncEnabled: (enabled: boolean) => void;
-  cloudSyncCheckpoints: Record<string, CloudSyncUserCheckpoint>;
-  setCloudSyncCheckpoints: (
-    checkpoints: Record<string, CloudSyncUserCheckpoint>,
-  ) => void;
-  cloudSync: CloudSyncState;
-  setCloudSync: (patch: Partial<CloudSyncState>) => void;
-  entitlements: ProEntitlements;
-  setEntitlements: (patch: Partial<ProEntitlements> | ProEntitlements) => void;
-  supportTicket?: SupportTicketState;
-  setSupportTicket: (patch?: Partial<SupportTicketState> | SupportTicketState) => void;
-  storageTicket?: StorageTicketState;
-  setStorageTicket: (patch?: Partial<StorageTicketState> | StorageTicketState) => void;
 }
 export const useAppStore = create<AppStore>((set) => ({
   searchTarget: undefined,
@@ -586,45 +567,4 @@ export const useAppStore = create<AppStore>((set) => ({
   setLastTwitchUserId: (lastTwitchUserId) => set({ lastTwitchUserId }),
   profilesAutoSwitch: true,
   setProfilesAutoSwitch: (profilesAutoSwitch) => set({ profilesAutoSwitch }),
-  cloudSyncEnabled: true,
-  setCloudSyncEnabled: (cloudSyncEnabled) => set({ cloudSyncEnabled }),
-  cloudSyncCheckpoints: {},
-  setCloudSyncCheckpoints: (cloudSyncCheckpoints) => set({ cloudSyncCheckpoints }),
-  cloudSync: { phase: "idle" },
-  setCloudSync: (patch) =>
-    set((s) => ({ cloudSync: { ...s.cloudSync, ...patch } })),
-  entitlements: { tier: "free", pro: false, features: [] },
-  setEntitlements: (patch) =>
-    set((s) => ({
-      entitlements:
-        "tier" in patch && patch.tier
-          ? { ...(patch as ProEntitlements) }
-          : { ...s.entitlements, ...patch },
-    })),
-  supportTicket: undefined,
-  setSupportTicket: (patch) =>
-    set((s) => {
-      if (!patch) return { supportTicket: undefined };
-      if ("hasActiveLicense" in patch && typeof patch.hasActiveLicense === "boolean") {
-        return { supportTicket: { ...(patch as SupportTicketState) } };
-      }
-      const prev: SupportTicketState = s.supportTicket ?? {
-        hasActiveLicense: false,
-        resetsUsed: 0,
-        maxResets: 1,
-        resetsRemaining: 0,
-        canSubmit: false,
-      };
-      return { supportTicket: { ...prev, ...patch } };
-    }),
-  storageTicket: undefined,
-  setStorageTicket: (patch) =>
-    set((s) => {
-      if (!patch) return { storageTicket: undefined };
-      if ("storage" in patch && patch.storage && "canSubmit" in patch) {
-        return { storageTicket: { ...(patch as StorageTicketState) } };
-      }
-      if (!s.storageTicket) return {};
-      return { storageTicket: { ...s.storageTicket, ...patch } };
-    }),
 }));

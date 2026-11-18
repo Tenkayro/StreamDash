@@ -1,11 +1,8 @@
 import { createContext, useContext } from "react";
 import type {
   ChatUserProfile,
-  ProEntitlements,
   ProfileExportBundle,
   ProfileExportSections,
-  StorageTicketState,
-  SupportTicketState,
 } from "../types";
 
 export interface DeviceAuth {
@@ -88,18 +85,6 @@ export interface RuntimeValue {
     bundle: ProfileExportBundle,
     options: ImportProfileOptions,
   ) => Promise<void>;
-  setCloudSyncEnabled: (enabled: boolean) => Promise<void>;
-  syncCloudNow: (
-    mode?: "smart" | "push" | "pull",
-    options?: { force?: boolean; merge?: boolean },
-  ) => Promise<void>;
-  deleteCloudBackup: () => Promise<void>;
-  refreshProEntitlements: (force?: boolean) => Promise<ProEntitlements>;
-  activateProLicense: (licenseKey: string) => Promise<ProEntitlements>;
-  refreshSupportTicket: (force?: boolean) => Promise<SupportTicketState | undefined>;
-  submitKeyResetTicket: (message: string) => Promise<void>;
-  refreshStorageTicket: (force?: boolean) => Promise<StorageTicketState | undefined>;
-  submitStorageRequestTicket: (requestedMb: number, message: string) => Promise<void>;
   reconnect: () => Promise<void>;
   shutdown: () => Promise<void>;
 }

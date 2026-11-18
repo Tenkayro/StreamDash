@@ -2,7 +2,7 @@ import { ExternalLink, FileText, ShieldCheck, X } from "lucide-react";
 import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { Badge, Button, Card } from "./ui";
-import { openLegalPage, PRO_PRIVACY_URL, PRO_TERMS_URL } from "../lib/pro";
+import { openLegalPage, PRIVACY_URL, TERMS_URL } from "../lib/legal";
 
 export type LegalTab = "terms" | "privacy";
 
@@ -43,7 +43,7 @@ function LegalModalContent({
     return () => window.removeEventListener("keydown", onKeyDown);
   }, [onClose]);
 
-  const activeUrl = tab === "terms" ? PRO_TERMS_URL : PRO_PRIVACY_URL;
+  const activeUrl = tab === "terms" ? TERMS_URL : PRIVACY_URL;
 
   return (
     <div

@@ -442,33 +442,6 @@ export async function startDemoTour(options?: {
         donations: 150,
       },
     });
-    app.setEntitlements({
-      tier: "pro",
-      pro: true,
-      twitchLogin: "tenkayro",
-      features: ["cloud_sync", "pro_themes", "unlimited_profiles"],
-    });
-    app.setCloudSyncEnabled(true);
-    app.setCloudSync({
-      phase: "synced",
-      lastSyncedAt: Date.now(),
-      hasLocalChanges: false,
-      error: undefined,
-      historyError: undefined,
-      storageInfo: {
-        usedBytes: 2_140_000,
-        quotaBytes: 26_214_400,
-        defaultQuotaBytes: 26_214_400,
-        effectiveDefaultQuotaBytes: 26_214_400,
-        globalUsedBytes: 180_000_000,
-        globalPoolMaxBytes: 1_073_741_824,
-        globalSoftThrottled: false,
-        globalPoolFull: false,
-        historyRevision: 12,
-        historyUpdatedAt: Date.now(),
-        historyEventCount: 142,
-      },
-    });
     app.setTwitch({ phase: "connected", account: "tenkayro", userId: "1001" });
     app.setTwitchBot({
       phase: "connected",
@@ -859,7 +832,7 @@ export async function startDemoTour(options?: {
     await sleep(1050, signal);
 
     // 11. Connections, Host & Settings (with sidebar + settings scroll)
-    setStep(11, "Connections, Host & Settings", "Unified services, mobile companion & Pro Cloud Sync");
+    setStep(11, "Connections, Host & Settings", "Unified services, mobile companion & local profiles");
     await navigateWithCursor("connections", signal);
     await sleep(950, signal);
     await navigateWithCursor("host", signal);

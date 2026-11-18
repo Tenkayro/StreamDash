@@ -5,7 +5,6 @@ import { openUrl } from "@tauri-apps/plugin-opener";
 import { openDevToolsWindow } from "../lib/dev-bridge";
 import {
   Bug,
-  Crown,
   Download,
   Eye,
   GitFork,
@@ -162,11 +161,10 @@ export function TitleBar({ setup = false }: { setup?: boolean }) {
   const [menuPos, setMenuPos] = useState({ right: 0, top: 0 });
   const closeMenuRef = useRef<HTMLDivElement>(null);
   const closeButtonRef = useRef<HTMLButtonElement>(null);
-  const { settings, setSettings, entitlements, stats, twitch, setPage } = useAppStore();
+  const { settings, setSettings, stats, twitch, setPage } = useAppStore();
   const networkOnline = useNetworkStore((state) => state.online);
   const networkChecking = useNetworkStore((state) => state.checking);
   const checkNetworkNow = useNetworkStore((state) => state.checkNow);
-  const proActive = entitlements.pro;
   const zoom = Math.max(50, Math.min(150, settings.dashboardZoom || 100));
   const applyZoom = (next: number) => {
     const clamped = Math.max(50, Math.min(150, Math.round(next / 5) * 5));
@@ -252,12 +250,6 @@ export function TitleBar({ setup = false }: { setup?: boolean }) {
           alt="StreamDash"
           className="h-4.5 w-auto object-contain"
         />
-        {proActive && (
-          <span className="inline-flex items-center gap-1 rounded-[5px] border border-amber-400/25 bg-amber-400/10 px-1.5 py-0.5 text-[9.5px] font-semibold tracking-wide text-amber-200">
-            <Crown size={9} className="text-amber-300" aria-hidden="true" />
-            PRO
-          </span>
-        )}
         <span
           aria-label={t("titleBar.version", { version: version || t("titleBar.loading"), channel })}
           className="flex items-center gap-1.5 studio-mono text-[10px] text-subtle"

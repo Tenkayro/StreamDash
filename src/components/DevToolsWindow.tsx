@@ -20,7 +20,6 @@ const QUICK_PAGES = [
   "stream",
   "connections",
   "settings",
-  "pro",
   "about",
 ] as const;
 
@@ -189,12 +188,6 @@ export function DevToolsWindow() {
                 }
               >
                 {snapshot.online ? "online" : "offline"}
-              </strong>
-            </span>
-            <span>
-              Tier:{" "}
-              <strong className="text-zinc-200">
-                {snapshot.pro ? "pro" : "free"}
               </strong>
             </span>
             <span>
@@ -483,11 +476,6 @@ export function DevToolsWindow() {
                 <ActionButton
                   label="Probe Net"
                   onClick={() => send({ type: "check-network" })}
-                />
-                <ActionButton
-                  label={snapshot?.pro ? "Pro: ON" : "Pro: OFF"}
-                  active={Boolean(snapshot?.pro)}
-                  onClick={() => send({ type: "set-pro", pro: !snapshot?.pro })}
                 />
                 <select
                   aria-label="Language"

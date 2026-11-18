@@ -11,7 +11,6 @@ interface NetworkStore {
 
 const PROBE_URLS = [
   "https://api.twitch.tv/helix",
-  "https://streamdash-api.tenkayro.de/health",
 ];
 
 let probeInFlight: Promise<boolean> | null = null;
