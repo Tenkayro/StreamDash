@@ -601,6 +601,21 @@ select.input option {
     var(--color-canvas);
 }
 
+body::after {
+  content: "";
+  background-image: url("./assets/textures/noise.jpg");
+  background-repeat: repeat;
+  z-index: 10050;
+  pointer-events: none;
+  image-rendering: pixelated;
+  position: fixed;
+  width: 100%;
+  height: 100%;
+  left: 0;
+  top: 0;
+  opacity: 0.032;
+}
+
 .app-workspace {
   padding: 0;
   gap: 0;
