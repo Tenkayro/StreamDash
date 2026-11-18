@@ -1,6 +1,30 @@
 /* StreamDash Studio Command Design System · Obsidian & Precision Hairlines */
 @import "tailwindcss";
 
+@font-face {
+  font-family: "Titillium Web";
+  src: url("./assets/fonts/TitilliumWeb-Regular.ttf") format("truetype");
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "Titillium Web";
+  src: url("./assets/fonts/TitilliumWeb-SemiBold.ttf") format("truetype");
+  font-weight: 600;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "Titillium Web";
+  src: url("./assets/fonts/TitilliumWeb-Bold.ttf") format("truetype");
+  font-weight: 700;
+  font-style: normal;
+  font-display: swap;
+}
+
 :root {
   color-scheme: dark;
 
@@ -72,8 +96,8 @@
   --shadow-inset: inset 0 1px 3px oklch(0% 0 0 / 0.65);
   --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
 
-  --font-display: "Wix Madefor Display", "Segoe UI Variable", system-ui, sans-serif;
-  --font-body: "Wix Madefor Text", "Segoe UI Variable", system-ui, sans-serif;
+  --font-display: "Titillium Web", "Segoe UI Variable", system-ui, sans-serif;
+  --font-body: "Titillium Web", "Segoe UI Variable", system-ui, sans-serif;
   --font-mono: "JetBrains Mono", ui-monospace, monospace;
 
   font-family: var(--font-body);
